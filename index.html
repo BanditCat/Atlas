@@ -29,6 +29,7 @@
     <canvas id="glCanvas" width="64" height="64" style="display: none;"></canvas>
     <pre id="output"></pre>
     <script>
+        const maxDim = 4096;
         const canvas = document.getElementById('glCanvas');
         const gl = canvas.getContext('webgl2');
         const outputElement = document.getElementById('output');
@@ -95,25 +96,19 @@
         }
 
         function createTextureFromData(gl, data) {
-            let totalElements = data.length;
-            let width = Math.min(totalElements, 8);
-            let height = Math.ceil(totalElements / width);
+            let totalTexels = Math.ceil(data.length / 4); 
+            let width = Math.min(totalTexels, maxDim);
+            let height = Math.ceil(totalTexels / width);
 
             // Create a Float32Array with length width * height * 4 (RGBA)
             let textureData = new Float32Array(width * height * 4);
-            for (let i = 0; i < totalElements; i++) {
-                textureData[i * 4] = data[i]; // Store data in R channel
-                textureData[i * 4 + 1] = 0;
-                textureData[i * 4 + 2] = 0;
-                textureData[i * 4 + 3] = 1;
+            for (let i = 0; i < data.length; i++) {
+                textureData[i] = data[i];
             }
 
             // Fill the rest of the texture data with zeros if necessary
-            for (let i = totalElements; i < (width * height); i++) {
-                textureData[i * 4] = 0;
-                textureData[i * 4 + 1] = 0;
-                textureData[i * 4 + 2] = 0;
-                textureData[i * 4 + 3] = 1;
+            for (let i = data.length; i < (width * height * 4); i++) {
+                textureData[i] = 0;
             }
 
             // Create texture
@@ -194,7 +189,7 @@
                     // Base case: last dimension
                     let elements = [];
                     for (let i = 0; i < shape[dimIndex]; i++) {
-                        let numStr = data[offset + i].toString().padStart(maxNumLength, ' ');
+                        let numStr = data[offset + i].toString().padEnd(maxNumLength, ' ');
                         elements.push(numStr);
                     }
                     return elements.join(' ');
@@ -303,14 +298,14 @@
                 // Extract the data from the pixels
                 let data = [];
                 for (let j = 0; j < totalElements; j++) {
-                    data.push(pixels[j * 4]); // Get the R channel
+                    data.push(pixels[j]);
                 }
 
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                 gl.deleteFramebuffer(framebuffer);
 
                 output += `Tensor ${i}:\n`;
-                output += `Shape: [${shape.join(', ')}]\n`;
+                output += `Shape: [${shape.join(' ')}]\n`;
                 output += `Data:\n${formatTensorData(data, shape)}\n\n`;
             }
 
