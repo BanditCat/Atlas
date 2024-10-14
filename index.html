@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta copyright="Copyright 2024 © Jon DuBois, 4o cookie dough, and o1 honey bun.">
+    <title>WebGL Tensor Stack with Index Tensors</title>
+    <style>
+        button {
+            margin: 5px;
+            padding: 10px;
+        }
+        pre {
+            white-space: pre;     /* Prevents word wrap */
+	    font-family: monospace;
+	    font-size: 10px;      /* Optional: Adjust for readability */
+	    overflow-x: auto;     /* Adds scrollbar if needed */
+	    max-width: 100%;      /* Ensures pre doesn't exceed container */
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <button id="pushIndexTensor">Push index tensor</button>
+        <button id="popTensor">Pop tensor</button>
+        <button id="pushRandomTensor">Push random tensor</button>
+        <button id="pushSingleton">Push singleton</button>
+        <button id="dumpMemory">Dump GPU Memory</button>
+    </div>
+    <canvas id="glCanvas" width="64" height="64" style="display: none;"></canvas>
+    <pre id="output"></pre>
+    <script>
+        const canvas = document.getElementById('glCanvas');
+        const gl = canvas.getContext('webgl2');
+        const outputElement = document.getElementById('output');
+
+        if (!gl) {
+            console.error('WebGL 2 not supported');
+            document.body.innerHTML = 'WebGL 2 is not supported in your browser.';
+        }
+
+        // Enable the EXT_color_buffer_float extension
+        const ext = gl.getExtension('EXT_color_buffer_float');
+        if (!ext) {
+            console.error('EXT_color_buffer_float not supported');
+            document.body.innerHTML = 'EXT_color_buffer_float is not supported in your browser.';
+        }
+
+        // Stack to hold tensors
+        let tensorStack = []; // Each tensor is an object {shape: [...], data: Float32Array, texture: WebGLTexture, width, height}
+
+        function generateRandomSize(maxDim, maxElements) {
+            let shape = [];
+            let dims = Math.floor(Math.random() * maxDim) + 1; // Number of dimensions between 1 and maxDim
+
+            let totalElements = 1;
+            for (let i = 0; i < dims; i++) {
+                let remainingDims = dims - i;
+                let maxSize = Math.floor(Math.pow(maxElements / totalElements, 1 / remainingDims));
+                if (maxSize <= 1) {
+                    shape.push(1);
+                    totalElements *= 1;
+                } else {
+                    let size = Math.floor(Math.random() * maxSize) + 1; // Size between 1 and maxSize
+                    shape.push(size);
+                    totalElements *= size;
+                }
+            }
+            return shape;
+        }
+
+        function generateIndexTensor(size) {
+            let totalElements = size.reduce((a, b) => a * b, 1);
+            let data = new Float32Array(size.length * totalElements);
+            let shape = size.slice(); // Copy of the size array
+            shape.push(size.length); // Increase rank by one
+
+            for (let i = 0; i < totalElements; i++) {
+                let remainder = i;
+                for (let j = size.length - 1; j >= 0; j--) {
+                    data[i * size.length + j] = remainder % size[j];
+                    remainder = Math.floor(remainder / size[j]);
+                }
+            }
+            return [shape, data];
+        }
+
+        function generateRandomTensor(shape) {
+            let totalElements = shape.reduce((a, b) => a * b, 1);
+            let data = new Float32Array(totalElements);
+
+            for (let i = 0; i < totalElements; i++) {
+		data[ i ] = Math.random();
+	    }
+	    return [shape, data];
+        }
+
+        function createTextureFromData(gl, data) {
+            let totalElements = data.length;
+            let width = Math.min(totalElements, 8);
+            let height = Math.ceil(totalElements / width);
+
+            // Create a Float32Array with length width * height * 4 (RGBA)
+            let textureData = new Float32Array(width * height * 4);
+            for (let i = 0; i < totalElements; i++) {
+                textureData[i * 4] = data[i]; // Store data in R channel
+                textureData[i * 4 + 1] = 0;
+                textureData[i * 4 + 2] = 0;
+                textureData[i * 4 + 3] = 1;
+            }
+
+            // Fill the rest of the texture data with zeros if necessary
+            for (let i = totalElements; i < (width * height); i++) {
+                textureData[i * 4] = 0;
+                textureData[i * 4 + 1] = 0;
+                textureData[i * 4 + 2] = 0;
+                textureData[i * 4 + 3] = 1;
+            }
+
+            // Create texture
+            let texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            // Set texture parameters
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            // Allocate texture storage and upload data
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, textureData);
+
+            // Unbind texture
+            gl.bindTexture(gl.TEXTURE_2D, null);
+
+            return { texture: texture, width: width, height: height };
+        }
+
+        function pushIndexTensor() {
+            let size = generateRandomSize(4, 64);
+            let [shape, data] = generateIndexTensor(size);
+            let { texture, width, height } = createTextureFromData(gl, data);
+            tensorStack.push({
+                shape: shape,
+                data: data,
+                texture: texture,
+                width: width,
+                height: height
+            });
+            outputElement.textContent = `Pushed index tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${tensorStack.length}`;
+        }
+
+        function pushRandomTensor() {
+            let size = generateRandomSize(6, 64);
+            let [shape, data] = generateRandomTensor(size);
+            let { texture, width, height } = createTextureFromData(gl, data);
+            tensorStack.push({
+                shape: shape,
+                data: data,
+                texture: texture,
+                width: width,
+                height: height
+            });
+            outputElement.textContent = `Pushed random tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${tensorStack.length}`;
+        }
+
+        function pushSingleton(x) {
+	    let data = new Float32Array([x]);
+            let { texture, width, height } = createTextureFromData(gl, data);
+            tensorStack.push({
+                shape: [],
+                data: data,
+                texture: texture,
+                width: width,
+                height: height
+            });
+            outputElement.textContent = `Pushed singleton  [${x}] onto the stack. Stack size: ${tensorStack.length}`;
+        }
+
+        function popTensor() {
+            if (tensorStack.length > 0) {
+                let tensor = tensorStack.pop();
+                gl.deleteTexture(tensor.texture);
+                outputElement.textContent = `Popped tensor with shape [${tensor.shape.join(', ')}] from the stack. Stack size: ${tensorStack.length}`;
+            } else {
+                outputElement.textContent = 'Cannot pop: Stack is empty';
+            }
+        }
+
+        function formatTensorData(data, shapeArg) {
+	    let shape = [1, ...shapeArg];
+            // Calculate global maximum number length
+            const maxNumLength = Math.max(...data.map(num => num.toString().length));
+	    if (shape.length === 0) { 
+		return '[' + data[0] + ']';
+	    }
+            function helper(dimIndex, offset, depth) {
+                if (dimIndex === shape.length - 1) {
+                    // Base case: last dimension
+                    let elements = [];
+                    for (let i = 0; i < shape[dimIndex]; i++) {
+                        let numStr = data[offset + i].toString().padStart(maxNumLength, ' ');
+                        elements.push(numStr);
+                    }
+                    return elements.join(' ');
+                } else {
+                    // Determine stacking direction based on depth
+                    let isHorizontal = (depth % 2 === 0);
+
+                    // Recursive case
+                    let blocks = [];
+                    let size = shape.slice(dimIndex + 1).reduce((a, b) => a * b, 1);
+                    for (let i = 0; i < shape[dimIndex]; i++) {
+                        let inner = helper(dimIndex + 1, offset + i * size, depth + 1);
+                        blocks.push(inner);
+                    }
+
+                    if (isHorizontal) {
+                        // Stack horizontally with boxes
+                        let blockLinesArray = blocks.map(block => {
+                            let lines = block.split('\n');
+                            let maxLineLength = Math.max(...lines.map(line => line.length));
+                            let maxLength = Math.max(maxLineLength, maxNumLength);
+
+                            let top = '┌' + '─'.repeat(maxLength + 2) + '┐';
+                            let bottom = '└' + '─'.repeat(maxLength + 2) + '┘';
+                            let middle = lines.map(line => '│ ' + line.padEnd(maxLength) + ' │');
+                            return [top, ...middle, bottom];
+                        });
+
+                        // Determine the maximum height among all blocks
+                        let maxHeight = Math.max(...blockLinesArray.map(blockLines => blockLines.length));
+
+                        // Pad blocks to have the same height
+                        blockLinesArray = blockLinesArray.map(blockLines => {
+                            let width = blockLines[0].length;
+                            if (blockLines.length < maxHeight) {
+                                let emptyLine = ' '.repeat(width);
+                                let padding = Array(maxHeight - blockLines.length).fill(emptyLine);
+                                blockLines = [...blockLines, ...padding];
+                            }
+                            return blockLines;
+                        });
+
+                        // Combine blocks line by line
+                        let combinedLines = [];
+                        for (let i = 0; i < maxHeight; i++) {
+                            let line = blockLinesArray.map(blockLines => blockLines[i]).join(' ');
+                            combinedLines.push(line);
+                        }
+                        return combinedLines.join('\n');
+                    } else {
+                        // Stack vertically with boxes
+                        let blockLinesArray = blocks.map(block => {
+                            let lines = block.split('\n');
+                            let maxLineLength = Math.max(...lines.map(line => line.length));
+                            let maxLength = Math.max(maxLineLength, maxNumLength);
+
+                            let top = '┌' + '─'.repeat(maxLength + 2) + '┐';
+                            let bottom = '└' + '─'.repeat(maxLength + 2) + '┘';
+                            let middle = lines.map(line => '│ ' + line.padEnd(maxLength) + ' │');
+                            return [top, ...middle, bottom];
+                        });
+
+                        // Determine the maximum width among all blocks
+                        let maxWidth = Math.max(...blockLinesArray.map(blockLines => blockLines[0].length));
+
+                        // Pad blocks to have the same width
+                        blockLinesArray = blockLinesArray.map(blockLines => {
+                            return blockLines.map(line => line.padEnd(maxWidth));
+                        });
+
+                        // Combine blocks vertically
+                        let combinedLines = [];
+                        blockLinesArray.forEach(blockLines => {
+                            combinedLines.push(...blockLines);
+                        });
+                        return combinedLines.join('\n');
+                    }
+                }
+            }
+            return helper(0, 0, 0);
+        }
+
+        function dumpGPUMemory() {
+            if (tensorStack.length === 0) {
+                outputElement.textContent = 'Stack is empty';
+                return;
+            }
+
+            let output = '';
+            for (let i = 0; i < tensorStack.length; i++) {
+                let tensor = tensorStack[i];
+                let shape = tensor.shape;
+                let totalElements = tensor.data.length;
+                let width = tensor.width;
+                let height = tensor.height;
+
+                // Create a framebuffer and attach the texture
+                let framebuffer = gl.createFramebuffer();
+                gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+                gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tensor.texture, 0);
+
+                // Read pixels
+                let pixels = new Float32Array(width * height * 4);
+                gl.readPixels(0, 0, width, height, gl.RGBA, gl.FLOAT, pixels);
+
+                // Extract the data from the pixels
+                let data = [];
+                for (let j = 0; j < totalElements; j++) {
+                    data.push(pixels[j * 4]); // Get the R channel
+                }
+
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+                gl.deleteFramebuffer(framebuffer);
+
+                output += `Tensor ${i}:\n`;
+                output += `Shape: [${shape.join(', ')}]\n`;
+                output += `Data:\n${formatTensorData(data, shape)}\n\n`;
+            }
+
+            outputElement.textContent = output;
+        }
+
+        document.getElementById('pushIndexTensor').addEventListener('click', pushIndexTensor);
+        document.getElementById('popTensor').addEventListener('click', popTensor);
+        document.getElementById('pushRandomTensor').addEventListener('click', pushRandomTensor);
+        document.getElementById('pushSingleton').addEventListener('click', () => {pushSingleton(5);});
+        document.getElementById('dumpMemory').addEventListener('click', dumpGPUMemory);
+    </script>
+</body>
+</html>
