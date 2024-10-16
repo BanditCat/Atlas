@@ -1,3 +1,5 @@
+In the parse function below, where the comment says check shape, can you fill it in? 🍪🍪🍪
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -375,82 +377,154 @@ function tokenize(string) {
     return tokens;
 }
 
-function unshiftTensor(shape, data) {
-    let { texture, width, height } = createTextureFromData(gl, data);
-    tensorStack.unshift({
-        shape: shape,
-        data: data,
-        texture: texture,
-        width: width,
-        height: height
-    });
-    debug( `Pushed tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${tensorStack.length}` );
-}
-
 function parse() {
     clearErrors();
     const program = document.getElementById('programField').value;
     const tokens = tokenize(program);
 
-    let numNumbers = 0; // The number of numbers we've seen in a row.
-    let bracketLevel = 0;
-    let currentShape = []; // Shape of the current tensor being processed
-    let currentArray = []; // To store the last dimension's data
-
-    for (let i = tokens.length - 1; i >= 0; i--) {
-        const token = tokens[i];
-        if (token.type === 'n') {
-            // Accumulate numbers for the current tensor
-            numNumbers++;
-            currentArray.unshift(token.value);
-            if (bracketLevel > 0) {
-                if (currentShape.length !== bracketLevel)
-                    error("SYNTAX ERROR: Malformed tensor, not all numbers appear at the same depth.");
-            }
-        } else {
-            if (numNumbers > 0) {
-                if (bracketLevel === 0) {
-                    if (numNumbers === 1)
-                        unshiftTensor([], new Float32Array(currentArray));
-                    else
-                        unshiftTensor([currentArray.length], new Float32Array(currentArray));
-                    numNumbers = 0;
-                }
-            }
-            if (token.type === 'b') {
-                if (token.value === ']') {
-                    if (bracketLevel >= currentShape.length)
-                        currentShape.push( 1 );
-                    else
-                        currentShape[bracketLevel - 1]++
-                    bracketLevel++;
-                } else if (token.value === '[') {
-                    bracketLevel--;
-                    if (numNumbers > 0) {
-                        currentShape[currentShape.length - 1] = numNumbers;
-			numNumbers = 0;
-                    }
-                    if (bracketLevel < 0)
-                        error( "SYNTAX ERROR: Unbalanced square brackets []." );
-                    else if (bracketLevel === 0) {
-                        unshiftTensor(currentShape, new Float32Array(currentArray));
-                        currentShape = [];
-			currentArray = [];
-                    }
-                }
-            }
+    let index = tokens.length - 1;
+    while (index >= 0) {
+        const token = tokens[index];
+        if (token.type === 'b' && token.value === '[') {
+            error("SYNTAX ERROR: Unbalanced square brackets [], unexpected [.");
         }
-    }            
-    if (bracketLevel !== 0)
-	error( "SYNTAX ERROR: Unexpected end of program while looking for [." );
-    if (numNumbers > 0) {
-        if (numNumbers === 1)
-	    unshiftTensor([], new Float32Array(currentArray));
-        else
-	    unshiftTensor([currentArray.length], new Float32Array(currentArray));
+        else if (token.type === 'b' && token.value === ']') {
+            // First search for the matching '['
+            let start = index - 1;
+            let bracketLevel = 1;
+            let rank = 0;
+            while (start >= 0) {
+                const stoken = tokens[start];
+                if (stoken.type === 'b' && stoken.value === '[') {
+                    bracketLevel--;
+                    if (bracketLevel === 0)
+                        break;
+                } else if (stoken.type === 'b' && stoken.value === ']') {
+                    bracketLevel++;
+                } else {
+                    if (stoken.type !== 'n') 
+                        error("SYNTAX ERROR: Malformed tensor, expected numbers.");
+                    else {
+                        if (rank === 0)
+                            rank = bracketLevel;
+                        else if (rank !== bracketLevel)
+                            error("SYNTAX ERROR: Malformed tensor, not all numbers are at equal depths.");
+                    }
+                }
+                start--;
+            }
+            if (start < 0)
+                error("SYNTAX ERROR: Unbalanced square brackets [] while searching for [.");
+
+            // *** Check Shape ***
+            // Extract the tokens that make up the tensor
+            const tensorTokens = tokens.slice(start + 1, index);
+            
+            // Function to recursively determine the shape
+            function determineShape(tokens, start, depth) {
+                let shape = [];
+                let currentDepth = depth;
+                let i = start;
+                let localShape = [];
+
+                while (i < tokens.length) {
+                    const tok = tokens[i];
+                    if (tok.type === 'b' && tok.value === '[') {
+                        const [subShape, newIndex] = determineShape(tokens, i + 1, depth + 1);
+                        localShape.push(subShape);
+                        i = newIndex;
+                    }
+                    else if (tok.type === 'b' && tok.value === ']') {
+                        break;
+                    }
+                    else if (tok.type === 'n') {
+                        // Base case: numbers at the deepest level
+                        localShape.push(1);
+                        i++;
+                    }
+                }
+
+                // Determine the shape based on the collected sub-shapes
+                if (localShape.length === 0) {
+                    return [1, i];
+                }
+
+                // Check consistency of sub-shapes
+                const firstSubShape = JSON.stringify(localShape[0]);
+                for (let s = 1; s < localShape.length; s++) {
+                    if (JSON.stringify(localShape[s]) !== firstSubShape) {
+                        error("SYNTAX ERROR: Inconsistent tensor shape detected.");
+                    }
+                }
+
+                // Current dimension size
+                shape.push(localShape.length);
+                // Merge the sub-shapes
+                if (Array.isArray(localShape[0])) {
+                    const mergedSubShape = localShape[0];
+                    shape = shape.concat(mergedSubShape);
+                }
+
+                return [shape, i + 1];
+            }
+
+            // Determine the shape of the tensor
+            const [shape, endIndex] = determineShape(tensorTokens, 0, 1);
+
+            // Now extract the actual data
+            function extractData(tokens, start, depth) {
+                let data = [];
+                let i = start;
+
+                while (i < tokens.length) {
+                    const tok = tokens[i];
+                    if (tok.type === 'b' && tok.value === '[') {
+                        const [subData, newIndex] = extractData(tokens, i + 1, depth + 1);
+                        data = data.concat(subData);
+                        i = newIndex;
+                    }
+                    else if (tok.type === 'b' && tok.value === ']') {
+                        break;
+                    }
+                    else if (tok.type === 'n') {
+                        data.push(tok.value);
+                        i++;
+                    }
+                }
+
+                return [data, i + 1];
+            }
+
+            const [data, finalIndex] = extractData(tensorTokens, 0, 1);
+
+            // Validate the number of elements matches the shape
+            const totalElements = shape.reduce((a, b) => a * b, 1);
+            if (data.length !== totalElements) {
+                error("SYNTAX ERROR: Number of elements does not match the tensor shape.");
+            }
+
+	    
+	    // Create the Float32Array for tensor data
+            const tensorData = new Float32Array(data);
+
+            // Create the texture from data
+            const { texture, width, height } = createTextureFromData(gl, tensorData);
+
+            // Push the tensor onto the stack
+            tensorStack.push({
+                shape: shape,
+                data: tensorData,
+                texture: texture,
+                width: width,
+                height: height
+            });
+
+            // Move the index to the start position
+            index = start;
+        }
+        index--;
     }
 }
-
 
 function debug(message) {
     const h3 = document.createElement('h3');
