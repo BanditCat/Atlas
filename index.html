@@ -476,31 +476,39 @@ function parse() {
     const tokens = tokenize(program);
 
     let index = tokens.length - 1;
+    let parensLevel = 0;
     while (index >= 0) {
         const token = tokens[index];
-	if (token.type === 'b' && (token.value === '(' || token.value === ')')) {
-	    index--;
-	    continue;
-	}
-	    
-	// Handle naked numbers.
-	if (token.type === 'n') {
-	    let start = index;
-	    let curArray = [];
-	    while (start >= 0 && tokens[start].type === 'n') {
-		curArray.unshift(parseFloat(tokens[start].value));
-		start--;
-	    }
-	    const size = index - start;
-	    if (size === 1)
-		pushTensor([], [parseFloat(token.value)]);
-	    else
-		pushTensor([curArray.length],curArray);
-	    index = start;
-	    continue;
-	}
+        if (token.type === 'b' && token.value === '(') {
+            index--;
+            parensLevel--;
+	    if (parensLevel < 0)
+		error(`SYNTAX ERROR: Unbalanced parentheses, ( with no ).`);
+            continue;
+        } else if (token.type === 'b' && token.value === ')') {
+            index--;
+            parensLevel++;
+            continue;
+        }
+        
+        // Handle naked numbers.
+        if (token.type === 'n') {
+            let start = index;
+            let curArray = [];
+            while (start >= 0 && tokens[start].type === 'n') {
+                curArray.unshift(parseFloat(tokens[start].value));
+                start--;
+            }
+            const size = index - start;
+            if (size === 1)
+                pushTensor([], [parseFloat(token.value)]);
+            else
+                pushTensor([curArray.length],curArray);
+            index = start;
+            continue;
+        }
 
-	if (token.type === 'b' && token.value === '[') {
+        if (token.type === 'b' && token.value === '[') {
             error("SYNTAX ERROR: Unbalanced square brackets [], unexpected [.");
         }
         else if (token.type === 'b' && token.value === ']') {
@@ -544,14 +552,16 @@ function parse() {
                 error("SYNTAX ERROR: Number of elements does not match the tensor shape.");
             }
 
-	    pushTensor(shape, data);
+            pushTensor(shape, data);
 
             // Move the index to the start position
             index = start;
         } else
-	    error(`SYNTAX ERROR: Unknown token ${token.value}.`);
+            error(`SYNTAX ERROR: Unknown token ${token.value}.`);
         index--;
     }
+    if (parensLevel !== 0)
+	error(`SYNTAX ERROR: Unbalanced parentheses, ) with no (.`);
 }
 
 function debug(message) {
@@ -573,7 +583,7 @@ function clear() {
     tensorStack = [];
 }
 
-document.getElementById('parse').addEventListener('click', () => {parse();});
+document.getElementById('parse').addEventListener('click', () => {parse();dumpGPUMemory();});
 document.getElementById('pushIndexTensor').addEventListener('click', () => {setProgram('i' + generateRandomSize(4, 64).join(' '));});
 document.getElementById('popTensor').addEventListener('click', () => {setProgram('↥');});
 document.getElementById('pushRandomTensor').addEventListener('click', () => {setProgram('?' + generateRandomSize(6, 64).join(' '));});
