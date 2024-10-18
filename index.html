@@ -25,7 +25,7 @@ pre {
 <button id="parse">Parse</button>
 <br>
 <button id="pushIndexTensor">Push index tensor</button>
-<button id="popTensor">Pop tensor</button>
+<button id="popItem">Pop</button>
 <button id="pushRandomTensor">Push random tensor</button>
 <button id="pushSingleton">Push singleton</button>
 <button id="dumpMemory">Dump GPU Memory</button>
@@ -34,561 +34,691 @@ pre {
 <pre id="output"></pre>
 <script>
 const maxDim = 4096;
-const canvas = document.getElementById('glCanvas');
-const gl = canvas.getContext('webgl2');
-const outputElement = document.getElementById('output');
-// Create a reusable framebuffer
+const canvas = document.getElementById( 'glCanvas' );
+const gl = canvas.getContext( 'webgl2' );
+const outputElement = document.getElementById( 'output' );
+// Create a reusable framebuffer.
 const framebuffer = gl.createFramebuffer();
+// Where most of the logic happens.
+const functions = new Map();
 
-if (!gl) {
-    console.error('WebGL 2 not supported');
+class StackNode {
+    constructor( value ){
+        this.value = value; // {type: 't', value: tensorObject} or {type: 'f', value: functionSymbol}
+        this.next = null;
+        this.prev = null;
+    }
+}
+
+class DoublyLinkedListStack {
+    constructor(){
+        this.head = null; // bottom of the stack (oldest element)
+        this.tail = null; // top of the stack (newest element)
+        this.size = 0;
+    }
+
+    push( value ){
+        const node = new StackNode( value );
+        if( !this.head ){
+            this.head = this.tail = node;
+        } else {
+            node.prev = this.tail;
+            this.tail.next = node;
+            this.tail = node;
+        }
+        this.size++;
+    }
+
+    length(){
+        return this.size;
+    }
+
+    isEmpty(){
+        return this.size === 0;
+    }
+
+    [Symbol.iterator](){
+        let current = this.head;
+        return{
+            next: function(){
+                if( current ){
+		    const value = current;
+                    current = current.next;
+                    return { value, done: false };
+                } else {
+                    return { done: true };
+                }
+            }
+        };
+    }
+}
+
+// Each function should return the node where parsing should continue
+// Pop, O( 1 )
+functions.set('↥', (item) => {
+    const itemToDel = item.prev;
+
+    if (itemToDel === null) {
+        error( "Cannot pop: No previous item to pop." );
+        return;
+    }
+
+    const prevNode = itemToDel.prev;
+    const nextNode = item.next;
+
+    // Remove itemToDel and item by connecting prevNode and nextNode
+    if( prevNode !== null ){
+        prevNode.next = nextNode;
+    } else {
+        // itemToDel was the head
+        stack.head = nextNode;
+    }
+
+    if( nextNode !== null ){
+        nextNode.prev = prevNode;
+    } else {
+        // item was the tail
+        stack.tail = prevNode;
+    }
+
+    // Decrement the stack size by 2
+    stack.size -= 2;
+
+    // Output the appropriate message
+    if( itemToDel.value.type === 't' ){
+	deleteTensor( itemToDel.value.value );
+        outputElement.textContent = `Popped tensor with shape [${itemToDel.value.value.shape.join(', ')}] from the stack. Stack size: ${stack.length()}`;
+    } else if( itemToDel.value.type === 'f' ){
+        outputElement.textContent = `Popped function '${itemToDel.value.value}' from the stack. Stack size: ${stack.length()}`;
+    }
+
+    // Clean up references
+    itemToDel.next = null;
+    itemToDel.prev = null;
+    item.next = null;
+    item.prev = null;
+});
+
+if( !gl ){
+    console.error( 'WebGL 2 not supported' );
     document.body.innerHTML = 'WebGL 2 is not supported in your browser.';
 }
 
 // Enable the EXT_color_buffer_float extension
-const ext = gl.getExtension('EXT_color_buffer_float');
-if (!ext) {
-    console.error('EXT_color_buffer_float not supported');
+const ext = gl.getExtension( 'EXT_color_buffer_float' );
+if( !ext ){
+    console.error( 'EXT_color_buffer_float not supported' );
     document.body.innerHTML = 'EXT_color_buffer_float is not supported in your browser.';
 }
 
-// Stack to hold tensors
-let tensorStack = []; // Each tensor is an object {shape: [...], data: Float32Array, texture: WebGLTexture, width, height}
+// Stack to hold tensors and functions
+let stack = new DoublyLinkedListStack(); // Use the doubly linked list stack
 
-function generateRandomSize(maxDimArg, maxElements) {
+function generateRandomSize( maxDimArg, maxElements ){
     let shape = [];
-    let dims = Math.floor(Math.random() * maxDimArg) + 1; // Number of dimensions between 1 and maxDimArg
+    let dims = Math.floor( Math.random() * maxDimArg ) + 1; // Number of dimensions between 1 and maxDimArg
 
     let totalElements = 1;
-    for (let i = 0; i < dims; i++) {
+    for( let i = 0; i < dims; i++ ){
         let remainingDims = dims - i;
-        let maxSize = Math.floor(Math.pow(maxElements / totalElements, 1 / remainingDims));
-        if (maxSize <= 1) {
-            shape.push(1);
+        let maxSize = Math.floor( Math.pow( maxElements / totalElements, 1 / remainingDims ));
+        if( maxSize <= 1 ){
+            shape.push( 1 );
             totalElements *= 1;
         } else {
-            let size = Math.floor(Math.random() * maxSize) + 1; 
-            shape.push(size);
+            let size = Math.floor( Math.random() * maxSize ) + 1; 
+            shape.push( size );
             totalElements *= size;
         }
     }
     return shape;
 }
 
-function generateIndexTensor(size) {
-    let totalElements = size.reduce((a, b) => a * b, 1);
-    let data = new Float32Array(size.length * totalElements);
+function generateIndexTensor( size ){
+    let totalElements = size.reduce( ( a, b ) => a * b, 1 );
+    let data = new Float32Array( size.length * totalElements );
     let shape = size.slice(); // Copy of the size array
-    shape.push(size.length); // Increase rank by one
+    shape.push( size.length ); // Increase rank by one
 
-    for (let i = 0; i < totalElements; i++) {
+    for( let i = 0; i < totalElements; i++ ){
         let remainder = i;
-        for (let j = size.length - 1; j >= 0; j--) {
-            data[i * size.length + j] = remainder % size[j];
-            remainder = Math.floor(remainder / size[j]);
+        for( let j = size.length - 1; j >= 0; j-- ){
+            data[ i * size.length + j ] = remainder % size[ j ];
+            remainder = Math.floor( remainder / size[ j ] );
         }
     }
-    return [shape, data];
+    return [ shape, data ];
 }
 
-function generateRandomTensor(shape) {
-    let totalElements = shape.reduce((a, b) => a * b, 1);
-    let data = new Float32Array(totalElements);
+function generateRandomTensor( shape ){
+    let totalElements = shape.reduce( ( a, b ) => a * b, 1 );
+    let data = new Float32Array( totalElements );
 
-    for (let i = 0; i < totalElements; i++) {
+    for( let i = 0; i < totalElements; i++ ){
         data[ i ] = Math.random();
     }
-    return [shape, data];
+    return [ shape, data ];
 }
 
-function createTextureFromData(gl, data) {
-    let totalTexels = Math.ceil(data.length / 4); 
-    let width = Math.min(totalTexels, maxDim);
-    let height = Math.ceil(totalTexels / width);
+function createTextureFromData( gl, data ){
+    let totalTexels = Math.ceil( data.length / 4 ); 
+    let width = Math.min( totalTexels, maxDim );
+    let height = Math.ceil( totalTexels / width );
 
-    // Create a Float32Array with length width * height * 4 (RGBA)
-    let textureData = new Float32Array(width * height * 4);
-    for (let i = 0; i < data.length; i++) {
-        textureData[i] = data[i];
+    // Create a Float32Array with length width * height * 4( RGBA )
+    let textureData = new Float32Array( width * height * 4 );
+    for( let i = 0; i < data.length; i++ ){
+        textureData[ i ] = data[ i ];
     }
 
     // Fill the rest of the texture data with zeros if necessary
-    for (let i = data.length; i < (width * height * 4); i++) {
-        textureData[i] = 0;
+    for( let i = data.length; i < ( width * height * 4 ); i++ ){
+        textureData[ i ] = 0;
     }
 
     // Create texture
     let texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.bindTexture( gl.TEXTURE_2D, texture );
     // Set texture parameters
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
     // Allocate texture storage and upload data
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, textureData);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, textureData );
 
     // Unbind texture
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindTexture( gl.TEXTURE_2D, null );
 
     return { texture: texture, width: width, height: height };
 }
 
-function pushIndexTensor() {
-    let size = generateRandomSize(4, 64);
-    let [shape, data] = generateIndexTensor(size);
-    let { texture, width, height } = createTextureFromData(gl, data);
-    tensorStack.push({
-        shape: shape,
-        data: data,
-        texture: texture,
-        width: width,
-        height: height
-    });
-    outputElement.textContent = `Pushed index tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${tensorStack.length}`;
-}
+// function pushIndexTensor(){
+//     let size = generateRandomSize( 4, 64 );
+//     let [ shape, data ] = generateIndexTensor( size );
+//     let { texture, width, height } = createTextureFromData( gl, data );
+//     stack.push({
+//         shape: shape,
+//         data: data,
+//         texture: texture,
+//         width: width,
+//         height: height
+//     });
+//     outputElement.textContent = `Pushed index tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${stack.length}`;
+// }
 
-function pushRandomTensor() {
-    let size = generateRandomSize(6, 64);
-    let [shape, data] = generateRandomTensor(size);
-    let { texture, width, height } = createTextureFromData(gl, data);
-    tensorStack.push({
-        shape: shape,
-        data: data,
-        texture: texture,
-        width: width,
-        height: height
-    });
-    outputElement.textContent = `Pushed random tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${tensorStack.length}`;
-}
+// function pushRandomTensor(){
+//     let size = generateRandomSize( 6, 64 );
+//     let [ shape, data ] = generateRandomTensor( size );
+//     let { texture, width, height } = createTextureFromData( gl, data );
+//     stack.push({
+//         shape: shape,
+//         data: data,
+//         texture: texture,
+//         width: width,
+//         height: height
+//     });
+//     outputElement.textContent = `Pushed random tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${stack.length}`;
+// }
 
-function pushSingleton(x) {
-    let data = new Float32Array([x]);
-    let { texture, width, height } = createTextureFromData(gl, data);
-    tensorStack.push({
-        shape: [],
-        data: data,
-        texture: texture,
-        width: width,
-        height: height
-    });
-    outputElement.textContent = `Pushed singleton  [${x}] onto the stack. Stack size: ${tensorStack.length}`;
-}
+// function pushSingleton( x ){
+//     let data = new Float32Array( [ x ] );
+//     let { texture, width, height } = createTextureFromData( gl, data );
+//     stack.push({
+//         shape: [],
+//         data: data,
+//         texture: texture,
+//         width: width,
+//         height: height
+//     });
+//     outputElement.textContent = `Pushed singleton  [${x}] onto the stack. Stack size: ${stack.length}`;
+// }
 
-function popTensor() {
-    if (tensorStack.length > 0) {
-        let tensor = tensorStack.pop();
-        gl.deleteTexture(tensor.texture);
-        outputElement.textContent = `Popped tensor with shape [${tensor.shape.join(', ')}] from the stack. Stack size: ${tensorStack.length}`;
-    } else {
-        outputElement.textContent = 'Cannot pop: Stack is empty';
-    }
-}
 
-function formatTensorData(data, shapeArg) {
-    let shape = [1, ...shapeArg];
+function formatTensorData( data, shapeArg ){
+    let shape = [ 1, ...shapeArg ];
     // Calculate global maximum number length
-    const maxNumLength = Math.max(...data.map(num => num.toString().length));
-    if (shape.length === 0) { 
-        return '[' + data[0] + ']';
+    const maxNumLength = Math.max( ...data.map( num => num.toString().length ));
+    if( shape.length === 0 ){ 
+        return '[' + data[ 0 ] + ']';
     }
-    function helper(dimIndex, offset, depth) {
-        if (dimIndex === shape.length - 1) {
+    function helper( dimIndex, offset, depth ){
+        if( dimIndex === shape.length - 1 ){
             // Base case: last dimension
             let elements = [];
-            for (let i = 0; i < shape[dimIndex]; i++) {
-                let numStr = data[offset + i].toString().padEnd(maxNumLength, ' ');
-                elements.push(numStr);
+            for( let i = 0; i < shape[ dimIndex ]; i++ ){
+                let numStr = data[ offset + i ].toString().padEnd( maxNumLength, ' ' );
+                elements.push( numStr );
             }
-            return elements.join(' ');
+            return elements.join( ' ' );
         } else {
             // Determine stacking direction based on depth
-            let isHorizontal = (depth % 2 === 0);
+            let isHorizontal = ( depth % 2 === 0 );
 
             // Recursive case
             let blocks = [];
-            let size = shape.slice(dimIndex + 1).reduce((a, b) => a * b, 1);
-            for (let i = 0; i < shape[dimIndex]; i++) {
-                let inner = helper(dimIndex + 1, offset + i * size, depth + 1);
-                blocks.push(inner);
+            let size = shape.slice( dimIndex + 1 ).reduce( ( a, b ) => a * b, 1 );
+            for( let i = 0; i < shape[ dimIndex ]; i++ ){
+                let inner = helper( dimIndex + 1, offset + i * size, depth + 1 );
+                blocks.push( inner );
             }
 
-            if (isHorizontal) {
+            if( isHorizontal ){
                 // Stack horizontally with boxes
-                let blockLinesArray = blocks.map(block => {
-                    let lines = block.split('\n');
-                    let maxLineLength = Math.max(...lines.map(line => line.length));
-                    let maxLength = Math.max(maxLineLength, maxNumLength);
+                let blockLinesArray = blocks.map( block => {
+                    let lines = block.split( '\n' );
+                    let maxLineLength = Math.max( ...lines.map( line => line.length ));
+                    let maxLength = Math.max( maxLineLength, maxNumLength );
 
-                    let top = '┌' + '─'.repeat(maxLength + 2) + '┐';
-                    let bottom = '└' + '─'.repeat(maxLength + 2) + '┘';
-                    let middle = lines.map(line => '│ ' + line.padEnd(maxLength) + ' │');
-                    return [top, ...middle, bottom];
+                    let top = '┌' + '─'.repeat( maxLength + 2 ) + '┐';
+                    let bottom = '└' + '─'.repeat( maxLength + 2 ) + '┘';
+                    let middle = lines.map( line => '│ ' + line.padEnd( maxLength ) + ' │' );
+                    return [ top, ...middle, bottom ];
                 });
 
                 // Determine the maximum height among all blocks
-                let maxHeight = Math.max(...blockLinesArray.map(blockLines => blockLines.length));
+                let maxHeight = Math.max( ...blockLinesArray.map( blockLines => blockLines.length ));
 
                 // Pad blocks to have the same height
-                blockLinesArray = blockLinesArray.map(blockLines => {
-                    let width = blockLines[0].length;
-                    if (blockLines.length < maxHeight) {
-                        let emptyLine = ' '.repeat(width);
-                        let padding = Array(maxHeight - blockLines.length).fill(emptyLine);
-                        blockLines = [...blockLines, ...padding];
+                blockLinesArray = blockLinesArray.map( blockLines => {
+                    let width = blockLines[ 0 ].length;
+                    if( blockLines.length < maxHeight ){
+                        let emptyLine = ' '.repeat( width );
+                        let padding = Array( maxHeight - blockLines.length ).fill( emptyLine );
+                        blockLines = [ ...blockLines, ...padding ];
                     }
                     return blockLines;
                 });
 
                 // Combine blocks line by line
                 let combinedLines = [];
-                for (let i = 0; i < maxHeight; i++) {
-                    let line = blockLinesArray.map(blockLines => blockLines[i]).join(' ');
-                    combinedLines.push(line);
+                for( let i = 0; i < maxHeight; i++ ){
+                    let line = blockLinesArray.map( blockLines => blockLines[ i ]).join( ' ' );
+                    combinedLines.push( line );
                 }
-                return combinedLines.join('\n');
+                return combinedLines.join( '\n' );
             } else {
                 // Stack vertically with boxes
-                let blockLinesArray = blocks.map(block => {
-                    let lines = block.split('\n');
-                    let maxLineLength = Math.max(...lines.map(line => line.length));
-                    let maxLength = Math.max(maxLineLength, maxNumLength);
+                let blockLinesArray = blocks.map( block => {
+                    let lines = block.split( '\n' );
+                    let maxLineLength = Math.max( ...lines.map( line => line.length ));
+                    let maxLength = Math.max( maxLineLength, maxNumLength );
 
-                    let top = '┌' + '─'.repeat(maxLength + 2) + '┐';
-                    let bottom = '└' + '─'.repeat(maxLength + 2) + '┘';
-                    let middle = lines.map(line => '│ ' + line.padEnd(maxLength) + ' │');
-                    return [top, ...middle, bottom];
+                    let top = '┌' + '─'.repeat( maxLength + 2 ) + '┐';
+                    let bottom = '└' + '─'.repeat( maxLength + 2 ) + '┘';
+                    let middle = lines.map( line => '│ ' + line.padEnd( maxLength ) + ' │' );
+                    return [ top, ...middle, bottom ];
                 });
 
                 // Determine the maximum width among all blocks
-                let maxWidth = Math.max(...blockLinesArray.map(blockLines => blockLines[0].length));
+                let maxWidth = Math.max( ...blockLinesArray.map( blockLines => blockLines[ 0 ].length ));
 
                 // Pad blocks to have the same width
-                blockLinesArray = blockLinesArray.map(blockLines => {
-                    return blockLines.map(line => line.padEnd(maxWidth));
+                blockLinesArray = blockLinesArray.map( blockLines => {
+                    return blockLines.map( line => line.padEnd( maxWidth ));
                 });
 
                 // Combine blocks vertically
                 let combinedLines = [];
-                blockLinesArray.forEach(blockLines => {
-                    combinedLines.push(...blockLines);
+                blockLinesArray.forEach( blockLines => {
+                    combinedLines.push( ...blockLines );
                 });
-                return combinedLines.join('\n');
+                return combinedLines.join( '\n' );
             }
         }
     }
-    return helper(0, 0, 0);
+    return helper( 0, 0, 0 );
 }
 
-function dumpGPUMemory() {
-    if (tensorStack.length === 0) {
+function dumpGPUMemory(){
+    if( stack.length() === 0 ){
         outputElement.textContent = 'Stack is empty';
         return;
     }
 
     let output = '';
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer); // Bind the reusable framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer ); // Bind the reusable framebuffer
 
-    for (let i = 0; i < tensorStack.length; i++) {
-        let tensor = tensorStack[i];
-        let shape = tensor.shape;
-        let totalElements = tensor.data.length;
-        let width = tensor.width;
-        let height = tensor.height;
+    let i = 0;
+    for( let item of stack ){
+        if( item.value.type === 't' ){
+            let tensor = item.value.value;
+            let shape = tensor.shape;
+            let totalElements = tensor.data.length;
+            let width = tensor.width;
+            let height = tensor.height;
 
-        // Attach the tensor's texture to the framebuffer
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tensor.texture, 0);
+            // Attach the tensor's texture to the framebuffer
+            gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tensor.texture, 0 );
 
-        // Check framebuffer status
-        let status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-        if (status !== gl.FRAMEBUFFER_COMPLETE) {
-            console.error(`Framebuffer is not complete for tensor ${i}`);
-            continue; // Skip this tensor
+            // Check framebuffer status
+            let status = gl.checkFramebufferStatus( gl.FRAMEBUFFER );
+            if( status !== gl.FRAMEBUFFER_COMPLETE ){
+                console.error( `Framebuffer is not complete for tensor ${i}` );
+                continue; // Skip this tensor
+            }
+
+            // Read pixels
+            let pixels = new Float32Array( width * height * 4 );
+            gl.readPixels( 0, 0, width, height, gl.RGBA, gl.FLOAT, pixels );
+
+            // Extract the data from the pixels
+            let data = [];
+            for( let j = 0; j < totalElements; j++ ){
+                data.push( pixels[ j ] );
+            }
+
+            output += `Tensor ${i}:\n`;
+            output += `Shape: [${shape.join(' ')}]\n`;
+            output += `Data:\n${formatTensorData(data, shape)}\n\n`;
+        } else if( item.value.type === 'f' ){
+            output += `Function ${i}: ${item.value.value}\n\n`;
         }
-
-        // Read pixels
-        let pixels = new Float32Array(width * height * 4);
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.FLOAT, pixels);
-
-        // Extract the data from the pixels
-        let data = [];
-        for (let j = 0; j < totalElements; j++) {
-            data.push(pixels[j]);
-        }
-
-        output += `Tensor ${i}:\n`;
-        output += `Shape: [${shape.join(' ')}]\n`;
-        output += `Data:\n${formatTensorData(data, shape)}\n\n`;
+        i++;
     }
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Unbind the framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, null ); // Unbind the framebuffer
 
     outputElement.textContent = output;
 }
 
-
-function setProgram(x) {
-    document.getElementById('programField').value = x + document.getElementById('programField').value;
+function setProgram( x ){
+    document.getElementById( 'programField' ).value = x + document.getElementById( 'programField' ).value;
 }
 
-function tokenize(string) {
+function tokenize( string ){
     const tokens = [];
     let current = '';
-    const operators = new Set(['?', '↥', 'i']);
-    const brackets = new Set(['[', ']', '(', ')']);
+    const operators = new Set( functions.keys() );
+    const brackets = new Set( [ '[', ']', '(', ')' ]);
     const whitespace = /\s/;
     
-    function addToken(type, value) {
-        tokens.push({type, value});
+    function addToken( type, value ){
+        tokens.push( {type, value} );
     }
     
-    for (let i = 0; i < string.length; i++) {
-        const char = string[i];
+    for( let i = 0; i < string.length; i++ ){
+        const char = string[ i ];
         
         // Skip whitespaces
-        if (whitespace.test(char)) {
+        if( whitespace.test( char )){
             continue;
         }
 
         // Handle numbers (both integers and decimals, with optional minus sign)
-        if ((char === '-' && /\d/.test(string[i+1])) || /\d/.test(char)) {
+        if( ( char === '-' && /\d/.test( string[ i+1 ])) || /\d/.test( char)){
             current += char;
             let decimalAdded = char === '.';
 
-            while (i + 1 < string.length && (/\d/.test(string[i + 1]) || (!decimalAdded && string[i + 1] === '.'))) {
-                if (string[i + 1] === '.') {
+            while( i + 1 < string.length && ( /\d/.test( string[ i + 1 ]) || ( !decimalAdded && string[ i + 1 ] === '.' ))){
+                if( string[ i + 1 ] === '.' ){
                     decimalAdded = true;
                 }
-                current += string[++i];
+                current += string[ ++i ];
             }
 
-            addToken('n', parseFloat(current)); // number
+            addToken( 'n', parseFloat( current )); // number
             current = '';
             continue;
         }
         
-        // Handle functions (?, ↥, i)
-        if (operators.has(char)) {
-            addToken('f', char); // function
+        // Handle functions (?, ↥, i )
+        if( operators.has( char )){
+            addToken( 'f', char ); // function
             continue;
         }
         
         // Handle brackets and parentheses
-        if (brackets.has(char)) {
-            addToken('b', char); // bracket
+        if( brackets.has( char )){
+            addToken( 'b', char ); // bracket
             continue;
         }
         
         // Handle invalid characters
-        error(`SYNTAX ERROR: Invalid character encountered: ${char}.`);
+        error( `SYNTAX ERROR: Invalid character encountered: ${char}.` );
     }
     
     return tokens;
 }
 
-function pushTensor(shape, data) {
-    const tensorData = new Float32Array(data);
+function pushFunction( symbol ){
+    stack.push({
+        type: 'f',
+        value: symbol
+    });
+    debug( `Pushed function '${symbol}' onto the stack. Stack size: ${stack.length()}` );
+}
 
-    const { texture, width, height } = createTextureFromData(gl, tensorData);
-    tensorStack.push({
+function pushTensor( shape, data ){
+    const tensorData = new Float32Array( data );
+
+    const { texture, width, height } = createTextureFromData( gl, tensorData );
+    const tensorObject = {
         shape: shape,
         data: tensorData,
         texture: texture,
         width: width,
         height: height
+    };
+    stack.push({
+        type: 't',
+        value: tensorObject
     });
-    debug(`Inserted stack with shape [${shape.join(' ')}]`);
+    debug( `Inserted tensor with shape [${shape.join(' ')}]` );
+}
+
+function deleteTensor( tensor ){
+    gl.deleteTexture( tensor.texture );
 }
 
 // Function to recursively determine the shape
-function determineShape(tokens, start, depth) {
+function determineShape( tokens, start, depth ){
     let shape = [];
     let currentDepth = depth;
     let i = start;
     let localShape = [];
     
-    while (i < tokens.length) {
-        const tok = tokens[i];
-        if (tok.type === 'b' && tok.value === '[') {
-            const [subShape, newIndex] = determineShape(tokens, i + 1, depth + 1);
-            localShape.push(subShape);
+    while( i < tokens.length ){
+        const tok = tokens[ i ];
+        if( tok.type === 'b' && tok.value === '[' ){
+            const [ subShape, newIndex ] = determineShape( tokens, i + 1, depth + 1 );
+            localShape.push( subShape );
             i = newIndex;
         }
-        else if (tok.type === 'b' && tok.value === ']') {
+        else if( tok.type === 'b' && tok.value === ']' ){
             break;
         }
-        else if (tok.type === 'n') {
+        else if( tok.type === 'n' ){
             // Base case: numbers at the deepest level
-            localShape.push(1);
+            localShape.push( 1 );
             i++;
         }
     }
     
     // Determine the shape based on the collected sub-shapes
-    if (localShape.length === 0) {
-        return [1, i];
+    if( localShape.length === 0 ){
+        return [ 1, i ];
     }
     
     // Check consistency of sub-shapes
-    const firstSubShape = JSON.stringify(localShape[0]);
-    for (let s = 1; s < localShape.length; s++) {
-        if (JSON.stringify(localShape[s]) !== firstSubShape) {
-            error("SYNTAX ERROR: Inconsistent tensor shape detected.");
+    const firstSubShape = JSON.stringify( localShape[ 0 ] );
+    for( let s = 1; s < localShape.length; s++ ){
+        if( JSON.stringify( localShape[ s ] ) !== firstSubShape ){
+            error( "SYNTAX ERROR: Inconsistent tensor shape detected." );
         }
     }
     
     // Current dimension size
-    shape.push(localShape.length);
+    shape.push( localShape.length );
     // Merge the sub-shapes
-    if (Array.isArray(localShape[0])) {
-        const mergedSubShape = localShape[0];
-        shape = shape.concat(mergedSubShape);
+    if( Array.isArray( localShape[ 0 ] )){
+        const mergedSubShape = localShape[ 0 ];
+        shape = shape.concat( mergedSubShape );
     }
     
-    return [shape, i + 1];
+    return [ shape, i + 1 ];
 }
 
 // Now extract the actual data
-function extractData(tokens, start, depth) {
+function extractData( tokens, start, depth ){
     let data = [];
     let i = start;
     
-    while (i < tokens.length) {
-        const tok = tokens[i];
-        if (tok.type === 'b' && tok.value === '[') {
-            const [subData, newIndex] = extractData(tokens, i + 1, depth + 1);
-            data = data.concat(subData);
+    while( i < tokens.length ){
+        const tok = tokens[ i ];
+        if( tok.type === 'b' && tok.value === '[' ){
+            const [ subData, newIndex ] = extractData( tokens, i + 1, depth + 1 );
+            data = data.concat( subData );
             i = newIndex;
         }
-        else if (tok.type === 'b' && tok.value === ']') {
+        else if( tok.type === 'b' && tok.value === ']' ){
             break;
         }
-        else if (tok.type === 'n') {
-            data.push(tok.value);
+        else if( tok.type === 'n' ){
+            data.push( tok.value );
             i++;
         }
     }
     
-    return [data, i + 1];
+    return [ data, i + 1 ];
 }
 
-function parse() {
+function parse(){
     clear();
-    const program = document.getElementById('programField').value;
-    const tokens = tokenize(program);
+    const program = document.getElementById( 'programField' ).value;
+    const tokens = tokenize( program );
 
     let index = tokens.length - 1;
     let parensLevel = 0;
-    while (index >= 0) {
-        const token = tokens[index];
-        if (token.type === 'b' && token.value === '(') {
+    while( index >= 0 ){
+        const token = tokens[ index ];
+        if( token.type === 'b' && token.value === '(' ){
             index--;
             parensLevel--;
-	    if (parensLevel < 0)
-		error(`SYNTAX ERROR: Unbalanced parentheses, ( with no ).`);
+            if( parensLevel < 0 )
+                error( `SYNTAX ERROR: Unbalanced parentheses, ( with no ).` );
             continue;
-        } else if (token.type === 'b' && token.value === ')') {
+        } else if( token.type === 'b' && token.value === ')' ){
             index--;
             parensLevel++;
             continue;
+        } else if( token.type === 'f' ){
+            pushFunction( token.value );
+            index--;
+            continue;
         }
+
         
         // Handle naked numbers.
-        if (token.type === 'n') {
+        if( token.type === 'n' ){
             let start = index;
             let curArray = [];
-            while (start >= 0 && tokens[start].type === 'n') {
-                curArray.unshift(parseFloat(tokens[start].value));
+            while( start >= 0 && tokens[ start ].type === 'n' ){
+                curArray.unshift( parseFloat( tokens[ start ].value ));
                 start--;
             }
             const size = index - start;
-            if (size === 1)
-                pushTensor([], [parseFloat(token.value)]);
+            if( size === 1 )
+                pushTensor( [], [ parseFloat( token.value ) ]);
             else
-                pushTensor([curArray.length],curArray);
+                pushTensor( [ curArray.length ],curArray );
             index = start;
             continue;
         }
 
-        if (token.type === 'b' && token.value === '[') {
-            error("SYNTAX ERROR: Unbalanced square brackets [], unexpected [.");
+        if( token.type === 'b' && token.value === '[' ){
+            error( "SYNTAX ERROR: Unbalanced square brackets [], unexpected [." );
         }
-        else if (token.type === 'b' && token.value === ']') {
+        else if( token.type === 'b' && token.value === ']' ){
             // First search for the matching '['
             let start = index - 1;
             let bracketLevel = 1;
             let rank = 0;
-            while (start >= 0) {
-                const stoken = tokens[start];
-                if (stoken.type === 'b' && stoken.value === '[') {
+            while( start >= 0 ){
+                const stoken = tokens[ start ];
+                if( stoken.type === 'b' && stoken.value === '[' ){
                     bracketLevel--;
-                    if (bracketLevel === 0)
+                    if( bracketLevel === 0 )
                         break;
-                } else if (stoken.type === 'b' && stoken.value === ']') {
+                } else if( stoken.type === 'b' && stoken.value === ']' ){
                     bracketLevel++;
                 } else {
-                    if (stoken.type !== 'n') 
-                        error("SYNTAX ERROR: Malformed tensor, expected numbers.");
+                    if( stoken.type !== 'n' ) 
+                        error( "SYNTAX ERROR: Malformed tensor, expected numbers." );
                     else {
-                        if (rank === 0)
+                        if( rank === 0 )
                             rank = bracketLevel;
-                        else if (rank !== bracketLevel)
-                            error("SYNTAX ERROR: Malformed tensor, not all numbers are at equal depths.");
+                        else if( rank !== bracketLevel )
+                            error( "SYNTAX ERROR: Malformed tensor, not all numbers are at equal depths." );
                     }
                 }
                 start--;
             }
-            if (start < 0)
-                error("SYNTAX ERROR: Unbalanced square brackets [] while searching for [.");
+            if( start < 0 )
+                error( "SYNTAX ERROR: Unbalanced square brackets [] while searching for [." );
 
             // Extract the tokens that make up the tensor
-            const tensorTokens = tokens.slice(start + 1, index);
+            const tensorTokens = tokens.slice( start + 1, index );
             
             // Determine the shape of the tensor
-            const [shape, endIndex] = determineShape(tensorTokens, 0, 1);
-            const [data, finalIndex] = extractData(tensorTokens, 0, 1);
+            const [ shape, endIndex ] = determineShape( tensorTokens, 0, 1 );
+            const [ data, finalIndex ] = extractData( tensorTokens, 0, 1 );
 
             // Validate the number of elements matches the shape
-            const totalElements = shape.reduce((a, b) => a * b, 1);
-            if (data.length !== totalElements) {
-                error("SYNTAX ERROR: Number of elements does not match the tensor shape.");
+            const totalElements = shape.reduce( (a, b ) => a * b, 1 );
+            if( data.length !== totalElements ){
+                error( "SYNTAX ERROR: Number of elements does not match the tensor shape." );
             }
 
-            pushTensor(shape, data);
+            pushTensor( shape, data );
 
             // Move the index to the start position
             index = start;
         } else
-            error(`SYNTAX ERROR: Unknown token ${token.value}.`);
+            error( `SYNTAX ERROR: Unknown token ${token.value}.` );
         index--;
     }
-    if (parensLevel !== 0)
-	error(`SYNTAX ERROR: Unbalanced parentheses, ) with no (.`);
+    if( parensLevel !== 0 )
+        error( `SYNTAX ERROR: Unbalanced parentheses, ) with no (.` );
 }
 
-function debug(message) {
-    const h3 = document.createElement('h3');
+function debug( message ){
+    const h3 = document.createElement( 'h3' );
     h3.style.color = 'red';
     h3.textContent = message;
-    document.body.appendChild(h3);
+    document.body.appendChild( h3 );
 }
 
-function error(message) {
-    debug(message);
-    throw new Error(message);
+function error( message ){
+    debug( message );
+    throw new Error( message );
 }
 
-function clear() {
-    const errorElements = document.querySelectorAll('h3[style="color: red;"]');
-    errorElements.forEach(element => element.remove());
-    document.getElementById('output').innerHTML = '';
-    tensorStack = [];
+function clear(){
+    const errorElements = document.querySelectorAll( 'h3[style="color: red;"]' );
+    errorElements.forEach( element => element.remove());
+    document.getElementById( 'output' ).innerHTML = '';
+    stack = new DoublyLinkedListStack();
 }
 
-document.getElementById('parse').addEventListener('click', () => {parse();dumpGPUMemory();});
-document.getElementById('pushIndexTensor').addEventListener('click', () => {setProgram('i' + generateRandomSize(4, 64).join(' '));});
-document.getElementById('popTensor').addEventListener('click', () => {setProgram('↥');});
-document.getElementById('pushRandomTensor').addEventListener('click', () => {setProgram('?' + generateRandomSize(6, 64).join(' '));});
-document.getElementById('pushSingleton').addEventListener('click', () => {setProgram('(?)');});
-document.getElementById('dumpMemory').addEventListener('click', dumpGPUMemory);
+function tick(){
+    // start at the bottom and find the first function.
+    let i = 0;
+    for( let item of stack ){
+        if( item.value.type == 'f' ){
+            debug( `found ${item.value.value} at index ${i}` );
+            let ret = functions.get( item.value.value )( item );
+            dumpGPUMemory();
+	    return ret;
+        }
+        i++;
+    }
+}
+
+document.getElementById( 'parse' ).addEventListener( 'click', () => {parse();dumpGPUMemory();tick()} );
+document.getElementById( 'pushIndexTensor' ).addEventListener( 'click', () => {setProgram( 'i' + generateRandomSize( 4, 64 ).join( ' ' ));} );
+document.getElementById( 'popItem' ).addEventListener( 'click', () => {setProgram( '↥' );} );
+document.getElementById( 'pushRandomTensor' ).addEventListener( 'click', () => {setProgram( '?' + generateRandomSize( 6, 64 ).join( ' ' ));} );
+document.getElementById( 'pushSingleton' ).addEventListener( 'click', () => {setProgram( '(2)' );} );
+document.getElementById( 'dumpMemory' ).addEventListener( 'click', dumpGPUMemory );
 </script>
 </body>
 </html>
