@@ -95,7 +95,7 @@ class DoublyLinkedListStack {
 
 // Each function should return the node where parsing should continue
 // Pop, O( 1 )
-functions.set('↥', (item) => {
+functions.set( '↥', ( item ) => {
     const itemToDel = item.prev;
 
     if (itemToDel === null) {
@@ -137,7 +137,28 @@ functions.set('↥', (item) => {
     itemToDel.prev = null;
     item.next = null;
     item.prev = null;
+    return nextNode;
 });
+
+// Push random tensor, O( Π( tensor ) )
+functions.set( '?', ( item ) => {
+    if( !item.prev || item.prev.value.type !== 't' || item.prev.value.value.shape.length > 1 )
+	error( "? expected a singleton or rank 1 tensor argument." );
+    if( item.prev.prev )
+	item.prev.prev.next = item;
+    else
+	stack.head = item;
+    item.value.type = 't';
+    let [ shape, data ] = generateRandomTensor( item.prev.value.value.data );
+    item.value.value = makeTensor( shape, data );
+    const toDel = item.prev;
+    item.prev = toDel.prev;
+    toDel.prev = null;
+    toDel.next = null;
+    deleteTensor( toDel );
+    stack.size--;
+    return item.next;
+})
 
 if( !gl ){
     console.error( 'WebGL 2 not supported' );
@@ -257,19 +278,6 @@ function createTextureFromData( gl, data ){
 //         height: height
 //     });
 //     outputElement.textContent = `Pushed random tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${stack.length}`;
-// }
-
-// function pushSingleton( x ){
-//     let data = new Float32Array( [ x ] );
-//     let { texture, width, height } = createTextureFromData( gl, data );
-//     stack.push({
-//         shape: [],
-//         data: data,
-//         texture: texture,
-//         width: width,
-//         height: height
-//     });
-//     outputElement.textContent = `Pushed singleton  [${x}] onto the stack. Stack size: ${stack.length}`;
 // }
 
 
@@ -487,6 +495,21 @@ function pushFunction( symbol ){
     debug( `Pushed function '${symbol}' onto the stack. Stack size: ${stack.length()}` );
 }
 
+
+function makeTensor( shape, data ){
+    const tensorData = new Float32Array( data );
+
+    const { texture, width, height } = createTextureFromData( gl, tensorData );
+    const tensorObject = {
+        shape: shape,
+        data: tensorData,
+        texture: texture,
+        width: width,
+        height: height
+    };
+    return tensorObject;
+}
+
 function pushTensor( shape, data ){
     const tensorData = new Float32Array( data );
 
@@ -503,6 +526,7 @@ function pushTensor( shape, data ){
         value: tensorObject
     });
     debug( `Inserted tensor with shape [${shape.join(' ')}]` );
+    return tensorObject;
 }
 
 function deleteTensor( tensor ){
@@ -699,21 +723,22 @@ function clear(){
     stack = new DoublyLinkedListStack();
 }
 
-function tick(){
+function evaluate(){
     // start at the bottom and find the first function.
     let i = 0;
-    for( let item of stack ){
+    let item = stack.head;
+    while( item ){
         if( item.value.type == 'f' ){
             debug( `found ${item.value.value} at index ${i}` );
-            let ret = functions.get( item.value.value )( item );
+            item = functions.get( item.value.value )( item );
             dumpGPUMemory();
-	    return ret;
-        }
+        } else
+	    item = item.next;
         i++;
     }
 }
 
-document.getElementById( 'parse' ).addEventListener( 'click', () => {parse();dumpGPUMemory();tick()} );
+document.getElementById( 'parse' ).addEventListener( 'click', () => {parse();dumpGPUMemory();evaluate()} );
 document.getElementById( 'pushIndexTensor' ).addEventListener( 'click', () => {setProgram( 'i' + generateRandomSize( 4, 64 ).join( ' ' ));} );
 document.getElementById( 'popItem' ).addEventListener( 'click', () => {setProgram( '↥' );} );
 document.getElementById( 'pushRandomTensor' ).addEventListener( 'click', () => {setProgram( '?' + generateRandomSize( 6, 64 ).join( ' ' ));} );
