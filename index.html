@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -82,7 +83,7 @@ class DoublyLinkedListStack {
         return{
             next: function(){
                 if( current ){
-		    const value = current;
+                    const value = current;
                     current = current.next;
                     return { value, done: false };
                 } else {
@@ -126,7 +127,7 @@ functions.set( '↥', ( item ) => {
 
     // Output the appropriate message
     if( itemToDel.value.type === 't' ){
-	deleteTensor( itemToDel.value.value );
+        deleteTensor( itemToDel.value.value );
         outputElement.textContent = `Popped tensor with shape [${itemToDel.value.value.shape.join(', ')}] from the stack. Stack size: ${stack.length()}`;
     } else if( itemToDel.value.type === 'f' ){
         outputElement.textContent = `Popped function '${itemToDel.value.value}' from the stack. Stack size: ${stack.length()}`;
@@ -143,11 +144,11 @@ functions.set( '↥', ( item ) => {
 // Push random tensor, O( Π( tensor ) )
 functions.set( '?', ( item ) => {
     if( !item.prev || item.prev.value.type !== 't' || item.prev.value.value.shape.length > 1 )
-	error( "? expected a singleton or rank 1 tensor argument." );
+        error( "? expected a singleton or rank 1 tensor argument." );
     if( item.prev.prev )
-	item.prev.prev.next = item;
+        item.prev.prev.next = item;
     else
-	stack.head = item;
+        stack.head = item;
     item.value.type = 't';
     let [ shape, data ] = generateRandomTensor( item.prev.value.value.data );
     item.value.value = makeTensor( shape, data );
@@ -159,6 +160,35 @@ functions.set( '?', ( item ) => {
     stack.size--;
     return item.next;
 })
+
+// Push random tensor, O( Π( tensor ) ).
+functions.set( 'i', ( item ) => {
+    if( !item.prev || item.prev.value.type !== 't' || item.prev.value.value.shape.length > 1 )
+        error( "i expected a singleton or rank 1 tensor argument." );
+    if( item.prev.prev )
+        item.prev.prev.next = item;
+    else
+        stack.head = item;
+    item.value.type = 't';
+
+    let size = Array.from( item.prev.value.value.data ); // Get the size array
+    if( size.length === 0 ){
+        error( "Size tensor must contain at least one dimension." );
+    }
+    if( size.some( s => s <= 0 )){
+        error( "Size dimensions must be positive integers." );
+    }
+
+    item.value.value = generateIndexTensorGPU( size );
+
+    const toDel = item.prev;
+    item.prev = toDel.prev;
+    toDel.prev = null;
+    toDel.next = null;
+    deleteTensor( toDel.value.value );
+    stack.size--;
+    return item.next;
+});
 
 if( !gl ){
     console.error( 'WebGL 2 not supported' );
@@ -195,10 +225,220 @@ function generateRandomSize( maxDimArg, maxElements ){
     return shape;
 }
 
+
+// Add the new GPU-based generateIndexTensorGPU function
+function generateIndexTensorGPU( size ){
+    // Enforce a maximum size length for compatibility
+    const MAX_SIZE_LENGTH = 8;
+    if( size.length > MAX_SIZE_LENGTH ){
+        error( `Size length greater than ${MAX_SIZE_LENGTH} is not supported.` );
+    }
+
+    // Compute the output shape
+    let outputShape = size.slice();
+    outputShape.push( size.length );
+
+    // Compute strides
+    let strides = [];
+    let stride = 1;
+    for( let i = size.length - 1; i >= 0; i-- ){
+        strides[ i ] = stride;
+        stride *= size[ i ];
+    }
+
+    // Compute the total number of positions and elements
+    let totalPositions = size.reduce( ( a, b ) => a * b, 1 );
+    let totalElements = totalPositions * size.length;
+
+    // Compute texture dimensions
+    let totalTexels = Math.ceil( totalElements / 4 );
+    let width = Math.min( totalTexels, maxDim );
+    let height = Math.ceil( totalTexels / width );
+
+    // Create the output texture
+    let outputTexture = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, outputTexture );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, width, height, 0, gl.RGBA, gl.FLOAT, null );
+
+    // Use the reusable framebuffer
+    gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer );
+    gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, outputTexture, 0 );
+
+    // Check framebuffer status
+    let status = gl.checkFramebufferStatus( gl.FRAMEBUFFER );
+    if( status !== gl.FRAMEBUFFER_COMPLETE ){
+        console.error( 'Framebuffer is not complete' );
+        return null;
+    }
+
+    // Vertex shader source
+    let vertexShaderSource = `#version 300 es
+        in vec4 a_position;
+        void main() {
+            gl_Position = a_position;
+        }
+    `;
+
+    // Fragment shader source
+    let fragmentShaderSource = `#version 300 es
+        precision highp float;
+
+        const int MAX_SIZE_LENGTH = ${MAX_SIZE_LENGTH};
+
+        uniform int u_sizeLength;
+        uniform float u_size[ MAX_SIZE_LENGTH ];
+        uniform float u_strides[ MAX_SIZE_LENGTH ];
+        uniform int u_width;
+        uniform int u_totalElements;
+
+        out vec4 outColor;
+
+        void main() {
+            int texelIndex = int( gl_FragCoord.y ) * u_width + int( gl_FragCoord.x );
+            int elementIndex = texelIndex * 4;
+
+            float indices[4];
+            for( int i = 0; i < 4; i++ ) {
+                int idx = elementIndex + i;
+                if( idx < u_totalElements ) {
+                    int pos = idx / u_sizeLength;
+                    int dim = idx % u_sizeLength;
+
+                    int index = 0;
+
+                    if( u_sizeLength >= 1 && dim == 0 ) {
+                        index = ( pos / int( u_strides[0] )) % int( u_size[0] );
+                    }
+                    if( u_sizeLength >= 2 && dim == 1 ) {
+                        index = ( pos / int( u_strides[1] )) % int( u_size[1] );
+                    }
+                    if( u_sizeLength >= 3 && dim == 2 ) {
+                        index = ( pos / int( u_strides[2] )) % int( u_size[2] );
+                    }
+                    if( u_sizeLength >= 4 && dim == 3 ) {
+                        index = ( pos / int( u_strides[3] )) % int( u_size[3] );
+                    }
+                    if( u_sizeLength >= 5 && dim == 4 ) {
+                        index = ( pos / int( u_strides[4] )) % int( u_size[4] );
+                    }
+                    if( u_sizeLength >= 6 && dim == 5 ) {
+                        index = ( pos / int( u_strides[5] )) % int( u_size[5] );
+                    }
+                    if( u_sizeLength >= 7 && dim == 6 ) {
+                        index = ( pos / int( u_strides[6] )) % int( u_size[6] );
+                    }
+                    if( u_sizeLength >= 8 && dim == 7 ) {
+                        index = ( pos / int( u_strides[7] )) % int( u_size[7] );
+                    }
+
+                    indices[ i ] = float( index );
+                } else {
+                    indices[ i ] = 0.0;
+                }
+            }
+            outColor = vec4( indices[ 0 ], indices[ 1 ], indices[ 2 ], indices[ 3 ] );
+        }
+    `;
+
+    // Compile shaders
+    let vertexShader = gl.createShader( gl.VERTEX_SHADER );
+    gl.shaderSource( vertexShader, vertexShaderSource );
+    gl.compileShader( vertexShader );
+    if( !gl.getShaderParameter( vertexShader, gl.COMPILE_STATUS ) ){
+        console.error( 'Vertex shader failed to compile:', gl.getShaderInfoLog( vertexShader ) );
+        return null;
+    }
+
+    let fragmentShader = gl.createShader( gl.FRAGMENT_SHADER );
+    gl.shaderSource( fragmentShader, fragmentShaderSource );
+    gl.compileShader( fragmentShader );
+    if( !gl.getShaderParameter( fragmentShader, gl.COMPILE_STATUS ) ){
+        console.error( 'Fragment shader failed to compile:', gl.getShaderInfoLog( fragmentShader ) );
+        return null;
+    }
+
+    // Link program
+    let program = gl.createProgram();
+    gl.attachShader( program, vertexShader );
+    gl.attachShader( program, fragmentShader );
+    gl.linkProgram( program );
+    if( !gl.getProgramParameter( program, gl.LINK_STATUS ) ){
+        console.error( 'Program failed to link:', gl.getProgramInfoLog( program ) );
+        return null;
+    }
+
+    // Set up a full-screen quad
+    let quadVertices = new Float32Array([
+        -1.0, -1.0, 0.0, 1.0,
+         1.0, -1.0, 0.0, 1.0,
+        -1.0,  1.0, 0.0, 1.0,
+         1.0,  1.0, 0.0, 1.0,
+    ]);
+
+    let vao = gl.createVertexArray();
+    gl.bindVertexArray( vao );
+
+    let vbo = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vbo );
+    gl.bufferData( gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW );
+
+    let positionLoc = gl.getAttribLocation( program, 'a_position' );
+    gl.enableVertexAttribArray( positionLoc );
+    gl.vertexAttribPointer( positionLoc, 4, gl.FLOAT, false, 0, 0 );
+
+    gl.useProgram( program );
+
+    // Set uniforms
+    gl.uniform1i( gl.getUniformLocation( program, 'u_sizeLength' ), size.length );
+    gl.uniform1i( gl.getUniformLocation( program, 'u_width' ), width );
+    gl.uniform1i( gl.getUniformLocation( program, 'u_totalElements' ), totalElements );
+
+    let sizeUniform = new Float32Array( MAX_SIZE_LENGTH );
+    let stridesUniform = new Float32Array( MAX_SIZE_LENGTH );
+    for( let i = 0; i < size.length; i++ ){
+        sizeUniform[ i ] = size[ i ];
+        stridesUniform[ i ] = strides[ i ];
+    }
+    gl.uniform1fv( gl.getUniformLocation( program, 'u_size' ), sizeUniform );
+    gl.uniform1fv( gl.getUniformLocation( program, 'u_strides' ), stridesUniform );
+
+    // Draw
+    gl.viewport( 0, 0, width, height );
+    gl.clearColor( 0, 0, 0, 0 );
+    gl.clear( gl.COLOR_BUFFER_BIT );
+    gl.drawArrays( gl.TRIANGLE_STRIP, 0, 4 );
+
+    // Clean up
+    gl.bindFramebuffer( gl.FRAMEBUFFER, null );
+    gl.bindVertexArray( null );
+    gl.deleteBuffer( vbo );
+    gl.deleteVertexArray( vao );
+    gl.deleteShader( vertexShader );
+    gl.deleteShader( fragmentShader );
+    gl.deleteProgram( program );
+
+    // Return the tensor object
+    let tensorObject = {
+        shape: outputShape,
+        data: null, // Data remains on GPU; read back if needed
+        texture: outputTexture,
+        width: width,
+        height: height
+    };
+    return tensorObject;
+}
+
 function generateIndexTensor( size ){
     let totalElements = size.reduce( ( a, b ) => a * b, 1 );
     let data = new Float32Array( size.length * totalElements );
-    let shape = size.slice(); // Copy of the size array
+    let shape;
+    if( size.length === 1 )
+	shape = new Array( size )
+    else
+	shape = new Array( ...size )
+	
     shape.push( size.length ); // Increase rank by one
 
     for( let i = 0; i < totalElements; i++ ){
@@ -251,35 +491,6 @@ function createTextureFromData( gl, data ){
 
     return { texture: texture, width: width, height: height };
 }
-
-// function pushIndexTensor(){
-//     let size = generateRandomSize( 4, 64 );
-//     let [ shape, data ] = generateIndexTensor( size );
-//     let { texture, width, height } = createTextureFromData( gl, data );
-//     stack.push({
-//         shape: shape,
-//         data: data,
-//         texture: texture,
-//         width: width,
-//         height: height
-//     });
-//     outputElement.textContent = `Pushed index tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${stack.length}`;
-// }
-
-// function pushRandomTensor(){
-//     let size = generateRandomSize( 6, 64 );
-//     let [ shape, data ] = generateRandomTensor( size );
-//     let { texture, width, height } = createTextureFromData( gl, data );
-//     stack.push({
-//         shape: shape,
-//         data: data,
-//         texture: texture,
-//         width: width,
-//         height: height
-//     });
-//     outputElement.textContent = `Pushed random tensor with shape [${shape.join(', ')}] onto the stack. Stack size: ${stack.length}`;
-// }
-
 
 function formatTensorData( data, shapeArg ){
     let shape = [ 1, ...shapeArg ];
@@ -390,7 +601,7 @@ function dumpGPUMemory(){
         if( item.value.type === 't' ){
             let tensor = item.value.value;
             let shape = tensor.shape;
-            let totalElements = tensor.data.length;
+            let totalElements = shape.reduce( ( a, b ) => a * b, 1 );
             let width = tensor.width;
             let height = tensor.height;
 
@@ -733,7 +944,7 @@ function evaluate(){
             item = functions.get( item.value.value )( item );
             dumpGPUMemory();
         } else
-	    item = item.next;
+            item = item.next;
         i++;
     }
 }
