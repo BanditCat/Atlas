@@ -34,7 +34,7 @@ $(TARGET): $(OBJS) libSDL2.dll.a
 clean:  
 	rm -f $(OBJS) $(HTML) $(TARGET)
 
-backup: clean
+backup: all clean
 	git add -A
 	git commit -m 'Auto-commited from Emacs.'
 	git push -u origin main
