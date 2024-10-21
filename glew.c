@@ -38,7 +38,7 @@
 
 #if defined(GLEW_OSMESA)
 #  define GLAPI extern
-#  include <GL/osmesa.h>
+#  incblude <GL/osmesa.h>
 #elif defined(GLEW_EGL)
 #  include <GL/eglew.h>
 #elif defined(_WIN32)
@@ -52,7 +52,7 @@
 #  endif
 #  include "GL/wglew.h"
 #elif !defined(__ANDROID__) && !defined(__native_client__) && !defined(__HAIKU__) && (!defined(__APPLE__) || defined(GLEW_APPLE_GLX))
-#  include <GL/glxew.h>
+#  include "GL/glxew.h"
 #endif
 
 #include <stddef.h>  /* For size_t */

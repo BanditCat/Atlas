@@ -18,7 +18,6 @@ bool running = true;
 
 // Vertex Shader Source
 const GLchar* vertexSource = 
-  "#version 120\n"
   "attribute vec2 position;\n"
   "varying vec2 fragCoord;\n"
   "void main() {\n"
@@ -28,7 +27,6 @@ const GLchar* vertexSource =
 
 // Fragment Shader Source
 const GLchar* fragmentSource = 
-  "#version 120\n"
   "precision mediump float;\n"
   "varying vec2 fragCoord;\n"
   "uniform float zoom;\n"
@@ -174,12 +172,14 @@ int main(int argc, char* argv[]) {
     }
 
     // Initialize GLEW
+    #ifndef __EMSCRIPTEN__
     glewExperimental = GL_TRUE; // Enable modern OpenGL techniques
     GLenum glewError = glewInit();
     if (glewError != GLEW_OK) {
         printf("glewInit Error: %s\n", glewGetErrorString(glewError));
         return 1;
     }
+    #endif
 
     // Initialize OpenGL
     glViewport(0, 0, windowWidth, windowHeight);
@@ -195,16 +195,21 @@ int main(int argc, char* argv[]) {
          1.0f,  1.0f, // Top-right
     };
 
+    printf( "Hithere\n%s\n", argv[ 0 ] );
     // Generate VBO
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+    #ifdef __EMSCRIPTEN__
+    // Start the main loop
+    emscripten_set_main_loop(mainLoop, 0, 1);
     // Main loop
+    #else
     while (running) {
         mainLoop();
     }
-
+    #endif
     
     // Clean up
     glDeleteProgram(shaderProgram);

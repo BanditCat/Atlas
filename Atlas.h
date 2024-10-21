@@ -6,13 +6,19 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "SDL2/SDL.h"
+#ifndef __EMSCRIPTEN__
 #include "GL/glew.h" // For managing OpenGL extensions
+#else
+#include <SDL2/SDL_opengles2.h>
+#include <emscripten/emscripten.h>
+#endif //EMCC
 #include <stdio.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
 
 #if ULLONG_MAX != 18446744073709551615ULL
 #error bad long size
@@ -27,11 +33,8 @@
 typedef unsigned long long int u64;
 typedef unsigned int u32;
 typedef unsigned char u8;
-typedef u8 bool;
 typedef float f32;
 typedef double f64;
-#define true ( 1 )
-#define false ( 0 )
 
 extern u64 memc;
 #define mem( size, T ) ( memc++, malloc( sizeof( T ) * ( size ) ) )
