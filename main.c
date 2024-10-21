@@ -12,7 +12,7 @@ extern void __cdecl ___chkstk_ms(void) {
 // Global variables
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
-GLuint shaderProgram;
+GLuint shaderProgram; 
 GLuint vbo;
 float zoom = 1.0f;
 float offsetX = -0.5f, offsetY = 0.0f; // Centered on Mandelbrot set
