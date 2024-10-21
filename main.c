@@ -5,6 +5,9 @@
 #include "Atlas.h" 
 u64 memc = 0;
 
+extern void __cdecl ___chkstk_ms(void) {
+    // Custom implementation
+}
 
 // Global variables
 SDL_Window* window = NULL;
