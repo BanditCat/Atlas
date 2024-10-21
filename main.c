@@ -1,13 +1,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4-o1.      //
 ////////////////////////////////////////////////////////////////////////////////
-// Main must define this.
 #include "Atlas.h" 
+// Main must define this.
 u64 memc = 0;
-
-extern void __cdecl ___chkstk_ms(void) {
-    // Custom implementation
-}
 
 // Global variables
 SDL_Window* window = NULL;
@@ -25,7 +21,7 @@ const GLchar* vertexSource =
   "varying vec2 fragCoord;\n"
   "void main() {\n"
   "  fragCoord = position;\n"
-  "  gl_Position = vec4(position, 0.0, 1.0);\n"
+  "  gl_Position = vec4( position, 0.0, 1.0 );\n"
   "}\n";
 
 // Fragment Shader Source
@@ -43,56 +39,56 @@ const GLchar* fragmentSource =
   "  int iterations = 0;\n"
   "  const int maxIterations = 100;\n"
   "  for (int i = 0; i < maxIterations; i++) {\n"
-  "    float x = (z.x * z.x - z.y * z.y) + c.x;\n"
-  "    float y = (2.0 * z.x * z.y) + c.y;\n"
-  "    if ((x * x + y * y) > 4.0) break;\n"
+  "    float x = (z.x * z.x - z.y * z.y ) + c.x;\n"
+  "    float y = (2.0 * z.x * z.y ) + c.y;\n"
+  "    if(( x * x + y * y ) > 4.0 ) break;\n"
   "    z.x = x;\n"
   "    z.y = y;\n"
   "    iterations++;\n"
     "  }\n"
-  "  float color = float(iterations) / float(maxIterations);\n"
-  "  gl_FragColor = vec4(vec3(color), 1.0);\n"
+  "  float color = float( iterations ) / float( maxIterations );\n"
+  "  gl_FragColor = vec4( vec3(color), 1.0 );\n"
   "}\n";
 
 // Function to compile shaders
-GLuint compileShader(GLenum type, const GLchar* source) {
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, NULL);
-    glCompileShader(shader);
+GLuint compileShader( GLenum type, const GLchar* source ) {
+    GLuint shader = glCreateShader( type );
+    glShaderSource( shader, 1, &source, NULL );
+    glCompileShader( shader );
 
     // Check for compilation errors
     GLint status;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-    if (status != GL_TRUE) {
+    glGetShaderiv( shader, GL_COMPILE_STATUS, &status );
+    if( status != GL_TRUE ) {
         char buffer[512];
-        glGetShaderInfoLog(shader, 512, NULL, buffer);
-        printf("Shader compilation failed: %s\n", buffer);
+        glGetShaderInfoLog( shader, 512, NULL, buffer );
+        printf("Shader compilation failed: %s\n", buffer );
     }
     return shader;
 }
 
 // Function to create shader program
-GLuint createProgram(const GLchar* vertexSource, const GLchar* fragmentSource) {
-    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexSource);
-    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
+GLuint createProgram( const GLchar* vertexSource, const GLchar* fragmentSource ) {
+    GLuint vertexShader = compileShader( GL_VERTEX_SHADER, vertexSource );
+    GLuint fragmentShader = compileShader( GL_FRAGMENT_SHADER, fragmentSource );
 
     GLuint program = glCreateProgram();
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-    glBindAttribLocation(program, 0, "position");
-    glLinkProgram(program);
+    glAttachShader( program, vertexShader );
+    glAttachShader( program, fragmentShader );
+    glBindAttribLocation( program, 0, "position");
+    glLinkProgram( program );
 
     // Check for linking errors
     GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status != GL_TRUE) {
+    glGetProgramiv( program, GL_LINK_STATUS, &status );
+    if( status != GL_TRUE ) {
         char buffer[512];
-        glGetProgramInfoLog(program, 512, NULL, buffer);
-        printf("Program linking failed: %s\n", buffer);
+        glGetProgramInfoLog( program, 512, NULL, buffer );
+        printf("Program linking failed: %s\n", buffer );
     }
 
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    glDeleteShader( vertexShader );
+    glDeleteShader( fragmentShader );
 
     return program;
 }
@@ -101,19 +97,19 @@ GLuint createProgram(const GLchar* vertexSource, const GLchar* fragmentSource) {
 void mainLoop() {
     // Handle events
     SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_QUIT) {
+    while( SDL_PollEvent(&event )) {
+        if( event.type == SDL_QUIT ) {
             running = false;
-        } else if (event.type == SDL_MOUSEWHEEL) {
-            if (event.wheel.y > 0) {
+        } else if( event.type == SDL_MOUSEWHEEL ) {
+            if( event.wheel.y > 0 ) {
                 zoom *= 0.9f; // Zoom in
-            } else if (event.wheel.y < 0) {
+            } else if( event.wheel.y < 0 ) {
                 zoom *= 1.1f; // Zoom out
             }
-        } else if (event.type == SDL_MOUSEMOTION) {
-            if (event.motion.state & SDL_BUTTON_LMASK) {
-                float deltaX = (float)event.motion.xrel / windowWidth * zoom * 2.0f;
-                float deltaY = (float)event.motion.yrel / windowHeight * zoom * 2.0f;
+        } else if( event.type == SDL_MOUSEMOTION ) {
+            if( event.motion.state & SDL_BUTTON_LMASK ) {
+                float deltaX = ( float)event.motion.xrel / windowWidth * zoom * 2.0f;
+                float deltaY = ( float)event.motion.yrel / windowHeight * zoom * 2.0f;
                 offsetX -= deltaX;
                 offsetY += deltaY;
             }
@@ -121,55 +117,57 @@ void mainLoop() {
     }
 
     // Render
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear( GL_COLOR_BUFFER_BIT );
 
-    glUseProgram(shaderProgram);
+    glUseProgram( shaderProgram );
 
     // Set uniforms
-    GLint zoomLoc = glGetUniformLocation(shaderProgram, "zoom");
-    glUniform1f(zoomLoc, zoom);
+    GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom");
+    glUniform1f( zoomLoc, zoom );
 
-    GLint offsetLoc = glGetUniformLocation(shaderProgram, "offset");
-    glUniform2f(offsetLoc, offsetX, offsetY);
+    GLint offsetLoc = glGetUniformLocation( shaderProgram, "offset");
+    glUniform2f( offsetLoc, offsetX, offsetY );
 
-    GLint resolutionLoc = glGetUniformLocation(shaderProgram, "resolution");
-    glUniform2f(resolutionLoc, (float)windowWidth, (float)windowHeight);
+    GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution");
+    glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
 
     // Bind VBO and set vertex attributes
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer( GL_ARRAY_BUFFER, vbo );
+    GLint posAttrib = glGetAttribLocation( shaderProgram, "position");
+    glEnableVertexAttribArray( posAttrib );
+    glVertexAttribPointer( posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0 );
 
     // Draw
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 
     // Cleanup
-    glDisableVertexAttribArray(posAttrib);
+    glDisableVertexAttribArray( posAttrib );
 
-    SDL_GL_SwapWindow(window);
+    SDL_GL_SwapWindow( window );
 }
 
-int main(int argc, char* argv[]) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+
+void test();
+int main( int argc, char* argv[]) {
+    if( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
         printf("SDL_Init Error: %s\n", SDL_GetError());
         return 1;
     }
 
     // Request OpenGL 2.1 context
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 
     window = SDL_CreateWindow("Fractal Zoomer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                              windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+                              windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
 
-    if (!window) {
+    if( !window ) {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
         return 1;
     }
 
-    glContext = SDL_GL_CreateContext(window);
-    if (!glContext) {
+    glContext = SDL_GL_CreateContext( window );
+    if( !glContext ) {
         printf("SDL_GL_CreateContext Error: %s\n", SDL_GetError());
         return 1;
     }
@@ -178,17 +176,17 @@ int main(int argc, char* argv[]) {
     #ifndef __EMSCRIPTEN__
     glewExperimental = GL_TRUE; // Enable modern OpenGL techniques
     GLenum glewError = glewInit();
-    if (glewError != GLEW_OK) {
-        printf("glewInit Error: %s\n", glewGetErrorString(glewError));
+    if( glewError != GLEW_OK ) {
+        printf("glewInit Error: %s\n", glewGetErrorString( glewError ));
         return 1;
     }
     #endif
 
     // Initialize OpenGL
-    glViewport(0, 0, windowWidth, windowHeight);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glViewport( 0, 0, windowWidth, windowHeight );
+    glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
-    shaderProgram = createProgram(vertexSource, fragmentSource);
+    shaderProgram = createProgram( vertexSource, fragmentSource );
 
     // Set up vertex data
     GLfloat vertices[] = {
@@ -199,25 +197,60 @@ int main(int argc, char* argv[]) {
     };
 
     // Generate VBO
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glGenBuffers( 1, &vbo );
+    glBindBuffer( GL_ARRAY_BUFFER, vbo );
+    glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
+    test();
+    
     #ifdef __EMSCRIPTEN__
     // Start the main loop
-    emscripten_set_main_loop(mainLoop, 0, 1);
+    emscripten_set_main_loop( mainLoop, 0, 1 );
     // Main loop
     #else
-    while (running) {
+    while( running ) {
         mainLoop();
     }
     #endif
     
     // Clean up
-    glDeleteProgram(shaderProgram);
-    glDeleteBuffers(1, &vbo);
-    SDL_GL_DeleteContext(glContext);
-    SDL_DestroyWindow(window);
+    glDeleteProgram( shaderProgram );
+    glDeleteBuffers( 1, &vbo );
+    SDL_GL_DeleteContext( glContext );
+    SDL_DestroyWindow( window );
     SDL_Quit();
     return 0;
+}
+
+
+void test(){
+  u8 data[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+  u64 shape1[] = { 2, 2, 3 };
+  u64 shape2[] = { 3, 2, 2 };
+  u64 shape3[] = { 2, 1, 2, 3 };
+  u64 shape4[] = { 2, 6 };
+  u64 shape5[] = { 3, 4 };
+  u64 shape6[] = { 1, 12 };
+  u64 shape7[] = { 12, 1 };
+  u64* shape8 = NULL;
+    
+  tensor* t1 = newTensor( 3, 12, shape1, data );
+  tensor* t2 = newTensor( 3, 12, shape2, data );
+  tensor* t3 = newTensor( 4, 12, shape3, data );
+  tensor* t4 = newTensor( 2, 12, shape4, data );
+  tensor* t5 = newTensor( 2, 12, shape5, data );
+  tensor* t6 = newTensor( 2, 12, shape6, data );
+  tensor* t7 = newTensor( 2, 12, shape7, data );
+  tensor* t8 = newTensor( 0, 1, shape8, data );
+
+  char* t1t = formatTensorData( t1 ); printf( "%s\n\n", t1t ); unmem( t1t );
+  char* t2t = formatTensorData( t2 ); printf( "%s\n\n", t2t ); unmem( t2t );
+  char* t3t = formatTensorData( t3 ); printf( "%s\n\n", t3t ); unmem( t3t );
+  char* t4t = formatTensorData( t4 ); printf( "%s\n\n", t4t ); unmem( t4t );
+  char* t5t = formatTensorData( t5 ); printf( "%s\n\n", t5t ); unmem( t5t );
+  char* t6t = formatTensorData( t6 ); printf( "%s\n\n", t6t ); unmem( t6t );
+  char* t7t = formatTensorData( t7 ); printf( "%s\n\n", t7t ); unmem( t7t );
+  char* t8t = formatTensorData( t8 ); printf( "%s\n\n", t8t ); unmem( t8t );
+  
+  printf( "mem count %llu", memc );
 }

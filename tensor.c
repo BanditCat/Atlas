@@ -157,7 +157,7 @@ char* helper( int dimIndex, int offset, int depth, int* shape, int shape_length,
 	    maxLineDisplayWidth = len;
 	  }
 	}
-	int maxLength = (maxLineDisplayWidth > maxNumLength ) ?
+	int maxLength = ( maxLineDisplayWidth > maxNumLength ) ?
 	  maxLineDisplayWidth : maxNumLength;
 
 	// Build box
