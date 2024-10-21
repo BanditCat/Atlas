@@ -195,7 +195,6 @@ int main(int argc, char* argv[]) {
          1.0f,  1.0f, // Top-right
     };
 
-    printf( "Hithere\n%s\n", argv[ 0 ] );
     // Generate VBO
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

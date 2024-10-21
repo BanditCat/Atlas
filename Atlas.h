@@ -22,7 +22,7 @@
 
 #if ULLONG_MAX != 18446744073709551615ULL
 #error bad long size
-#endif
+#endif 
 #if UINT_MAX != 4294967295
 #error bad int size
 #endif
