@@ -193,7 +193,7 @@ int main() {
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // No need to unbind here
+     // No need to unbind here
 
     // Start the main loop
     emscripten_set_main_loop(mainLoop, 0, 1);

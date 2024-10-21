@@ -8,7 +8,7 @@ HTML = Atlas.html
 
 HDRS = Atlas.h tensor.h
 SRCS = main.c tensor.c glew.c
-OBJS = $(SRCS:.c=.o) 
+OBJS = $(SRCS:.c=.o)
 
 all: $(TARGET) $(HTML)
 rall: $(TARGET) $(HTML)
@@ -26,12 +26,10 @@ $(TARGET): $(OBJS) libSDL2.dll.a
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-clean:  $(TARGET)
-	rm -f ./bin/$(TARGET)
-	mv $(TARGET) ./bin
-	rm -f $(TARGET) $(OBJS) $(HTML) 
+clean:  
+	rm -f $(OBJS)
 
 backup: clean
-	git add .
-	git commit -m 'Automatically upgited from Emacs.'
+	git add -A
+	git commit -m 'Auto-commited from Emacs.'
 	git push -u origin main

@@ -11,7 +11,7 @@
 #else
 #include <SDL2/SDL_opengles2.h>
 #include <emscripten/emscripten.h>
-#endif //EMCC
+#endif 
 #include <stdio.h>
 
 #include <stdio.h>
