@@ -5,6 +5,10 @@
 #define ATLAS_H_INCLUDED
 #define _CRT_SECURE_NO_WARNINGS
 
+#include "SDL2/SDL.h"
+#include "GL/glew.h" // For managing OpenGL extensions
+#include <stdio.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

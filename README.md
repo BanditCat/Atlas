@@ -1,1 +1,1 @@
-Atlas is a simple stack oriented tensor programming language. The stack contains only anonymous functions of one variable and tensors of bytes.
+Atlas is a simple stack oriented tensor programming language using prefix notation. 

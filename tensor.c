@@ -94,7 +94,7 @@ int displayWidth( const char* str ){
 char* helper( int dimIndex, int offset, int depth, int* shape, int shape_length,
 	      u8* data, int data_length, int maxNumLength ){
   if( dimIndex == shape_length - 1 ){
-    // Base case: last dimension
+    // Base case: last dimension 
     int num_elements = shape[ dimIndex ];
     int total_length = num_elements * maxNumLength + (num_elements - 1 );
     char* result = (char*)mem( total_length + 1, u8 );

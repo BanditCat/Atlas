@@ -1,18 +1,20 @@
 CC = clang
-CFLAGS = -Wall -g
-
+CFLAGS = -Wall -g -DSDL_MAIN_HANDLED
+LDFLAGS = -lopengl32
 TARGET = Atlas.exe
 
 HDRS = Atlas.h tensor.h
-SRCS = main.c tensor.c
-OBJS = $(SRCS:.c=.o)
+SRCS = main.c tensor.c glew.c
+OBJS = $(SRCS:.c=.o) 
 
 all: $(TARGET)
 rall: $(TARGET)
 	$(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+$(SRCS): $(HDRS)
+
+$(TARGET): $(OBJS) libSDL2.dll.a
+	$(CC) $(LDFLAGS) -o $@ $^
 
 %.c: %.h
 %.o: %.c
