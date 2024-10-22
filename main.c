@@ -45,7 +45,7 @@ const GLchar* fragmentSource =
   "    z.x = x;\n"
   "    z.y = y;\n"
   "    iterations++;\n"
-    "  }\n"
+  "  }\n"
   "  float color = float( iterations ) / float( maxIterations );\n"
   "  gl_FragColor = vec4( vec3(color), 1.0 );\n"
   "}\n";
@@ -251,6 +251,15 @@ void test(){
   char* t6t = formatTensorData( t6 ); printf( "%s\n\n", t6t ); unmem( t6t );
   char* t7t = formatTensorData( t7 ); printf( "%s\n\n", t7t ); unmem( t7t );
   char* t8t = formatTensorData( t8 ); printf( "%s\n\n", t8t ); unmem( t8t );
-  
+
+  deleteTensor( t1 );
+  deleteTensor( t2 );
+  deleteTensor( t3 );
+  deleteTensor( t4 );
+  deleteTensor( t5 );
+  deleteTensor( t6 );
+  deleteTensor( t7 );
+  deleteTensor( t8 );
+
   printf( "mem count %llu", memc );
 }

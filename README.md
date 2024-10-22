@@ -1,1 +1,1 @@
-Atlas is a simple stack oriented tensor programming language using prefix notation. 
+Atlas is a reversible, 8-bit stack oriented tensor programming language using prefix notation. 

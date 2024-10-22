@@ -3,7 +3,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+
 #include "Atlas.h" 
+
 
 
 // Function to compute the length of a number when converted to string
@@ -393,39 +395,6 @@ char* helper( int dimIndex, int offset, int depth, int* shape, int shape_length,
   }
 }
 
-tensor* newTensor( u32 rank, u64 size, u64* shape, u8* data ){
-  tensor* ret = mem( 1, tensor );
-  if( rank ){
-    if( !shape )
-      error( "A tensor with non-zero rank was given with no shape." );
-    ret->rank = rank;
-    ret->size = size;
-    ret->shape = mem( rank, u64 );
-    memcpy( ret->shape, shape, sizeof( u64 ) * rank );
-    ret->data = mem( size, f32 );
-    memcpy( ret->data, data, sizeof( f32 ) * size );
-  } else {
-    ret->rank = 0;
-    ret->size = 1;
-    ret->shape = NULL;
-    ret->data = mem( 1, f32 );
-    *(ret->data) = *data;
-  }
-  ret->references = 1;
-  return ret;
-}
-
-void deleteTensor( tensor* t ){
-  --t->references;
-  if( !t->references ){
-    if( t->shape )
-      unmem( t->shape );
-    if( t->data )
-      unmem( t->data );
-  }
-  unmem( t );  
-}
-
 // Main function to format tensor data
 char* formatTensorData( const tensor* t ){
   // Create shape = [ 1, ...shapeArg ]
@@ -454,3 +423,35 @@ char* formatTensorData( const tensor* t ){
   unmem( shape );
   return result; // Remember to free this string after use
 }
+
+
+
+tensor* newTensor( u32 rank, u64 size, u64* shape, u8* data ){
+  tensor* ret = mem( 1, tensor );
+  if( rank ){
+    if( !shape )
+      error( "A tensor with non-zero rank was given with no shape." );
+    ret->rank = rank;
+    ret->size = size;
+    ret->shape = mem( rank, u64 );
+    memcpy( ret->shape, shape, sizeof( u64 ) * rank );
+    ret->data = mem( size, f32 );
+    memcpy( ret->data, data, sizeof( f32 ) * size );
+  } else {
+    ret->rank = 0;
+    ret->size = 1;
+    ret->shape = NULL;
+    ret->data = mem( 1, f32 );
+    *(ret->data) = *data;
+  }
+  ret->ownsData = true;
+  return ret;
+}
+
+void deleteTensor( tensor* t ){
+  if( t->data && t->ownsData )
+    unmem( t->data );
+  unmem( t->shape );
+    unmem( t );  
+}
+
