@@ -68,7 +68,8 @@ GLuint compileShader( GLenum type, const GLchar* source ) {
 }
 
 // Function to create shader program
-GLuint createProgram( const GLchar* vertexSource, const GLchar* fragmentSource ) {
+GLuint createProgram( const GLchar* vertexSource,
+		      const GLchar* fragmentSource ) {
     GLuint vertexShader = compileShader( GL_VERTEX_SHADER, vertexSource );
     GLuint fragmentShader = compileShader( GL_FRAGMENT_SHADER, fragmentSource );
 
@@ -108,8 +109,10 @@ void mainLoop() {
             }
         } else if( event.type == SDL_MOUSEMOTION ) {
             if( event.motion.state & SDL_BUTTON_LMASK ) {
-                float deltaX = ( float)event.motion.xrel / windowWidth * zoom * 2.0f;
-                float deltaY = ( float)event.motion.yrel / windowHeight * zoom * 2.0f;
+                float deltaX =
+		  (float)event.motion.xrel / windowWidth * zoom * 2.0f;
+                float deltaY =
+		  (float)event.motion.yrel / windowHeight * zoom * 2.0f;
                 offsetX -= deltaX;
                 offsetY += deltaY;
             }
@@ -148,7 +151,7 @@ void mainLoop() {
 
 
 void test();
-int main( int argc, char* argv[]) {
+int main( int argc, char* argv[] ) {
     if( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
         printf("SDL_Init Error: %s\n", SDL_GetError());
         return 1;
@@ -158,8 +161,12 @@ int main( int argc, char* argv[]) {
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 
-    window = SDL_CreateWindow("Fractal Zoomer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                              windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
+    window =
+      SDL_CreateWindow( "Fractal Zoomer",
+			SDL_WINDOWPOS_CENTERED,
+			SDL_WINDOWPOS_CENTERED,
+                        windowWidth, windowHeight,
+			SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
 
     if( !window ) {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
@@ -199,7 +206,8 @@ int main( int argc, char* argv[]) {
     // Generate VBO
     glGenBuffers( 1, &vbo );
     glBindBuffer( GL_ARRAY_BUFFER, vbo );
-    glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
+    glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices,
+		  GL_STATIC_DRAW );
 
     test();
     
@@ -232,34 +240,25 @@ void test(){
   u64 shape5[] = { 3, 4 };
   u64 shape6[] = { 1, 12 };
   u64 shape7[] = { 12, 1 };
-  u64* shape8 = NULL;
-    
-  tensor* t1 = newTensor( 3, 12, shape1, data );
-  tensor* t2 = newTensor( 3, 12, shape2, data );
-  tensor* t3 = newTensor( 4, 12, shape3, data );
-  tensor* t4 = newTensor( 2, 12, shape4, data );
-  tensor* t5 = newTensor( 2, 12, shape5, data );
-  tensor* t6 = newTensor( 2, 12, shape6, data );
-  tensor* t7 = newTensor( 2, 12, shape7, data );
-  tensor* t8 = newTensor( 0, 1, shape8, data );
 
-  char* t1t = formatTensorData( t1 ); printf( "%s\n\n", t1t ); unmem( t1t );
-  char* t2t = formatTensorData( t2 ); printf( "%s\n\n", t2t ); unmem( t2t );
-  char* t3t = formatTensorData( t3 ); printf( "%s\n\n", t3t ); unmem( t3t );
-  char* t4t = formatTensorData( t4 ); printf( "%s\n\n", t4t ); unmem( t4t );
-  char* t5t = formatTensorData( t5 ); printf( "%s\n\n", t5t ); unmem( t5t );
-  char* t6t = formatTensorData( t6 ); printf( "%s\n\n", t6t ); unmem( t6t );
-  char* t7t = formatTensorData( t7 ); printf( "%s\n\n", t7t ); unmem( t7t );
-  char* t8t = formatTensorData( t8 ); printf( "%s\n\n", t8t ); unmem( t8t );
+  tensorStack* ts = newStack();
 
-  deleteTensor( t1 );
-  deleteTensor( t2 );
-  deleteTensor( t3 );
-  deleteTensor( t4 );
-  deleteTensor( t5 );
-  deleteTensor( t6 );
-  deleteTensor( t7 );
-  deleteTensor( t8 );
+  push( ts, 3, shape1, data );
+  push( ts, 3, shape2, data );
+  push( ts, 4, shape3, data );
+  push( ts, 2, shape4, data );
+  push( ts, 2, shape5, data );
+  push( ts, 2, shape6, data );
+  push( ts, 2, shape7, data );
+  push( ts, 0, NULL, data );
+
+  printStack( ts );
+
+  pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
+
+  printStack( ts );
+  
+  deleteStack( ts );
 
   printf( "mem count %llu", memc );
 }

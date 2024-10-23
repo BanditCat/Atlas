@@ -13,11 +13,21 @@ typedef struct{
 } tensor;
 
 
+typedef struct{
+  u64 size;
+  tensor* stack;
+  u64 top;
+} tensorStack;
 
-tensor* newTensor( u32 rank, u64 size, u64* shape, u8* data );
-void deleteTensor( tensor* t );
-// Function for printing tensors.
+
+tensorStack* newStack( void );
+tensor* newTensor( u32 rank, u64* shape, u8* data );
+void deleteStack( tensorStack* ts );
+void push( tensorStack* ts, u32 rank, u64* shape, u8* data );
+void pop( tensorStack* ts );
+// Functions for printing tensors.
 char* formatTensorData( const tensor* t );
+void printStack( const tensorStack* ts );
 
 
   
