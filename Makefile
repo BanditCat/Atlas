@@ -10,7 +10,7 @@ JS = $(HTML:.html=.js)
 WASM = $(HTML:.html=.wasm)
 
 HDRS = Atlas.h tensor.h
-SRCS = main.c tensor.c glew.c
+SRCS = main.c tensor.c glew.c tensorPrint.c
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: all rall clean backup release

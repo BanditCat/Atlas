@@ -232,7 +232,7 @@ int main( int argc, char* argv[] ) {
 
 
 void test(){
-  u8 data[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+  u8 data[] = { 1, 2, 3, 4, 7, 6, 7, 8, 9, 10, 11, 12 };
   u64 shape1[] = { 2, 2, 3 };
   u64 shape2[] = { 3, 2, 2 };
   u64 shape3[] = { 2, 1, 2, 3 };
@@ -256,8 +256,29 @@ void test(){
 
   pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
 
-  printStack( ts );
   
+  u8 d2[] = { 1, 0 };
+  u64 shape8[] = { 2 };
+  push( ts, 1, shape8, d2 );
+  printStack( ts );
+  tensorIndex( ts );
+  printStack( ts );
+
+  u8 d3[] = { 0 };
+  u64 shape9[] = { 1 };
+  push( ts, 1, shape9, d3 );
+  printStack( ts );
+  tensorIndex( ts );
+  printStack( ts );
+
+  
+  u8 d4[] = { 2, 0, 0, 0, 0, 0 };
+  u64 shape10[] = { 6 };
+  push( ts, 1, shape10, d4 );
+  printStack( ts );
+  tensorIndex( ts );
+  printStack( ts );
+
   deleteStack( ts );
 
   printf( "mem count %llu", memc );
