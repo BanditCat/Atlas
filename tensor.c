@@ -103,7 +103,7 @@ void tensorIndex( tensorStack* ts, u64 indexIndex, u64 tIndex ){
   for( u64 i = ( indexTensor->rank - 2 ); i < ret->rank; ++i )
     ret->shape[ i ] = t->shape[ i + rankReduction ];
   ret->strides = mem( ret->rank, u64 );
-  for( int i = ret->rank - 1, m = 1; i >= 0; --i, m *= ret->shape[ i ] )
+  for( int i = ret->rank - 1, m = 1; i >= 0; m *= ret->shape[ i-- ] )
     ret->strides[ i ] = m;
   ret->size = ret->rank ? ret->strides[ 0 ] * ret->shape[ 0 ] : 1;
   ret->data = mem( ret->size, u8 );
@@ -198,8 +198,8 @@ void deleteStack( tensorStack* ts ){
   
 void printStack( const tensorStack* ts ){
   for( u64 i = ts->top - 1; i < ts->top; --i ){
+
     tensor* t = ts->stack[ i ];
-    char* fd = formatTensorData( t );
     printf( "Tensor %llu\n", i );
     printf( "Shape:" );
     for( u64 j = 0; j < t->rank; ++j )
@@ -207,6 +207,7 @@ void printStack( const tensorStack* ts ){
     printf( "\nStrides:" );
     for( u64 j = 0; j < t->rank; ++j )
       printf( " %llu", t->strides[ j ] );
+    char* fd = formatTensorData( t );
     printf( "\n%s\n\n", fd );
     unmem( fd );
   }
