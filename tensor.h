@@ -23,6 +23,8 @@ tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u64* shape, u8* data );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, u32 rank, u64* shape, u8* data );
+// Push the 8 bit add tensor
+void pushAdd( tensorStack* ts );
 void tensorIndex( tensorStack* ts, u64 indexIndex, u64 tIndex );
 void pop( tensorStack* ts );
 // Functions for printing tensors.

@@ -218,8 +218,11 @@ void printStack( const tensorStack* ts ){
     printf( "\nStrides:" );
     for( u64 j = 0; j < t->rank; ++j )
       printf( " %llu", t->strides[ j ] );
-    char* fd = formatTensorData( t );
-    printf( "\n%s\n\n", fd );
-    unmem( fd );
+    if( t->size < 256 ){
+      char* fd = formatTensorData( t );
+      printf( "\n%s\n\n", fd );
+      unmem( fd );
+    } else
+      printf( "\n[large tensor]\n\n" );
   }
 }

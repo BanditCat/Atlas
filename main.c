@@ -256,12 +256,12 @@ void test(){
   pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
   printf( "\n\n\n\n\n\n\n\n" );
   
-  
-  u8 d2[] = { 0, 0, 0,  1, 0, 0,  1, 0, 0, 0, 0,0 }; 
-  u64 shape8[] = { 2, 2, 3 }; 
+  u8 d2[] = { 222, 250, 1, 2, 3, 4 }; 
+  u64 shape8[] = { 3, 2, 1 }; 
+  pushAdd( ts );
   push( ts, 3, shape8, d2 ); 
-  printStack( ts ); fflush( stdout );
-  tensorIndex( ts, 1, 0 );
+  //  printStack( ts ); fflush( stdout );
+  tensorIndex( ts, ts->top - 1, ts->top - 2 );
   printStack( ts );
 
   /* u8 d3[] = { 0 }; */
