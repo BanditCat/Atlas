@@ -39,7 +39,9 @@ typedef double f64;
 extern u64 memc;
 #define mem( size, T ) ( memc++, malloc( sizeof( T ) * ( size ) ) )
 #define unmem( F ) ( memc--, free( F ) ) 
-#define error( msg ) ( fprintf( stderr, "%s\n\n", ( msg ) ), fflush( stderr ), exit( 1 ) )
+#define error( msg ) ( fflush( stdout ), \
+		       fprintf( stderr, "%s\n\n", ( msg ) ), \
+		       fflush( stderr ), exit( 1 ) )
 
 #include "tensor.h"
 

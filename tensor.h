@@ -4,7 +4,6 @@
 
 
 typedef struct{
-  bool ownsData;
   u32 rank;
   u64 size;
   u64* shape;
@@ -15,7 +14,7 @@ typedef struct{
 
 typedef struct{
   u64 size;
-  tensor* stack;
+  tensor** stack;
   u64 top;
 } tensorStack;
 
@@ -24,7 +23,7 @@ tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u64* shape, u8* data );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, u32 rank, u64* shape, u8* data );
-void tensorIndex( tensorStack* ts );
+void tensorIndex( tensorStack* ts, u64 indexIndex, u64 tIndex );
 void pop( tensorStack* ts );
 // Functions for printing tensors.
 char* formatTensorData( const tensor* t );

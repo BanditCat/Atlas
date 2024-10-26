@@ -240,7 +240,6 @@ void test(){
   u64 shape5[] = { 3, 4 };
   u64 shape6[] = { 1, 12 };
   u64 shape7[] = { 12, 1 };
-
   tensorStack* ts = newStack();
 
   push( ts, 3, shape1, data );
@@ -255,29 +254,30 @@ void test(){
   printStack( ts );
 
   pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
+  printf( "\n\n\n\n\n\n\n\n" );
+  
+  
+  u8 d2[] = { 1, 0, 0, 0, 0, 0}; 
+  u64 shape8[] = { 2, 3 }; 
+  push( ts, 2, shape8, d2 ); 
+  printStack( ts );
+  tensorIndex( ts, 1, 0 );
+  printStack( ts );
+
+  /* u8 d3[] = { 0 }; */
+  /* u64 shape9[] = { 1 }; */
+  /* push( ts, 1, shape9, d3 ); */
+  /* printStack( ts ); */
+  /* tensorIndex( ts ); */
+  /* printStack( ts ); */
 
   
-  u8 d2[] = { 1, 0 };
-  u64 shape8[] = { 2 };
-  push( ts, 1, shape8, d2 );
-  printStack( ts );
-  tensorIndex( ts );
-  printStack( ts );
-
-  u8 d3[] = { 0 };
-  u64 shape9[] = { 1 };
-  push( ts, 1, shape9, d3 );
-  printStack( ts );
-  tensorIndex( ts );
-  printStack( ts );
-
-  
-  u8 d4[] = { 2, 0, 0, 0, 0, 0 };
-  u64 shape10[] = { 6 };
-  push( ts, 1, shape10, d4 );
-  printStack( ts );
-  tensorIndex( ts );
-  printStack( ts );
+  /* u8 d4[] = { 2, 0, 0, 0, 0, 0 }; */
+  /* u64 shape10[] = { 6 }; */
+  /* push( ts, 1, shape10, d4 ); */
+  /* printStack( ts ); */
+  /* tensorIndex( ts ); */
+  /* printStack( ts ); */
 
   deleteStack( ts );
 
