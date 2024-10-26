@@ -48,6 +48,18 @@ void push( tensorStack* ts, u32 rank, u64* shape, u8* data ){
   ts->stack[ ts->top++ ] = newTensor( rank, shape, data );
 }
 
+void pushAdd( tensorStack* ts ){
+  u64 shape[] = { 256, 256, 2 };
+  u8 data[ 65536 * 2 ] = {};
+  for( u64 x = 0; x < 256; ++x ){
+    for( u64 y = 0; y < 256; ++y ){
+      u64 res = x + y;
+      data[ ( x + y * 256 ) * 2 + 0 ] = res & 255;
+      data[ ( x + y * 256 ) * 2 + 1 ] = res >> 8;
+    }
+  }
+  push( ts, 3, shape, data );
+}
 
 // Raises rank by 1 without deallocating data.
 void enclose( tensor* t ){
@@ -90,7 +102,7 @@ void tensorIndex( tensorStack* ts, u64 indexIndex, u64 tIndex ){
     error( "Index must be at least rank 2." );
   if( t->rank < 1 )
     error( "Cannot index singleton." );
-  
+
   u64 bytesPerIndex = indexTensor->shape[ indexTensor->rank - 1 ];
   u64 rankReduction = indexTensor->shape[ indexTensor->rank - 2 ];
   if( rankReduction > t->rank )
@@ -101,7 +113,7 @@ void tensorIndex( tensorStack* ts, u64 indexIndex, u64 tIndex ){
   for( u64 i = 0; i < ( indexTensor->rank - 2 ); ++i )
     ret->shape[ i ] = indexTensor->shape[ i ];
   for( u64 i = ( indexTensor->rank - 2 ); i < ret->rank; ++i )
-    ret->shape[ i ] = t->shape[ i + rankReduction ];
+    ret->shape[ i ] = t->shape[ ( i - ( indexTensor->rank - 2 ) ) + rankReduction ];
   ret->strides = mem( ret->rank, u64 );
   for( int i = ret->rank - 1, m = 1; i >= 0; m *= ret->shape[ i-- ] )
     ret->strides[ i ] = m;
@@ -198,7 +210,6 @@ void deleteStack( tensorStack* ts ){
   
 void printStack( const tensorStack* ts ){
   for( u64 i = ts->top - 1; i < ts->top; --i ){
-
     tensor* t = ts->stack[ i ];
     printf( "Tensor %llu\n", i );
     printf( "Shape:" );
