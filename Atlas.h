@@ -42,6 +42,9 @@ extern u64 memc;
 #define error( msg ) ( fflush( stdout ), \
 		       fprintf( stderr, "%s\n\n", ( msg ) ), \
 		       fflush( stderr ), exit( 1 ) )
+#define dbg( msg ) ( fflush( stdout ), \
+		     fprintf( stderr, "%s\n\n", ( msg ) ), \
+		     fflush( stderr ) )
 
 #include "tensor.h"
 

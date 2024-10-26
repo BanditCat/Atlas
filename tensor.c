@@ -74,7 +74,6 @@ void enclose( tensor* t ){
     
 
 /* typedef struct{ */
-/*   bool ownsData; */
 /*   u32 rank; */
 /*   u64 size; */
 /*   u64* shape; */
@@ -94,72 +93,86 @@ void tensorIndex( tensorStack* ts, u64 indexIndex, u64 tIndex ){
   
   u64 bytesPerIndex = indexTensor->shape[ indexTensor->rank - 1 ];
   u64 rankReduction = indexTensor->shape[ indexTensor->rank - 2 ];
-
   if( rankReduction > t->rank )
     error( "Index tensor rank reduction greater than target rank." );
+  tensor* ret = mem( 1, tensor );
+  ret->rank = ( t->rank - rankReduction ) + ( indexTensor->rank - 2 );
+  ret->shape = mem( ret->rank, u64 );
+  for( u64 i = 0; i < ( indexTensor->rank - 2 ); ++i )
+    ret->shape[ i ] = indexTensor->shape[ i ];
+  for( u64 i = ( indexTensor->rank - 2 ); i < ret->rank; ++i )
+    ret->shape[ i ] = t->shape[ i + rankReduction ];
+  ret->strides = mem( ret->rank, u64 );
+  for( int i = ret->rank - 1, m = 1; i >= 0; --i, m *= ret->shape[ i ] )
+    ret->strides[ i ] = m;
+  ret->size = ret->rank ? ret->strides[ 0 ] * ret->shape[ 0 ] : 1;
+  ret->data = mem( ret->size, u8 );
 
-  u64 index = 0;
+  // Allocate arrays for indices
+  u64* ret_indices = malloc( ret->rank * sizeof( u64 ) );
+  u64* t_indices = malloc( t->rank * sizeof( u64 ) );
   
-  for( u64 i = 0; i < rankReduction; ++i ){
-    u64 iindex = 0;
-    u64 multend = 1; 
-    for( u64 j = 0; j < bytesPerIndex; ++j ){
-      iindex += multend * indexTensor->data[ j + i * bytesPerIndex ]; 
-      multend <<= 8;
+  // Iterate over each element in ret->data
+  for( u64 idx = 0; idx < ret->size; ++idx ){
+    u64 temp_idx = idx;
+
+    for( u64 i = 0; i < ret->rank; ++i ) {
+      ret_indices[ i ] = temp_idx / ret->strides[ i ];
+      temp_idx %= ret->strides[ i ];
     }
-    iindex *= t->strides[ i ];
-    index += iindex;
+
+    u64 indexTensor_indices[ indexTensor->rank ];
+    for( u64 i = 0; i < indexTensor->rank - 2; ++i ) {
+      indexTensor_indices[ i ] = ret_indices[ i ];
+    }
+
+    for( u64 k = 0; k < rankReduction; ++k ) {
+      u64 index = 0;
+
+      for( u64 b = 0; b < bytesPerIndex; ++b ) {
+	// Set the indices for rank reduction and bytes per index dimensions
+	indexTensor_indices[ indexTensor->rank - 2 ] = k;  
+	indexTensor_indices[ indexTensor->rank - 1 ] = b; 
+
+	// Compute flat index into indexTensor->data
+	u64 indexTensor_flat_idx = 0;
+	for( u64 i = 0; i < indexTensor->rank; ++i ) {
+	  indexTensor_flat_idx += indexTensor_indices[ i ] *
+	    indexTensor->strides[ i ];
+	}
+	u8 byte = indexTensor->data[ indexTensor_flat_idx ];
+	index |= ( (u64)byte ) << ( b * 8 );
+      }
+
+      t_indices[ k ] = index;
+    }
+    // Map remaining indices from ret_indices to t_indices
+    for( u64 k = rankReduction; k < t->rank; ++k ){
+      u64 ret_idx = ( indexTensor->rank - 2 ) + ( k - rankReduction );
+      t_indices[ k ] = ret_indices[ ret_idx ];
+    }
+
+    u64 t_offset = 0;
+    for( u64 i = 0; i < t->rank; ++i ){
+      t_offset += t_indices[ i ] * t->strides[ i ];
+    } 
+
+    ret->data[ idx ] = t->data[ t_offset ];
   }
+  free( ret_indices );
+  free( t_indices );
 
-  
-
-
-  // Please fill the code in here. Notice that the last dimension for the index tensor
-  // is so that byte tensors can index as arbirtrary precision. An index tensor of
-  // rank two should select a slice of the target tensor. shape[ 0 ] is the number
-  // of ranks that will be consumed by indexing as above. Please adhere to my style
-  // as closely as possible.
-    
-  /* u64 index = 0; */
-  /* u64 multend = 1; */
-  /* for( u64 i = 0; i < indexTensor->shape[ 0 ]; ++i ){ */
-  /* } */
-  /* if( index >= t->shape[ 0 ] ) */
-  /*   error( "Index out of range." ); */
-  /* // Replace index with the tensor slice. */
-  /* indexTensor->rank = t->rank - 1; */
-  /* indexTensor->size = t->size / t->shape[ 0 ]; */
-  /* if( indexTensor->rank != 0 ){ */
-  /*   unmem( indexTensor->shape ); */
-  /*   indexTensor->shape = mem( indexTensor->rank, u64 ); */
-  /*   for( u64 i = 0; i < indexTensor->rank; ++i ) */
-  /*     indexTensor->shape[ i ] = t->shape[ i + 1 ]; */
-  /*   unmem( indexTensor->strides ); */
-  /*   indexTensor->strides = mem( indexTensor->rank, u64 ); */
-  /*   for( u64 i = 0; i < indexTensor->rank; ++i ) */
-  /*     indexTensor->strides[ i ] = t->strides[ i + 1 ]; */
-  /* } else { */
-  /*   if( indexTensor->strides ) */
-  /*     unmem( indexTensor->strides ); */
-  /*   indexTensor->strides = NULL; */
-  /*   if( indexTensor->shape ) */
-  /*     unmem( indexTensor->shape ); */
-  /*   indexTensor->shape = NULL; */
-  /* } */
-  /* if( indexTensor->ownsData ) */
-  /*   unmem( indexTensor->data ); */
-  /* indexTensor->ownsData = false; */
-  /* indexTensor->data = t->data + t->strides[ 0 ] * index; */
+  ts->stack[ ts->top++ ] = ret;
 }
 
 void deleteTensor( tensor* t ){
-   if( t->data )
-     unmem( t->data );
-   if( t->shape )
-     unmem( t->shape );
-   if( t->strides )
-     unmem( t->strides );
-   unmem( t );
+  if( t->data )
+    unmem( t->data );
+  if( t->shape )
+    unmem( t->shape );
+  if( t->strides )
+    unmem( t->strides );
+  unmem( t );
 }
 
 void pop( tensorStack* ts ){

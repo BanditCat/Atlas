@@ -257,7 +257,7 @@ void test(){
   printf( "\n\n\n\n\n\n\n\n" );
   
   
-  u8 d2[] = { 1, 0, 0, 0, 0, 0}; 
+  u8 d2[] = { 0, 0, 0, 1, 0, 0}; 
   u64 shape8[] = { 2, 3 }; 
   push( ts, 2, shape8, d2 ); 
   printStack( ts );
