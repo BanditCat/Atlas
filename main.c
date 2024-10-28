@@ -251,7 +251,7 @@ void test(){
   push( ts, 2, shape7, data );
   push( ts, 0, NULL, data );
 
-  printStack( ts );
+  //  printStack( ts );
 
   pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
   printf( "\n\n\n\n\n\n\n\n" );
@@ -262,6 +262,8 @@ void test(){
   push( ts, 3, shape8, d2 ); 
   //  printStack( ts ); fflush( stdout );
   tensorIndex( ts, ts->top - 1, ts->top - 2 );
+  u64 shape9[] = { 3, 2, 1 };
+  tensorReshape( ts, ts->top - 1, 3, shape9 );
   printStack( ts );
 
   /* u8 d3[] = { 0 }; */

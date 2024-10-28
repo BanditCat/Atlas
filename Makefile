@@ -39,7 +39,7 @@ backup:
 	$(MAKE) release
 	$(MAKE) clean
 	git add -A
-	git commit -m 'Auto-committed from Emacs.'
+	git commit -m 'Reshape.'
 	git push -u origin main
 
 # Include dependency files

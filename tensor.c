@@ -7,7 +7,7 @@
 #include "Atlas.h" 
 
 
-tensor* newTensor( u32 rank, u64* shape, u8* data ){
+tensor* newTensor( u64 rank, u64* shape, u8* data ){
   tensor* ret = mem( 1, tensor );
 
   if( rank ){
@@ -225,4 +225,31 @@ void printStack( const tensorStack* ts ){
     } else
       printf( "\n[large tensor]\n\n" );
   }
+}
+
+void tensorReshapeHelper( tensor* t, u64 newRank, u64* newShape ){
+  if( !t || !newShape || !newRank || !t->rank )
+    error( "Invalid tensor or shape." );
+  u64 newSize = 1;
+  for( u64 i = 0; i < newRank; ++i )
+    newSize *= newShape[ i ];
+  if( newSize != t->size )
+    error( "New shape size does not match tensor size." );
+  
+  u64* tp = NULL;
+  tp = mem( newRank, u64 );
+  memcpy( tp, newShape, sizeof( u64 ) * newRank );
+  unmem( t->shape ); t->shape = tp;
+  tp = mem( newRank, u64 );
+  u64 size = 1;
+  for( int i = newRank - 1; i >= 0; --i ){
+    tp[ i ] = size;
+    size *= newShape[ i ];
+  }
+  unmem( t->strides ); t->strides = tp;
+  t->rank = newRank;
+}
+
+void tensorReshape( tensorStack* ts, u64 index, u64 newRank, u64* newShape ){
+  tensorReshapeHelper( ts->stack[ index ], newRank, newShape );
 }
