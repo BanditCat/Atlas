@@ -39,7 +39,7 @@ backup:
 	$(MAKE) release
 	$(MAKE) clean
 	git add -A
-	git commit -m 'Reshape.'
+	git commit -m 'Auto-commit'
 	git push -u origin main
 
 # Include dependency files
