@@ -8,6 +8,7 @@ typedef struct {
   u32 size;              // Total number of elements
   u32 shape[4];          // Dimensions of the tensor
   u32 strides[4];        // Strides for indexing
+  u32 width, height;
   GLuint texture;        // OpenGL texture for reading/writing operations
   GLuint framebuffer;    // Framebuffer for rendering into the texture
 } tensor;

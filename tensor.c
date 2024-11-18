@@ -12,18 +12,13 @@ f32* tensorToHostMemory( const tensor* t ){
   if( t == NULL )
     error( "Tensor is NULL." );
 
-  // Calculate the smallest square dimensions
-  u32 size = t->size;
-  u32 width = ceil( sqrt( (double)size ) );
-  u32 height = ( size + width - 1 ) / width;
-
   // Allocate memory for the host data
-  f32* hostData = mem( size, f32 );
+  f32* hostData = mem( t->size, f32 );
   if( hostData == NULL )
     error( "Failed to allocate host memory." );
 
   // Allocate temporary buffer for RGBA texture data
-  f32* tempData = mem( width * height * 4, f32 ); // RGBA channels
+  f32* tempData = mem( t->width * t->height * 4, f32 ); // RGBA channels
   if( tempData == NULL ){
     unmem( hostData );
     error( "Failed to allocate temporary buffer." );
@@ -31,11 +26,11 @@ f32* tensorToHostMemory( const tensor* t ){
 
   // Bind framebuffer and read pixels from the texture
   glBindFramebuffer( GL_FRAMEBUFFER, t->framebuffer );
-  glReadPixels( 0, 0, width, height, GL_RGBA, GL_FLOAT, tempData );
+  glReadPixels( 0, 0, t->width, t->height, GL_RGBA, GL_FLOAT, tempData );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
   // Extract the actual tensor data
-  memcpy( hostData, tempData, size * sizeof( f32 ) );
+  memcpy( hostData, tempData, t->size * sizeof( f32 ) );
 
   // Free the temporary buffer
   unmem( tempData );
@@ -64,14 +59,14 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   }
 
   // Compute the smallest square dimensions
-  u32 size = ret->size;
-  u32 width = ceil( sqrt( (double)size ) ); // Start with a square root estimate
-  u32 height = ( size + width - 1 ) / width; // Ensure it fits the data
-
+  u32 pixels = ( ret->size + 3 ) / 4;
+  ret->width = ceilf( sqrtf( pixels ) ); // Start with a square root estimate
+  ret->height = ( pixels + ret->width - 1 ) / ret->width; // Ensure it fits the data
+  
   // Create OpenGL texture
   glGenTextures( 1, &ret->texture);
   glBindTexture( GL_TEXTURE_2D, ret->texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, 34836, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
   glBindTexture( GL_TEXTURE_2D, 0 );
@@ -92,9 +87,9 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   glBindTexture( GL_TEXTURE_2D, ret->texture );
   
   // Prepare temporary buffer to fit the texture size
-  f32* paddedData = (f32*)calloc(width * height * 4, sizeof(f32)); // RGBA channels
-  memcpy( paddedData, data, size * sizeof(f32) ); // Copy data to padded buffer
-  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, paddedData );
+  f32* paddedData = (f32*)calloc( ret->width * ret->height * 4, sizeof(f32)); // RGBA channels
+  memcpy( paddedData, data, ret->size * sizeof(f32) ); // Copy data to padded buffer
+  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, ret->width, ret->height, GL_RGBA, GL_FLOAT, paddedData );
   free( paddedData );
   glBindTexture( GL_TEXTURE_2D, 0 );
 
