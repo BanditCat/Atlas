@@ -19,6 +19,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <math.h>
 
 #if ULLONG_MAX != 18446744073709551615ULL
 #error bad long size

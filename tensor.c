@@ -7,29 +7,113 @@
 #include "Atlas.h" 
 
 
+// Don't forget to unmem.
+f32* tensorToHostMemory( const tensor* t ){
+  if( t == NULL )
+    error( "Tensor is NULL." );
+
+  // Calculate the smallest square dimensions
+  u32 size = t->size;
+  u32 width = ceil( sqrt( (double)size ) );
+  u32 height = ( size + width - 1 ) / width;
+
+  // Allocate memory for the host data
+  f32* hostData = mem( size, f32 );
+  if( hostData == NULL )
+    error( "Failed to allocate host memory." );
+
+  // Allocate temporary buffer for RGBA texture data
+  f32* tempData = mem( width * height * 4, f32 ); // RGBA channels
+  if( tempData == NULL ){
+    unmem( hostData );
+    error( "Failed to allocate temporary buffer." );
+  }
+
+  // Bind framebuffer and read pixels from the texture
+  glBindFramebuffer( GL_FRAMEBUFFER, t->framebuffer );
+  glReadPixels( 0, 0, width, height, GL_RGBA, GL_FLOAT, tempData );
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+  // Extract the actual tensor data
+  memcpy( hostData, tempData, size * sizeof( f32 ) );
+
+  // Free the temporary buffer
+  unmem( tempData );
+
+  return hostData;
+}
+
+
 tensor* newTensor( u32 rank, u32* shape, f32* data ){
   tensor* ret = mem( 1, tensor );
 
-  if( rank ){
-    if( !shape )
-      error( "A tensor with non-zero rank was given with no shape." );
-    ret->rank = rank;
-    u32 size = 1;
-    for( int i = rank - 1; i >= 0; --i ){
-      ret->strides[ i ] = size;
-      size *= shape[ i ];
-    }
-    ret->size = size;
-    memcpy( ret->shape, shape, sizeof( u32 ) * rank );
-    ret->data = mem( size, f32 );
-    memcpy( ret->data, data, sizeof( f32 ) * size );
-  } else {
-    ret->rank = 0;
-    ret->size = 1;
-    ret->data = mem( 1, f32 );
-    *(ret->data) = *data;
+  if( rank > 4 )
+    error( "Rank exceeds maximum of 4." );
+
+  // Initialize basic properties
+  ret->rank = rank;
+  ret->size = 1;
+  for( u32 i = 0; i < rank; ++i ){
+    ret->shape[ i ] = shape[ i ];
+    ret->strides[ i ] = ret->size;
+    ret->size *= shape[ i ];
   }
+  for( u32 i = rank; i < 4; ++i ){
+    ret->shape[ i ] = 0;
+    ret->strides[ i ] = 0;
+  }
+
+  // Compute the smallest square dimensions
+  u32 size = ret->size;
+  u32 width = ceil( sqrt( (double)size ) ); // Start with a square root estimate
+  u32 height = ( size + width - 1 ) / width; // Ensure it fits the data
+
+  // Create OpenGL texture
+  glGenTextures( 1, &ret->texture);
+  glBindTexture( GL_TEXTURE_2D, ret->texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, 34836, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glBindTexture( GL_TEXTURE_2D, 0 );
+
+  // Create framebuffer
+  glGenFramebuffers( 1, &ret->framebuffer);
+  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
+
+  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+    error( "Framebuffer is not complete." );
+  
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+  
+  if( !data )
+    error( "Null data!" );
+
+  glBindTexture( GL_TEXTURE_2D, ret->texture );
+  
+  // Prepare temporary buffer to fit the texture size
+  f32* paddedData = (f32*)calloc(width * height * 4, sizeof(f32)); // RGBA channels
+  memcpy( paddedData, data, size * sizeof(f32) ); // Copy data to padded buffer
+  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, paddedData );
+  free( paddedData );
+  glBindTexture( GL_TEXTURE_2D, 0 );
+
   return ret;
+}
+void deleteTensor( tensor* t ){
+  if( t == NULL )
+    return;
+  if( t->texture ){
+    glDeleteTextures( 1, &t->texture );
+    t->texture = 0;
+  }
+  if( t->framebuffer ){
+    glDeleteFramebuffers( 1, &t->framebuffer );
+    t->framebuffer = 0;
+  }
+
+  // Free the tensor structure memory
+  unmem( t );
 }
 
 void push( tensorStack* ts, u32 rank, u32* shape, f32* data ){
@@ -44,125 +128,6 @@ void push( tensorStack* ts, u32 rank, u32* shape, f32* data ){
   ts->stack[ ts->top++ ] = newTensor( rank, shape, data );
 }
 
-/* // Raises rank by 1 without deallocating data. */
-/* void enclose( tensor* t ){ */
-/*   if( !t->rank ){ */
-/*     t->rank = 1; */
-/*     t->shape = mem( 1, u32 ); */
-/*     *t->shape = 1; */
-/*     t->strides = mem( 1, u32 ); */
-/*     *t->strides = 1; */
-/*   } else { */
-/*     t->rank++; */
-/*     u32* np = mem( t->rank, u32 ); */
-/*     memcpy( np + 1, t->shape, sizeof( u32 ) * ( t->rank - 1 ) ); */
-/*     *np = 1; */
-/*     unmem( t->shape ); */
-/*     t->shape = np; */
-/*     np = mem( t->rank, u32 ); */
-/*     memcpy( np + 1, t->strides, sizeof( u32 ) * ( t->rank - 1 ) ); */
-/*     *np = *(np + 1); */
-/*     unmem( t->strides ); */
-/*     t->strides = np; */
-/*   } */
-/* } */
-    
-
-/* typedef struct{ */
-/*   u32 rank; */
-/*   u32 size; */
-/*   u32* shape; */
-/*   u32* strides; */
-/*   f32* data; */
-/* } tensor; */
-// This pushes a new tensor onto the stack that is tensor t indexed by index.
-/* void tensorIndex( tensorStack* ts, u32 indexIndex, u32 tIndex ){ */
-/*   if( indexIndex >= ts->top || tIndex >= ts->top ) */
-/*     error( "Stack index out of range in tensorIndex." ); */
-/*   tensor* indexTensor = ts->stack[ indexIndex ]; */
-/*   tensor* t = ts->stack[ tIndex ]; */
-/*   if( indexTensor->rank < 2 ) */
-/*     error( "Index must be at least rank 2." ); */
-/*   if( t->rank < 1 ) */
-/*     error( "Cannot index singleton." ); */
-
-/*   u32 bytesPerIndex = indexTensor->shape[ indexTensor->rank - 1 ]; */
-/*   u32 rankReduction = indexTensor->shape[ indexTensor->rank - 2 ]; */
-/*   if( rankReduction > t->rank ) */
-/*     error( "Index tensor rank reduction greater than target rank." ); */
-/*   tensor* ret = mem( 1, tensor ); */
-/*   ret->rank = ( t->rank - rankReduction ) + ( indexTensor->rank - 2 ); */
-/*   for( u32 i = 0; i < ( indexTensor->rank - 2 ); ++i ) */
-/*     ret->shape[ i ] = indexTensor->shape[ i ]; */
-/*   for( u32 i = ( indexTensor->rank - 2 ); i < ret->rank; ++i ) */
-/*     ret->shape[ i ] = t->shape[ ( i - ( indexTensor->rank - 2 ) ) + rankReduction ]; */
-/*   for( int i = ret->rank - 1, m = 1; i >= 0; m *= ret->shape[ i-- ] ) */
-/*     ret->strides[ i ] = m; */
-/*   ret->size = ret->rank ? ret->strides[ 0 ] * ret->shape[ 0 ] : 1; */
-/*   ret->data = mem( ret->size, f32 ); */
-
-/*   // Allocate arrays for indices */
-/*   u32* ret_indices = malloc( ret->rank * sizeof( u32 ) ); */
-/*   u32* t_indices = malloc( t->rank * sizeof( u32 ) ); */
-  
-/*   // Iterate over each element in ret->data */
-/*   for( u32 idx = 0; idx < ret->size; ++idx ){ */
-/*     u32 temp_idx = idx; */
-
-/*     for( u32 i = 0; i < ret->rank; ++i ) { */
-/*       ret_indices[ i ] = temp_idx / ret->strides[ i ]; */
-/*       temp_idx %= ret->strides[ i ]; */
-/*     } */
-
-/*     u32 indexTensor_indices[ indexTensor->rank ]; */
-/*     for( u32 i = 0; i < indexTensor->rank - 2; ++i ) { */
-/*       indexTensor_indices[ i ] = ret_indices[ i ]; */
-/*     } */
-
-/*     for( u32 k = 0; k < rankReduction; ++k ) { */
-/*       u32 index = 0; */
-
-/*       for( u32 b = 0; b < bytesPerIndex; ++b ) { */
-/* 	// Set the indices for rank reduction and bytes per index dimensions */
-/* 	indexTensor_indices[ indexTensor->rank - 2 ] = k;   */
-/* 	indexTensor_indices[ indexTensor->rank - 1 ] = b;  */
-
-/* 	// Compute flat index into indexTensor->data */
-/* 	u32 indexTensor_flat_idx = 0; */
-/* 	for( u32 i = 0; i < indexTensor->rank; ++i ) { */
-/* 	  indexTensor_flat_idx += indexTensor_indices[ i ] * */
-/* 	    indexTensor->strides[ i ]; */
-/* 	} */
-/* 	f32 byte = indexTensor->data[ indexTensor_flat_idx ]; */
-/* 	index |= ( (u32)byte ) << ( b * 8 ); */
-/*       } */
-
-/*       t_indices[ k ] = index; */
-/*     } */
-/*     // Map remaining indices from ret_indices to t_indices */
-/*     for( u32 k = rankReduction; k < t->rank; ++k ){ */
-/*       u32 ret_idx = ( indexTensor->rank - 2 ) + ( k - rankReduction ); */
-/*       t_indices[ k ] = ret_indices[ ret_idx ]; */
-/*     } */
-
-/*     u32 t_offset = 0; */
-/*     for( u32 i = 0; i < t->rank; ++i ){ */
-/*       t_offset += t_indices[ i ] * t->strides[ i ]; */
-/*     }  */
-
-/*     ret->data[ idx ] = t->data[ t_offset ]; */
-/*   } */
-/*   free( ret_indices ); */
-/*   free( t_indices ); */
-
-/*   ts->stack[ ts->top++ ] = ret; */
-/* } */
-
-void deleteTensor( tensor* t ){
-  if( t->data )
-    unmem( t->data );
-  unmem( t );
-}
 
 void pop( tensorStack* ts ){
   if( !ts->top )

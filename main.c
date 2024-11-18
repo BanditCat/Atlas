@@ -7,7 +7,7 @@ u64 memc = 0;
 
 // Global variables
 SDL_Window* window = NULL;
-SDL_GLContext glContext;
+SDL_GLContext glContext; 
 GLuint shaderProgram; 
 GLuint vbo;
 float zoom = 1.0f;
@@ -47,7 +47,7 @@ const GLchar* fragmentSource =
   "    iterations++;\n"
   "  }\n"
   "  float color = float( iterations ) / float( maxIterations );\n"
-  "  gl_FragColor = vec4( vec3(color), 1.0 );\n"
+  "  gl_FragColor = vec4( 0.0, color, 0.0, 1.0 );\n"
   "}\n";
 
 // Function to compile shaders
@@ -232,7 +232,7 @@ int main( int argc, char* argv[] ) {
 
 
 void test(){
-  f32 data[] = { 1, 2, 3, 4, 7, 6, 7, 8, 9, 10, 11, 12 };
+  f32 data[] = { 1, 2, 3, 4, 7, 6, 7.7, 8, 9, 10, 11, 12 };
   u32 shape1[] = { 2, 2, 3 };
   u32 shape2[] = { 3, 2, 2 };
   u32 shape3[] = { 2, 1, 2, 3 };

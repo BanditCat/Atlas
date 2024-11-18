@@ -401,7 +401,7 @@ char* formatTensorData( const tensor* t ){
   u32 shapeArg_length = t->rank;
   u32 const* shapeArg = t->shape;
   u32 data_length = t->size;
-  f32* data = t->data;
+  f32* data = tensorToHostMemory( t );
   
   u32 shape_length = shapeArg_length + 1;
   u32* shape = (u32*)mem( shape_length, u32 );
@@ -421,5 +421,6 @@ char* formatTensorData( const tensor* t ){
   char* result = helper( 0, 0, 0, shape, shape_length, data, data_length,
 			 maxNumLength );
   unmem( shape );
+  unmem( data );
   return result; // Remember to free this string after use
 }
