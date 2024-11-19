@@ -38,7 +38,7 @@ f32* tensorToHostMemory( const tensor* t ){
   return hostData;
 }
 
-GLuint makeInitializer( const char* glsl ){
+GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that stores buffer, program, uniform locs, etc.
   // Vertex shader source (simple pass-through)
   const char* vertexShaderSource = "\
     #version 300 es\n\
@@ -55,11 +55,27 @@ GLuint makeInitializer( const char* glsl ){
     precision highp float;\n\
     out vec4 fragColor;\n\
     uniform vec2 dims; // Texture dimensions\n\
+    uniform vec4 strides; // Tensor shape\n\
+    vec4 toTensorIndices( float i ) {\n\
+      vec4 ret;\n\
+      ret.x = floor(i / strides.w);\n\
+      i -= ret.x * strides.w;\n\
+      ret.y = floor(i / strides.z);\n\
+      i -= ret.y * strides.z;\n\
+      ret.z = floor(i / strides.y);\n\
+      i -= ret.z * strides.y;\n\
+      ret.w = i;\n\
+      return ret;\n\
+    }\n\
     void main() {\n\
       float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * dims.x ) * 4.0;\n\
+      vec4 t = toTensorIndices( i );\n\
       float r = (%s); ++i;\n\
+      t = toTensorIndices( i );\n\
       float g = (%s); ++i;\n\
+      t = toTensorIndices( i );\n\
       float b = (%s); ++i;\n\
+      t = toTensorIndices( i );\n\
       float a = (%s);\n\
       fragColor = vec4( r, g, b, a );\n\
     }\n\
@@ -80,8 +96,8 @@ GLuint makeInitializer( const char* glsl ){
   GLint status;
   glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
-    static char msg[ 512 ];
-    char log[ 512 ];
+    static char msg[ 65536 ];
+    char log[ 65536 ];
     glGetShaderInfoLog( vertexShader, sizeof( log ), NULL, log );
     snprintf( msg, sizeof( msg ), "Vertex shader compilation failed: %s", log );
     glDeleteShader( vertexShader );
@@ -151,8 +167,8 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
     ret->size *= shape[ i ];
   }
   for( u32 i = rank; i < 4; ++i ){
-    ret->shape[ i ] = 0;
-    ret->strides[ i ] = 0;
+    ret->shape[ i ] = 1;
+    ret->strides[ i ] = i ? ret->strides[ i - 1 ] : 1;
   }
 
   // Compute the smallest square dimensions
@@ -222,8 +238,8 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
     ret->size *= shape[ i ];
   }
   for( u32 i = rank; i < 4; ++i ){
-    ret->shape[ i ] = 0;
-    ret->strides[ i ] = 0;
+    ret->shape[ i ] = 1;
+    ret->strides[ i ] = i ? ret->strides[ i - 1 ] : 1;
   }
 
   // Compute the smallest square dimensions
@@ -267,6 +283,11 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
   GLint dimsLocation = glGetUniformLocation( initializer, "dims" );
   if( dimsLocation != -1 )
     glUniform2f( dimsLocation, (f32)ret->width, (f32)ret->height );
+  // Set uniforms if necessary
+  GLint stridesLocation = glGetUniformLocation( initializer, "strides" );
+  if( stridesLocation != -1 )
+    glUniform4f( stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
+		 (f32)ret->strides[ 2 ], (f32)ret->strides[ 3 ] );
 
   // Set up vertex data for a full-screen quad
   f32 vertices[] = {
