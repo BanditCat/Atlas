@@ -60,8 +60,8 @@ GLuint compileShader( GLenum type, const GLchar* source ) {
     GLint status;
     glGetShaderiv( shader, GL_COMPILE_STATUS, &status );
     if( status != GL_TRUE ) {
-        char buffer[512];
-        glGetShaderInfoLog( shader, 512, NULL, buffer );
+        char buffer[ 65536 ];
+        glGetShaderInfoLog( shader, sizeof( buffer ), NULL, buffer );
         printf("Shader compilation failed: %s\n", buffer );
     }
     return shader;
@@ -242,29 +242,33 @@ void test(){
   u32 shape7[] = { 12, 1 };
   tensorStack* ts = newStack();
 
-  push( ts, 3, shape1, data );
-  push( ts, 3, shape2, data );
-  push( ts, 4, shape3, data );
-  push( ts, 2, shape4, data );
-  push( ts, 2, shape5, data );
-  push( ts, 2, shape6, data );
-  push( ts, 2, shape7, data );
-  push( ts, 0, NULL, data );
+  push( ts, newTensor( 3, shape1, data ) );
+  push( ts, newTensor( 3, shape2, data ) );
+  push( ts, newTensor( 4, shape3, data ) );
+  push( ts, newTensor( 2, shape4, data ) );
+  push( ts, newTensor( 2, shape5, data ) );
+  push( ts, newTensor( 2, shape6, data ) );
+  push( ts, newTensor( 2, shape7, data ) );
+  push( ts, newTensor( 0, NULL, data ) );
 
-  //  printStack( ts );
+ printStack( ts );
 
   pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
   printf( "\n\n\n\n\n\n\n\n" );
   
   f32 d2[] = { 222, 250, 1, 2, 3, 4 }; 
   u32 shape8[] = { 3, 2, 1 }; 
-  push( ts, 3, shape8, d2 ); 
+  push( ts, newTensor( 3, shape8, d2 ) );
   //  printStack( ts ); fflush( stdout );
   //  tensorIndex( ts, ts->top - 1, ts->top - 2 );
   u32 shape9[] = { 3, 2, 1 };
   tensorReshape( ts, ts->top - 1, 3, shape9 );
+  GLuint p = makeInitializer( "2.1 + i" );
+  push( ts, newTensorInitialized( 3, (u32[]){ 2, 2, 2 }, p ) );
+  // glDeleteProgram( p );
   printStack( ts );
-
+  
+  
   /* u8 d3[] = { 0 }; */
   /* u32 shape9[] = { 1 }; */
   /* push( ts, 1, shape9, d3 ); */

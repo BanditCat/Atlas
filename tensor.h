@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4-o1 etc.  //
+// Copyright © 2024 Jon DuBois. Written with the assistance of o1-preview etc.//
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -23,8 +23,10 @@ typedef struct{
 f32* tensorToHostMemory( const tensor* t );
 tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u32* shape, f32* data );
+GLuint makeInitializer( const char* glsl );
+tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer );
 void deleteStack( tensorStack* ts );
-void push( tensorStack* ts, u32 rank, u32* shape, f32* data );
+void push( tensorStack* ts, tensor* t );
 void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );
 void pop( tensorStack* ts );
 // Functions for printing tensors.

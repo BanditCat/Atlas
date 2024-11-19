@@ -38,7 +38,104 @@ f32* tensorToHostMemory( const tensor* t ){
   return hostData;
 }
 
+GLuint makeInitializer( const char* glsl ){
+  // Vertex shader source (simple pass-through)
+  const char* vertexShaderSource = "\
+    #version 300 es\n\
+    precision highp float;\n\
+    in vec2 a_position;\n\
+    void main() {\n\
+      gl_Position = vec4(a_position, 0.0, 1.0);\n\
+    }\n\
+  ";
 
+  // Fragment shader template
+  const char* fragmentShaderTemplate = "\
+    #version 300 es\n\
+    precision highp float;\n\
+    out vec4 fragColor;\n\
+    uniform vec2 dims; // Texture dimensions\n\
+    void main() {\n\
+      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * dims.x ) * 4.0;\n\
+      float r = (%s); ++i;\n\
+      float g = (%s); ++i;\n\
+      float b = (%s); ++i;\n\
+      float a = (%s);\n\
+      fragColor = vec4( r, g, b, a );\n\
+    }\n\
+  ";
+
+  // Buffer to hold the final fragment shader source
+  char fragmentShaderSource[ 65536 ]; // Adjust size as needed
+  int len = snprintf( fragmentShaderSource, sizeof( fragmentShaderSource ), fragmentShaderTemplate, glsl, glsl, glsl, glsl );
+  if( len < 0 || len >= sizeof( fragmentShaderSource ) )
+    error( "Shader source exceeds buffer size." );
+
+  // Compile the vertex shader
+  GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
+  glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
+  glCompileShader( vertexShader );
+
+  // Check for vertex shader compilation errors
+  GLint status;
+  glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &status );
+  if( status != GL_TRUE ){
+    static char msg[ 512 ];
+    char log[ 512 ];
+    glGetShaderInfoLog( vertexShader, sizeof( log ), NULL, log );
+    snprintf( msg, sizeof( msg ), "Vertex shader compilation failed: %s", log );
+    glDeleteShader( vertexShader );
+    error( msg );
+  }
+
+  // Compile the fragment shader
+  GLuint fragmentShader = glCreateShader( GL_FRAGMENT_SHADER );
+  const char* p = fragmentShaderSource;
+  glShaderSource( fragmentShader, 1, &p, NULL );
+  glCompileShader( fragmentShader );
+
+  // Check for fragment shader compilation errors
+  glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &status );
+  if( status != GL_TRUE ){
+    static char msg[ 512 ];
+    char log[ 512 ];
+    glGetShaderInfoLog( fragmentShader, sizeof( log ), NULL, log );
+    snprintf( msg, sizeof( msg ), "Fragment shader compilation failed: %s", log );
+    glDeleteShader( fragmentShader );
+    glDeleteShader( vertexShader );
+    error( msg );
+  }
+
+  // Create the program and attach both shaders
+  GLuint program = glCreateProgram();
+  glAttachShader( program, vertexShader );
+  glAttachShader( program, fragmentShader );
+
+  // Bind attribute locations (if any)
+  glBindAttribLocation( program, 0, "a_position" );
+
+  // Link the program
+  glLinkProgram( program );
+
+  // Check for linking errors
+  glGetProgramiv( program, GL_LINK_STATUS, &status );
+  if( status != GL_TRUE ){
+    static char msg[ 512 ];
+    char log[ 512 ];
+    glGetProgramInfoLog( program, sizeof( log ), NULL, log );
+    snprintf( msg, sizeof( msg ), "Program linking failed: %s", log );
+    glDeleteProgram( program );
+    glDeleteShader( vertexShader );
+    glDeleteShader( fragmentShader );
+    error( msg );
+  }
+
+  // Cleanup shaders (they're no longer needed once the program is linked)
+  glDeleteShader( vertexShader );
+  glDeleteShader( fragmentShader );
+
+  return program;
+}
 tensor* newTensor( u32 rank, u32* shape, f32* data ){
   tensor* ret = mem( 1, tensor );
 
@@ -110,8 +207,102 @@ void deleteTensor( tensor* t ){
   // Free the tensor structure memory
   unmem( t );
 }
+tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
+  tensor* ret = mem( 1, tensor );
 
-void push( tensorStack* ts, u32 rank, u32* shape, f32* data ){
+  if( rank > 4 )
+    error( "Rank exceeds maximum of 4." );
+
+  // Initialize basic properties
+  ret->rank = rank;
+  ret->size = 1;
+  for( u32 i = 0; i < rank; ++i ){
+    ret->shape[ i ] = shape[ i ];
+    ret->strides[ i ] = ret->size;
+    ret->size *= shape[ i ];
+  }
+  for( u32 i = rank; i < 4; ++i ){
+    ret->shape[ i ] = 0;
+    ret->strides[ i ] = 0;
+  }
+
+  // Compute the smallest square dimensions
+  u32 pixels = ( ret->size + 3 ) / 4;
+  ret->width = (u32)ceilf( sqrtf( (f32)pixels ) );
+  ret->height = ( pixels + ret->width - 1 ) / ret->width;
+
+  // Create OpenGL texture
+  glGenTextures( 1, &ret->texture );
+  glBindTexture( GL_TEXTURE_2D, ret->texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glBindTexture( GL_TEXTURE_2D, 0 );
+
+  // Create framebuffer
+  glGenFramebuffers( 1, &ret->framebuffer );
+  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
+
+  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+    error( "Framebuffer is not complete." );
+
+  // Save current OpenGL states
+  GLint prevFramebuffer;
+  glGetIntegerv( GL_FRAMEBUFFER_BINDING, &prevFramebuffer );
+
+  GLint prevViewport[4];
+  glGetIntegerv( GL_VIEWPORT, prevViewport );
+
+  GLint prevProgram;
+  glGetIntegerv( GL_CURRENT_PROGRAM, &prevProgram );
+
+  // Use the initializer program to render to the texture
+  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
+  glViewport( 0, 0, ret->width, ret->height );
+
+  glUseProgram( initializer );
+
+  // Set uniforms if necessary
+  GLint dimsLocation = glGetUniformLocation( initializer, "dims" );
+  if( dimsLocation != -1 )
+    glUniform2f( dimsLocation, (f32)ret->width, (f32)ret->height );
+
+  // Set up vertex data for a full-screen quad
+  f32 vertices[] = {
+    -1.0f, -1.0f, // Bottom left
+     1.0f, -1.0f, // Bottom right
+    -1.0f,  1.0f, // Top left
+     1.0f,  1.0f  // Top right
+  };
+
+  // Generate and bind the VBO
+  GLuint VBO;
+  glGenBuffers( 1, &VBO );
+  glBindBuffer( GL_ARRAY_BUFFER, VBO );
+  glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
+
+  // Enable the vertex attribute and set up the pointer
+  glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position
+  glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, (void* )0 );
+
+  // Draw the quad
+  glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+
+  // Clean up VBO
+  glDisableVertexAttribArray( 0 );
+  glBindBuffer( GL_ARRAY_BUFFER, 0 );
+  glDeleteBuffers( 1, &VBO );
+
+  // Restore previous OpenGL states
+  glUseProgram( prevProgram );
+  glViewport( prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3] );
+  glBindFramebuffer( GL_FRAMEBUFFER, prevFramebuffer );
+
+  return ret;
+}
+
+void push( tensorStack* ts, tensor* t ){
   // Grow stack if necessary. 
   if( ts->top >= ts->size ){
     ts->size *= 2;
@@ -120,7 +311,7 @@ void push( tensorStack* ts, u32 rank, u32* shape, f32* data ){
     unmem( ts->stack );
     ts->stack = ns;
   }
-  ts->stack[ ts->top++ ] = newTensor( rank, shape, data );
+  ts->stack[ ts->top++ ] = t;
 }
 
 
