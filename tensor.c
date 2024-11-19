@@ -59,7 +59,7 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
     vec4 toTensorIndices( float i ) {\n\
       vec4 ret;\n\
       ret.w = floor(i / strides.w);\n\
-      i -= ret.w * strides.w;\n			\
+      i -= ret.w * strides.w;\n\
       ret.z = floor(i / strides.z);\n\
       i -= ret.z * strides.z;\n\
       ret.y = floor(i / strides.y);\n\
@@ -164,7 +164,7 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   for( u32 i = 0; i < rank; ++i ){
     ret->shape[ i ] = shape[ i ];
     ret->strides[ i ] = ret->size;
-    ret->size *= shape[ i ];
+    ret->size *= shape[ rank - i - 1 ];
   }
   for( u32 i = rank; i < 4; ++i ){
     ret->shape[ i ] = 1;
@@ -235,7 +235,7 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
   for( u32 i = 0; i < rank; ++i ){
     ret->shape[ i ] = shape[ i ];
     ret->strides[ i ] = ret->size;
-    ret->size *= shape[ i ];
+    ret->size *= shape[ rank - i - 1 ];
   }
   for( u32 i = rank; i < 4; ++i ){
     ret->shape[ i ] = 1;
@@ -389,7 +389,7 @@ void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   u32 size = 1;
   for( int i = 0; i < newRank; ++i ){
     t->strides[ i ] = size;
-    size *= newShape[ i ];
+    size *= newShape[ newRank - i - 1 ];
   }
 
   t->rank = newRank;
