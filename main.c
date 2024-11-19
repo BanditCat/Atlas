@@ -12,7 +12,7 @@ GLuint shaderProgram;
 GLuint vbo;
 float zoom = 1.0f;
 float offsetX = -0.5f, offsetY = 0.0f; // Centered on Mandelbrot set
-int windowWidth = 800, windowHeight = 600;
+int windowWidth = 800, windowHeight = 600; 
 bool running = true;
 
 // Vertex Shader Source
@@ -60,7 +60,7 @@ GLuint compileShader( GLenum type, const GLchar* source ) {
     GLint status;
     glGetShaderiv( shader, GL_COMPILE_STATUS, &status );
     if( status != GL_TRUE ) {
-        char buffer[ 65536 ];
+        char buffer[ 1024 ];
         glGetShaderInfoLog( shader, sizeof( buffer ), NULL, buffer );
         printf("Shader compilation failed: %s\n", buffer );
     }
@@ -83,7 +83,7 @@ GLuint createProgram( const GLchar* vertexSource,
     GLint status;
     glGetProgramiv( program, GL_LINK_STATUS, &status );
     if( status != GL_TRUE ) {
-        char buffer[512];
+        char buffer[ 1024 ];
         glGetProgramInfoLog( program, 512, NULL, buffer );
         printf("Program linking failed: %s\n", buffer );
     }

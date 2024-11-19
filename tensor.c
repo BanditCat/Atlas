@@ -82,9 +82,10 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
   ";
 
   // Buffer to hold the final fragment shader source
-  char fragmentShaderSource[ 65536 ]; // Adjust size as needed
-  int len = snprintf( fragmentShaderSource, sizeof( fragmentShaderSource ), fragmentShaderTemplate, glsl, glsl, glsl, glsl );
-  if( len < 0 || len >= sizeof( fragmentShaderSource ) )
+  u32 bufsize = 65536;
+  char* fragmentShaderSource = mem( bufsize, char ); // Adjust size as needed
+  int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, glsl, glsl, glsl, glsl );
+  if( len < 0 || len >= bufsize )
     error( "Shader source exceeds buffer size." );
 
   // Compile the vertex shader
@@ -96,8 +97,8 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
   GLint status;
   glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
-    static char msg[ 65536 ];
-    char log[ 65536 ];
+    static char msg[ 2048 ];
+    char log[ 1024 ];
     glGetShaderInfoLog( vertexShader, sizeof( log ), NULL, log );
     snprintf( msg, sizeof( msg ), "Vertex shader compilation failed: %s", log );
     glDeleteShader( vertexShader );
@@ -109,7 +110,8 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
   const char* p = fragmentShaderSource;
   glShaderSource( fragmentShader, 1, &p, NULL );
   glCompileShader( fragmentShader );
-
+  unmem( fragmentShaderSource );
+  
   // Check for fragment shader compilation errors
   glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
