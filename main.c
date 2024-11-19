@@ -263,8 +263,8 @@ void test(){
   //  tensorIndex( ts, ts->top - 1, ts->top - 2 );
   u32 shape9[] = { 3, 2, 1 };
   tensorReshape( ts, ts->top - 1, 3, shape9 );
-  GLuint p = makeInitializer( "t.x * 1000.0 + t.y * 100.0 + t.z * 10.0 + t.w" );
-  push( ts, newTensorInitialized( 4, (u32[]){ 2, 2, 2, 2 }, p ) );
+  GLuint p = makeInitializer( "t.y * 1000.0 + t.x * 100.0 + t.z * 10.0 + t.w" );
+  push( ts, newTensorInitialized( 2, (u32[]){ 2, 3 }, p ) );
   glDeleteProgram( p );
   printStack( ts );
   

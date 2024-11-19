@@ -58,13 +58,13 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
     uniform vec4 strides; // Tensor shape\n\
     vec4 toTensorIndices( float i ) {\n\
       vec4 ret;\n\
-      ret.x = floor(i / strides.w);\n\
-      i -= ret.x * strides.w;\n\
-      ret.y = floor(i / strides.z);\n\
-      i -= ret.y * strides.z;\n\
-      ret.z = floor(i / strides.y);\n\
-      i -= ret.z * strides.y;\n\
-      ret.w = i;\n\
+      ret.w = floor(i / strides.w);\n\
+      i -= ret.w * strides.w;\n			\
+      ret.z = floor(i / strides.z);\n\
+      i -= ret.z * strides.z;\n\
+      ret.y = floor(i / strides.y);\n\
+      i -= ret.y * strides.y;\n\
+      ret.x = i;\n\
       return ret;\n\
     }\n\
     void main() {\n\
@@ -168,7 +168,7 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   }
   for( u32 i = rank; i < 4; ++i ){
     ret->shape[ i ] = 1;
-    ret->strides[ i ] = i ? ret->strides[ i - 1 ] : 1;
+    ret->strides[ i ] = ret->size;
   }
 
   // Compute the smallest square dimensions
@@ -239,7 +239,7 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
   }
   for( u32 i = rank; i < 4; ++i ){
     ret->shape[ i ] = 1;
-    ret->strides[ i ] = i ? ret->strides[ i - 1 ] : 1;
+    ret->strides[ i ] = ret->size;
   }
 
   // Compute the smallest square dimensions
@@ -387,7 +387,7 @@ void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   
   memcpy( t->shape, newShape, sizeof( u32 ) * newRank );
   u32 size = 1;
-  for( int i = newRank - 1; i >= 0; --i ){
+  for( int i = 0; i < newRank; ++i ){
     t->strides[ i ] = size;
     size *= newShape[ i ];
   }
