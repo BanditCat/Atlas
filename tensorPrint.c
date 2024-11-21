@@ -132,7 +132,7 @@ char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32* strides, u32
       u32 numStr_len = strlen( numStr );
 
       // Pad the number string to maxNumLength
-      u32 pad_len = maxNumLength - numLength( data[ offset + i ] );
+      u32 pad_len = maxNumLength - numLength( data[ translatedIndex ] );
       // Use numLength for correct padding
       memcpy( ptr, numStr, numStr_len );
       ptr += numStr_len;

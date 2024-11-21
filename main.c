@@ -269,7 +269,7 @@ void test(){
   push( ts, newTensorInitialized( 4, (u32[]){ 3, 2, 4, 2 }, p ) );
   deleteInitializer( p );
   printStack( ts );
-  //tensorTranspose( ts, ts->top - 1, 0, 1 );
+  tensorTranspose( ts, ts->top - 1, 2, 3 );
   printStack( ts );
   
   /* u8 d3[] = { 0 }; */
