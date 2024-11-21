@@ -47,6 +47,8 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   // Initialize basic properties
   ret->rank = rank;
   ret->size = 1;
+  ret->offset = 0;
+  ret->ownsData = true;
   for( u32 i = 0; i < rank; ++i ){
     ret->shape[ i ] = shape[ i ];
     ret->strides[ rank - i - 1 ] = ret->size;
@@ -97,16 +99,16 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
 void deleteTensor( tensor* t ){
   if( t == NULL )
     return;
-  if( t->texture ){
-    glDeleteTextures( 1, &t->texture );
-    t->texture = 0;
+  if( t->ownsData ){
+    if( t->texture ){
+      glDeleteTextures( 1, &t->texture );
+      t->texture = 0;
+    }
+    if( t->framebuffer ){
+      glDeleteFramebuffers( 1, &t->framebuffer );
+      t->framebuffer = 0;
+    }
   }
-  if( t->framebuffer ){
-    glDeleteFramebuffers( 1, &t->framebuffer );
-    t->framebuffer = 0;
-  }
-
-  // Free the tensor structure memory
   unmem( t );
 }
 initializer* makeInitializer( const char* glsl ){ // TODO make initializer struct that stores buffer, program, uniform locs, etc.
@@ -257,6 +259,8 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
   // Initialize basic properties
   ret->rank = rank;
   ret->size = 1;
+  ret->offset = 0;
+  ret->ownsData = true;
   for( u32 i = 0; i < rank; ++i ){
     ret->shape[ i ] = shape[ i ];
     ret->strides[ rank - i - 1 ] = ret->size;
@@ -354,7 +358,7 @@ void printStack( const tensorStack* ts ){
       printf( " %u", t->shape[ j ] );
     printf( "\nStrides:" );
     for( u32 j = 0; j < t->rank; ++j )
-      printf( " %u", t->strides[ j ] );
+      printf( " %i", t->strides[ j ] );
     if( t->size < 256 ){
       char* fd = formatTensorData( t );
       printf( "\n%s\n\n", fd );
@@ -398,4 +402,14 @@ void tensorTransposeHelper( tensor* t, u32 axis1, u32 axis2 ){
 }
 void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 ){
   tensorTransposeHelper( ts->stack[ index ], axis1, axis2 );
+}
+
+void tensorReverseHelper( tensor* t, u32 axis ){
+  if( axis > 3 )
+    error( "Invalid axis in reverse." );
+  t->offset += t->strides[ axis ] * ( t->shape[ axis ] - 1 );
+  t->strides[ axis ] = -t->strides[ axis ];
+}
+void tensorReverse( tensorStack* ts, u32 index, u32 axis ){
+  tensorReverseHelper( ts->stack[ index ], axis );
 }

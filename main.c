@@ -51,7 +51,7 @@ const GLchar* fragmentSource =
   "}\n";
 
 // Function to compile shaders
-GLuint compileShader( GLenum type, const GLchar* source ) {
+GLuint compileShader( GLenum type, const GLchar* source ){
     GLuint shader = glCreateShader( type );
     glShaderSource( shader, 1, &source, NULL );
     glCompileShader( shader );
@@ -266,10 +266,13 @@ void test(){
   u32 shape9[] = { 3, 2, 1 };
   tensorReshape( ts, ts->top - 1, 3, shape9 );
   initializer* p = makeInitializer( "t.x * 1000.0 + t.y * 100.0 + t.z * 10.0 + t.w" );
-  push( ts, newTensorInitialized( 4, (u32[]){ 3, 2, 4, 2 }, p ) );
+  push( ts, newTensorInitialized( 2, (u32[]){ 4, 2 }, p ) );
   deleteInitializer( p );
   printStack( ts );
   tensorTranspose( ts, ts->top - 1, 2, 3 );
+  printStack( ts );
+  tensorReverse( ts, ts->top - 1, 3 );
+  tensorReverse( ts, ts->top - 1, 0 );
   printStack( ts );
   
   /* u8 d3[] = { 0 }; */
