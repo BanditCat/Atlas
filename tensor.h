@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-typedef struct {
+typedef struct{
   u32 rank;              // Rank of the tensor (0 to 4)
   u32 size;              // Total number of elements
   u32 shape[4];          // Dimensions of the tensor
@@ -12,6 +12,13 @@ typedef struct {
   GLuint texture;        // OpenGL texture for reading/writing operations
   GLuint framebuffer;    // Framebuffer for rendering into the texture
 } tensor;
+
+typedef struct{
+  GLuint program;
+  GLuint dimsLocation;
+  GLuint stridesLocation;
+  GLuint VBO;
+} initializer;
 
 typedef struct{
   u32 size;
@@ -23,11 +30,13 @@ typedef struct{
 f32* tensorToHostMemory( const tensor* t );
 tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u32* shape, f32* data );
-GLuint makeInitializer( const char* glsl );
-tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer );
+initializer* makeInitializer( const char* glsl );
+void deleteInitializer( initializer* i );
+tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializer );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );
 void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );
+void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 ); 
 void pop( tensorStack* ts );
 // Functions for printing tensors.
 char* formatTensorData( const tensor* t );

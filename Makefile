@@ -3,7 +3,7 @@ EMCC = emcc
 CFLAGS = -Wall -O3
 CPPFLAGS = -MMD -MP -DSDL_MAIN_HANDLED
 LDFLAGS = -lopengl32 -lSDL2-static -luser32 -lgdi32 -lshell32 -lwinmm -lsetupapi -lole32 -ladvapi32 -limm32 -lversion -loleaut32 -Wl,-nodefaultlib:msvcrt 
-EMCCFLAGS = -O3 -s SAFE_HEAP=1 -s ASSERTIONS=2 -s WASM=1 -s USE_SDL=2 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s FULL_ES2=1
+EMCCFLAGS = -O3 -s WASM=1 -s USE_SDL=2 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s FULL_ES2=1
 TARGET = Atlas.exe
 HTML = index.html
 JS = $(HTML:.html=.js)
@@ -15,7 +15,7 @@ OBJS = $(SRCS:.c=.o)
 
 .PHONY: all rall clean backup release
 
-all: $(TARGET) $(HTML)
+all: $(TARGET)
 rall: all
 	./$(TARGET)
 

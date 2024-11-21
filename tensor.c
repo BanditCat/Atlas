@@ -38,8 +38,80 @@ f32* tensorToHostMemory( const tensor* t ){
   return hostData;
 }
 
-GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that stores buffer, program, uniform locs, etc.
+tensor* newTensor( u32 rank, u32* shape, f32* data ){
+  tensor* ret = mem( 1, tensor );
+
+  if( rank > 4 )
+    error( "Rank exceeds maximum of 4." );
+
+  // Initialize basic properties
+  ret->rank = rank;
+  ret->size = 1;
+  for( u32 i = 0; i < rank; ++i ){
+    ret->shape[ i ] = shape[ i ];
+    ret->strides[ rank - i - 1 ] = ret->size;
+    ret->size *= shape[ rank - i - 1 ];
+  }
+  for( u32 i = rank; i < 4; ++i ){
+    ret->shape[ i ] = 1;
+    ret->strides[ i ] = 1;
+  }
+
+  // Compute the smallest square dimensions
+  u32 pixels = ( ret->size + 3 ) / 4;
+  ret->width = ceilf( sqrtf( pixels ) ); // Start with a square root estimate
+  ret->height = ( pixels + ret->width - 1 ) / ret->width; // Ensure it fits the data
+  
+  // Create OpenGL texture
+  glGenTextures( 1, &ret->texture);
+  glBindTexture( GL_TEXTURE_2D, ret->texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glBindTexture( GL_TEXTURE_2D, 0 );
+
+  // Create framebuffer
+  glGenFramebuffers( 1, &ret->framebuffer);
+  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
+
+  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+    error( "Framebuffer is not complete." );
+  
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+  
+  if( !data )
+    error( "Null data!" );
+
+  glBindTexture( GL_TEXTURE_2D, ret->texture );
+  
+  // Prepare temporary buffer to fit the texture size
+  f32* paddedData = (f32*)calloc( ret->width * ret->height * 4, sizeof(f32)); // RGBA channels
+  memcpy( paddedData, data, ret->size * sizeof(f32) ); // Copy data to padded buffer
+  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, ret->width, ret->height, GL_RGBA, GL_FLOAT, paddedData );
+  free( paddedData );
+  glBindTexture( GL_TEXTURE_2D, 0 );
+
+  return ret;
+}
+void deleteTensor( tensor* t ){
+  if( t == NULL )
+    return;
+  if( t->texture ){
+    glDeleteTextures( 1, &t->texture );
+    t->texture = 0;
+  }
+  if( t->framebuffer ){
+    glDeleteFramebuffers( 1, &t->framebuffer );
+    t->framebuffer = 0;
+  }
+
+  // Free the tensor structure memory
+  unmem( t );
+}
+initializer* makeInitializer( const char* glsl ){ // TODO make initializer struct that stores buffer, program, uniform locs, etc.
   // Vertex shader source (simple pass-through)
+  initializer* ret = mem( 1, initializer );
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
@@ -58,13 +130,13 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
     uniform vec4 strides; // Tensor shape\n\
     vec4 toTensorIndices( float i ) {\n\
       vec4 ret;\n\
-      ret.w = floor(i / strides.w);\n\
-      i -= ret.w * strides.w;\n\
-      ret.z = floor(i / strides.z);\n\
-      i -= ret.z * strides.z;\n\
+      ret.x = floor(i / strides.x);\n\
+      i -= ret.x * strides.x;\n\
       ret.y = floor(i / strides.y);\n\
       i -= ret.y * strides.y;\n\
-      ret.x = i;\n\
+      ret.z = floor(i / strides.z);\n\
+      i -= ret.z * strides.z;\n\
+      ret.w = i;\n\
       return ret;\n\
     }\n\
     void main() {\n\
@@ -125,107 +197,58 @@ GLuint makeInitializer( const char* glsl ){ // TODO make initializer struct that
   }
 
   // Create the program and attach both shaders
-  GLuint program = glCreateProgram();
-  glAttachShader( program, vertexShader );
-  glAttachShader( program, fragmentShader );
+  ret->program = glCreateProgram();
+  glAttachShader( ret->program, vertexShader );
+  glAttachShader( ret->program, fragmentShader );
 
   // Bind attribute locations (if any)
-  glBindAttribLocation( program, 0, "a_position" );
+  glBindAttribLocation( ret->program, 0, "a_position" );
 
   // Link the program
-  glLinkProgram( program );
+  glLinkProgram( ret->program );
 
   // Check for linking errors
-  glGetProgramiv( program, GL_LINK_STATUS, &status );
+  glGetProgramiv( ret->program, GL_LINK_STATUS, &status );
   if( status != GL_TRUE ){
     static char msg[ 512 ];
     char log[ 512 ];
-    glGetProgramInfoLog( program, sizeof( log ), NULL, log );
+    glGetProgramInfoLog( ret->program, sizeof( log ), NULL, log );
     snprintf( msg, sizeof( msg ), "Program linking failed: %s", log );
-    glDeleteProgram( program );
+    glDeleteProgram( ret->program );
     glDeleteShader( vertexShader );
     glDeleteShader( fragmentShader );
     error( msg );
   }
 
+  // Set uniform locations and VBO.
+  ret->dimsLocation = glGetUniformLocation( ret->program, "dims" );
+  if( ret->dimsLocation == -1 )
+    error( "Failed to get uniform location for dims." );
+  ret->stridesLocation = glGetUniformLocation( ret->program, "strides" );
+  
+  f32 vertices[] = {
+    -1.0f, -1.0f,
+     1.0f, -1.0f,
+    -1.0f,  1.0f,
+     1.0f,  1.0f  
+  };
+
+  glGenBuffers( 1, &ret->VBO );
+  glBindBuffer( GL_ARRAY_BUFFER, ret->VBO );
+  glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
+
   // Cleanup shaders (they're no longer needed once the program is linked)
   glDeleteShader( vertexShader );
   glDeleteShader( fragmentShader );
 
-  return program;
-}
-tensor* newTensor( u32 rank, u32* shape, f32* data ){
-  tensor* ret = mem( 1, tensor );
-
-  if( rank > 4 )
-    error( "Rank exceeds maximum of 4." );
-
-  // Initialize basic properties
-  ret->rank = rank;
-  ret->size = 1;
-  for( u32 i = 0; i < rank; ++i ){
-    ret->shape[ i ] = shape[ i ];
-    ret->strides[ i ] = ret->size;
-    ret->size *= shape[ rank - i - 1 ];
-  }
-  for( u32 i = rank; i < 4; ++i ){
-    ret->shape[ i ] = 1;
-    ret->strides[ i ] = ret->size;
-  }
-
-  // Compute the smallest square dimensions
-  u32 pixels = ( ret->size + 3 ) / 4;
-  ret->width = ceilf( sqrtf( pixels ) ); // Start with a square root estimate
-  ret->height = ( pixels + ret->width - 1 ) / ret->width; // Ensure it fits the data
-  
-  // Create OpenGL texture
-  glGenTextures( 1, &ret->texture);
-  glBindTexture( GL_TEXTURE_2D, ret->texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-  glBindTexture( GL_TEXTURE_2D, 0 );
-
-  // Create framebuffer
-  glGenFramebuffers( 1, &ret->framebuffer);
-  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
-
-  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
-    error( "Framebuffer is not complete." );
-  
-  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-  
-  if( !data )
-    error( "Null data!" );
-
-  glBindTexture( GL_TEXTURE_2D, ret->texture );
-  
-  // Prepare temporary buffer to fit the texture size
-  f32* paddedData = (f32*)calloc( ret->width * ret->height * 4, sizeof(f32)); // RGBA channels
-  memcpy( paddedData, data, ret->size * sizeof(f32) ); // Copy data to padded buffer
-  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, ret->width, ret->height, GL_RGBA, GL_FLOAT, paddedData );
-  free( paddedData );
-  glBindTexture( GL_TEXTURE_2D, 0 );
-
   return ret;
 }
-void deleteTensor( tensor* t ){
-  if( t == NULL )
-    return;
-  if( t->texture ){
-    glDeleteTextures( 1, &t->texture );
-    t->texture = 0;
-  }
-  if( t->framebuffer ){
-    glDeleteFramebuffers( 1, &t->framebuffer );
-    t->framebuffer = 0;
-  }
-
-  // Free the tensor structure memory
-  unmem( t );
+void deleteInitializer( initializer* i ){
+  glDeleteProgram( i->program );
+  glDeleteBuffers( 1, &i->VBO );
+  unmem( i );
 }
-tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
+tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializer ){
   tensor* ret = mem( 1, tensor );
 
   if( rank > 4 )
@@ -236,12 +259,12 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
   ret->size = 1;
   for( u32 i = 0; i < rank; ++i ){
     ret->shape[ i ] = shape[ i ];
-    ret->strides[ i ] = ret->size;
+    ret->strides[ rank - i - 1 ] = ret->size;
     ret->size *= shape[ rank - i - 1 ];
   }
   for( u32 i = rank; i < 4; ++i ){
     ret->shape[ i ] = 1;
-    ret->strides[ i ] = ret->size;
+    ret->strides[ i ] = 1;
   }
 
   // Compute the smallest square dimensions
@@ -265,45 +288,18 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
     error( "Framebuffer is not complete." );
 
-  // Save current OpenGL states
-  GLint prevFramebuffer;
-  glGetIntegerv( GL_FRAMEBUFFER_BINDING, &prevFramebuffer );
-
-  GLint prevViewport[4];
-  glGetIntegerv( GL_VIEWPORT, prevViewport );
-
-  GLint prevProgram;
-  glGetIntegerv( GL_CURRENT_PROGRAM, &prevProgram );
 
   // Use the initializer program to render to the texture
   glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
   glViewport( 0, 0, ret->width, ret->height );
 
-  glUseProgram( initializer );
+  glUseProgram( initializer->program );
 
-  // Set uniforms if necessary
-  GLint dimsLocation = glGetUniformLocation( initializer, "dims" );
-  if( dimsLocation != -1 )
-    glUniform2f( dimsLocation, (f32)ret->width, (f32)ret->height );
-  // Set uniforms if necessary
-  GLint stridesLocation = glGetUniformLocation( initializer, "strides" );
-  if( stridesLocation != -1 )
-    glUniform4f( stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
-		 (f32)ret->strides[ 2 ], (f32)ret->strides[ 3 ] );
+  glUniform2f( initializer->dimsLocation, (f32)ret->width, (f32)ret->height );
+  glUniform4f( initializer->stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
+	       (f32)ret->strides[ 2 ], (f32)ret->strides[ 3 ] );
 
-  // Set up vertex data for a full-screen quad
-  f32 vertices[] = {
-    -1.0f, -1.0f, // Bottom left
-     1.0f, -1.0f, // Bottom right
-    -1.0f,  1.0f, // Top left
-     1.0f,  1.0f  // Top right
-  };
-
-  // Generate and bind the VBO
-  GLuint VBO;
-  glGenBuffers( 1, &VBO );
-  glBindBuffer( GL_ARRAY_BUFFER, VBO );
-  glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
+  glBindBuffer( GL_ARRAY_BUFFER, initializer->VBO );
 
   // Enable the vertex attribute and set up the pointer
   glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position
@@ -311,16 +307,6 @@ tensor* newTensorInitialized( u32 rank, u32* shape, GLuint initializer ){
 
   // Draw the quad
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
-
-  // Clean up VBO
-  glDisableVertexAttribArray( 0 );
-  glBindBuffer( GL_ARRAY_BUFFER, 0 );
-  glDeleteBuffers( 1, &VBO );
-
-  // Restore previous OpenGL states
-  glUseProgram( prevProgram );
-  glViewport( prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3] );
-  glBindFramebuffer( GL_FRAMEBUFFER, prevFramebuffer );
 
   return ret;
 }
@@ -396,7 +382,20 @@ void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
 
   t->rank = newRank;
 }
-
 void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape ){
   tensorReshapeHelper( ts->stack[ index ], newRank, newShape );
+}
+
+void tensorTransposeHelper( tensor* t, u32 axis1, u32 axis2 ){
+  if( axis1 > 3 || axis2 > 3 )
+    error( "Invalid axis in transpose." );
+  u32 tmp = t->shape[ axis1 ];
+  t->shape[ axis1 ] = t->shape[ axis2 ];
+  t->shape[ axis2 ] = tmp;
+  tmp = t->strides[ axis1 ];
+  t->strides[ axis1 ] = t->strides[ axis2 ];
+  t->strides[ axis2 ] = tmp;
+}
+void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 ){
+  tensorTransposeHelper( ts->stack[ index ], axis1, axis2 );
 }

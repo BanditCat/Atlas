@@ -15,6 +15,7 @@ u32 numLength( f32 num ){
   return length;
 }
 
+
 // Function to compute the product of elements in an array slice
 u32 product( u32* arr, u32 start, u32 end ){
   u32 p = 1;
@@ -92,9 +93,29 @@ u32 displayWidth( const char* str ){
   return width;
 }
 
+
+// Translate function: converts linear index to properly indexed value
+u32 translateIndex( u32 linearIndex, u32* shape, u32* strides, u32 rank ){
+  if( rank <= 1 )
+    return linearIndex;
+  u32 li = linearIndex;
+  u32 tensorIndex[ 5 ]; // Assumes a maximum rank of 4. Adjust as needed.
+  u32 newIndex = 0;
+  for( int i = rank - 1; i >= 0; --i ){
+    tensorIndex[ i ] =  li % shape[ i ];
+    li /= shape[ i ];
+  }
+  for( u32 i = 0; i < rank; ++i )
+    newIndex += tensorIndex[ i ] * strides[ i ];
+ 
+  return newIndex; 
+}
+
+
 // The recursive helper function
-char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32 shape_length,
+char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32* strides, u32 shape_length,
 	      f32* data, u32 data_length, u32 maxNumLength ){
+
   if( dimIndex == shape_length - 1 ){
     // Base case: last dimension
     u32 num_elements = shape[ dimIndex ];
@@ -104,7 +125,10 @@ char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32 shape_length,
 
     for( u32 i = 0; i < num_elements; i++ ){
       char numStr[ 50 ];
-      snprintf( numStr, sizeof( numStr ), "%f", data[ offset + i ] );
+
+      u32 translatedIndex = translateIndex( offset + i, shape, strides, shape_length );
+
+      snprintf( numStr, sizeof( numStr ), "%f", data[ translatedIndex ] );
       u32 numStr_len = strlen( numStr );
 
       // Pad the number string to maxNumLength
@@ -133,7 +157,7 @@ char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32 shape_length,
     char** blocks = (char**)mem( sizeof( char*) * num_blocks, u8 );
     for( u32 i = 0; i < num_blocks; i++ ){
       blocks[ i ] = helper( dimIndex + 1, offset + i * size,
-			    depth + 1, shape, shape_length, data,
+			    depth + 1, shape, strides, shape_length, data,
 			    data_length, maxNumLength );
     }
 
@@ -405,10 +429,13 @@ char* formatTensorData( const tensor* t ){
   
   u32 shape_length = shapeArg_length + 1;
   u32* shape = (u32*)mem( shape_length, u32 );
+  u32* strides = (u32*)mem( shape_length, u32 );
   shape[ 0 ] = 1;
-  for( u32 i = 0; i < shapeArg_length; i++ ){
+  for( u32 i = 0; i < shapeArg_length; ++i ){
     shape[ i + 1 ] = shapeArg[ i ];
+    strides[ i + 1 ] = t->strides[ i ];
   }
+  strides[ 0 ] = strides[ 1 ] * shape[ 1 ];
   // Compute maxNumLength
   u32 maxNumLength = 0;
   for( u32 i = 0; i < data_length; i++ ){
@@ -418,9 +445,10 @@ char* formatTensorData( const tensor* t ){
     }
   }
   // Call helper function
-  char* result = helper( 0, 0, 0, shape, shape_length, data, data_length,
+  char* result = helper( 0, 0, 0, shape, strides, shape_length, data, data_length,
 			 maxNumLength );
   unmem( shape );
+  unmem( strides );
   unmem( data );
   return result; // Remember to free this string after use
 }
