@@ -10,18 +10,18 @@
 // Don't forget to unmem.
 f32* tensorToHostMemory( const tensor* t ){
   if( t == NULL )
-    error( "Tensor is NULL." );
+    error( "%s", "Tensor is NULL." );
 
   // Allocate memory for the host data
   f32* hostData = mem( t->size, f32 );
   if( hostData == NULL )
-    error( "Failed to allocate host memory." );
+    error( "%s", "Failed to allocate host memory." );
 
   // Allocate temporary buffer for RGBA texture data
   f32* tempData = mem( t->width * t->height * 4, f32 ); // RGBA channels
   if( tempData == NULL ){
     unmem( hostData );
-    error( "Failed to allocate temporary buffer." );
+    error( "%s", "Failed to allocate temporary buffer." );
   }
 
   // Bind framebuffer and read pixels from the texture
@@ -42,7 +42,7 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   tensor* ret = mem( 1, tensor );
 
   if( rank > 4 )
-    error( "Rank exceeds maximum of 4." );
+    error( "%s", "Rank exceeds maximum of 4." );
 
   // Initialize basic properties
   ret->rank = rank;
@@ -78,12 +78,12 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
 
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
-    error( "Framebuffer is not complete." );
+    error( "%s", "Framebuffer is not complete." );
   
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   
   if( !data )
-    error( "Null data!" );
+    error( "%s", "Null data!" );
 
   glBindTexture( GL_TEXTURE_2D, ret->texture );
   
@@ -160,7 +160,7 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
   char* fragmentShaderSource = mem( bufsize, char ); // Adjust size as needed
   int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, glsl, glsl, glsl, glsl );
   if( len < 0 || len >= bufsize )
-    error( "Shader source exceeds buffer size." );
+    error( "%s", "Shader source exceeds buffer size." );
 
   // Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
@@ -176,7 +176,7 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
     glGetShaderInfoLog( vertexShader, sizeof( log ), NULL, log );
     snprintf( msg, sizeof( msg ), "Vertex shader compilation failed: %s", log );
     glDeleteShader( vertexShader );
-    error( msg );
+    error( "%s", msg );
   }
 
   // Compile the fragment shader
@@ -195,7 +195,7 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
     snprintf( msg, sizeof( msg ), "Fragment shader compilation failed: %s", log );
     glDeleteShader( fragmentShader );
     glDeleteShader( vertexShader );
-    error( msg );
+    error( "%s", msg );
   }
 
   // Create the program and attach both shaders
@@ -219,13 +219,13 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
     glDeleteProgram( ret->program );
     glDeleteShader( vertexShader );
     glDeleteShader( fragmentShader );
-    error( msg );
+    error( "%s", msg );
   }
 
   // Set uniform locations and VBO.
   ret->dimsLocation = glGetUniformLocation( ret->program, "dims" );
   if( ret->dimsLocation == -1 )
-    error( "Failed to get uniform location for dims." );
+    error( "%s", "Failed to get uniform location for dims." );
   ret->stridesLocation = glGetUniformLocation( ret->program, "strides" );
   
   f32 vertices[] = {
@@ -254,7 +254,7 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
   tensor* ret = mem( 1, tensor );
 
   if( rank > 4 )
-    error( "Rank exceeds maximum of 4." );
+    error( "%s", "Rank exceeds maximum of 4." );
 
   // Initialize basic properties
   ret->rank = rank;
@@ -290,7 +290,7 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
   glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
 
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
-    error( "Framebuffer is not complete." );
+    error( "%s", "Framebuffer is not complete." );
 
 
   // Use the initializer program to render to the texture
@@ -330,7 +330,7 @@ void push( tensorStack* ts, tensor* t ){
 
 void pop( tensorStack* ts ){
   if( !ts->top )
-    error( "Atempt to pop an empty stack!" );
+    error( "%s", "Atempt to pop an empty stack!" );
   deleteTensor( ts->stack[ --ts->top ] );
 }
 
@@ -370,12 +370,12 @@ void printStack( const tensorStack* ts ){
 
 void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   if( !t || !newShape || !newRank || !t->rank )
-    error( "Invalid tensor or shape." );
+    error( "%s", "Invalid tensor or shape." );
   u32 newSize = 1;
   for( u32 i = 0; i < newRank; ++i )
     newSize *= newShape[ i ];
   if( newSize != t->size )
-    error( "New shape size does not match tensor size." );
+    error( "%s", "New shape size does not match tensor size." );
   
   memcpy( t->shape, newShape, sizeof( u32 ) * newRank );
   u32 size = 1;
@@ -392,7 +392,7 @@ void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape ){
 
 void tensorTransposeHelper( tensor* t, u32 axis1, u32 axis2 ){
   if( axis1 > 3 || axis2 > 3 )
-    error( "Invalid axis in transpose." );
+    error( "%s", "Invalid axis in transpose." );
   u32 tmp = t->shape[ axis1 ];
   t->shape[ axis1 ] = t->shape[ axis2 ];
   t->shape[ axis2 ] = tmp;
@@ -406,7 +406,7 @@ void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 ){
 
 void tensorReverseHelper( tensor* t, u32 axis ){
   if( axis > 3 )
-    error( "Invalid axis in reverse." );
+    error( "%s", "Invalid axis in reverse." );
   t->offset += t->strides[ axis ] * ( t->shape[ axis ] - 1 );
   t->strides[ axis ] = -t->strides[ axis ];
 }

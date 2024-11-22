@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <math.h>
@@ -43,15 +44,16 @@ typedef float f32;
 typedef double f64;
 
 extern u64 memc;
-#define mem( size, T ) ( memc++, malloc( sizeof( T ) * ( size ) ) )
+#define mem( size, T ) ( memc++, calloc( sizeof( T ), ( size ) ) )
 #define unmem( F ) ( memc--, free( F ) ) 
-#define error( msg ) ( fflush( stdout ), \
-		       fprintf( stderr, "%s\n\n", ( msg ) ), \
-		       fflush( stderr ), exit( 1 ) )
-#define dbg( msg ) ( fflush( stdout ), \
-		     fprintf( stderr, "%s\n\n", ( msg ) ), \
-		     fflush( stderr ) )
+#define error( msg, ... ) ( fflush( stdout ),		     \
+			    fprintf( stderr, ( msg ), __VA_ARGS__ ),	\
+			    fflush( stderr ), exit( 1 ) )
+#define dbg( msg, ... ) ( fflush( stdout ),			   \
+			  fprintf( stderr, ( msg ), __VA_ARGS__ ),   \
+			  fflush( stderr ) )
 
 #include "tensor.h"
+#include "program.h"
 
 #endif //ATLAS_H_INCLUDED

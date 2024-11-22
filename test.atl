@@ -1,0 +1,11 @@
+i'i' 3 4;print // initialize a 3x4 tensor with the linear index
+  i't.x + t.y * 10.0 + t.z * 100.0 + t.w * 1000.0' 2 3 4 5; // Initialize a 4d tensor with tensor indices.
+print // print the stack
+t 0 1 // tranpose across axis x and y
+print
+
+
+r 1 // reverse axis 1
+print
+
+

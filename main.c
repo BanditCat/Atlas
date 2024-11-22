@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4-o1.      //
+// Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 #include "Atlas.h" 
 // Main must define this.
@@ -234,29 +234,29 @@ int main( int argc, char* argv[] ) {
 
 
 void test(){
-  f32 data[] = { 106.5001, 2, 3, 4, 7, 6, 7.7, 8, 9, 10, 11, 12 };
-  u32 shape1[] = { 2, 2, 3 };
-  u32 shape2[] = { 3, 2, 2 };
-  u32 shape3[] = { 2, 1, 2, 3 };
-  u32 shape4[] = { 2, 6 };
-  u32 shape5[] = { 3, 4 };
-  u32 shape6[] = { 1, 12 };
-  u32 shape7[] = { 12, 1 };
-  tensorStack* ts = newStack();
+ /*  f32 data[] = { 106.5001, 2, 3, 4, 7, 6, 7.7, 8, 9, 10, 11, 12 }; */
+ /*  u32 shape1[] = { 2, 2, 3 }; */
+ /*  u32 shape2[] = { 3, 2, 2 }; */
+ /*  u32 shape3[] = { 2, 1, 2, 3 }; */
+ /*  u32 shape4[] = { 2, 6 }; */
+ /*  u32 shape5[] = { 3, 4 }; */
+ /*  u32 shape6[] = { 1, 12 }; */
+ /*  u32 shape7[] = { 12, 1 }; */
+   tensorStack* ts = newStack(); 
 
-  push( ts, newTensor( 3, shape1, data ) );
-  push( ts, newTensor( 3, shape2, data ) );
-  push( ts, newTensor( 4, shape3, data ) );
-  push( ts, newTensor( 2, shape4, data ) );
-  push( ts, newTensor( 2, shape5, data ) );
-  push( ts, newTensor( 2, shape6, data ) );
-  push( ts, newTensor( 2, shape7, data ) );
-  push( ts, newTensor( 0, NULL, data ) );
+ /*  push( ts, newTensor( 3, shape1, data ) ); */
+ /*  push( ts, newTensor( 3, shape2, data ) ); */
+ /*  push( ts, newTensor( 4, shape3, data ) ); */
+ /*  push( ts, newTensor( 2, shape4, data ) ); */
+ /*  push( ts, newTensor( 2, shape5, data ) ); */
+ /*  push( ts, newTensor( 2, shape6, data ) ); */
+ /*  push( ts, newTensor( 2, shape7, data ) ); */
+ /*  push( ts, newTensor( 0, NULL, data ) ); */
 
- printStack( ts );
+ /* printStack( ts ); */
 
-  pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts );
-  printf( "\n\n\n\n\n\n\n\n" );
+ /*  pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); */
+ /*  printf( "\n\n\n\n\n\n\n\n" ); */
   
   f32 d2[] = { 222, 250, 1, 2, 3, 4 }; 
   u32 shape8[] = { 3, 2, 1 }; 
@@ -269,7 +269,7 @@ void test(){
   push( ts, newTensorInitialized( 2, (u32[]){ 4, 2 }, p ) );
   deleteInitializer( p );
   printStack( ts );
-  tensorTranspose( ts, ts->top - 1, 2, 3 );
+  tensorTranspose( ts, ts->top - 1, 0, 1 );
   printStack( ts );
   tensorReverse( ts, ts->top - 1, 3 );
   tensorReverse( ts, ts->top - 1, 0 );
@@ -290,7 +290,10 @@ void test(){
   /* tensorIndex( ts ); */
   /* printStack( ts ); */
 
-  deleteStack( ts );
+  program* prog = newProgramFromFile( "test.atl" );
+  deleteProgram( prog );
 
+  deleteStack( ts );
+  
   printf( "mem count %llu", memc );
 }
