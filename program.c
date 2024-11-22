@@ -52,6 +52,8 @@ void trimWhitespace( char** str ){
   *str = start;
 }
 void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
+  if( !command )
+    return;
   if( p->numSteps >= p->stepStackSize ){
     p->stepStackSize *= 2;
     step* tp = mem( p->stepStackSize, step );
@@ -60,7 +62,6 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   }
   step* curStep = &( p->steps[ p->numSteps ] );
   ++p->numSteps;
-  
   trimWhitespace( &command );
   if( !*command )
     return;
@@ -171,6 +172,14 @@ program* newProgram( char* prog ){
     ++linenum;
   }
   
+  return ret;
+}
+// Doesn't modify prog.
+program* newProgramFromString( const char* prog ){
+  char* cp = mem( strlen( prog ) + 1, char );
+  strcpy( cp, prog );
+  program* ret = newProgram( cp );
+  unmem( cp );
   return ret;
 }
 program* newProgramFromFile( const char* filename ){

@@ -5,6 +5,19 @@
 // Main must define this.
 u64 memc = 0;
 
+char* testProg = 
+  "i'i' 3 4;print ; i'i' // initiaslize a 3x4 tensor with the linear index\n"
+  "  i't.x + t.y * 10.0 + t.z * 100.0 + t.w * 1000.0' 2 3 4 5; // Init a 4d tensor with tensor indices.\n"
+  "print // print the stack\n"
+  "t 0 1 // tranpose across axis x and y\n"
+  "print\n"
+  "\n"
+  "\n"
+  "r 1 // reverse axis 1\n"
+  "print\n";
+
+
+
 // Global variables
 SDL_Window* window = NULL;
 SDL_GLContext glContext; 
@@ -290,7 +303,7 @@ void test(){
   /* tensorIndex( ts ); */
   /* printStack( ts ); */
 
-  program* prog = newProgramFromFile( "test.atl" );
+  program* prog = newProgramFromString( testProg );
   deleteProgram( prog );
 
   deleteStack( ts );

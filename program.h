@@ -37,6 +37,6 @@ typedef struct{
   u32 stepStackSize;
 } program;
 
-program* newProgram( char* prog );
+program* newProgramFromString( const char* prog );
 program* newProgramFromFile( const char* file );
 void deleteProgram( program* p );
