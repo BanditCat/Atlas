@@ -3,13 +3,36 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#define initSize 256
+#define initSize 2
 
-typedef struct {
+typedef struct{
+  enum{
+    INIT,
+    TRANSPOSE,
+    REVERSE,
+    PRINT
+  } type;
+  union{
+    struct{
+      u32 initializer;
+      u32 rank;
+      u32 shape[ 4 ];
+    } init;
+    struct{
+      u32 axis1;
+      u32 axis2;
+    } transpose;
+    struct{
+      u32 axis;
+    } reverse;
+  };
+} step;
+
+typedef struct{
   initializer** initializers;
   u32 numInitializers;
   u32 initializerStackSize;
-  void* (*steps)( void* );
+  step* steps;
   u32 numSteps;
   u32 stepStackSize;
 } program;

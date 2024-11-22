@@ -47,11 +47,11 @@ extern u64 memc;
 #define mem( size, T ) ( memc++, calloc( sizeof( T ), ( size ) ) )
 #define unmem( F ) ( memc--, free( F ) ) 
 #define error( msg, ... ) ( fflush( stdout ),		     \
-			    fprintf( stderr, ( msg ), __VA_ARGS__ ),	\
-			    fflush( stderr ), exit( 1 ) )
+			    fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ), \
+			    fflush( stdout ), exit( 1 ) )
 #define dbg( msg, ... ) ( fflush( stdout ),			   \
-			  fprintf( stderr, ( msg ), __VA_ARGS__ ),   \
-			  fflush( stderr ) )
+			  fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ), \
+			  fflush( stdout ) )
 
 #include "tensor.h"
 #include "program.h"
