@@ -290,6 +290,7 @@ void test(){
   /* tensorIndex( ts ); */
   /* printStack( ts ); */
 
+  dbg( "%s\n\n", "hi" );
   program* prog = newProgramFromFile( "test.atl" );
   deleteProgram( prog );
 
