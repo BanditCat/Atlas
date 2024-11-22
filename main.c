@@ -263,15 +263,15 @@ void test(){
   push( ts, newTensor( 3, shape8, d2 ) );
   //  printStack( ts ); fflush( stdout );
   //  tensorIndex( ts, ts->top - 1, ts->top - 2 );
-  u32 shape9[] = { 3, 2, 1 };
-  tensorReshape( ts, ts->top - 1, 3, shape9 );
+  //u32 shape9[] = { 3, 2, 1 };
+  //tensorReshape( ts, ts->top - 1, 3, shape9 );
   initializer* p = makeInitializer( "t.x * 1000.0 + t.y * 100.0 + t.z * 10.0 + t.w" );
   push( ts, newTensorInitialized( 2, (u32[]){ 4, 2 }, p ) );
   deleteInitializer( p );
   printStack( ts );
   tensorTranspose( ts, ts->top - 1, 0, 1 );
   printStack( ts );
-  tensorReverse( ts, ts->top - 1, 3 );
+  tensorReverse( ts, ts->top - 2, 1 );
   tensorReverse( ts, ts->top - 1, 0 );
   printStack( ts );
   

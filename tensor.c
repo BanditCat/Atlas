@@ -379,9 +379,9 @@ void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   
   memcpy( t->shape, newShape, sizeof( u32 ) * newRank );
   u32 size = 1;
-  for( int i = 0; i < newRank; ++i ){
+  for( int i = newRank - 1; i >= 0; --i ){
     t->strides[ i ] = size;
-    size *= newShape[ newRank - i - 1 ];
+    size *= newShape[ i ];
   }
 
   t->rank = newRank;
