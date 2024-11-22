@@ -273,7 +273,9 @@ void test(){
   printStack( ts );
   tensorReverse( ts, ts->top - 2, 1 );
   tensorReverse( ts, ts->top - 1, 0 );
+  dbg( "%s\n\n", "hi" );
   printStack( ts );
+  dbg( "%s\n\n", "hi" );
   
   /* u8 d3[] = { 0 }; */
   /* u32 shape9[] = { 1 }; */
