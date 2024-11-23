@@ -227,16 +227,20 @@ void runProgram( tensorStack* ts, program* p ){
     switch( s->type ){
     case PRINT:
       printStack( ts );
+      dbg( "%s", "print" );
       break;
     case INIT:
       push( ts, newTensorInitialized( s->init.rank, s->init.shape,
 				      p->initializers[ s->init.initializer ] ) );
+      dbg( "%s", "init" );
       break;
     case REVERSE:
       tensorReverse( ts, ts->top - 1, s->reverse.axis );
+      dbg( "%s", "reverse" );
       break;
     case TRANSPOSE:
       tensorTranspose( ts, ts->top - 1, s->transpose.axis1, s->transpose.axis2 );
+      dbg( "%s", "transpose" );
       break;
     default:
       error( "%s", "Logic error in Atlas!" ); 

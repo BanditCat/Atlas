@@ -282,7 +282,6 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
   glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-  glBindTexture( GL_TEXTURE_2D, 0 );
 
   // Create framebuffer
   glGenFramebuffers( 1, &ret->framebuffer );
@@ -294,7 +293,6 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
 
 
   // Use the initializer program to render to the texture
-  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
   glViewport( 0, 0, ret->width, ret->height );
 
   glUseProgram( initializer->program );
@@ -312,6 +310,8 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
   // Draw the quad
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 
+  glBindTexture( GL_TEXTURE_2D, 0 );
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   return ret;
 }
 
