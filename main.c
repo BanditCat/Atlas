@@ -6,15 +6,8 @@
 u64 memc = 0;
 
 char* testProg = 
-  "i'i' 3 4;print ; i'i' // initiaslize a 3x4 tensor with the linear index\n"
-  "  i't.x + t.y * 10.0 + t.z * 100.0 + t.w * 1000.0' 2 3 4 5; // Init a 4d tensor with tensor indices.\n"
-  "print // print the stack\n"
-  "t 0 1 // tranpose across axis x and y\n"
-  "print\n"
-  "\n"
-  "\n"
-  "r 1 // reverse axis 1\n"
-  "print\n";
+  "i't.x + 2.0' 3 4;print\n"
+  "t 1 0;print;\n";
 
 
 
@@ -247,63 +240,10 @@ int main( int argc, char* argv[] ) {
 
 
 void test(){
- /*  f32 data[] = { 106.5001, 2, 3, 4, 7, 6, 7.7, 8, 9, 10, 11, 12 }; */
- /*  u32 shape1[] = { 2, 2, 3 }; */
- /*  u32 shape2[] = { 3, 2, 2 }; */
- /*  u32 shape3[] = { 2, 1, 2, 3 }; */
- /*  u32 shape4[] = { 2, 6 }; */
- /*  u32 shape5[] = { 3, 4 }; */
- /*  u32 shape6[] = { 1, 12 }; */
- /*  u32 shape7[] = { 12, 1 }; */
-   tensorStack* ts = newStack(); 
-
- /*  push( ts, newTensor( 3, shape1, data ) ); */
- /*  push( ts, newTensor( 3, shape2, data ) ); */
- /*  push( ts, newTensor( 4, shape3, data ) ); */
- /*  push( ts, newTensor( 2, shape4, data ) ); */
- /*  push( ts, newTensor( 2, shape5, data ) ); */
- /*  push( ts, newTensor( 2, shape6, data ) ); */
- /*  push( ts, newTensor( 2, shape7, data ) ); */
- /*  push( ts, newTensor( 0, NULL, data ) ); */
-
- /* printStack( ts ); */
-
- /*  pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); pop( ts ); */
- /*  printf( "\n\n\n\n\n\n\n\n" ); */
-  
-  f32 d2[] = { 222, 250, 1, 2, 3, 4 }; 
-  u32 shape8[] = { 3, 2, 1 }; 
-  push( ts, newTensor( 3, shape8, d2 ) );
-  //  printStack( ts ); fflush( stdout );
-  //  tensorIndex( ts, ts->top - 1, ts->top - 2 );
-  //u32 shape9[] = { 3, 2, 1 };
-  //tensorReshape( ts, ts->top - 1, 3, shape9 );
-  initializer* p = makeInitializer( "t.x * 1000.0 + t.y * 100.0 + t.z * 10.0 + t.w" );
-  push( ts, newTensorInitialized( 2, (u32[]){ 4, 2 }, p ) );
-  deleteInitializer( p );
-  printStack( ts );
-  tensorTranspose( ts, ts->top - 1, 0, 1 );
-  printStack( ts );
-  tensorReverse( ts, ts->top - 2, 1 );
-  tensorReverse( ts, ts->top - 1, 0 );
-  printStack( ts );
-  
-  /* u8 d3[] = { 0 }; */
-  /* u32 shape9[] = { 1 }; */
-  /* push( ts, 1, shape9, d3 ); */
-  /* printStack( ts ); */
-  /* tensorIndex( ts ); */
-  /* printStack( ts ); */
-
-  
-  /* u8 d4[] = { 2, 0, 0, 0, 0, 0 }; */
-  /* u32 shape10[] = { 6 }; */
-  /* push( ts, 1, shape10, d4 ); */
-  /* printStack( ts ); */
-  /* tensorIndex( ts ); */
-  /* printStack( ts ); */
+  tensorStack* ts = newStack(); 
 
   program* prog = newProgramFromString( testProg );
+  runProgram( ts, prog );
   deleteProgram( prog );
 
   deleteStack( ts );

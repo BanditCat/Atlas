@@ -54,6 +54,9 @@ void trimWhitespace( char** str ){
 void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   if( !command )
     return;
+  trimWhitespace( &command );
+  if( !*command )
+    return;
   if( p->numSteps >= p->stepStackSize ){
     p->stepStackSize *= 2;
     step* tp = mem( p->stepStackSize, step );
@@ -62,9 +65,6 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   }
   step* curStep = &( p->steps[ p->numSteps ] );
   ++p->numSteps;
-  trimWhitespace( &command );
-  if( !*command )
-    return;
 
   
   if( !strncmp( command, "i'", 2 ) ){ // Initializer
@@ -164,10 +164,10 @@ program* newProgram( char* prog ){
     }
     u32 commandnum = 1;
     char* token = strtok( line, ";" );
-    addStep( ret, linenum, commandnum, token );
-    while( (token = strtok( NULL, ";" )) ){
-      ++commandnum;
+    while( token ){
       addStep( ret, linenum, commandnum, token );
+      ++commandnum;
+      token = strtok( NULL, ";" );
     }
     ++linenum;
   }
@@ -221,4 +221,25 @@ void deleteProgram( program* p ){
   unmem( p->steps );
   unmem( p );
 }
-
+void runProgram( tensorStack* ts, program* p ){
+  for( u32 i = 0; i < p->numSteps; ++i ){
+    step* s = p->steps + i;
+    switch( s->type ){
+    case PRINT:
+      printStack( ts );
+      break;
+    case INIT:
+      push( ts, newTensorInitialized( s->init.rank, s->init.shape,
+				      p->initializers[ s->init.initializer ] ) );
+      break;
+    case REVERSE:
+      tensorReverse( ts, ts->top - 1, s->reverse.axis );
+      break;
+    case TRANSPOSE:
+      tensorTranspose( ts, ts->top - 1, s->transpose.axis1, s->transpose.axis2 );
+      break;
+    default:
+      error( "%s", "Logic error in Atlas!" ); 
+    }
+  }
+}

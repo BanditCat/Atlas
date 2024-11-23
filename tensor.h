@@ -37,7 +37,7 @@ void deleteInitializer( initializer* i );
 tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializer );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );
-void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );
+void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  // BUGBUG
 void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
 void tensorReverse( tensorStack* ts, u32 index, u32 axis );
 void pop( tensorStack* ts );

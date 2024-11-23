@@ -39,4 +39,5 @@ typedef struct{
 
 program* newProgramFromString( const char* prog );
 program* newProgramFromFile( const char* file );
+void runProgram( tensorStack* ts, program* p );
 void deleteProgram( program* p );
