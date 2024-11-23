@@ -10,8 +10,7 @@ program* prog;
 tensorStack* ts; 
 
 char* testProg = 
-  "i't.x / 4.0' 3 4;\n"
-  "t 1 0;\n";
+  "i't.x / 9.0 + t.y / 5.0' 9 5 3\n";
 
 
 
@@ -36,13 +35,24 @@ const GLchar* vertexSource =
 
 // Fragment Shader Source
 const GLchar* fragmentSource = 
-  "precision mediump float;\n"
   "varying vec2 fragCoord;\n"
   "uniform float zoom;\n"
   "uniform sampler2D tex;\n"
   "uniform vec2 offset;\n"
   "uniform vec2 resolution;\n"
-  "void main() {\n"
+  "uniform vec4 strides;\n"
+  "uniform vec4 shape;\n"
+  "uniform vec2 dims;\n"
+  "uniform float toffset;\n"
+  "float sampleTensorIndex(vec4 i) {\n"
+  "  float lindex = dot( i, strides ) + toffset;\n"
+  "  float pixel_index = floor( lindex / 4.0 );\n"
+  "  float channel = mod( lindex, 4.0 );\n"
+  "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x ) ) + 0.5 ) / dims;\n"
+  "  vec4 texel = texture2D( tex, uv );\n"
+  "  return  texel[ channel ];\n"
+  "}\n"
+  "void main(){\n"
   "  vec2 uv = fragCoord;\n"
   "  uv.x *= resolution.x / resolution.y; // Adjust for aspect ratio\n"
   "  vec2 c = uv * zoom + offset;\n"
@@ -58,8 +68,9 @@ const GLchar* fragmentSource =
   "    iterations++;\n"
   "  }\n"
   "  float color = float( iterations ) / float( maxIterations );\n"
-  "  vec4 tcolor = texture2D( tex, fragCoord );\n"
-  "  gl_FragColor = vec4( tcolor.r, 1.0 - color, 0.0, 1.0 );\n"
+  "  vec4 tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 0, 0 );\n"
+  "  float tcolor = sampleTensorIndex( tindex );\n"
+  "  gl_FragColor = vec4( tcolor, 1.0 - color, 0.0, 1.0 );\n"
   "}\n";
 
 // Function to compile shaders
@@ -74,7 +85,7 @@ GLuint compileShader( GLenum type, const GLchar* source ){
   if( status != GL_TRUE ) {
     char buffer[ 1024 ];
     glGetShaderInfoLog( shader, sizeof( buffer ), NULL, buffer );
-    printf("Shader compilation failed: %s\n", buffer );
+    error( "Shader compilation failed: %s\n", buffer );
   }
   return shader;
 }
@@ -133,6 +144,13 @@ void mainLoop() {
     }
   }
   // Render
+  if( !ts->top )
+    return;
+  if( ts->stack[ ts->top - 1 ]->rank != 3 )
+    error( "%s", "Display tensor not of rank 3" );
+  if( ts->stack[ ts->top - 1 ]->shape[ 2 ] != 3 )
+    error( "%s", "Display tensor not a 3 component tensor of rank 3" );
+  
   glClear( GL_COLOR_BUFFER_BIT );
   
   glUseProgram( shaderProgram );
@@ -153,8 +171,24 @@ void mainLoop() {
   GLint offsetLoc = glGetUniformLocation( shaderProgram, "offset");
   glUniform2f( offsetLoc, offsetX, offsetY );
 
+  GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
+  glUniform2f( dimsLoc, ts->stack[ ts->top - 1 ]->width, ts->stack[ ts->top - 1 ]->height );
+
   GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution");
   glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
+
+  dbg( "str %u %u %u %u", ts->stack[ ts->top - 1 ]->strides[ 0 ], ts->stack[ ts->top - 1 ]->strides[ 1 ],
+	       ts->stack[ ts->top - 1 ]->strides[ 2 ], ts->stack[ ts->top - 1 ]->strides[ 3 ] );
+  GLint stridesLoc = glGetUniformLocation( shaderProgram, "strides");
+  glUniform4f( stridesLoc, ts->stack[ ts->top - 1 ]->strides[ 0 ], ts->stack[ ts->top - 1 ]->strides[ 1 ],
+	       ts->stack[ ts->top - 1 ]->strides[ 2 ], ts->stack[ ts->top - 1 ]->strides[ 3 ] );
+  GLint shapeLoc = glGetUniformLocation( shaderProgram, "shape");
+  glUniform4f( shapeLoc, ts->stack[ ts->top - 1 ]->shape[ 0 ], ts->stack[ ts->top - 1 ]->shape[ 1 ],
+	       ts->stack[ ts->top - 1 ]->shape[ 2 ], ts->stack[ ts->top - 1 ]->shape[ 3 ] );
+
+  GLint toffsetLoc = glGetUniformLocation( shaderProgram, "toffset");
+  glUniform1f( toffsetLoc, ts->stack[ ts->top - 1 ]->offset );
+
   
   // Bind VBO and set vertex attributes
   glBindBuffer( GL_ARRAY_BUFFER, vbo );
