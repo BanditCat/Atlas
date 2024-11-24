@@ -48,7 +48,7 @@ const GLchar* fragmentSource =
   "float sampleTensorIndex(vec4 i) {\n"
   "  float lindex = dot( i, strides ) + toffset;\n"
   "  float pixel_index = floor( lindex / 4.0 );\n"
-  "  int channel = int( lindex ) % 4;\n"
+  "  int channel = int( mod( lindex, 4.0 ) );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x ) ) + 0.5 ) / dims;\n"
   "  vec4 texel = texture2D( tex, uv );\n"
   "  return  texel[ channel ];\n"
