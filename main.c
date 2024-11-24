@@ -51,7 +51,7 @@ const GLchar* fragmentSource =
   "  float channel = mod( lindex, 4.0 );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x ) ) + 0.5 ) / dims;\n"
   "  vec4 texel = texture2D( tex, uv );\n"
-  "  return  texel[ channel ];\n"
+  "  return  texel[ int( channel ) ];\n"
   "}\n"
   "void main(){\n"
   "  vec2 uv = fragCoord;\n"
