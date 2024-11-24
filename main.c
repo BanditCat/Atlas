@@ -10,7 +10,7 @@ program* prog;
 tensorStack* ts; 
 
 char* testProg = 
-  "i't.x / 9.0 + t.y / 5.0' 9 5 3\n";
+  "i't.x / 9.0' 9 5 3;r 0;t 1 0\n";
 
 
 
@@ -35,6 +35,7 @@ const GLchar* vertexSource =
 
 // Fragment Shader Source
 const GLchar* fragmentSource = 
+  "precision highp float;\n"
   "varying vec2 fragCoord;\n"
   "uniform float zoom;\n"
   "uniform sampler2D tex;\n"
@@ -161,8 +162,7 @@ void mainLoop() {
 
   // Bind the texture to texture unit 0
   glActiveTexture( GL_TEXTURE0 );
-  dbg( "TSTOP  %u", ts->stack[ ts->top - 1 ]->texture );
-   glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->texture );
+  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->texture );
   
   // Set uniforms
   GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom");
@@ -177,8 +177,6 @@ void mainLoop() {
   GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution");
   glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
 
-  dbg( "str %u %u %u %u", ts->stack[ ts->top - 1 ]->strides[ 0 ], ts->stack[ ts->top - 1 ]->strides[ 1 ],
-	       ts->stack[ ts->top - 1 ]->strides[ 2 ], ts->stack[ ts->top - 1 ]->strides[ 3 ] );
   GLint stridesLoc = glGetUniformLocation( shaderProgram, "strides");
   glUniform4f( stridesLoc, ts->stack[ ts->top - 1 ]->strides[ 0 ], ts->stack[ ts->top - 1 ]->strides[ 1 ],
 	       ts->stack[ ts->top - 1 ]->strides[ 2 ], ts->stack[ ts->top - 1 ]->strides[ 3 ] );
