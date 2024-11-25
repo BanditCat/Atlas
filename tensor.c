@@ -7,35 +7,94 @@
 #include "Atlas.h" 
 
 
-// Don't forget to unmem.
-f32* tensorToHostMemory( const tensor* t ){
+// This converts a tensor to cpu memory.
+void tensorToHostMemory( tensor* t ){
+  if( !t->gpu )
+    return;
+  
   if( t == NULL )
     error( "%s", "Tensor is NULL." );
 
-  // Allocate memory for the host data
   f32* hostData = mem( t->size, f32 );
-  if( hostData == NULL )
-    error( "%s", "Failed to allocate host memory." );
 
-  // Allocate temporary buffer for RGBA texture data
-  f32* tempData = mem( t->width * t->height * 4, f32 ); // RGBA channels
-  if( tempData == NULL ){
-    unmem( hostData );
-    error( "%s", "Failed to allocate temporary buffer." );
-  }
+  f32* tempData = mem( t->tex.width * t->tex.height * 4, f32 ); // RGBA channels
 
-  // Bind framebuffer and read pixels from the texture
-  glBindFramebuffer( GL_FRAMEBUFFER, t->framebuffer );
-  glReadPixels( 0, 0, t->width, t->height, GL_RGBA, GL_FLOAT, tempData );
+  glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+  glReadPixels( 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-  // Extract the actual tensor data
   memcpy( hostData, tempData, t->size * sizeof( f32 ) );
 
-  // Free the temporary buffer
   unmem( tempData );
 
-  return hostData;
+  if( t->ownsData ){
+    if( t->tex.texture ){
+      glDeleteTextures( 1, &t->tex.texture );
+      t->tex.texture = 0;
+    }
+    if( t->tex.framebuffer ){
+      glDeleteFramebuffers( 1, &t->tex.framebuffer );
+      t->tex.framebuffer = 0;
+    }
+  }
+  
+  t->data = hostData;
+  t->gpu = false;
+  t->ownsData = true;
+}
+void tensorToGPUMemory( tensor* t ){
+  if( t->gpu )
+    return;
+  if( t == NULL )
+    error( "%s", "Tensor is NULL." );
+
+  // Calculate texture dimensions for GPU storage
+  f32* tdata = t->data;
+  u32 pixels = ( t->size + 3 ) / 4; // RGBA = 4 floats per pixel
+  u32 twidth = ceilf( sqrtf( (f32)pixels ) );
+  u32 theight = ( pixels + t->tex.width - 1 ) / t->tex.width;
+
+  // Prepare padded data for texture upload
+  f32* paddedData = mem( twidth * theight * 4, f32 );
+  memset( paddedData, 0, twidth * theight * 4 * sizeof( f32 ) );
+  memcpy( paddedData, t->data, t->size * sizeof( f32 ) );
+
+  t->tex.width = twidth;
+  t->tex.height = theight;
+    
+  // Create OpenGL texture
+  glGenTextures( 1, &t->tex.texture );
+  glBindTexture( GL_TEXTURE_2D, t->tex.texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, t->tex.width, t->tex.height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+  // Allocate framebuffer
+  glGenFramebuffers( 1, &t->tex.framebuffer );
+  glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
+
+  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+    error( "%s", "Framebuffer is not complete." );
+
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+
+  // Upload data to texture
+  glBindTexture( GL_TEXTURE_2D, t->tex.texture );
+  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, paddedData );
+  glBindTexture( GL_TEXTURE_2D, 0 );
+
+  // Free padded buffer
+  unmem( paddedData );
+
+  // Clean up CPU memory if tensor owns the data
+  if( t->ownsData ){
+    unmem( tdata );
+  }
+
+  t->gpu = true;
+  t->ownsData = true;
 }
 
 tensor* newTensor( u32 rank, u32* shape, f32* data ){
@@ -61,21 +120,22 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
 
   // Compute the smallest square dimensions
   u32 pixels = ( ret->size + 3 ) / 4;
-  ret->width = ceilf( sqrtf( pixels ) ); // Start with a square root estimate
-  ret->height = ( pixels + ret->width - 1 ) / ret->width; // Ensure it fits the data
+  ret->tex.width = ceilf( sqrtf( pixels ) ); // Start with a square root estimate
+  ret->tex.height = ( pixels + ret->tex.width - 1 ) / ret->tex.width; // Ensure it fits the data
+  ret->gpu = true;
   
   // Create OpenGL texture
-  glGenTextures( 1, &ret->texture);
-  glBindTexture( GL_TEXTURE_2D, ret->texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glGenTextures( 1, &ret->tex.texture);
+  glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->tex.width, ret->tex.height, 0, GL_RGBA, GL_FLOAT, NULL );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
   glBindTexture( GL_TEXTURE_2D, 0 );
 
   // Create framebuffer
-  glGenFramebuffers( 1, &ret->framebuffer);
-  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
+  glGenFramebuffers( 1, &ret->tex.framebuffer);
+  glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->tex.texture, 0 );
 
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
     error( "%s", "Framebuffer is not complete." );
@@ -85,13 +145,13 @@ tensor* newTensor( u32 rank, u32* shape, f32* data ){
   if( !data )
     error( "%s", "Null data!" );
 
-  glBindTexture( GL_TEXTURE_2D, ret->texture );
+  glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
   
   // Prepare temporary buffer to fit the texture size
-  f32* paddedData = (f32*)calloc( ret->width * ret->height * 4, sizeof(f32)); // RGBA channels
+  f32* paddedData = (f32*)mem( ret->tex.width * ret->tex.height * 4, sizeof(f32)); // RGBA channels
   memcpy( paddedData, data, ret->size * sizeof(f32) ); // Copy data to padded buffer
-  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, ret->width, ret->height, GL_RGBA, GL_FLOAT, paddedData );
-  free( paddedData );
+  glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, ret->tex.width, ret->tex.height, GL_RGBA, GL_FLOAT, paddedData );
+  unmem( paddedData );
   glBindTexture( GL_TEXTURE_2D, 0 );
 
   return ret;
@@ -100,13 +160,17 @@ void deleteTensor( tensor* t ){
   if( t == NULL )
     return;
   if( t->ownsData ){
-    if( t->texture ){
-      glDeleteTextures( 1, &t->texture );
-      t->texture = 0;
-    }
-    if( t->framebuffer ){
-      glDeleteFramebuffers( 1, &t->framebuffer );
-      t->framebuffer = 0;
+    if( t->gpu ){
+      if( t->tex.texture ){
+	glDeleteTextures( 1, &t->tex.texture );
+	t->tex.texture = 0;
+      }
+      if( t->tex.framebuffer ){
+	glDeleteFramebuffers( 1, &t->tex.framebuffer );
+	t->tex.framebuffer = 0;
+      }
+    } else{
+      unmem( t->data );
     }
   }
   unmem( t );
@@ -261,6 +325,7 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
   ret->size = 1;
   ret->offset = 0;
   ret->ownsData = true;
+  ret->gpu = true;
   for( u32 i = 0; i < rank; ++i ){
     ret->shape[ i ] = shape[ i ];
     ret->strides[ rank - i - 1 ] = ret->size;
@@ -273,31 +338,31 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
 
   // Compute the smallest square dimensions
   u32 pixels = ( ret->size + 3 ) / 4;
-  ret->width = (u32)ceilf( sqrtf( (f32)pixels ) );
-  ret->height = ( pixels + ret->width - 1 ) / ret->width;
+  ret->tex.width = (u32)ceilf( sqrtf( (f32)pixels ) );
+  ret->tex.height = ( pixels + ret->tex.width - 1 ) / ret->tex.width;
 
   // Create OpenGL texture
-  glGenTextures( 1, &ret->texture );
-  glBindTexture( GL_TEXTURE_2D, ret->texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->width, ret->height, 0, GL_RGBA, GL_FLOAT, NULL );
+  glGenTextures( 1, &ret->tex.texture );
+  glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->tex.width, ret->tex.height, 0, GL_RGBA, GL_FLOAT, NULL );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
   // Create framebuffer
-  glGenFramebuffers( 1, &ret->framebuffer );
-  glBindFramebuffer( GL_FRAMEBUFFER, ret->framebuffer );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->texture, 0 );
+  glGenFramebuffers( 1, &ret->tex.framebuffer );
+  glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->tex.texture, 0 );
 
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
     error( "%s", "Framebuffer is not complete." );
 
 
   // Use the initializer program to render to the texture
-  glViewport( 0, 0, ret->width, ret->height );
+  glViewport( 0, 0, ret->tex.width, ret->tex.height );
 
   glUseProgram( initializer->program );
 
-  glUniform2f( initializer->dimsLocation, (f32)ret->width, (f32)ret->height );
+  glUniform2f( initializer->dimsLocation, (f32)ret->tex.width, (f32)ret->tex.height );
   glUniform4f( initializer->stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
 	       (f32)ret->strides[ 2 ], (f32)ret->strides[ 3 ] );
 
@@ -349,7 +414,7 @@ void deleteStack( tensorStack* ts ){
   unmem( ts );
 }
   
-void printStack( const tensorStack* ts ){
+void printStack( tensorStack* ts ){
   for( u32 i = ts->top - 1; i < ts->top; --i ){
     tensor* t = ts->stack[ i ];
     printf( "Tensor %u\n", i );

@@ -5,12 +5,14 @@
 
 #define initSize 256
 
+// To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
 typedef struct{
   enum{
     INIT,
     TRANSPOSE,
     REVERSE,
-    PRINT
+    PRINT,
+    QUIT
   } type;
   union{
     struct{

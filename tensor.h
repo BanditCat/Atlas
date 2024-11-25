@@ -9,9 +9,15 @@ typedef struct{
   u32 shape[4];          // Dimensions of the tensor
   s32 strides[4];        // Strides for indexing
   u32 offset;
-  u32 width, height;
-  GLuint texture;        // OpenGL texture for reading/writing operations
-  GLuint framebuffer;    // Framebuffer for rendering into the texture
+  bool gpu;              // True if in gpu memory, false if in cpu memory.
+  union{
+    f32* data;
+    struct{
+      GLuint texture;        // OpenGL texture for reading/writing operations
+      GLuint framebuffer;    // Framebuffer for rendering into the texture
+      u32 width, height;
+    } tex;
+  };
   bool ownsData;
 } tensor;
 
@@ -29,7 +35,8 @@ typedef struct{
 } tensorStack;
 
 
-f32* tensorToHostMemory( const tensor* t );
+void tensorToHostMemory( tensor* t );
+void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u32* shape, f32* data );
 initializer* makeInitializer( const char* glsl );
@@ -41,9 +48,9 @@ void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  /
 void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
 void tensorReverse( tensorStack* ts, u32 index, u32 axis );
 void pop( tensorStack* ts );
-// Functions for printing tensors.
-char* formatTensorData( const tensor* t );
-void printStack( const tensorStack* ts );
+// Functions for printing tensors. These put the tensor in cpu memory if not already there.
+char* formatTensorData( tensor* t );
+void printStack( tensorStack* ts );
 
 
   

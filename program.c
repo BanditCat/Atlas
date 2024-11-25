@@ -139,6 +139,9 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   } else if( !strcmp( command, "print" ) ){ // Print
     curStep->type = PRINT;
     dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
+  } else if( !strcmp( command, "quit" ) ){ // Print
+    curStep->type = QUIT;
+    dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
   } else{
     error( "Unknown command %s.", command );
   }
@@ -241,6 +244,10 @@ void runProgram( tensorStack* ts, program* p ){
     case TRANSPOSE:
       tensorTranspose( ts, ts->top - 1, s->transpose.axis1, s->transpose.axis2 );
       //dbg( "%s", "transpose" );
+      break;
+    case QUIT:
+      exit( 0 );
+      //dbg( "%s", "exit" );
       break;
     default:
       error( "%s", "Logic error in Atlas!" ); 

@@ -114,7 +114,7 @@ s32 translateIndex( u32 linearIndex, u32* shape, u32* strides, u32 rank ){
 
 // The recursive helper function
 char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32* strides, u32 shape_length,
-	      f32* data, u32 data_length, u32 maxNumLength, const tensor* t ){
+	      const f32* data, u32 data_length, u32 maxNumLength, const tensor* t ){
 
   if( dimIndex == shape_length - 1 ){
     // Base case: last dimension
@@ -419,12 +419,12 @@ char* helper( u32 dimIndex, u32 offset, u32 depth, u32* shape, u32* strides, u32
 }
 
 // Main function to format tensor data
-char* formatTensorData( const tensor* t ){
-  // Create shape = [ 1, ...shapeArg ]
+char* formatTensorData( tensor* t ){
   u32 shapeArg_length = t->rank;
   u32 const* shapeArg = t->shape;
   u32 data_length = t->size;
-  f32* data = tensorToHostMemory( t );
+  tensorToHostMemory( t );
+  const f32* data = t->data;
   
   u32 shape_length = shapeArg_length + 1;
   u32* shape = (u32*)mem( shape_length, u32 );
@@ -435,6 +435,7 @@ char* formatTensorData( const tensor* t ){
     strides[ i + 1 ] = t->strides[ i ];
   }
   strides[ 0 ] = strides[ 1 ] * shape[ 1 ];
+
   // Compute maxNumLength
   u32 maxNumLength = 0;
   for( u32 i = 0; i < data_length; i++ ){
@@ -443,11 +444,12 @@ char* formatTensorData( const tensor* t ){
       maxNumLength = len;
     }
   }
+
   // Call helper function
   char* result = helper( 0, 0, 0, shape, strides, shape_length, data, data_length,
 			 maxNumLength, t );
   unmem( shape );
   unmem( strides );
-  unmem( data );
+
   return result; // Remember to free this string after use
 }

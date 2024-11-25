@@ -10,7 +10,9 @@ program* prog;
 tensorStack* ts; 
 
 char* testProg = 
-  "i't.x / 9.0' 9 5 3;r 0;t 1 0\n";
+  "i't.x / 3.0' 3 5 3;r 0;print;t 1 0\n"
+  "\n";
+
 
 
 
@@ -154,6 +156,8 @@ void mainLoop() {
   // Render
   if( !ts->top )
     return;
+  if( !ts->stack[ ts->top - 1 ]->gpu )
+    tensorToGPUMemory( ts->stack[ ts->top - 1 ] );
   if( ts->stack[ ts->top - 1 ]->rank != 3 )
     error( "%s", "Display tensor not of rank 3" );
   if( ts->stack[ ts->top - 1 ]->shape[ 2 ] != 3 )
@@ -169,7 +173,7 @@ void mainLoop() {
 
   // Bind the texture to texture unit 0
   glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->texture );
+  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->tex.texture );
   
   // Set uniforms
   GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom");
@@ -179,7 +183,7 @@ void mainLoop() {
   glUniform2f( offsetLoc, offsetX, offsetY );
 
   GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
-  glUniform2f( dimsLoc, ts->stack[ ts->top - 1 ]->width, ts->stack[ ts->top - 1 ]->height );
+  glUniform2f( dimsLoc, ts->stack[ ts->top - 1 ]->tex.width, ts->stack[ ts->top - 1 ]->tex.height );
 
   GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution");
   glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
@@ -211,8 +215,8 @@ void mainLoop() {
   SDL_GL_SwapWindow( window );
 }
 
-
-int main( int argc, char* argv[] ) {
+void test( void );
+int main( int argc, char* argv[] ){
   if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
 
@@ -270,7 +274,8 @@ int main( int argc, char* argv[] ) {
   // Compile program.
   prog = newProgramFromString( testProg );
   ts = newStack();
-    
+
+  test();
 #ifdef __EMSCRIPTEN__
   // Start the main loop
   emscripten_set_main_loop( mainLoop, 0, 1 );
@@ -295,3 +300,32 @@ int main( int argc, char* argv[] ) {
 }
 
 
+void test( void ){
+    // Create the root of the trie
+    trieNode* root = newTrieNode(NULL, 0);
+
+    // Insert some keys and values
+    trieInsert(root, "apple", 100);
+    trieInsert(root, "app", 50);
+    trieInsert(root, "banana", 150);
+    trieInsert(root, "band", 75);
+    trieInsert(root, "bandana", 200);
+
+    // Search for keys
+    const char* keysToSearch[] = {"apple", "app", "banana", "band", "bandana", "bandit", "apricot"};
+    size_t numKeys = sizeof(keysToSearch) / sizeof(keysToSearch[0]);
+
+    for (size_t i = 0; i < numKeys; ++i) {
+        u32 value;
+        bool found = trieSearch(root, keysToSearch[i], &value);
+        if (found) {
+            printf("Key '%s' found with value: %u\n", keysToSearch[i], value);
+        } else {
+            printf("Key '%s' not found.\n", keysToSearch[i]);
+        }
+    }
+
+    // Clean up
+    deleteTrieNode(root);
+
+}

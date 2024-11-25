@@ -46,13 +46,14 @@ typedef double f64;
 extern u64 memc;
 #define mem( size, T ) ( memc++, calloc( sizeof( T ), ( size ) ) )
 #define unmem( F ) ( memc--, free( F ) ) 
-#define error( msg, ... ) ( fflush( stdout ),		     \
-			    fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ), \
+#define error( msg, ... ) ( fflush( stdout ),\
+			    fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ),\
 			    fflush( stdout ), exit( 1 ) )
-#define dbg( msg, ... ) ( fflush( stdout ),			   \
-			  fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ), \
+#define dbg( msg, ... ) ( fflush( stdout ),\
+			  fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ),\
 			  fflush( stdout ) )
 
+#include "trie.h"
 #include "tensor.h"
 #include "program.h"
 
