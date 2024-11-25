@@ -6,7 +6,14 @@
 
 #include "Atlas.h" 
 
-
+// DANGER this sets owns data to false, therefore the undelyinng data MUST NOT be destroyed BEFORE the copy
+// while the programming is running. At exit cleanup, it shouldn't matter the order of deallocation.
+tensor* copyTensor( const tensor* t ){
+  tensor* ret = mem( 1, tensor );
+  memcpy( ret, t, sizeof( tensor ) );
+  ret->ownsData = false;
+  return ret;    
+}
 // This converts a tensor to cpu memory.
 void tensorToHostMemory( tensor* t ){
   if( !t->gpu )
@@ -16,7 +23,6 @@ void tensorToHostMemory( tensor* t ){
     error( "%s", "Tensor is NULL." );
 
   f32* hostData = mem( t->size, f32 );
-
   f32* tempData = mem( t->tex.width * t->tex.height * 4, f32 ); // RGBA channels
 
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
@@ -62,14 +68,12 @@ void tensorToGPUMemory( tensor* t ){
   t->tex.width = twidth;
   t->tex.height = theight;
     
-  // Create OpenGL texture
   glGenTextures( 1, &t->tex.texture );
   glBindTexture( GL_TEXTURE_2D, t->tex.texture );
   glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, t->tex.width, t->tex.height, 0, GL_RGBA, GL_FLOAT, NULL );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
-  // Allocate framebuffer
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
@@ -80,15 +84,11 @@ void tensorToGPUMemory( tensor* t ){
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 
-  // Upload data to texture
   glBindTexture( GL_TEXTURE_2D, t->tex.texture );
   glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, paddedData );
   glBindTexture( GL_TEXTURE_2D, 0 );
 
-  // Free padded buffer
   unmem( paddedData );
-
-  // Clean up CPU memory if tensor owns the data
   if( t->ownsData ){
     unmem( tdata );
   }

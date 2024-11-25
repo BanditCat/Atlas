@@ -44,7 +44,7 @@ typedef float f32;
 typedef double f64;
 
 extern u64 memc;
-#define mem( size, T ) ( memc++, calloc( sizeof( T ), ( size ) ) )
+#define mem( size, T ) ( memc++, calloc( ( size ), sizeof( T ) ) )
 #define unmem( F ) ( memc--, free( F ) ) 
 #define error( msg, ... ) ( fflush( stdout ),\
 			    fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ),\

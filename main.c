@@ -10,9 +10,8 @@ program* prog;
 tensorStack* ts; 
 
 char* testProg = 
-  "i't.x / 3.0' 3 5 3;r 0;print;t 1 0\n"
-  "\n";
-
+  "[[[1 0.2 3][.3 4 5]][[ 6 7 8][9 10.5 11 ]]] ;[3 5];i't.x / 3.0' 3 5 3;r 0;print;t 1 0\n"
+  "quit\n";
 
 
 
@@ -128,9 +127,12 @@ GLuint createProgram( const GLchar* vertexSource,
 }
 
 // Main loop function
-void mainLoop() {
-  runProgram( ts, prog );
-  
+void mainLoop(){
+  if( !runProgram( ts, prog ) ){
+    running = false;
+    return;
+  }
+
   // Handle events
   SDL_Event event;
   while( SDL_PollEvent(&event )) {
@@ -224,7 +226,7 @@ int main( int argc, char* argv[] ){
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 
   window =
-    SDL_CreateWindow( "Fractal Zoomer",
+    SDL_CreateWindow( "Atlas",
 		      SDL_WINDOWPOS_CENTERED,
 		      SDL_WINDOWPOS_CENTERED,
 		      windowWidth, windowHeight,
@@ -274,7 +276,6 @@ int main( int argc, char* argv[] ){
   // Compile program.
   prog = newProgramFromString( testProg );
   ts = newStack();
-
   test();
 #ifdef __EMSCRIPTEN__
   // Start the main loop
@@ -294,7 +295,7 @@ int main( int argc, char* argv[] ){
   glDeleteBuffers( 1, &vbo );
   SDL_GL_DeleteContext( glContext );
   SDL_DestroyWindow( window );
-  printf( "mem count %llu", memc );
+  dbg( "mem count %llu", memc );
   SDL_Quit();
   return 0;
 }
@@ -312,7 +313,7 @@ void test( void ){
     trieInsert(root, "bandana", 200);
 
     // Search for keys
-    const char* keysToSearch[] = {"apple", "app", "banana", "band", "bandana", "bandit", "apricot"};
+    const char* keysToSearch[] = {"apple", "app", "banana", "band", "bandana", "bandit", "apricot", "ban"};
     size_t numKeys = sizeof(keysToSearch) / sizeof(keysToSearch[0]);
 
     for (size_t i = 0; i < numKeys; ++i) {

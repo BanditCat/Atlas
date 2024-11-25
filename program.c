@@ -4,6 +4,155 @@
 
 #include "Atlas.h"
 
+
+void skipWhitespace( const char** str ){
+  while( isspace(**str) )
+    (*str)++;
+}
+void parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
+  skipWhitespace( str );
+  if( **str != '[' )
+    error( "%s", "Expected '[' to start tensor definition." );
+  (*str)++; 
+  skipWhitespace( str );
+  
+  u32 dim_size = 0;
+  while( **str != ']' && **str != '\0' ){
+    if( **str == '[' ){
+      if( currentDim + 1 >= 4 )
+	error( "%s", "Tensor exceeds maximum supported dimensions (4D)." );
+      parseTensorRecursive(str, currentDim + 1, shape, data, dataIndex);
+      dim_size++;
+    } else{
+      float num;
+      int charsread;
+      if( sscanf( *str, "%f%n", &num, &charsread ) != 1 )
+	error( "%s", "Failed to parse number in tensor." );
+      *str += charsread;
+      data[*dataIndex] = num;
+      (*dataIndex)++;
+      dim_size++;
+    }
+    
+    skipWhitespace( str );
+  }
+  
+  if( **str != ']' )
+    error( "%s", "Expected ']' to close tensor definition." );
+  
+  (*str)++; 
+  skipWhitespace( str );
+  
+  // Update shape
+  if( !shape[ currentDim ] )
+    shape[ currentDim ] = dim_size;
+  else if (shape[ currentDim ] != dim_size )
+    error( "%s", "Inconsistent tensor shape detected." );
+}
+// Function to determine shape
+void determineShape( const char** s, u32 currentDim, u32* tempShape ){
+  skipWhitespace( s );
+  if( **s != '[' )
+    error( "%s", "Expected '[' to start tensor definition." );
+  (*s)++;
+  skipWhitespace( s );
+  
+  u32 dim_size = 0;
+  
+  while( **s != ']' && **s != '\0' ){
+    if( **s == '[' ){
+      // Nested tensor
+      determineShape( s, currentDim + 1, tempShape );
+      dim_size++;
+    } else {
+      // Parse a number
+      float num;
+      int charsread;
+      if( sscanf(*s, "%f%n", &num, &charsread ) != 1 )
+	error( "%s", "Failed to parse number in tensor." );
+      *s += charsread;
+      dim_size++;
+    }
+    
+    skipWhitespace( s );
+  }
+  
+  if( **s != ']' )
+    error( "%s", "Expected ']' to close tensor definition." );
+  (*s)++; // Skip ']'
+  skipWhitespace( s );
+  
+  // Update shape
+  if( !tempShape[ currentDim ] )
+    tempShape[ currentDim ] = dim_size;
+  else if( tempShape[ currentDim ] != dim_size )
+    error( "%s", "Inconsistent tensor shape detected." );
+}
+
+static tensor* parseTensor( const char* command ){
+  u32 shape[ 4 ] = { 0, 0, 0, 0 }; // Initialize shape to zero
+  float* tempData = NULL;
+  u32 dataCount = 0;
+
+  // To determine the number of elements, we'll need to parse the tensor
+  // First, we make a pass to determine the shape and total elements
+  
+  // Clone the string to parse
+  char* clone = mem( strlen( command ) + 1, char );
+  strcpy( clone, command );
+  const char* parsePtr = clone;
+  
+  u32 tempShape[ 4 ] = { 0, 0, 0, 0 };
+  
+  
+  determineShape( &parsePtr, 0, tempShape );
+  
+  // Now, determine the rank by finding the deepest non-zero dimension
+  u32 rank = 0;
+  for( u32 i = 0; i < 4; ++i ){
+      if( tempShape[ i ] > 0 )
+	rank = i + 1;
+  }
+  
+    // Validate that all deeper dimensions are set
+  for( u32 i = 0; i < rank; ++i ){
+    if( tempShape[i] == 0 )
+      error( "%s", "Incomplete tensor shape definition." );
+  }
+  
+  u32 totalElements = 1;
+  for( u32 i = 0; i < rank; ++i )
+    totalElements *= tempShape[i];
+  
+  tempData = mem( totalElements, f32 );
+  
+  parsePtr = clone;
+  parseTensorRecursive( &parsePtr, 0, tempShape, tempData, &dataCount );
+    
+  if( dataCount != totalElements )
+    error( "%s", "Mismatch in expected and actual number of tensor elements." );
+  
+  memcpy( shape, tempShape, sizeof( shape ) );
+  
+  unmem( clone );
+
+  tensor* t = mem( 1, tensor );
+  t->rank = rank;
+  t->size = 1;
+  for( u32 i = 0; i < 4; ++i )
+    t->strides[ i ] = t->shape[ i ] = 1;
+  for( int i = rank - 1; i >= 0; --i ){
+    t->strides[ i ] = t->size;
+    t->shape[ i ] = shape[ i ];
+    t->size *= shape[ i ];
+  }
+  t->offset = 0;
+  t->gpu = false;
+  t->ownsData = true;
+  t->data = tempData;
+
+  return t;
+}
 // This adds an initializer to p and returns its index.
 u32 addInitializer( program* p, const char* glsl ){
   if( p->numInitializers >= p->initializerStackSize ){
@@ -16,19 +165,19 @@ u32 addInitializer( program* p, const char* glsl ){
   return p->numInitializers++;
 }
 char* getNextLine(char** str) {
-    if (*str == NULL || **str == '\0') return NULL;
+  if (*str == NULL || **str == '\0') return NULL;
 
-    char* start = *str;
-    char* end = strchr(start, '\n');
+  char* start = *str;
+  char* end = strchr(start, '\n');
 
-    if (end != NULL) {
-        *end = '\0'; // Replace '\n' with '\0'
-        *str = end + 1; // Move to the next line
-    } else {
-        *str = NULL; // No more lines
-    }
+  if (end != NULL) {
+    *end = '\0'; // Replace '\n' with '\0'
+    *str = end + 1; // Move to the next line
+  } else {
+    *str = NULL; // No more lines
+  }
 
-    return start;
+  return start;
 }
 void trimWhitespace( char** str ){
   char* start = *str;
@@ -117,7 +266,8 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = REVERSE;
     curStep->reverse.axis = axis;
     dbg( "Linenum %u commandnum %u: reverse %u\n", linenum, commandnum, curStep->reverse.axis );
-     
+
+    
   } else if( !strncmp( command, "t ", 2 ) ){ // Transpose
     char* sizep = command + 2;
     u32 charsread = 0;
@@ -135,14 +285,24 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->transpose.axis2 = axis2;
     dbg( "Linenum %u commandnum %u: transpose %u %u\n", linenum, commandnum, curStep->transpose.axis1,
 	 curStep->transpose.axis2 );
+
+    
+  } else if( *command == '[' || *command == '.' || isdigit( *command ) ){ // A tensor
+    curStep->type = TENSOR;
+    curStep->tensor = parseTensor( command );
+    dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
     
   } else if( !strcmp( command, "print" ) ){ // Print
     curStep->type = PRINT;
     dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
-  } else if( !strcmp( command, "quit" ) ){ // Print
+
+    
+  } else if( !strcmp( command, "quit" ) ){ // Quit
     curStep->type = QUIT;
     dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
-  } else{
+
+
+  } else{ // Error
     error( "Unknown command %s.", command );
   }
 }
@@ -220,14 +380,24 @@ program* newProgramFromFile( const char* filename ){
 void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numInitializers; ++i )
     deleteInitializer( p->initializers[ i ] );
+  for( u32 i = 0; i < p->numSteps; ++i ){
+    if( p->steps[ i ].type == TENSOR ){
+      deleteTensor( p->steps[ i ].tensor );
+      p->steps[ i ].tensor = NULL;
+    }
+    
+  }
   unmem( p->initializers );
   unmem( p->steps );
   unmem( p );
 }
-void runProgram( tensorStack* ts, program* p ){
+bool runProgram( tensorStack* ts, program* p ){
   for( u32 i = 0; i < p->numSteps; ++i ){
     step* s = p->steps + i;
     switch( s->type ){
+    case TENSOR:
+      push( ts, copyTensor( s->tensor ) );
+      break;
     case PRINT:
       printStack( ts );
       //dbg( "%s", "print" );
@@ -246,11 +416,11 @@ void runProgram( tensorStack* ts, program* p ){
       //dbg( "%s", "transpose" );
       break;
     case QUIT:
-      exit( 0 );
       //dbg( "%s", "exit" );
-      break;
+      return false;
     default:
       error( "%s", "Logic error in Atlas!" ); 
     }
   }
+  return true;
 }

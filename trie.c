@@ -10,7 +10,7 @@ char* stringDup( const char* src ){
   if( src == NULL )
     return NULL;
   size_t len = strlen( src ) + 1;
-  char* dest = (char*)mem( len, sizeof(char) );
+  char* dest = (char*)mem( len, char );
   memcpy( dest, src, len );
   return dest;
 }
@@ -73,11 +73,12 @@ void trieInsert( trieNode* root, const char* key, u32 value ){
       remainingKey += prefixLen;
     } else{
       trieNode* splitNode = newTrieNode( child->thisPart, 0 ); // New intermediate node
-      splitNode->thisPart[prefixLen] = '\0';
+      splitNode->thisPart[ prefixLen ] = '\0';
            
       // Adjust the existing child
       char* childSuffix = child->thisPart + prefixLen;
-      child->thisPart = stringDup(childSuffix);
+      unmem( child->thisPart );
+      child->thisPart = stringDup( childSuffix );
             
       // Move the existing child under the split node
       unsigned char suffixFirstChar = (unsigned char)*child->thisPart;

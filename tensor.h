@@ -35,6 +35,7 @@ typedef struct{
 } tensorStack;
 
 
+tensor* copyTensor( const tensor* t );
 void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
@@ -42,6 +43,7 @@ tensor* newTensor( u32 rank, u32* shape, f32* data );
 initializer* makeInitializer( const char* glsl );
 void deleteInitializer( initializer* i );
 tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializer );
+void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );
 void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  // BUGBUG

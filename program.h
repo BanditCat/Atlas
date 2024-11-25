@@ -12,9 +12,11 @@ typedef struct{
     TRANSPOSE,
     REVERSE,
     PRINT,
+    TENSOR,
     QUIT
   } type;
   union{
+    tensor* tensor;
     struct{
       u32 initializer;
       u32 rank;
@@ -41,5 +43,6 @@ typedef struct{
 
 program* newProgramFromString( const char* prog );
 program* newProgramFromFile( const char* file );
-void runProgram( tensorStack* ts, program* p );
+// Return false to exit program.
+bool runProgram( tensorStack* ts, program* p );
 void deleteProgram( program* p );
