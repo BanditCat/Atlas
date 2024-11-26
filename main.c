@@ -30,6 +30,7 @@ bool running = true;
 
 // Vertex Shader Source
 const GLchar* vertexSource = 
+  "#version 300 es\n"
   "precision highp float;\n"
   "attribute vec2 position;\n"
   "varying vec2 fragCoord;\n"
@@ -39,7 +40,8 @@ const GLchar* vertexSource =
   "}\n";
 
 // Fragment Shader Source
-const GLchar* fragmentSource = 
+const GLchar* fragmentSource =
+  "#version 300 es\n"
   "precision highp float;\n"
   "varying vec2 fragCoord;\n"
   "uniform float zoom;\n"
