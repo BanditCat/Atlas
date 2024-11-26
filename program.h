@@ -18,10 +18,6 @@ typedef struct{
   union{
     tensor* tensor;
     u32 initializer;
-    struct{
-      u32 axis1;
-      u32 axis2;
-    } transpose;
   };
 } step;
 

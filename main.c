@@ -10,8 +10,8 @@ program* prog;
 tensorStack* ts; 
 
 char* testProg = 
-  "[[[1 0.2 3][.3 4 5]][[ 6 7 8][9 10.5 11 ]]] ;[3 5 3];i't.y / 5.0';1;r;print;t 1 0\n"
-  "\n";
+  "[[[1 0.2 3][.3 4 5]][[ 6 7 8][9 10.5 11 ]]] ;[3 5 3];i't.y / 5.0';1;r;[0 1];t\n"
+  "print\n";
 
 
 
@@ -167,7 +167,7 @@ void mainLoop(){
   if( ts->stack[ ts->top - 1 ]->rank != 3 )
     error( "%s", "Display tensor not of rank 3" );
   if( ts->stack[ ts->top - 1 ]->shape[ 2 ] != 3 )
-    error( "%s", "Display tensor not a 3 component tensor of rank 3" );
+    error( "%s", "Display tensor not a 3 component tensor of rank 3." );
   
   glClear( GL_COLOR_BUFFER_BIT );
   

@@ -243,23 +243,9 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
     
-  } else if( !strncmp( command, "t ", 2 ) ){ // Transpose
-    char* sizep = command + 2;
-    int charsread = 0;
-    u32 axis1 = 0;
-    u32 axis2 = 0;
-    int sret = sscanf( sizep, "%u%u%n", &axis1, &axis2, &charsread );
-    if( sret != 2 || !charsread )
-      error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Failed to parse axes in transpose command." );
-    if( sizep[ charsread ] )
-      error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Extra characters after transpose command." );
+  } else if( !strcmp( command, "t" ) ){ // Transpose
     curStep->type = TRANSPOSE;
-    curStep->transpose.axis1 = axis1;   
-    curStep->transpose.axis2 = axis2;
-    dbg( "Linenum %u commandnum %u: transpose %u %u\n", linenum, commandnum, curStep->transpose.axis1,
-	 curStep->transpose.axis2 );
+    dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
 
     
   } else if( *command == '[' || *command == '.' || isdigit( *command ) ){ // A tensor
@@ -421,8 +407,17 @@ bool runProgram( tensorStack* ts, program* p ){
       //dbg( "%s %u", "reverse", axis );
       break;
     case TRANSPOSE:
-      tensorTranspose( ts, ts->top - 1, s->transpose.axis1, s->transpose.axis2 );
-      //dbg( "%s", "transpose" );
+      if( !ts->top )
+	error( "%s", "Attempt to transpose with no axes parameter on the stack." );
+      if( ts->stack[ ts->top - 1 ]->rank != 1 )
+	error( "%s", "Attempt to transpose with a axes parameter not of rank 1." );
+
+      u32 axis1 = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
+      u32 axis2 = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset
+		    + ts->stack[ ts->top - 1 ]->strides[ 0 ] );
+      pop( ts );
+      tensorTranspose( ts, ts->top - 1, axis1, axis2 );
+      //dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
     case QUIT:
       //dbg( "%s", "exit" );
