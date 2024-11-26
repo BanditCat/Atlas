@@ -228,7 +228,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     char* label = mem( 1 + endi - starti, char );
     memcpy( label, starti, endi - starti );
     label[ endi - starti ] = '\0';
-    trieInsert( p->labels, label, p->numSteps-- );
+    trieInsert( p->labels, label, --p->numSteps );
     unmem( label );
     dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
     
@@ -421,6 +421,7 @@ void deleteProgram( program* p ){
 }
 bool runProgram( tensorStack* ts, program* p ){
   for( u32 i = 0; i < p->numSteps; ++i ){
+    //dbg( "Step %u", i );
     step* s = p->steps + i;
     switch( s->type ){
     case TENSOR:
@@ -469,8 +470,8 @@ bool runProgram( tensorStack* ts, program* p ){
       f32 cond = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
       pop( ts );
       if( cond != 0.0 )
-	i = s->branch;
-      //dbg( "%s %u", "reverse", axis );
+	i = s->branch - 1;
+      //dbg( "%s %u", "if", axis );
       break;
     case TRANSPOSE:
       if( !ts->top )
