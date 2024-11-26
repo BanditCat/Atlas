@@ -11,7 +11,7 @@ tensorStack* ts;
 
 char* testProg = 
   "size;if'start'\n"
-  "[3 2 3];i't.x / 3.0 + t.y / 2.0'\n"
+  "[3000 20 3];i't.x / 6000.0 + t.y / 40.0'\n"
   "print\n"
   "l'start';0;r;[0 1];t\n"
   "\n";
