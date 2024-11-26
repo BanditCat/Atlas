@@ -32,7 +32,7 @@ bool running = true;
 const GLchar* vertexSource = 
   "#version 300 es\n"
   "precision highp float;\n"
-  "attribute vec2 position;\n"
+  "in vec2 position;\n"
   "varying vec2 fragCoord;\n"
   "void main() {\n"
   "  fragCoord = position;\n"
