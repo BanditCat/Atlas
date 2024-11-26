@@ -13,7 +13,7 @@ char* testProg =
   "size;if'start'\n"
   "[30 20 3];i't.x / 30.0 + t.y / 20.0'\n"
   "print\n"
-  "l'start';[0 1];t\n"
+  "l'start';1;r\n"
   "\n";
 
 
