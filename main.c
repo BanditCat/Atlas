@@ -43,7 +43,7 @@ const GLchar* vertexSource =
 const GLchar* fragmentSource =
   "#version 300 es\n"
   "precision highp float;\n"
-  "varying vec2 fragCoord;\n"
+  "in vec2 fragCoord;\n"
   "uniform float zoom;\n"
   "uniform sampler2D tex;\n"
   "uniform vec2 offset;\n"
