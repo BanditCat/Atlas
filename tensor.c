@@ -176,7 +176,7 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
       return ret;\n\
     }\n\
     void main() {\n\
-      float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * dims.x ) * 4.0;\n\
+      float i = floor( ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * dims.x ) * 4.0 + 0.1 );\n\
       vec4 t = toTensorIndices( i );\n\
       float r = (%s); ++i;\n\
       t = toTensorIndices( i );\n\
