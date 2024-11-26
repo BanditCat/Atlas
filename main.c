@@ -57,7 +57,7 @@ const GLchar* fragmentSource =
   "  float pixel_index = floor( lindex / 4.0 );\n"
   "  float channel = mod( lindex, 4.0 );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x ) ) + 0.5 ) / dims;\n"
-  "  vec4 texel = texture2D( tex, uv );\n"
+  "  vec4 texel = texture( tex, uv );\n"
   "  if( channel < 1.0 )\n"
   "    return texel.r;\n"
   "  else if( channel < 2.0 )\n"
