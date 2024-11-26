@@ -229,48 +229,23 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     memcpy( init, starti, endi - starti );
     init[ endi - starti ] = '\0';
     curStep->type = INIT;
-    curStep->init.initializer = addInitializer( p, init );
+    curStep->initializer = addInitializer( p, init );
     char* sizep = endi + 1;
-    curStep->init.rank = 0;
-    while( *sizep ){
-      u32 charsread = 0;
-      int sret = sscanf( sizep, "%u%n", curStep->init.shape + curStep->init.rank, &charsread );
-      if( sret == EOF )
-	error( "Line %u, command %u: %s", linenum, commandnum,
-	       "Failed to parse tensor size in initializer." );
-      sizep += charsread;
-      ++curStep->init.rank;
-      if( !sret )
-	break;
-    }
     if( *sizep )
       error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Extra characters after tensor size in initializer." );
-    for( u32 i = curStep->init.rank; i < 4; ++i )
-      curStep->init.shape[ i ] = 1;
-    dbg( "Linenum %u commandnum %u: %s       %u\n", linenum, commandnum, init, curStep->init.rank );
+	     "Extra characters after initializer." );
+    dbg( "Linenum %u commandnum %u: %s\n", linenum, commandnum, init );
     unmem( init );
 
     
-  } else if( !strncmp( command, "r ", 2 ) ){ // Reverse
-    char* sizep = command + 2;
-    u32 charsread = 0;
-    u32 axis = 0;
-    int sret = sscanf( sizep, "%u%n", &axis, &charsread );
-    if( sret != 1 || !charsread )
-      error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Failed to parse axis in reverse command." );
-    if( sizep[ charsread ] )
-      error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Extra characters after reverse command." );
+  } else if( !strcmp( command, "r" ) ){ // Reverse
     curStep->type = REVERSE;
-    curStep->reverse.axis = axis;
-    dbg( "Linenum %u commandnum %u: reverse %u\n", linenum, commandnum, curStep->reverse.axis );
+    dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
     
   } else if( !strncmp( command, "t ", 2 ) ){ // Transpose
     char* sizep = command + 2;
-    u32 charsread = 0;
+    int charsread = 0;
     u32 axis1 = 0;
     u32 axis2 = 0;
     int sret = sscanf( sizep, "%u%u%n", &axis1, &axis2, &charsread );
@@ -289,8 +264,21 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     
   } else if( *command == '[' || *command == '.' || isdigit( *command ) ){ // A tensor
     curStep->type = TENSOR;
-    curStep->tensor = parseTensor( command );
+    char* tp = command;
+    f32 scalar;
+    int charsread;
+    if( sscanf( tp, "%f%n", &scalar, &charsread ) == 1 && !tp[ charsread ] ){
+      curStep->tensor = mem( 1, tensor );
+      curStep->tensor->size = 1;
+      for( u32 i = 0; i < 4; ++i )
+	curStep->tensor->shape[ i ] = curStep->tensor->strides[ i ] = 1;
+      curStep->tensor->data = mem( 1, f32 );
+      *curStep->tensor->data = scalar;
+      curStep->tensor->ownsData = true;
+    }else
+      curStep->tensor = parseTensor( command );
     dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
+
     
   } else if( !strcmp( command, "print" ) ){ // Print
     curStep->type = PRINT;
@@ -400,16 +388,37 @@ bool runProgram( tensorStack* ts, program* p ){
       break;
     case PRINT:
       printStack( ts );
+      
       //dbg( "%s", "print" );
       break;
     case INIT:
-      push( ts, newTensorInitialized( s->init.rank, s->init.shape,
-				      p->initializers[ s->init.initializer ] ) );
+      if( !ts->top )
+	error( "%s", "Attempt to run an initializer with no shape parameter on the stack." );
+      if( ts->stack[ ts->top - 1 ]->rank != 1 )
+	error( "%s", "The shape for an initilizer was not a rank 1 tensor." );
+      if( ts->stack[ ts->top - 1 ]->size > 4 )
+	error( "%s", "The shape for an initilizer was more than 4 component." );
+      tensorToHostMemory( ts->stack[ ts->top - 1 ] );
+      u32 shape[ 4 ];
+      u32 size = ts->stack[ ts->top - 1 ]->size;
+      for( u32 i = 0; i < ts->stack[ ts->top - 1 ]->size; ++i )
+	shape[ i ] = ts->stack[ ts->top - 1 ]->data[ i ];
+      pop( ts );
+      push( ts, newTensorInitialized( size, shape,
+				      p->initializers[ s->initializer ] ) );
       //dbg( "%s", "init" );
       break;
     case REVERSE:
-      tensorReverse( ts, ts->top - 1, s->reverse.axis );
-      //dbg( "%s", "reverse" );
+      if( !ts->top )
+	error( "%s", "Attempt to reverse with no axis parameter on the stack." );
+      if( ts->stack[ ts->top - 1 ]->rank )
+	error( "%s", "Attempt to reverse a nonscalar axis parameter." );
+      
+      tensorToHostMemory( ts->stack[ ts->top - 1 ] );
+      u32 axis = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
+      pop( ts );
+      tensorReverse( ts, ts->top - 1, axis );
+      //dbg( "%s %u", "reverse", axis );
       break;
     case TRANSPOSE:
       tensorTranspose( ts, ts->top - 1, s->transpose.axis1, s->transpose.axis2 );

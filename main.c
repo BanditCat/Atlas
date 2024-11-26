@@ -10,8 +10,8 @@ program* prog;
 tensorStack* ts; 
 
 char* testProg = 
-  "[[[1 0.2 3][.3 4 5]][[ 6 7 8][9 10.5 11 ]]] ;[3 5];i't.x / 3.0' 3 5 3;r 0;print;t 1 0\n"
-  "quit\n";
+  "[[[1 0.2 3][.3 4 5]][[ 6 7 8][9 10.5 11 ]]] ;[3 5 3];i't.y / 5.0';1;r;print;t 1 0\n"
+  "\n";
 
 
 
@@ -135,17 +135,17 @@ void mainLoop(){
 
   // Handle events
   SDL_Event event;
-  while( SDL_PollEvent(&event )) {
+  while( SDL_PollEvent(&event ) ){
     if( event.type == SDL_QUIT ) {
       running = false;
-    } else if( event.type == SDL_MOUSEWHEEL ) {
-      if( event.wheel.y > 0 ) {
+    } else if( event.type == SDL_MOUSEWHEEL ){
+      if( event.wheel.y > 0 ){
 	zoom *= 0.9f; // Zoom in
-      } else if( event.wheel.y < 0 ) {
+      } else if( event.wheel.y < 0 ){
 	zoom *= 1.1f; // Zoom out
       }
-    } else if( event.type == SDL_MOUSEMOTION ) {
-      if( event.motion.state & SDL_BUTTON_LMASK ) {
+    } else if( event.type == SDL_MOUSEMOTION ){
+      if( event.motion.state & SDL_BUTTON_LMASK ){
 	float deltaX =
 	  (float)event.motion.xrel / windowWidth * zoom * 2.0f;
 	float deltaY =
@@ -153,6 +153,10 @@ void mainLoop(){
 	offsetX -= deltaX;
 	offsetY += deltaY;
       }
+    } else if( event.type == SDL_KEYDOWN ){
+      if( event.key.keysym.sym == SDLK_ESCAPE )
+	running = false;
+      break;
     }
   }
   // Render
@@ -232,16 +236,12 @@ int main( int argc, char* argv[] ){
 		      windowWidth, windowHeight,
 		      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
 
-  if( !window ) {
-    printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
-    return 1;
-  }
+  if( !window )
+    error( "SDL_CreateWindow Error: %s\n", SDL_GetError() );
 
   glContext = SDL_GL_CreateContext( window );
-  if( !glContext ) {
-    printf("SDL_GL_CreateContext Error: %s\n", SDL_GetError());
-    return 1;
-  }
+  if( !glContext )
+    error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
 
   // Initialize GLEW
 #ifndef __EMSCRIPTEN__

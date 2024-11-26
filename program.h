@@ -17,18 +17,11 @@ typedef struct{
   } type;
   union{
     tensor* tensor;
-    struct{
-      u32 initializer;
-      u32 rank;
-      u32 shape[ 4 ];
-    } init;
+    u32 initializer;
     struct{
       u32 axis1;
       u32 axis2;
     } transpose;
-    struct{
-      u32 axis;
-    } reverse;
   };
 } step;
 

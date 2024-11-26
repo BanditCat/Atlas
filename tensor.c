@@ -288,8 +288,6 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
 
   // Set uniform locations and VBO.
   ret->dimsLocation = glGetUniformLocation( ret->program, "dims" );
-  if( ret->dimsLocation == -1 )
-    error( "%s", "Failed to get uniform location for dims." );
   ret->stridesLocation = glGetUniformLocation( ret->program, "strides" );
   
   f32 vertices[] = {
@@ -456,8 +454,8 @@ void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape ){
 }
 
 void tensorTransposeHelper( tensor* t, u32 axis1, u32 axis2 ){
-  if( axis1 > 3 || axis2 > 3 )
-    error( "%s", "Invalid axis in transpose." );
+  if( axis1 >= t->rank || axis2 >= t->rank )
+    error( "%s", "Invalid axes in transpose." );
   u32 tmp = t->shape[ axis1 ];
   t->shape[ axis1 ] = t->shape[ axis2 ];
   t->shape[ axis2 ] = tmp;
