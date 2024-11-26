@@ -44,6 +44,7 @@ const GLchar* fragmentSource =
   "#version 300 es\n"
   "precision highp float;\n"
   "in vec2 fragCoord;\n"
+  "out vec4 fragColor;\n"
   "uniform float zoom;\n"
   "uniform sampler2D tex;\n"
   "uniform vec2 offset;\n"
@@ -85,7 +86,7 @@ const GLchar* fragmentSource =
   "  float color = float( iterations ) / float( maxIterations );\n"
   "  vec4 tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 0, 0 );\n"
   "  float tcolor = sampleTensorIndex( tindex );\n"
-  "  gl_FragColor = vec4( tcolor, 1.0 - color, 0.0, 1.0 );\n"
+  "  fragColor = vec4( tcolor, 1.0 - color, 0.0, 1.0 );\n"
   "}\n";
 
 // Function to compile shaders
