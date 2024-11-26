@@ -30,6 +30,7 @@ bool running = true;
 
 // Vertex Shader Source
 const GLchar* vertexSource = 
+  "precision highp float;\n"
   "attribute vec2 position;\n"
   "varying vec2 fragCoord;\n"
   "void main() {\n"
