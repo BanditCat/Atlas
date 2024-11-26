@@ -486,11 +486,13 @@ bool runProgram( tensorStack* ts, program* p ){
       //dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
     case TOP:
-      f32* ssize = mem( 1, f32 );
-      *ssize = ts->top;
-      push( ts, newTensor( 0, NULL, ssize ) );
-      //dbg( "%s %u %u", "transpose", axis1, axis2 );
-      break;
+      {
+	f32* ssize = mem( 1, f32 );
+	*ssize = ts->top;
+	push( ts, newTensor( 0, NULL, ssize ) );
+	//dbg( "%s %u %u", "transpose", axis1, axis2 );
+	break;
+      }
     case QUIT:
       //dbg( "%s", "exit" );
       return false;
