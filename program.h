@@ -10,15 +10,19 @@
 typedef struct{
   enum{
     INIT,
+    IF,
     TRANSPOSE,
     REVERSE,
     PRINT,
     TENSOR,
+    TOP,
     QUIT
   } type;
   union{
     tensor* tensor;
     u32 initializer;
+    u32 branch;
+    char* branchName;
   };
 } step;
 

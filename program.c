@@ -233,6 +233,27 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
     
     
+  } else if( !strncmp( command, "if'", 3 ) ){ // If
+    char* starti = command + 3;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty if statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in if statement." );
+    char* branchName = mem( 1 + endi - starti, char );
+    memcpy( branchName, starti, endi - starti );
+    branchName[ endi - starti ] = '\0';
+    curStep->type = IF;
+    curStep->branchName = branchName;
+    char* sizep = endi + 1;
+    if( *sizep )
+      error( "Line %u, command %u: %s", linenum, commandnum,
+	     "Extra characters after if statement." );
+    dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
+
+
   } else if( !strncmp( command, "i'", 2 ) ){ // Initializer
     char* starti = command + 2;
     char* endi = starti;
@@ -258,6 +279,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   } else if( !strcmp( command, "r" ) ){ // Reverse
     curStep->type = REVERSE;
     dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+
+    
+  } else if( !strcmp( command, "size" ) ){ // Top
+    curStep->type = TOP;
+    dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "t" ) ){ // Transpose
@@ -326,7 +352,16 @@ program* newProgram( char* prog ){
     }
     ++linenum;
   }
-  
+
+  // After adding all steps now we can replace if statement branchNames with the label locations.
+  for( u32 i = 0; i < ret->numSteps; ++i )
+    if( ret->steps[ i ].type == IF ){
+      u32 jumpTo;
+      if( !trieSearch( ret->labels, ret->steps[ i ].branchName, &jumpTo ) )
+	error( "If statement with unknown label %s.", ret->steps[ i ].branchName );
+      unmem( ret->steps[ i ].branchName );
+      ret->steps[ i ].branch = jumpTo;
+    }
   return ret;
 }
 // Doesn't modify prog.
@@ -393,7 +428,6 @@ bool runProgram( tensorStack* ts, program* p ){
       break;
     case PRINT:
       printStack( ts );
-      
       //dbg( "%s", "print" );
       break;
     case INIT:
@@ -425,6 +459,19 @@ bool runProgram( tensorStack* ts, program* p ){
       tensorReverse( ts, ts->top - 1, axis );
       //dbg( "%s %u", "reverse", axis );
       break;
+    case IF:
+      if( !ts->top )
+	error( "%s", "Attempt to if with no parameter on the stack." );
+      if( ts->stack[ ts->top - 1 ]->rank )
+	error( "%s", "Attempt to if with a non-scalar parameter." );
+      
+      tensorToHostMemory( ts->stack[ ts->top - 1 ] );
+      f32 cond = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
+      pop( ts );
+      if( cond != 0.0 )
+	i = s->branch;
+      //dbg( "%s %u", "reverse", axis );
+      break;
     case TRANSPOSE:
       if( !ts->top )
 	error( "%s", "Attempt to transpose with no axes parameter on the stack." );
@@ -436,6 +483,12 @@ bool runProgram( tensorStack* ts, program* p ){
 		    + ts->stack[ ts->top - 1 ]->strides[ 0 ] );
       pop( ts );
       tensorTranspose( ts, ts->top - 1, axis1, axis2 );
+      //dbg( "%s %u %u", "transpose", axis1, axis2 );
+      break;
+    case TOP:
+      f32* ssize = mem( 1, f32 );
+      *ssize = ts->top;
+      push( ts, newTensor( 0, NULL, ssize ) );
       //dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
     case QUIT:
