@@ -33,7 +33,7 @@ const GLchar* vertexSource =
   "#version 300 es\n"
   "precision highp float;\n"
   "in vec2 position;\n"
-  "varying vec2 fragCoord;\n"
+  "out vec2 fragCoord;\n"
   "void main() {\n"
   "  fragCoord = position;\n"
   "  gl_Position = vec4( position, 0.0, 1.0 );\n"
