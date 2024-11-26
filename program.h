@@ -4,6 +4,7 @@
 
 
 #define initSize 256
+#include "trie.h"
 
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
 typedef struct{
@@ -26,6 +27,7 @@ typedef struct{
   u32 numInitializers;
   u32 initializerStackSize;
   step* steps;
+  trieNode* labels;
   u32 numSteps;
   u32 stepStackSize;
 } program;
