@@ -18,9 +18,8 @@ tensor* copyTensor( const tensor* t ){
 void tensorToHostMemory( tensor* t ){
   if( !t->gpu )
     return;
-  
   if( t == NULL )
-    error( "%s", "Tensor is NULL." );
+    error( "%s", "Tensor is NULL in tensorToHostMemory." );
 
   f32* hostData = mem( t->size, f32 );
   f32* tempData = mem( t->tex.width * t->tex.height * 4, f32 ); // RGBA channels
@@ -52,7 +51,7 @@ void tensorToGPUMemory( tensor* t ){
   if( t->gpu )
     return;
   if( t == NULL )
-    error( "%s", "Tensor is NULL." );
+    error( "%s", "Tensor is NULL in tensorToGPUMemory." );
 
   // Calculate texture dimensions for GPU storage
   f32* tdata = t->data;
@@ -145,9 +144,9 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-initializer* makeInitializer( const char* glsl ){ // TODO make initializer struct that stores buffer, program, uniform locs, etc.
+compute* makeCompute( const char* glsl ){ // TODO make compute struct that stores buffer, program, uniform locs, etc.
   // Vertex shader source (simple pass-through)
-  initializer* ret = mem( 1, initializer );
+  compute* ret = mem( 1, compute );
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
@@ -277,12 +276,12 @@ initializer* makeInitializer( const char* glsl ){ // TODO make initializer struc
 
   return ret;
 }
-void deleteInitializer( initializer* i ){
+void deleteCompute( compute* i ){
   glDeleteProgram( i->program );
   glDeleteBuffers( 1, &i->VBO );
   unmem( i );
 }
-tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializer ){
+tensor* newTensorInitialized( u32 rank, u32* shape, const compute* compute ){
   tensor* ret = mem( 1, tensor );
 
   if( rank > 4 )
@@ -325,16 +324,16 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializ
     error( "%s", "Framebuffer is not complete." );
 
 
-  // Use the initializer program to render to the texture
+  // Use the compute program to render to the texture
   glViewport( 0, 0, ret->tex.width, ret->tex.height );
 
-  glUseProgram( initializer->program );
+  glUseProgram( compute->program );
 
-  glUniform2f( initializer->dimsLocation, (f32)ret->tex.width, (f32)ret->tex.height );
-  glUniform4f( initializer->stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
+  glUniform2f( compute->dimsLocation, (f32)ret->tex.width, (f32)ret->tex.height );
+  glUniform4f( compute->stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
 	       (f32)ret->strides[ 2 ], (f32)ret->strides[ 3 ] );
 
-  glBindBuffer( GL_ARRAY_BUFFER, initializer->VBO );
+  glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
 
   // Enable the vertex attribute and set up the pointer
   glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position

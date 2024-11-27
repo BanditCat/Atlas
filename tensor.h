@@ -26,7 +26,7 @@ typedef struct{
   GLuint dimsLocation;
   GLuint stridesLocation;
   GLuint VBO;
-} initializer;
+} compute;
 
 typedef struct{
   u32 size;
@@ -40,9 +40,9 @@ void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u32* shape, f32* data );
-initializer* makeInitializer( const char* glsl );
-void deleteInitializer( initializer* i );
-tensor* newTensorInitialized( u32 rank, u32* shape, const initializer* initializer );
+compute* makeCompute( const char* glsl );
+void deleteCompute( compute* i );
+tensor* newTensorInitialized( u32 rank, u32* shape, const compute* initializer );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );

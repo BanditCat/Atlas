@@ -153,16 +153,16 @@ static tensor* parseTensor( const char* command ){
 
   return t;
 }
-// This adds an initializer to p and returns its index.
-u32 addInitializer( program* p, const char* glsl ){
-  if( p->numInitializers >= p->initializerStackSize ){
-    p->initializerStackSize *= 2;
-    initializer** tp = mem( p->initializerStackSize, initializer* );
-    memcpy( tp, p->initializers, sizeof( initializer* ) * p->numInitializers );
-    unmem( p->initializers ); p->initializers = tp;
+// This adds an compute statement to p and returns its index.
+u32 addCompute( program* p, const char* glsl ){
+  if( p->numComputes >= p->computeStackSize ){
+    p->computeStackSize *= 2;
+    compute** tp = mem( p->computeStackSize, compute* );
+    memcpy( tp, p->computes, sizeof( compute* ) * p->numComputes );
+    unmem( p->computes ); p->computes = tp;
   }
-  p->initializers[ p->numInitializers ] = makeInitializer( glsl );
-  return p->numInitializers++;
+  p->computes[ p->numComputes ] = makeCompute( glsl );
+  return p->numComputes++;
 }
 char* getNextLine(char** str) {
   if (*str == NULL || **str == '\0') return NULL;
@@ -254,24 +254,24 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
 
 
-  } else if( !strncmp( command, "i'", 2 ) ){ // Initializer
+  } else if( !strncmp( command, "c'", 2 ) ){ // Compute
     char* starti = command + 2;
     char* endi = starti;
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s", linenum, commandnum, "Empty initializer." );
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty compute statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in initializer." );
+      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in compute statement." );
     char* init = mem( 1 + endi - starti, char );
     memcpy( init, starti, endi - starti );
     init[ endi - starti ] = '\0';
-    curStep->type = INIT;
-    curStep->initializer = addInitializer( p, init );
+    curStep->type = COMPUTE;
+    curStep->compute = addCompute( p, init );
     char* sizep = endi + 1;
     if( *sizep )
       error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Extra characters after initializer." );
+	     "Extra characters after compute statement." );
     dbg( "Linenum %u commandnum %u: init %s\n", linenum, commandnum, init );
     unmem( init );
 
@@ -326,9 +326,9 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
 // Modifies prog.
 program* newProgram( char* prog ){
   program* ret = mem( 1, program );
-  ret->initializers = mem( initSize, initializer* );
-  ret->numInitializers = 0;
-  ret->initializerStackSize = initSize;
+  ret->computes = mem( initSize, compute* );
+  ret->numComputes = 0;
+  ret->computeStackSize = initSize;
   ret->steps = mem( initSize, step );
   ret->numSteps = 0;
   ret->stepStackSize = initSize;
@@ -405,8 +405,8 @@ program* newProgramFromFile( const char* filename ){
   return ret;
 }
 void deleteProgram( program* p ){
-  for( u32 i = 0; i < p->numInitializers; ++i )
-    deleteInitializer( p->initializers[ i ] );
+  for( u32 i = 0; i < p->numComputes; ++i )
+    deleteCompute( p->computes[ i ] );
   for( u32 i = 0; i < p->numSteps; ++i ){
     if( p->steps[ i ].type == TENSOR ){
       deleteTensor( p->steps[ i ].tensor );
@@ -415,7 +415,7 @@ void deleteProgram( program* p ){
     
   }
   deleteTrieNode( p->labels );
-  unmem( p->initializers );
+  unmem( p->computes );
   unmem( p->steps );
   unmem( p );
 }
@@ -431,9 +431,9 @@ bool runProgram( tensorStack* ts, program* p ){
       printStack( ts );
       //dbg( "%s", "print" );
       break;
-    case INIT:
+    case COMPUTE:
       if( !ts->top )
-	error( "%s", "Attempt to run an initializer with no shape parameter on the stack." );
+	error( "%s", "Attempt to run an compute statement with no shape parameter on the stack." );
       if( ts->stack[ ts->top - 1 ]->rank != 1 )
 	error( "%s", "The shape for an initilizer was not a rank 1 tensor." );
       if( ts->stack[ ts->top - 1 ]->size > 4 )
@@ -445,7 +445,7 @@ bool runProgram( tensorStack* ts, program* p ){
 	shape[ i ] = ts->stack[ ts->top - 1 ]->data[ i ];
       pop( ts );
       push( ts, newTensorInitialized( size, shape,
-				      p->initializers[ s->initializer ] ) );
+				      p->computes[ s->compute ] ) );
       //dbg( "%s", "init" );
       break;
     case REVERSE:

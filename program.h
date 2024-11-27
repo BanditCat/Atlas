@@ -9,7 +9,7 @@
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
 typedef struct{
   enum{
-    INIT,
+    COMPUTE,
     IF,
     TRANSPOSE,
     REVERSE,
@@ -20,16 +20,16 @@ typedef struct{
   } type;
   union{
     tensor* tensor;
-    u32 initializer;
+    u32 compute;
     u32 branch;
     char* branchName;
   };
 } step;
 
 typedef struct{
-  initializer** initializers;
-  u32 numInitializers;
-  u32 initializerStackSize;
+  compute** computes;
+  u32 numComputes;
+  u32 computeStackSize;
   step* steps;
   trieNode* labels;
   u32 numSteps;
