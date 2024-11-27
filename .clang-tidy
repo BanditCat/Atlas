@@ -1,0 +1,8 @@
+Checks: '-*,readability-*,cppcoreguidelines-*'
+HeaderFilterRegex: '.*'
+WarningsAsErrors: '*'
+FormatStyle:
+  BraceWrapping: AfterFunction: false, AfterControlStatement: false
+  ColumnLimit: 80
+  IndentWidth: 2
+  UseTab: Never

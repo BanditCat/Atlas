@@ -10,15 +10,19 @@ JS = $(HTML:.html=.js)
 WASM = $(HTML:.html=.wasm)
 
 HDRS = Atlas.h tensor.h trie.h program.h
+MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
 SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
 OBJS = $(SRCS:.c=.o)
 
 
-.PHONY: all rall clean backup release
+.PHONY: all rall clean backup release tidy
 
 all: $(TARGET)
 rall: all
 	./$(TARGET)
+
+tidy:
+	clang-tidy $(MSRCS) -- $(CFLAGS) $(CPPFLAGS)
 
 icon.res: icon.rc
 	llvm-rc icon.rc
