@@ -2,36 +2,43 @@
 // Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "Atlas.h"
+//#include <SDL2/SDL.h>
+//#include <GL/glew.h>
+//#include <stdbool.h>
+//#include <stdio.h>
 
-#include "Atlas.h" 
 // Main must define this.
 u64 memc = 0;
 
 // The compiled program to be run.
 program* prog;
-tensorStack* ts; 
+tensorStack* ts;
 
-char* testProg = 
+char* testProg =
   "size;if'start'\n"
   "[3000 20 3];i't.x / 6000.0 + t.y / 40.0'\n"
   "print\n"
   "l'start';0;r;[0 1];t\n"
   "\n";
 
-
-
 // Global variables
 SDL_Window* window = NULL;
-SDL_GLContext glContext; 
-GLuint shaderProgram; 
+SDL_GLContext glContext;
+GLuint shaderProgram;
 GLuint vbo;
-float zoom = 1.0f;
-float offsetX = -0.5f, offsetY = 0.0f; // Centered on Mandelbrot set
-int windowWidth = 800, windowHeight = 600; 
-bool running = true;
+
+// Thread synchronization variables
+SDL_atomic_t running;
+SDL_mutex* data_mutex = NULL;
+
+// Variables shared between threads
+float shared_zoom = 1.0f;
+float shared_offsetX = -0.5f;
+float shared_offsetY = 0.0f;
 
 // Vertex Shader Source
-const GLchar* vertexSource = 
+const GLchar* vertexSource =
   "#version 300 es\n"
   "precision highp float;\n"
   "in vec2 position;\n"
@@ -135,216 +142,264 @@ GLuint createProgram( const GLchar* vertexSource,
   return program;
 }
 
-
-// Main loop function
-void mainLoop(){
-  if( !runProgram( ts, prog ) ){
-    running = false;
-    return;
-  }  // Handle events
-  SDL_Event event;
-  while( SDL_PollEvent(&event ) ){
-    if( event.type == SDL_QUIT ) {
-      running = false;
-    } else if (event.type == SDL_WINDOWEVENT) {
-      switch (event.window.event) {
-        case SDL_WINDOWEVENT_MOVED:
-            printf("Window moved to (%d, %d)\n", event.window.data1, event.window.data2);
-            break;
-        case SDL_WINDOWEVENT_RESIZED:
-            printf("Window resized to (%d, %d)\n", event.window.data1, event.window.data2);
-            break;
-      }
-    }else if( event.type == SDL_MOUSEWHEEL ){
-      if( event.wheel.y > 0 ){
-	zoom *= 0.9f; // Zoom in
-      } else if( event.wheel.y < 0 ){
-	zoom *= 1.1f; // Zoom out
-      }
-    } else if( event.type == SDL_MOUSEMOTION ){
-      if( event.motion.state & SDL_BUTTON_LMASK ){
-	float deltaX =
-	  (float)event.motion.xrel / windowWidth * zoom * 2.0f;
-	float deltaY =
-	  (float)event.motion.yrel / windowHeight * zoom * 2.0f;
-	offsetX -= deltaX;
-	offsetY += deltaY;
-      }
-    } else if( event.type == SDL_KEYDOWN ){
-      if( event.key.keysym.sym == SDLK_ESCAPE )
-	running = false;
-      break;
-    }
-  }
-
-  // Render
-  if( !ts->top )
-    return;
-  if( !ts->stack[ ts->top - 1 ]->gpu )
-    tensorToGPUMemory( ts->stack[ ts->top - 1 ] );
-  if( ts->stack[ ts->top - 1 ]->rank != 3 )
-    error( "%s", "Display tensor not of rank 3" );
-  if( ts->stack[ ts->top - 1 ]->shape[ 2 ] != 3 )
-    error( "%s", "Display tensor not a 3 component tensor of rank 3." );
-
-  glClear( GL_COLOR_BUFFER_BIT );
-  
-  glUseProgram( shaderProgram );
-  glViewport( 0, 0, windowWidth, windowHeight );
-  
-  GLint texLoc = glGetUniformLocation( shaderProgram, "tex");
-  glUniform1i( texLoc, 0 ); // Texture unit 0
-
-  // Bind the texture to texture unit 0
-  glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->tex.texture );
-  
-  // Set uniforms
-  GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom");
-  glUniform1f( zoomLoc, zoom );
-  
-  GLint offsetLoc = glGetUniformLocation( shaderProgram, "offset");
-  glUniform2f( offsetLoc, offsetX, offsetY );
-
-  GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
-  glUniform2f( dimsLoc, ts->stack[ ts->top - 1 ]->tex.width, ts->stack[ ts->top - 1 ]->tex.height );
-
-  GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution");
-  glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
-
-  GLint stridesLoc = glGetUniformLocation( shaderProgram, "strides");
-  glUniform4f( stridesLoc, ts->stack[ ts->top - 1 ]->strides[ 0 ], ts->stack[ ts->top - 1 ]->strides[ 1 ],
-	       ts->stack[ ts->top - 1 ]->strides[ 2 ], ts->stack[ ts->top - 1 ]->strides[ 3 ] );
-  GLint shapeLoc = glGetUniformLocation( shaderProgram, "shape");
-  glUniform4f( shapeLoc, ts->stack[ ts->top - 1 ]->shape[ 0 ], ts->stack[ ts->top - 1 ]->shape[ 1 ],
-	       ts->stack[ ts->top - 1 ]->shape[ 2 ], ts->stack[ ts->top - 1 ]->shape[ 3 ] );
-
-  GLint toffsetLoc = glGetUniformLocation( shaderProgram, "toffset");
-  glUniform1f( toffsetLoc, ts->stack[ ts->top - 1 ]->offset );
-
-  
-  // Bind VBO and set vertex attributes
-  glBindBuffer( GL_ARRAY_BUFFER, vbo );
-  GLint posAttrib = glGetAttribLocation( shaderProgram, "position");
-  glEnableVertexAttribArray( posAttrib );
-  glVertexAttribPointer( posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0 );
-  
-  // Draw
-  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-  glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
-  
-  // Cleanup
-  glDisableVertexAttribArray( posAttrib );
-  
-  SDL_GL_SwapWindow( window );
-}
-
-void test( void );
-int main( int argc, char* argv[] ){
-  if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
-    error( "SDL_Init Error: %s\n", SDL_GetError() );
-
-  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
-  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
-
-  window =
-    SDL_CreateWindow( "Atlas",
-		      SDL_WINDOWPOS_CENTERED,
-		      SDL_WINDOWPOS_CENTERED,
-		      windowWidth, windowHeight,
-		      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
-
-  if( !window )
-    error( "SDL_CreateWindow Error: %s\n", SDL_GetError() );
-
-  glContext = SDL_GL_CreateContext( window );
-  if( !glContext )
-    error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
+// Rendering and computation thread function
+int renderThreadFunction(void* data) {
+  // Set the OpenGL context in this thread
+  glContext = SDL_GL_CreateContext(window);
+  if (!glContext)
+    error("SDL_GL_CreateContext Error: %s\n", SDL_GetError());
 
   // Initialize GLEW
 #ifndef __EMSCRIPTEN__
   glewExperimental = GL_TRUE; // Enable modern OpenGL techniques
   GLenum glewError = glewInit();
-  if( glewError != GLEW_OK ) {
-    printf("glewInit Error: %s\n", glewGetErrorString( glewError ));
+  if (glewError != GLEW_OK) {
+    printf("glewInit Error: %s\n", glewGetErrorString(glewError));
+    SDL_AtomicSet(&running, 0);
     return 1;
   }
 #endif
 
   // Initialize OpenGL
-  glViewport( 0, 0, windowWidth, windowHeight );
-  glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+  int windowWidth, windowHeight;
+  SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+  glViewport(0, 0, windowWidth, windowHeight);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-  shaderProgram = createProgram( vertexSource, fragmentSource );
+  shaderProgram = createProgram(vertexSource, fragmentSource);
 
   // Set up vertex data
   GLfloat vertices[] = {
     -1.0f, -1.0f, // Bottom-left
-    1.0f, -1.0f, // Bottom-right
+     1.0f, -1.0f,  // Bottom-right
     -1.0f,  1.0f, // Top-left
-    1.0f,  1.0f, // Top-right
+     1.0f,  1.0f,  // Top-right
   };
 
   // Generate VBO
-  glGenBuffers( 1, &vbo );
-  glBindBuffer( GL_ARRAY_BUFFER, vbo );
-  glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices,
-		GL_STATIC_DRAW );
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   // Compile program.
-  prog = newProgramFromString( testProg );
+  prog = newProgramFromString(testProg);
   ts = newStack();
-  test();
-#ifdef __EMSCRIPTEN__
-  // Start the main loop
-  emscripten_set_main_loop( mainLoop, 0, 1 );
-  // Main loop
-#else
-  while( running ) {
-    mainLoop();
-  }
-#endif
-    
-  deleteProgram( prog );
-  deleteStack( ts );
+  //test();
 
-  // Clean up
-  glDeleteProgram( shaderProgram );
-  glDeleteBuffers( 1, &vbo );
-  SDL_GL_DeleteContext( glContext );
-  SDL_DestroyWindow( window );
-  dbg( "mem count %llu", memc );
-  SDL_Quit();
+  float zoom, offsetX, offsetY;
+
+  // Main loop
+  while (SDL_AtomicGet(&running)) {
+    // Run the program
+    if (!runProgram(ts, prog)) {
+      SDL_AtomicSet(&running, 0);
+      break;
+    }
+
+    // Lock OpenGL context
+    SDL_GL_MakeCurrent(window, glContext);
+
+    // Lock mutex to read shared variables
+    SDL_LockMutex(data_mutex);
+    zoom = shared_zoom;
+    offsetX = shared_offsetX;
+    offsetY = shared_offsetY;
+    SDL_UnlockMutex(data_mutex);
+
+    // Get current window size
+    SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+    // Adjust the viewport
+    glViewport(0, 0, windowWidth, windowHeight);
+
+    // Render
+    if (!ts->top)
+      continue;
+    if (!ts->stack[ts->top - 1]->gpu)
+      tensorToGPUMemory(ts->stack[ts->top - 1]);
+    if (ts->stack[ts->top - 1]->rank != 3)
+      error("%s", "Display tensor not of rank 3");
+    if (ts->stack[ts->top - 1]->shape[2] != 3)
+      error("%s", "Display tensor not a 3 component tensor of rank 3.");
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glUseProgram(shaderProgram);
+    glViewport(0, 0, windowWidth, windowHeight);
+
+    GLint texLoc = glGetUniformLocation(shaderProgram, "tex");
+    glUniform1i(texLoc, 0); // Texture unit 0
+
+    // Bind the texture to texture unit 0
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ts->stack[ts->top - 1]->tex.texture);
+
+    // Set uniforms
+    GLint zoomLoc = glGetUniformLocation(shaderProgram, "zoom");
+    glUniform1f(zoomLoc, zoom);
+
+    GLint offsetLoc = glGetUniformLocation(shaderProgram, "offset");
+    glUniform2f(offsetLoc, offsetX, offsetY);
+
+    GLint dimsLoc = glGetUniformLocation(shaderProgram, "dims");
+    glUniform2f(dimsLoc, ts->stack[ts->top - 1]->tex.width, ts->stack[ts->top - 1]->tex.height);
+
+    GLint resolutionLoc = glGetUniformLocation(shaderProgram, "resolution");
+    glUniform2f(resolutionLoc, (float)windowWidth, (float)windowHeight);
+
+    GLint stridesLoc = glGetUniformLocation(shaderProgram, "strides");
+    glUniform4f(stridesLoc, ts->stack[ts->top - 1]->strides[0], ts->stack[ts->top - 1]->strides[1],
+      ts->stack[ts->top - 1]->strides[2], ts->stack[ts->top - 1]->strides[3]);
+    GLint shapeLoc = glGetUniformLocation(shaderProgram, "shape");
+    glUniform4f(shapeLoc, ts->stack[ts->top - 1]->shape[0], ts->stack[ts->top - 1]->shape[1],
+      ts->stack[ts->top - 1]->shape[2], ts->stack[ts->top - 1]->shape[3]);
+
+    GLint toffsetLoc = glGetUniformLocation(shaderProgram, "toffset");
+    glUniform1f(toffsetLoc, ts->stack[ts->top - 1]->offset);
+
+    // Bind VBO and set vertex attributes
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    // Draw
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // Cleanup
+    glDisableVertexAttribArray(posAttrib);
+
+    SDL_GL_SwapWindow(window);
+
+    // Small delay to prevent high CPU usage
+    SDL_Delay(10);
+  }
+
+  // Cleanup
+  glDeleteProgram(shaderProgram);
+  glDeleteBuffers(1, &vbo);
+
+  deleteProgram(prog);
+  deleteStack(ts);
+
+  SDL_GL_DeleteContext(glContext);
+
   return 0;
 }
 
+// Main function
+int main(int argc, char* argv[]) {
+  SDL_AtomicSet(&running, 1);
 
-void test( void ){
-    // Create the root of the trie
-    trieNode* root = newTrieNode(NULL, 0);
+  // Initialize mutex
+  data_mutex = SDL_CreateMutex();
+  if (data_mutex == NULL) {
+    error("%s","Failed to create mutex");
+  }
 
-    // Insert some keys and values
-    trieInsert(root, "apple", 100);
-    trieInsert(root, "app", 50);
-    trieInsert(root, "banana", 150);
-    trieInsert(root, "band", 75);
-    trieInsert(root, "bandana", 200);
+  // Initialize SDL and create window in the main thread
+  if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    error("SDL_Init Error: %s\n", SDL_GetError());
 
-    // Search for keys
-    const char* keysToSearch[] = {"apple", "app", "banana", "band", "bandana", "bandit", "apricot", "ban"};
-    size_t numKeys = sizeof(keysToSearch) / sizeof(keysToSearch[0]);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
-    for (size_t i = 0; i < numKeys; ++i) {
-        u32 value;
-        bool found = trieSearch(root, keysToSearch[i], &value);
-        if (found) {
-            printf("Key '%s' found with value: %u\n", keysToSearch[i], value);
-        } else {
-            printf("Key '%s' not found.\n", keysToSearch[i]);
+  // Add SDL_WINDOW_RESIZABLE flag
+  window = SDL_CreateWindow("Atlas",
+      SDL_WINDOWPOS_CENTERED,
+      SDL_WINDOWPOS_CENTERED,
+      800, 600, // Initial window size
+      SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+  if (!window)
+    error("SDL_CreateWindow Error: %s\n", SDL_GetError());
+
+  // Create rendering and computation thread
+  SDL_Thread* renderThread = SDL_CreateThread(renderThreadFunction, "RenderThread", NULL);
+  if (renderThread == NULL) {
+    error( "%s", "Failed to create rendering thread" );
+  }
+
+  // Main thread handles SDL event loop
+  while (SDL_AtomicGet(&running)) {
+    // Process events
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+      if (event.type == SDL_QUIT) {
+        SDL_AtomicSet(&running, 0);
+      } else if (event.type == SDL_WINDOWEVENT) {
+        if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+          SDL_AtomicSet(&running, 0);
         }
+        // No need to handle SDL_WINDOWEVENT_RESIZED
+      } else if (event.type == SDL_MOUSEWHEEL) {
+        SDL_LockMutex(data_mutex);
+        if (event.wheel.y > 0) {
+          shared_zoom *= 0.9f; // Zoom in
+        } else if (event.wheel.y < 0) {
+          shared_zoom *= 1.1f; // Zoom out
+        }
+        SDL_UnlockMutex(data_mutex);
+      } else if (event.type == SDL_MOUSEMOTION) {
+        if (event.motion.state & SDL_BUTTON_LMASK) {
+          SDL_LockMutex(data_mutex);
+          float deltaX =
+            (float)event.motion.xrel / 800 * shared_zoom * 2.0f;
+          float deltaY =
+            (float)event.motion.yrel / 600 * shared_zoom * 2.0f;
+          shared_offsetX -= deltaX;
+          shared_offsetY += deltaY;
+          SDL_UnlockMutex(data_mutex);
+        }
+      } else if (event.type == SDL_KEYDOWN) {
+        if (event.key.keysym.sym == SDLK_ESCAPE)
+          SDL_AtomicSet(&running, 0);
+        break;
+      }
     }
 
-    // Clean up
-    deleteTrieNode(root);
+    // Small delay to prevent high CPU usage
+    SDL_Delay(10);
+  }
 
+  // Wait for rendering thread to finish
+  SDL_WaitThread(renderThread, NULL);
+
+  SDL_DestroyMutex(data_mutex);
+
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+
+  dbg("mem count %llu", memc);
+
+  return 0;
+}
+
+void test(void) {
+  // Create the root of the trie
+  trieNode* root = newTrieNode(NULL, 0);
+
+  // Insert some keys and values
+  trieInsert(root, "apple", 100);
+  trieInsert(root, "app", 50);
+  trieInsert(root, "banana", 150);
+  trieInsert(root, "band", 75);
+  trieInsert(root, "bandana", 200);
+
+  // Search for keys
+  const char* keysToSearch[] = { "apple", "app", "banana", "band", "bandana", "bandit", "apricot", "ban" };
+  size_t numKeys = sizeof(keysToSearch) / sizeof(keysToSearch[0]);
+
+  for (size_t i = 0; i < numKeys; ++i) {
+    u32 value;
+    bool found = trieSearch(root, keysToSearch[i], &value);
+    if (found) {
+      printf("Key '%s' found with value: %u\n", keysToSearch[i], value);
+    } else {
+      printf("Key '%s' not found.\n", keysToSearch[i]);
+    }
+  }
+
+  // Clean up
+  deleteTrieNode(root);
 }
