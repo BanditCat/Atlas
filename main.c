@@ -4,6 +4,12 @@
 
 #include "Atlas.h"
 
+#ifndef __EMSCRIPTEN__
+#include <dwmapi.h>
+#include <windows.h>
+#include "SDL2/SDL_syswm.h"
+#endif
+
 // Main must define this.
 u64 memc = 0;
 
@@ -28,6 +34,26 @@ GLuint vbo;
 // Thread synchronization variables
 SDL_atomic_t running;
 SDL_mutex* data_mutex = NULL;
+void SetDarkTitleBar(SDL_Window* sdlWindow) {
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+
+    if (SDL_GetWindowWMInfo(sdlWindow, &wmInfo)) {
+        HWND hwnd = wmInfo.info.win.window;
+        BOOL enable = TRUE;
+
+        // Apply dark mode attribute
+        HRESULT hr = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
+        if (SUCCEEDED(hr)) {
+	  ShowWindow(hwnd, SW_HIDE);
+	  ShowWindow(hwnd, SW_SHOW);
+        } else {
+            MessageBoxA(NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR);
+        }
+    } else {
+        SDL_Log("Unable to get window handle: %s", SDL_GetError());
+    }
+}
 #else
 int running; // Simple integer for the running flag in single-threaded mode
 #endif
@@ -95,7 +121,7 @@ const GLchar* fragmentSource =
   "  float color = float( iterations ) / float( maxIterations );\n"
   "  vec4 tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 0, 0 );\n"
   "  float tcolor = sampleTensorIndex( tindex );\n"
-  "  fragColor = vec4( tcolor, 1.0 - color, 0.0, 1.0 );\n"
+  "  fragColor = vec4( 0.0, 1.0 - color, tcolor, 1.0 );\n"
   "}\n";
 
 // Function to compile shaders
@@ -435,7 +461,10 @@ int main(int argc, char* argv[]) {
       SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if (!window)
     error("SDL_CreateWindow Error: %s\n", SDL_GetError());
-
+#ifndef __EMSCRIPTEN__
+  SetDarkTitleBar(window);
+#endif
+  
   // Create OpenGL context in the main thread
   glContext = SDL_GL_CreateContext(window);
   if (!glContext)
