@@ -1,12 +1,8 @@
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al.   //
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 #include "Atlas.h"
-//#include <SDL2/SDL.h>
-//#include <GL/glew.h>
-//#include <stdbool.h>
-//#include <stdio.h>
 
 // Main must define this.
 u64 memc = 0;
@@ -28,9 +24,13 @@ SDL_GLContext glContext;
 GLuint shaderProgram;
 GLuint vbo;
 
+#ifndef __EMSCRIPTEN__
 // Thread synchronization variables
 SDL_atomic_t running;
 SDL_mutex* data_mutex = NULL;
+#else
+int running; // Simple integer for the running flag in single-threaded mode
+#endif
 
 // Variables shared between threads
 float shared_zoom = 1.0f;
@@ -142,6 +142,7 @@ GLuint createProgram( const GLchar* vertexSource,
   return program;
 }
 
+#ifndef __EMSCRIPTEN__
 // Rendering and computation thread function
 int renderThreadFunction(void* data) {
   // Set the OpenGL context in this thread
@@ -150,7 +151,6 @@ int renderThreadFunction(void* data) {
     error("SDL_GL_CreateContext Error: %s\n", SDL_GetError());
 
   // Initialize GLEW
-#ifndef __EMSCRIPTEN__
   glewExperimental = GL_TRUE; // Enable modern OpenGL techniques
   GLenum glewError = glewInit();
   if (glewError != GLEW_OK) {
@@ -158,7 +158,6 @@ int renderThreadFunction(void* data) {
     SDL_AtomicSet(&running, 0);
     return 1;
   }
-#endif
 
   // Initialize OpenGL
   int windowWidth, windowHeight;
@@ -287,9 +286,129 @@ int renderThreadFunction(void* data) {
 
   return 0;
 }
+#else
+#include <emscripten/emscripten.h>
+
+// Main loop function for Emscripten
+void main_loop() {
+  // Process events
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_QUIT) {
+      running = 0;
+      emscripten_cancel_main_loop();
+    } else if (event.type == SDL_WINDOWEVENT) {
+      if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+        running = 0;
+        emscripten_cancel_main_loop();
+      }
+    } else if (event.type == SDL_MOUSEWHEEL) {
+      if (event.wheel.y > 0) {
+        shared_zoom *= 0.9f; // Zoom in
+      } else if (event.wheel.y < 0) {
+        shared_zoom *= 1.1f; // Zoom out
+      }
+    } else if (event.type == SDL_MOUSEMOTION) {
+      if (event.motion.state & SDL_BUTTON_LMASK) {
+        float deltaX =
+          (float)event.motion.xrel / 800 * shared_zoom * 2.0f;
+        float deltaY =
+          (float)event.motion.yrel / 600 * shared_zoom * 2.0f;
+        shared_offsetX -= deltaX;
+        shared_offsetY += deltaY;
+      }
+    } else if (event.type == SDL_KEYDOWN) {
+      if (event.key.keysym.sym == SDLK_ESCAPE) {
+        running = 0;
+        emscripten_cancel_main_loop();
+      }
+    }
+  }
+
+  // Run the program
+  if (!runProgram(ts, prog)) {
+    running = 0;
+    emscripten_cancel_main_loop();
+    return;
+  }
+
+  // Rendering code
+  // Get current window size
+  int windowWidth, windowHeight;
+  SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+  float zoom = shared_zoom;
+  float offsetX = shared_offsetX;
+  float offsetY = shared_offsetY;
+
+  // Adjust the viewport
+  glViewport(0, 0, windowWidth, windowHeight);
+
+  // Render
+  if (!ts->top)
+    return;
+  if (!ts->stack[ts->top - 1]->gpu)
+    tensorToGPUMemory(ts->stack[ts->top - 1]);
+  if (ts->stack[ts->top - 1]->rank != 3)
+    error("%s", "Display tensor not of rank 3");
+  if (ts->stack[ts->top - 1]->shape[2] != 3)
+    error("%s", "Display tensor not a 3 component tensor of rank 3.");
+
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glUseProgram(shaderProgram);
+  glViewport(0, 0, windowWidth, windowHeight);
+
+  GLint texLoc = glGetUniformLocation(shaderProgram, "tex");
+  glUniform1i(texLoc, 0); // Texture unit 0
+
+  // Bind the texture to texture unit 0
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, ts->stack[ts->top - 1]->tex.texture);
+
+  // Set uniforms
+  GLint zoomLoc = glGetUniformLocation(shaderProgram, "zoom");
+  glUniform1f(zoomLoc, zoom);
+
+  GLint offsetLoc = glGetUniformLocation(shaderProgram, "offset");
+  glUniform2f(offsetLoc, offsetX, offsetY);
+
+  GLint dimsLoc = glGetUniformLocation(shaderProgram, "dims");
+  glUniform2f(dimsLoc, ts->stack[ts->top - 1]->tex.width, ts->stack[ts->top - 1]->tex.height);
+
+  GLint resolutionLoc = glGetUniformLocation(shaderProgram, "resolution");
+  glUniform2f(resolutionLoc, (float)windowWidth, (float)windowHeight);
+
+  GLint stridesLoc = glGetUniformLocation(shaderProgram, "strides");
+  glUniform4f(stridesLoc, ts->stack[ts->top - 1]->strides[0], ts->stack[ts->top - 1]->strides[1],
+    ts->stack[ts->top - 1]->strides[2], ts->stack[ts->top - 1]->strides[3]);
+  GLint shapeLoc = glGetUniformLocation(shaderProgram, "shape");
+  glUniform4f(shapeLoc, ts->stack[ts->top - 1]->shape[0], ts->stack[ts->top - 1]->shape[1],
+    ts->stack[ts->top - 1]->shape[2], ts->stack[ts->top - 1]->shape[3]);
+
+  GLint toffsetLoc = glGetUniformLocation(shaderProgram, "toffset");
+  glUniform1f(toffsetLoc, ts->stack[ts->top - 1]->offset);
+
+  // Bind VBO and set vertex attributes
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+  glEnableVertexAttribArray(posAttrib);
+  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+  // Draw
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+  // Cleanup
+  glDisableVertexAttribArray(posAttrib);
+
+  SDL_GL_SwapWindow(window);
+}
+#endif
 
 // Main function
 int main(int argc, char* argv[]) {
+#ifndef __EMSCRIPTEN__
   SDL_AtomicSet(&running, 1);
 
   // Initialize mutex
@@ -297,6 +416,9 @@ int main(int argc, char* argv[]) {
   if (data_mutex == NULL) {
     error("%s","Failed to create mutex");
   }
+#else
+  running = 1;
+#endif
 
   // Initialize SDL and create window in the main thread
   if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -314,6 +436,48 @@ int main(int argc, char* argv[]) {
   if (!window)
     error("SDL_CreateWindow Error: %s\n", SDL_GetError());
 
+  // Create OpenGL context in the main thread
+  glContext = SDL_GL_CreateContext(window);
+  if (!glContext)
+    error("SDL_GL_CreateContext Error: %s\n", SDL_GetError());
+
+#ifndef __EMSCRIPTEN__
+  // Initialize GLEW
+  glewExperimental = GL_TRUE; // Enable modern OpenGL techniques
+  GLenum glewError = glewInit();
+  if (glewError != GLEW_OK) {
+    printf("glewInit Error: %s\n", glewGetErrorString(glewError));
+    SDL_AtomicSet(&running, 0);
+    return 1;
+  }
+#endif
+
+  // Initialize OpenGL
+  int windowWidth, windowHeight;
+  SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+  glViewport(0, 0, windowWidth, windowHeight);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+  shaderProgram = createProgram(vertexSource, fragmentSource);
+
+  // Set up vertex data
+  GLfloat vertices[] = {
+    -1.0f, -1.0f, // Bottom-left
+     1.0f, -1.0f,  // Bottom-right
+    -1.0f,  1.0f, // Top-left
+     1.0f,  1.0f,  // Top-right
+  };
+
+  // Generate VBO
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  // Compile program.
+  prog = newProgramFromString(testProg);
+  ts = newStack();
+
+#ifndef __EMSCRIPTEN__
   // Create rendering and computation thread
   SDL_Thread* renderThread = SDL_CreateThread(renderThreadFunction, "RenderThread", NULL);
   if (renderThread == NULL) {
@@ -366,6 +530,19 @@ int main(int argc, char* argv[]) {
   SDL_WaitThread(renderThread, NULL);
 
   SDL_DestroyMutex(data_mutex);
+#else
+  // Set up the main loop for Emscripten
+  emscripten_set_main_loop(main_loop, 0, 1);
+#endif
+
+  // Cleanup
+  glDeleteProgram(shaderProgram);
+  glDeleteBuffers(1, &vbo);
+
+  deleteProgram(prog);
+  deleteStack(ts);
+
+  SDL_GL_DeleteContext(glContext);
 
   SDL_DestroyWindow(window);
   SDL_Quit();
