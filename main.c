@@ -474,8 +474,8 @@ int main(int argc, char* argv[]) {
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   // Compile program.
-  prog = newProgramFromString(testProg);
-  ts = newStack();
+  //prog = newProgramFromString(testProg);
+  //  ts = newStack();
 
 #ifndef __EMSCRIPTEN__
   // Create rendering and computation thread
