@@ -307,7 +307,7 @@ int renderThreadFunction(void* data) {
 
   deleteProgram(prog);
   deleteStack(ts);
-
+  
   SDL_GL_DeleteContext(glContext);
 
   return 0;
@@ -434,6 +434,7 @@ void main_loop() {
 
 // Main function
 int main(int argc, char* argv[]) {
+
 #ifndef __EMSCRIPTEN__
   SDL_AtomicSet(&running, 1);
 
@@ -570,8 +571,10 @@ int main(int argc, char* argv[]) {
   glDeleteProgram(shaderProgram);
   glDeleteBuffers(1, &vbo);
 
+#ifdef __EMSCRIPTEN__
   deleteProgram(prog);
   deleteStack(ts);
+#endif
 
   SDL_GL_DeleteContext(glContext);
 
