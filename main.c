@@ -473,9 +473,11 @@ int main(int argc, char* argv[]) {
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+#ifdef __EMSCRIPTEN__
   // Compile program.
-  //prog = newProgramFromString(testProg);
-  //  ts = newStack();
+  prog = newProgramFromString(testProg);
+  ts = newStack();
+#endif
 
 #ifndef __EMSCRIPTEN__
   // Create rendering and computation thread
