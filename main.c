@@ -1,6 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
+
+
 #include "Atlas.h" 
 // Main must define this.
 u64 memc = 0;
@@ -133,18 +135,27 @@ GLuint createProgram( const GLchar* vertexSource,
   return program;
 }
 
+
 // Main loop function
 void mainLoop(){
   if( !runProgram( ts, prog ) ){
     running = false;
     return;
-  }
-  // Handle events
+  }  // Handle events
   SDL_Event event;
   while( SDL_PollEvent(&event ) ){
     if( event.type == SDL_QUIT ) {
       running = false;
-    } else if( event.type == SDL_MOUSEWHEEL ){
+    } else if (event.type == SDL_WINDOWEVENT) {
+      switch (event.window.event) {
+        case SDL_WINDOWEVENT_MOVED:
+            printf("Window moved to (%d, %d)\n", event.window.data1, event.window.data2);
+            break;
+        case SDL_WINDOWEVENT_RESIZED:
+            printf("Window resized to (%d, %d)\n", event.window.data1, event.window.data2);
+            break;
+      }
+    }else if( event.type == SDL_MOUSEWHEEL ){
       if( event.wheel.y > 0 ){
 	zoom *= 0.9f; // Zoom in
       } else if( event.wheel.y < 0 ){
@@ -165,6 +176,7 @@ void mainLoop(){
       break;
     }
   }
+
   // Render
   if( !ts->top )
     return;
