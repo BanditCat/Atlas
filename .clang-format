@@ -1,0 +1,45 @@
+# .clang-format configuration file
+
+Language:        Cpp
+IndentWidth:     2
+TabWidth:        2
+UseTab:          Never
+
+# Brace placement
+BreakBeforeBraces: Attach
+
+# No spaces inside parentheses
+SpacesInParentheses: true
+SpacesInSquareBrackets: true
+
+# No space after unary operators like '!'
+SpaceAfterLogicalNot: false
+
+# Spaces around assignment operators
+SpaceBeforeAssignmentOperators: true
+
+# Indentation settings
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+ContinuationIndentWidth: 2
+
+# Disable line wrapping
+ColumnLimit: 80
+
+# Pointer alignment
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+# Trailing comments spacing
+SpacesBeforeTrailingComments: 2
+
+# Disable bin packing of function parameters
+BinPackParameters: false
+BinPackArguments: false
+
+
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: false
+  AfterFunctionDefinitionName: false
