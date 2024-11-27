@@ -13,11 +13,15 @@ HDRS = Atlas.h tensor.h trie.h program.h
 SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
 OBJS = $(SRCS:.c=.o)
 
+
 .PHONY: all rall clean backup release
 
 all: $(TARGET)
 rall: all
 	./$(TARGET)
+
+icon.res: icon.rc
+	llvm-rc icon.rc
 
 release: $(TARGET) $(HTML)
 	cp -f $(TARGET) $(HTML) $(JS) $(WASM) ./bin
@@ -26,14 +30,14 @@ release: $(TARGET) $(HTML)
 $(HTML): $(SRCS)
 	$(EMCC) $(EMCCFLAGS) -o $(HTML) $(SRCS)
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) icon.res
 	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM)
+	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) icon.res
 
 backup:
 	$(MAKE) release
