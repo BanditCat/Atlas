@@ -40,7 +40,7 @@ void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u32* shape, f32* data );
-compute* makeCompute( const char* glsl );
+compute* makeCompute( const char* glsl, u32 argCount );
 void deleteCompute( compute* i );
 tensor* newTensorInitialized( u32 rank, u32* shape, const compute* initializer );
 void deleteTensor( tensor* t );

@@ -154,14 +154,14 @@ static tensor* parseTensor( const char* command ){
   return t;
 }
 // This adds an compute statement to p and returns its index.
-u32 addCompute( program* p, const char* glsl ){
+u32 addCompute( program* p, const char* glsl, u32 argCount ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
     memcpy( tp, p->computes, sizeof( compute* ) * p->numComputes );
     unmem( p->computes ); p->computes = tp;
   }
-  p->computes[ p->numComputes ] = makeCompute( glsl );
+  p->computes[ p->numComputes ] = makeCompute( glsl, argCount );
   return p->numComputes++;
 }
 char* getNextLine(char** str) {
@@ -263,17 +263,20 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       error( "Line %u, command %u: %s", linenum, commandnum, "Empty compute statement." );
     if( *endi != '\'' )
       error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in compute statement." );
-    char* init = mem( 1 + endi - starti, char );
-    memcpy( init, starti, endi - starti );
-    init[ endi - starti ] = '\0';
-    curStep->type = COMPUTE;
-    curStep->compute = addCompute( p, init );
+    char* comp = mem( 1 + endi - starti, char );
+    memcpy( comp, starti, endi - starti );
+    comp[ endi - starti ] = '\0';
     char* sizep = endi + 1;
-    if( *sizep )
+    u32 argCount;
+    int charsread;
+    if( sscanf( sizep, "%u%n", &argCount, &charsread ) == 1 && !sizep[ charsread ] ){
+      curStep->type = COMPUTE;
+      curStep->compute = addCompute( p, comp, argCount );
+      dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n", linenum, commandnum, comp, argCount );
+      unmem( comp );
+    } else
       error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Extra characters after compute statement." );
-    dbg( "Linenum %u commandnum %u: init %s\n", linenum, commandnum, init );
-    unmem( init );
+	     "Malformed compute statement." );
 
     
   } else if( !strcmp( command, "r" ) ){ // Reverse

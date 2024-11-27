@@ -144,15 +144,15 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-compute* makeCompute( const char* glsl ){ // TODO make compute struct that stores buffer, program, uniform locs, etc.
+compute* makeCompute( const char* glsl, u32 argCount ){ // TODO make compute struct that stores buffer, program, uniform locs, etc.
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
-    in vec2 a_position;\n\
-    void main() {\n\
-      gl_Position = vec4(a_position, 0.0, 1.0);\n\
+    in vec2 _a_position;\n\
+    void main(){\n\
+      gl_Position = vec4( _a_position, 0.0, 1.0);\n\
     }\n\
   ";
 
@@ -160,31 +160,31 @@ compute* makeCompute( const char* glsl ){ // TODO make compute struct that store
   const char* fragmentShaderTemplate = "\
     #version 300 es\n\
     precision highp float;\n\
-    out vec4 fragColor;\n\
-    uniform vec2 dims; // Texture dimensions\n\
-    uniform vec4 strides; // Tensor shape\n\
-    vec4 toTensorIndices( float i ) {\n\
+    out vec4 _a_fragColor;\n\
+    uniform vec2 _a_dims; // Texture dimensions\n\
+    uniform vec4 _a_strides; // Tensor shape\n\
+    vec4 _a_toTensorIndices( float i ) {\n\
       vec4 ret;\n\
-      ret.x = floor(i / strides.x);\n\
-      i -= ret.x * strides.x;\n\
-      ret.y = floor(i / strides.y);\n\
-      i -= ret.y * strides.y;\n\
-      ret.z = floor(i / strides.z);\n\
-      i -= ret.z * strides.z;\n\
+      ret.x = floor(i / _a_strides.x);\n\
+      i -= ret.x * _a_strides.x;\n\
+      ret.y = floor(i / _a_strides.y);\n\
+      i -= ret.y * _a_strides.y;\n\
+      ret.z = floor(i / _a_strides.z);\n\
+      i -= ret.z * _a_strides.z;\n\
       ret.w = i;\n\
       return ret;\n\
     }\n\
     void main() {\n\
-      float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * dims.x ) * 4.0 + 0.5;\n\
-      vec4 t = toTensorIndices( i );\n\
-      float r = (%s); ++i;\n\
-      t = toTensorIndices( i );\n\
-      float g = (%s); ++i;\n\
-      t = toTensorIndices( i );\n\
-      float b = (%s); ++i;\n\
-      t = toTensorIndices( i );\n\
-      float a = (%s);\n\
-      fragColor = vec4( r, g, b, a );\n\
+      float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0 + 0.5;\n\
+      vec4 t = _a_toTensorIndices( i );\n\
+      float _a_r = (%s); ++i;\n\
+      t = _a_toTensorIndices( i );\n\
+      float _a_g = (%s); ++i;\n\
+      t = _a_toTensorIndices( i );\n\
+      float _a_b = (%s); ++i;\n\
+      t = _a_toTensorIndices( i );\n\
+      float _a_a = (%s);\n\
+      _a_fragColor = vec4( _a_r, _a_g, _a_b, _a_a );\n\
     }\n\
   ";
 
@@ -256,8 +256,8 @@ compute* makeCompute( const char* glsl ){ // TODO make compute struct that store
   }
 
   // Set uniform locations and VBO.
-  ret->dimsLocation = glGetUniformLocation( ret->program, "dims" );
-  ret->stridesLocation = glGetUniformLocation( ret->program, "strides" );
+  ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );
+  ret->stridesLocation = glGetUniformLocation( ret->program, "_a_strides" );
   
   f32 vertices[] = {
     -1.0f, -1.0f,
