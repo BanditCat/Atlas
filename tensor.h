@@ -25,13 +25,18 @@ typedef struct{
   GLuint program;
   GLuint dimsLocation;
   GLuint stridesLocation;
+  u32 argCount;
+  GLuint argDimsLocation[ 4 ];
+  GLuint argStridesLocation[ 4 ];
+  GLuint argToffsetLocation[ 4 ];
+  GLuint argTexLocation[ 4 ];
   GLuint VBO;
 } compute;
 
 typedef struct{
-  u32 size;
+  u32 allocSize;
   tensor** stack;
-  u32 top;
+  u32 size;
 } tensorStack;
 
 
@@ -42,7 +47,7 @@ tensorStack* newStack( void );
 tensor* newTensor( u32 rank, u32* shape, f32* data );
 compute* makeCompute( const char* glsl, u32 argCount );
 void deleteCompute( compute* i );
-tensor* newTensorInitialized( u32 rank, u32* shape, const compute* initializer );
+tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compute* initializer );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );

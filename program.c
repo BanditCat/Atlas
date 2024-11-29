@@ -110,11 +110,11 @@ static tensor* parseTensor( const char* command ){
   // Now, determine the rank by finding the deepest non-zero dimension
   u32 rank = 0;
   for( u32 i = 0; i < 4; ++i ){
-      if( tempShape[ i ] > 0 )
-	rank = i + 1;
+    if( tempShape[ i ] > 0 )
+      rank = i + 1;
   }
   
-    // Validate that all deeper dimensions are set
+  // Validate that all deeper dimensions are set
   for( u32 i = 0; i < rank; ++i ){
     if( tempShape[i] == 0 )
       error( "%s", "Incomplete tensor shape definition." );
@@ -275,6 +275,8 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     if( sscanf( sizep, "%u%n", &argCount, &charsread ) == 1 && !sizep[ charsread ] ){
       curStep->type = COMPUTE;
       curStep->compute = addCompute( p, comp, argCount );
+      if( argCount > 4 )
+	error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
       dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n", linenum, commandnum, comp, argCount );
       unmem( comp );
     } else
@@ -438,64 +440,64 @@ bool runProgram( tensorStack* ts, program* p ){
       //dbg( "%s", "print" );
       break;
     case COMPUTE:
-      if( !ts->top )
-	error( "%s", "Attempt to run an compute statement with no shape parameter on the stack." );
-      if( ts->stack[ ts->top - 1 ]->rank != 1 )
-	error( "%s", "The shape for an initilizer was not a rank 1 tensor." );
-      if( ts->stack[ ts->top - 1 ]->size > 4 )
+      if( !ts->size )
+	error( "%s", "Attempt to run a compute statement with no shape parameter on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
+	error( "%s", "The shape for a compute was not a rank 1 tensor." );
+      if( ts->stack[ ts->size - 1 ]->size > 4 )
 	error( "%s", "The shape for an initilizer was more than 4 component." );
-      tensorToHostMemory( ts->stack[ ts->top - 1 ] );
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 shape[ 4 ];
-      u32 size = ts->stack[ ts->top - 1 ]->size;
-      for( u32 i = 0; i < ts->stack[ ts->top - 1 ]->size; ++i )
-	shape[ i ] = ts->stack[ ts->top - 1 ]->data[ i ];
+      u32 size = ts->stack[ ts->size - 1 ]->size;
+      for( u32 i = 0; i < ts->stack[ ts->size - 1 ]->size; ++i )
+	shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
       pop( ts );
-      push( ts, newTensorInitialized( size, shape,
+      push( ts, newTensorInitialized( ts, size, shape,
 				      p->computes[ s->compute ] ) );
-      //dbg( "%s", "init" );
+      //dbg( "%s", "compute" );
       break;
     case REVERSE:
-      if( !ts->top )
+      if( !ts->size )
 	error( "%s", "Attempt to reverse with no axis parameter on the stack." );
-      if( ts->stack[ ts->top - 1 ]->rank )
+      if( ts->stack[ ts->size - 1 ]->rank )
 	error( "%s", "Attempt to reverse a nonscalar axis parameter." );
       
-      tensorToHostMemory( ts->stack[ ts->top - 1 ] );
-      u32 axis = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      u32 axis = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      tensorReverse( ts, ts->top - 1, axis );
+      tensorReverse( ts, ts->size - 1, axis );
       //dbg( "%s %u", "reverse", axis );
       break;
     case IF:
-      if( !ts->top )
+      if( !ts->size )
 	error( "%s", "Attempt to if with no parameter on the stack." );
-      if( ts->stack[ ts->top - 1 ]->rank )
+      if( ts->stack[ ts->size - 1 ]->rank )
 	error( "%s", "Attempt to if with a non-scalar parameter." );
       
-      tensorToHostMemory( ts->stack[ ts->top - 1 ] );
-      f32 cond = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      f32 cond = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
       if( cond != 0.0 )
 	i = s->branch - 1;
       //dbg( "%s %u", "if", axis );
       break;
     case TRANSPOSE:
-      if( !ts->top )
+      if( !ts->size )
 	error( "%s", "Attempt to transpose with no axes parameter on the stack." );
-      if( ts->stack[ ts->top - 1 ]->rank != 1 )
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
 	error( "%s", "Attempt to transpose with a axes parameter not of rank 1." );
 
-      u32 axis1 = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset );
-      u32 axis2 = *( ts->stack[ ts->top - 1 ]->data + ts->stack[ ts->top - 1 ]->offset
-		    + ts->stack[ ts->top - 1 ]->strides[ 0 ] );
+      u32 axis1 = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+      u32 axis2 = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
+		    + ts->stack[ ts->size - 1 ]->strides[ 0 ] );
       pop( ts );
-      tensorTranspose( ts, ts->top - 1, axis1, axis2 );
+      tensorTranspose( ts, ts->size - 1, axis1, axis2 );
       //dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
     case TOP:
       {
 	f32* ssize = mem( 1, f32 );
-	*ssize = ts->top;
+	*ssize = ts->size;
 	push( ts, newTensor( 0, NULL, ssize ) );
 	//dbg( "%s %u %u", "transpose", axis1, axis2 );
 	break;

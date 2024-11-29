@@ -144,9 +144,10 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-compute* makeCompute( const char* glsl, u32 argCount ){ // TODO make compute struct that stores buffer, program, uniform locs, etc.
+compute* makeCompute( const char* glsl, u32 argCount ){
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
+  ret->argCount = argCount;
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
@@ -163,6 +164,28 @@ compute* makeCompute( const char* glsl, u32 argCount ){ // TODO make compute str
     out vec4 _a_fragColor;\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\
+    \n\
+    uniform vec4 _a_astrides;\n\
+    uniform float _a_atoffset;\n\
+    uniform vec2 _a_adims;\n\
+    uniform sampler2D _a_atex;\n\
+    float a( vec4 i ){\n\
+      float lindex = dot( i, _a_astrides ) + _a_atoffset;\n\
+      float pixel_index = floor( lindex / 4.0 );\n\
+      float channel = mod( lindex, 4.0 );\n\
+      vec2 uv = ( vec2( mod( pixel_index, _a_adims.x ), \n\
+                  floor( pixel_index / _a_adims.x) ) + 0.5 ) / _a_adims;\n\
+      vec4 texel = texture( _a_atex, uv );\n\
+      if( channel < 1.0 )\n\
+        return texel.r;\n\
+      else if( channel < 2.0 )\n\
+        return texel.g;\n\
+      else if( channel < 3.0 )\n\
+        return texel.b;\n\
+      else\n\
+        return texel.a;\n\
+    }\n\
+    \n\
     vec4 _a_toTensorIndices( float i ) {\n\
       vec4 ret;\n\
       ret.x = floor(i / _a_strides.x);\n\
@@ -175,14 +198,14 @@ compute* makeCompute( const char* glsl, u32 argCount ){ // TODO make compute str
       return ret;\n\
     }\n\
     void main() {\n\
-      float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0 + 0.5;\n\
-      vec4 t = _a_toTensorIndices( i );\n\
+      float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0;\n\
+      vec4 t = _a_toTensorIndices( i + 0.5 );\n\
       float _a_r = (%s); ++i;\n\
-      t = _a_toTensorIndices( i );\n\
+      t = _a_toTensorIndices( i + 0.5 );\n\
       float _a_g = (%s); ++i;\n\
-      t = _a_toTensorIndices( i );\n\
+      t = _a_toTensorIndices( i + 0.5 );\n\
       float _a_b = (%s); ++i;\n\
-      t = _a_toTensorIndices( i );\n\
+      t = _a_toTensorIndices( i + 0.5 );\n\
       float _a_a = (%s);\n\
       _a_fragColor = vec4( _a_r, _a_g, _a_b, _a_a );\n\
     }\n\
@@ -255,7 +278,25 @@ compute* makeCompute( const char* glsl, u32 argCount ){ // TODO make compute str
     error( "%s", msg );
   }
 
-  // Set uniform locations and VBO.
+
+  // Get uniforms.
+  char sname[ 12 ] = "_a_astrides";
+  char toname[ 12 ] = "_a_atoffset";
+  char dname[ 9 ] = "_a_adims";
+  char tname[ 8 ] = "_a_atex";
+  for( u32 i = 0; i < argCount; ++i ){
+    sname[ 3 ] = 'a' + i;
+    toname[ 3 ] = 'a' + i;
+    dname[ 3 ] = 'a' + i;
+    tname[ 3 ] = 'a' + i;
+    ret->argStridesLocation[ i ] = glGetUniformLocation( ret->program, sname );
+    ret->argToffsetLocation[ i ] = glGetUniformLocation( ret->program, toname );
+    ret->argDimsLocation[ i ] = glGetUniformLocation( ret->program, dname );
+    ret->argTexLocation[ i ] = glGetUniformLocation( ret->program, tname );
+    dbg( "%u %u %u %u", ret->argStridesLocation[ i ], ret->argToffsetLocation[ i ],
+	 ret->argDimsLocation[ i ],  ret->argTexLocation[ i ]  );
+  }
+
   ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );
   ret->stridesLocation = glGetUniformLocation( ret->program, "_a_strides" );
   
@@ -281,9 +322,11 @@ void deleteCompute( compute* i ){
   glDeleteBuffers( 1, &i->VBO );
   unmem( i );
 }
-tensor* newTensorInitialized( u32 rank, u32* shape, const compute* compute ){
+tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   tensor* ret = mem( 1, tensor );
-
+  if( compute->argCount > ts->size )
+    error( "A compute was called with %u arguments, but the stack size is only %u.",
+	   compute->argCount, ts->size );
   if( rank > 4 )
     error( "%s", "Rank exceeds maximum of 4." );
 
@@ -333,6 +376,11 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const compute* compute ){
   glUniform4f( compute->stridesLocation, (f32)ret->strides[ 0 ], (f32)ret->strides[ 1 ],
 	       (f32)ret->strides[ 2 ], (f32)ret->strides[ 3 ] );
 
+  // Bind arguments
+  for( u32 i = 0; i < compute->argCount; ++i ){
+    //    glUniform
+  }
+  
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
 
   // Enable the vertex attribute and set up the pointer
@@ -349,40 +397,40 @@ tensor* newTensorInitialized( u32 rank, u32* shape, const compute* compute ){
 
 void push( tensorStack* ts, tensor* t ){
   // Grow stack if necessary. 
-  if( ts->top >= ts->size ){
-    ts->size *= 2;
-    tensor** ns = mem( ts->size, tensor* );
-    memcpy( ns, ts->stack, sizeof( tensor* ) * ( ts->top - 1 ) );
+  if( ts->size >= ts->allocSize ){
+    ts->allocSize *= 2;
+    tensor** ns = mem( ts->allocSize, tensor* );
+    memcpy( ns, ts->stack, sizeof( tensor* ) * ( ts->size - 1 ) );
     unmem( ts->stack );
     ts->stack = ns;
   }
-  ts->stack[ ts->top++ ] = t;
+  ts->stack[ ts->size++ ] = t;
 }
 
 
 void pop( tensorStack* ts ){
-  if( !ts->top )
+  if( !ts->size )
     error( "%s", "Atempt to pop an empty stack!" );
-  deleteTensor( ts->stack[ --ts->top ] );
+  deleteTensor( ts->stack[ --ts->size ] );
 }
 
 tensorStack* newStack( void ){
   tensorStack* ret = mem( 1, tensorStack );
-  ret->size = 256;
-  ret->stack = mem( ret->size, tensor );
-  ret->top = 0;
+  ret->allocSize = 256;
+  ret->stack = mem( ret->allocSize, tensor );
+  ret->size = 0;
   return ret;
 }
 
 void deleteStack( tensorStack* ts ){
-  for( u32 i = 0; i < ts->top; ++i )
+  for( u32 i = 0; i < ts->size; ++i )
     deleteTensor( ts->stack[ i ] );
   unmem( ts->stack );
   unmem( ts );
 }
   
 void printStack( tensorStack* ts ){
-  for( u32 i = ts->top - 1; i < ts->top; --i ){
+  for( u32 i = ts->size - 1; i < ts->size; --i ){
     tensor* t = ts->stack[ i ];
     printf( "Tensor %u\n", i );
     printf( "Shape:" );

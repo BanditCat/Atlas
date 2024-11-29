@@ -17,8 +17,9 @@ u64 memc = 0;
 program* prog;
 tensorStack* ts;
 
-char* testProg = "size;if'start'\n"
-                 "[3 3 3];c't.x / 3.0 + t.y / 3.0' 0\n"
+char* testProg = "size;if'dstart'\n"
+                 "[10];c'i' 0\n"
+                 "[3 3 3];c't.x / 3.0 + t.y / 3.0 + a( vec4( t.z, 0.0, 0.0, 0.0 ) )' 1\n"
                  "l'start';print;l'dstart'\n"
                  "0;r;0;r;\n"
                  "\n";
@@ -242,13 +243,13 @@ int renderThreadFunction( void* data ){
     glViewport( 0, 0, windowWidth, windowHeight );
 
     // Render
-    if( !ts->top )
+    if( !ts->size )
       continue;
-    if( !ts->stack[ ts->top - 1 ]->gpu )
-      tensorToGPUMemory( ts->stack[ ts->top - 1 ] );
-    if( ts->stack[ ts->top - 1 ]->rank != 3 )
+    if( !ts->stack[ ts->size - 1 ]->gpu )
+      tensorToGPUMemory( ts->stack[ ts->size - 1 ] );
+    if( ts->stack[ ts->size - 1 ]->rank != 3 )
       error( "%s", "Display tensor not of rank 3" );
-    if( ts->stack[ ts->top - 1 ]->shape[ 2 ] != 3 )
+    if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 3 )
       error( "%s", "Display tensor not a 3 component tensor of rank 3." );
 
     glClear( GL_COLOR_BUFFER_BIT );
@@ -261,7 +262,7 @@ int renderThreadFunction( void* data ){
 
     // Bind the texture to texture unit 0
     glActiveTexture( GL_TEXTURE0 );
-    glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->tex.texture );
+    glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->size - 1 ]->tex.texture );
 
     // Set uniforms
     GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom" );
@@ -272,27 +273,27 @@ int renderThreadFunction( void* data ){
 
     GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
     glUniform2f( dimsLoc,
-                 ts->stack[ ts->top - 1 ]->tex.width,
-                 ts->stack[ ts->top - 1 ]->tex.height );
+                 ts->stack[ ts->size - 1 ]->tex.width,
+                 ts->stack[ ts->size - 1 ]->tex.height );
 
     GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution" );
     glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
 
     GLint stridesLoc = glGetUniformLocation( shaderProgram, "strides" );
     glUniform4f( stridesLoc,
-                 ts->stack[ ts->top - 1 ]->strides[ 0 ],
-                 ts->stack[ ts->top - 1 ]->strides[ 1 ],
-                 ts->stack[ ts->top - 1 ]->strides[ 2 ],
-                 ts->stack[ ts->top - 1 ]->strides[ 3 ] );
+                 ts->stack[ ts->size - 1 ]->strides[ 0 ],
+                 ts->stack[ ts->size - 1 ]->strides[ 1 ],
+                 ts->stack[ ts->size - 1 ]->strides[ 2 ],
+                 ts->stack[ ts->size - 1 ]->strides[ 3 ] );
     GLint shapeLoc = glGetUniformLocation( shaderProgram, "shape" );
     glUniform4f( shapeLoc,
-                 ts->stack[ ts->top - 1 ]->shape[ 0 ],
-                 ts->stack[ ts->top - 1 ]->shape[ 1 ],
-                 ts->stack[ ts->top - 1 ]->shape[ 2 ],
-                 ts->stack[ ts->top - 1 ]->shape[ 3 ] );
+                 ts->stack[ ts->size - 1 ]->shape[ 0 ],
+                 ts->stack[ ts->size - 1 ]->shape[ 1 ],
+                 ts->stack[ ts->size - 1 ]->shape[ 2 ],
+                 ts->stack[ ts->size - 1 ]->shape[ 3 ] );
 
     GLint toffsetLoc = glGetUniformLocation( shaderProgram, "toffset" );
-    glUniform1f( toffsetLoc, ts->stack[ ts->top - 1 ]->offset );
+    glUniform1f( toffsetLoc, ts->stack[ ts->size - 1 ]->offset );
 
     // Bind VBO and set vertex attributes
     glBindBuffer( GL_ARRAY_BUFFER, vbo );
@@ -379,13 +380,13 @@ void main_loop(){
   glViewport( 0, 0, windowWidth, windowHeight );
 
   // Render
-  if( !ts->top )
+  if( !ts->size )
     return;
-  if( !ts->stack[ ts->top - 1 ]->gpu )
-    tensorToGPUMemory( ts->stack[ ts->top - 1 ] );
-  if( ts->stack[ ts->top - 1 ]->rank != 3 )
+  if( !ts->stack[ ts->size - 1 ]->gpu )
+    tensorToGPUMemory( ts->stack[ ts->size - 1 ] );
+  if( ts->stack[ ts->size - 1 ]->rank != 3 )
     error( "%s", "Display tensor not of rank 3" );
-  if( ts->stack[ ts->top - 1 ]->shape[ 2 ] != 3 )
+  if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 3 )
     error( "%s", "Display tensor not a 3 component tensor of rank 3." );
 
   glClear( GL_COLOR_BUFFER_BIT );
@@ -398,7 +399,7 @@ void main_loop(){
 
   // Bind the texture to texture unit 0
   glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->top - 1 ]->tex.texture );
+  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->size - 1 ]->tex.texture );
 
   // Set uniforms
   GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom" );
@@ -409,27 +410,27 @@ void main_loop(){
 
   GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
   glUniform2f( dimsLoc,
-               ts->stack[ ts->top - 1 ]->tex.width,
-               ts->stack[ ts->top - 1 ]->tex.height );
+               ts->stack[ ts->size - 1 ]->tex.width,
+               ts->stack[ ts->size - 1 ]->tex.height );
 
   GLint resolutionLoc = glGetUniformLocation( shaderProgram, "resolution" );
   glUniform2f( resolutionLoc, (float)windowWidth, (float)windowHeight );
 
   GLint stridesLoc = glGetUniformLocation( shaderProgram, "strides" );
   glUniform4f( stridesLoc,
-               ts->stack[ ts->top - 1 ]->strides[ 0 ],
-               ts->stack[ ts->top - 1 ]->strides[ 1 ],
-               ts->stack[ ts->top - 1 ]->strides[ 2 ],
-               ts->stack[ ts->top - 1 ]->strides[ 3 ] );
+               ts->stack[ ts->size - 1 ]->strides[ 0 ],
+               ts->stack[ ts->size - 1 ]->strides[ 1 ],
+               ts->stack[ ts->size - 1 ]->strides[ 2 ],
+               ts->stack[ ts->size - 1 ]->strides[ 3 ] );
   GLint shapeLoc = glGetUniformLocation( shaderProgram, "shape" );
   glUniform4f( shapeLoc,
-               ts->stack[ ts->top - 1 ]->shape[ 0 ],
-               ts->stack[ ts->top - 1 ]->shape[ 1 ],
-               ts->stack[ ts->top - 1 ]->shape[ 2 ],
-               ts->stack[ ts->top - 1 ]->shape[ 3 ] );
+               ts->stack[ ts->size - 1 ]->shape[ 0 ],
+               ts->stack[ ts->size - 1 ]->shape[ 1 ],
+               ts->stack[ ts->size - 1 ]->shape[ 2 ],
+               ts->stack[ ts->size - 1 ]->shape[ 3 ] );
 
   GLint toffsetLoc = glGetUniformLocation( shaderProgram, "toffset" );
-  glUniform1f( toffsetLoc, ts->stack[ ts->top - 1 ]->offset );
+  glUniform1f( toffsetLoc, ts->stack[ ts->size - 1 ]->offset );
 
   // Bind VBO and set vertex attributes
   glBindBuffer( GL_ARRAY_BUFFER, vbo );
