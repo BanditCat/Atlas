@@ -228,7 +228,10 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     char* label = mem( 1 + endi - starti, char );
     memcpy( label, starti, endi - starti );
     label[ endi - starti ] = '\0';
-    trieInsert( p->labels, label, --p->numSteps );
+    --p->numSteps;
+    if( trieSearch( p->labels, label, NULL ) )
+      error( "Line %u, command %u: duplicate label '%s'", linenum, commandnum, label );
+    trieInsert( p->labels, label, p->numSteps );
     unmem( label );
     dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
     

@@ -19,8 +19,8 @@ tensorStack* ts;
 
 char* testProg = "size;if'start'\n"
                  "[3 3 3];c't.x / 3.0 + t.y / 3.0' 0\n"
-                 "l'start';print\n"
-                 "0;r;[0 1];t\n"
+                 "l'start';print;l'dstart'\n"
+                 "0;r;0;r;\n"
                  "\n";
 
 // Global variables
@@ -192,6 +192,7 @@ int renderThreadFunction( void* data ){
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
   glViewport( 0, 0, windowWidth, windowHeight );
   glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+  SDL_GL_SetSwapInterval( 1 );
 
   shaderProgram = createProgram( vertexSource, fragmentSource );
 
@@ -220,6 +221,7 @@ int renderThreadFunction( void* data ){
 
   // Main loop
   while( SDL_AtomicGet( &running ) ){
+    SDL_PumpEvents();
     // Run the program
     if( !runProgram( ts, prog ) ){
       SDL_AtomicSet( &running, 0 );
@@ -235,7 +237,7 @@ int renderThreadFunction( void* data ){
 
     // Get current window size
     SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-
+    
     // Adjust the viewport
     glViewport( 0, 0, windowWidth, windowHeight );
 
@@ -306,9 +308,7 @@ int renderThreadFunction( void* data ){
     glDisableVertexAttribArray( posAttrib );
 
     SDL_GL_SwapWindow( window );
-
-    // Small delay to prevent high CPU usage
-    // SDL_Delay(10);
+    DwmFlush();
   }
 
   // Cleanup
@@ -346,7 +346,7 @@ void main_loop(){
       }
     } else if( event.type == SDL_MOUSEMOTION ){
       if( event.motion.state & SDL_BUTTON_LMASK ){
-        float deltaX = (float)event.motion.xrel / 800 * shared_zoom * 2.0f;
+        float deltaX = (float)event.motion.xrel / 600 * shared_zoom * 2.0f;
         float deltaY = (float)event.motion.yrel / 600 * shared_zoom * 2.0f;
         shared_offsetX -= deltaX;
         shared_offsetY += deltaY;
@@ -450,12 +450,10 @@ void main_loop(){
 
 // Main function
 int main( int argc, char* argv[] ){
-
 #ifndef __EMSCRIPTEN__
   // Set the output code page to UTF-8
-  if( !SetConsoleOutputCP( CP_UTF8 ) )
-    error( "%s", "Error setting console code page to UTF-8.\n" );
-
+  SetConsoleOutputCP( CP_UTF8 );
+  
   SDL_AtomicSet( &running, 1 );
 
   // Initialize mutex
@@ -463,9 +461,13 @@ int main( int argc, char* argv[] ){
   if( data_mutex == NULL ){
     error( "%s", "Failed to create mutex" );
   }
+
 #else
   running = 1;
 #endif
+
+  setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
+  setvbuf( stderr, NULL, _IONBF, 0 ); // Unbuffer stderr
 
   // Initialize SDL and create window in the main thread
   if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
@@ -489,6 +491,7 @@ int main( int argc, char* argv[] ){
 #endif
 
 #ifndef __EMSCRIPTEN__
+  
   // Do not create the OpenGL context here for non-Emscripten builds
 #else
   // Emscripten code (single-threaded), create the context here
@@ -539,7 +542,12 @@ int main( int argc, char* argv[] ){
     // Process events
     SDL_Event event;
     while( SDL_PollEvent( &event ) ){
-      if( event.type == SDL_QUIT ){
+      if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+	int width, height;
+	SDL_GetWindowSize( window, &width, &height );
+	glViewport( 0, 0, width, height );
+	DwmFlush();
+      } else if( event.type == SDL_QUIT ){
         SDL_AtomicSet( &running, 0 );
       } else if( event.type == SDL_WINDOWEVENT ){
         if( event.window.event == SDL_WINDOWEVENT_CLOSE ){
@@ -557,7 +565,7 @@ int main( int argc, char* argv[] ){
       } else if( event.type == SDL_MOUSEMOTION ){
         if( event.motion.state & SDL_BUTTON_LMASK ){
           SDL_LockMutex( data_mutex );
-          float deltaX = (float)event.motion.xrel / 800 * shared_zoom * 2.0f;
+          float deltaX = (float)event.motion.xrel / 600 * shared_zoom * 2.0f;
           float deltaY = (float)event.motion.yrel / 600 * shared_zoom * 2.0f;
           shared_offsetX -= deltaX;
           shared_offsetY += deltaY;
