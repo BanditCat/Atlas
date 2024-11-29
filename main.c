@@ -18,8 +18,8 @@ program* prog;
 tensorStack* ts;
 
 char* testProg = "size;if'dstart'\n"
-                 "[10];c'i' 0\n"
-                 "[3 3 3];c't.x / 3.0 + t.y / 3.0' 1\n"
+                 "[10];c'i' 0;0;r;\n"
+                 "[3 3 3];c't.x / 3.0 + t.y / 3.0 + a( vec4( t.z, 0.0, 0.0, 0.0 ) )' 1\n"
                  "l'start';print;l'dstart'\n"
                  "0;r;0;r;\n"
                  "\n";
