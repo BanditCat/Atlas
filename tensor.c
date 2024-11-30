@@ -473,7 +473,7 @@ void push( tensorStack* ts, tensor* t ){
   if( ts->size >= ts->allocSize ){
     ts->allocSize *= 2;
     tensor** ns = mem( ts->allocSize, tensor* );
-    memcpy( ns, ts->stack, sizeof( tensor* ) * ( ts->size - 1 ) );
+    memcpy( ns, ts->stack, sizeof( tensor* ) * ts->size );
     unmem( ts->stack );
     ts->stack = ns;
   }
