@@ -74,9 +74,9 @@ void trieInsert( trieNode* root, const char* key, u32 value ){
       splitNode->thisPart[ prefixLen ] = '\0';
 
       // Adjust the existing child
-      char* childSuffix = child->thisPart + prefixLen;
+      char* childSuffix = stringDup( child->thisPart + prefixLen );
       unmem( child->thisPart );
-      child->thisPart = stringDup( childSuffix );
+      child->thisPart = childSuffix;
 
       // Move the existing child under the split node
       unsigned char suffixFirstChar = (unsigned char)*child->thisPart;
