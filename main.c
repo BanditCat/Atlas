@@ -125,7 +125,7 @@ float shared_offsetY = 0.0f;
 
 // Vertex Shader Source
 const GLchar* vertexSource = "#version 300 es\n"
-                             "precision highp float;\n"
+                             "precision mediump float;\n"
                              "in vec2 position;\n"
                              "out vec2 fragCoord;\n"
                              "void main(){\n"
@@ -136,7 +136,7 @@ const GLchar* vertexSource = "#version 300 es\n"
 // Fragment Shader Source
 const GLchar* fragmentSource =
   "#version 300 es\n"
-  "precision highp float;\n"
+  "precision mediump float;\n"
   "in vec2 fragCoord;\n"
   "out vec4 fragColor;\n"
   "uniform float zoom;\n"
