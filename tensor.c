@@ -185,6 +185,66 @@ compute* makeCompute( const char* glsl, u32 argCount ){
       else\n\
         return texel.a;\n\
     }\n\
+    uniform vec4 _a_bstrides;\n\
+    uniform float _a_btoffset;\n\
+    uniform vec2 _a_bdims;\n\
+    uniform sampler2D _a_btex;\n\
+    float b( vec4 i ){\n\
+      float lindex = dot( i, _a_bstrides ) + _a_btoffset;\n\
+      float pixel_index = floor( lindex / 4.0 );\n\
+      float channel = mod( lindex, 4.0 );\n\
+      vec2 uv = ( vec2( mod( pixel_index, _a_bdims.x ), \n\
+                  floor( pixel_index / _a_bdims.x) ) + 0.5 ) / _a_bdims;\n\
+      vec4 texel = texture( _a_btex, uv );\n\
+      if( channel < 1.0 )\n\
+        return texel.r;\n\
+      else if( channel < 2.0 )\n\
+        return texel.g;\n\
+      else if( channel < 3.0 )\n\
+        return texel.b;\n\
+      else\n\
+        return texel.a;\n\
+    }\n\
+    uniform vec4 _a_cstrides;\n\
+    uniform float _a_ctoffset;\n\
+    uniform vec2 _a_cdims;\n\
+    uniform sampler2D _a_ctex;\n\
+    float c( vec4 i ){\n\
+      float lindex = dot( i, _a_cstrides ) + _a_ctoffset;\n\
+      float pixel_index = floor( lindex / 4.0 );\n\
+      float channel = mod( lindex, 4.0 );\n\
+      vec2 uv = ( vec2( mod( pixel_index, _a_cdims.x ), \n\
+                  floor( pixel_index / _a_cdims.x) ) + 0.5 ) / _a_cdims;\n\
+      vec4 texel = texture( _a_ctex, uv );\n\
+      if( channel < 1.0 )\n\
+        return texel.r;\n\
+      else if( channel < 2.0 )\n\
+        return texel.g;\n\
+      else if( channel < 3.0 )\n\
+        return texel.b;\n\
+      else\n\
+        return texel.a;\n\
+    }\n\
+    uniform vec4 _a_dstrides;\n\
+    uniform float _a_dtoffset;\n\
+    uniform vec2 _a_ddims;\n\
+    uniform sampler2D _a_dtex;\n\
+    float d( vec4 i ){\n\
+      float lindex = dot( i, _a_dstrides ) + _a_dtoffset;\n\
+      float pixel_index = floor( lindex / 4.0 );\n\
+      float channel = mod( lindex, 4.0 );\n\
+      vec2 uv = ( vec2( mod( pixel_index, _a_ddims.x ), \n\
+                  floor( pixel_index / _a_ddims.x) ) + 0.5 ) / _a_ddims;\n\
+      vec4 texel = texture( _a_dtex, uv );\n\
+      if( channel < 1.0 )\n\
+        return texel.r;\n\
+      else if( channel < 2.0 )\n\
+        return texel.g;\n\
+      else if( channel < 3.0 )\n\
+        return texel.b;\n\
+      else\n\
+        return texel.a;\n\
+    }\n\
     \n\
     vec4 _a_toTensorIndices( float i ) {\n\
       vec4 ret;\n\
@@ -327,6 +387,8 @@ tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compu
   if( compute->argCount > ts->size )
     error( "A compute was called with %u arguments, but the stack size is only %u.",
 	   compute->argCount, ts->size );
+  for( u32 i = 0; i < compute->argCount; ++i )
+    tensorToGPUMemory( ts->stack[ ( ts->size - 1 ) - i ] );
   if( rank > 4 )
     error( "%s", "Rank exceeds maximum of 4." );
 
@@ -381,6 +443,7 @@ tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compu
     glActiveTexture( GL_TEXTURE0 + i );
     const tensor* at = ts->stack[ ( ts->size - 1 ) - i ];
     glBindTexture( GL_TEXTURE_2D, at->tex.texture );
+    glUniform1i( compute->argTexLocation[ i ], i );
     glUniform2f( compute->argDimsLocation[ i ], at->tex.width, at->tex.height );
     glUniform4f( compute->argStridesLocation[ i ], at->strides[ 0 ], at->strides[ 1 ],
 		 at->strides[ 2 ], at->strides[ 3 ] );
@@ -398,6 +461,10 @@ tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compu
 
   glBindTexture( GL_TEXTURE_2D, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+  // Pop arguments off the stack
+  for( u32 i = 0; i < compute->argCount; ++i )
+    pop( ts );
   return ret;
 }
 

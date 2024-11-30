@@ -17,13 +17,72 @@ u64 memc = 0;
 program* prog;
 tensorStack* ts;
 
-char* testProg = "size;if'dstart'\n"
-                 "[10];c'i' 0;0;r;\n"
-                 "[3 3 3];c't.x / 3.0 + t.y / 3.0 + a( vec4( t.z, 0.0, 0.0, 0.0 ) )' 1\n"
-                 "l'start';print;l'dstart'\n"
-                 "0;r;0;r;\n"
-                 "\n";
+/* char* testProg = "size;if'dstart'\n" */
+/*                  "[10];c'i / 20.0' 0;0;r;[[0.1] [0.2] [3] [4]];print;\n" */
+/*                  "[3 3 3];c't.x / 3.0 + t.y / 3.0 + b( vec4( t.z, 0.0, 0.0, 0.0 ) ) + a( vec4( 0.0, t.z, 0.0, 0.0 ) )' 2\n" */
+/*                  "l'start';print;l'dstart';0;r;[0 1];t\n" */
+/*                  "0;r;0;r;\n" */
+/*                  "\n"; */
 
+char* testProg = "\
+size;if'start'\n\
+[60 60 2];c'( t.z == 1.0 ) ?\
+	  ( t.x + 0.5 ) * 4.0 / 60.0 - 2.0 :\
+	  ( t.y + 0.5 ) * 4.0 / 60.0 - 2.0\
+	 ' 0;\
+[60 60 2];c'0.0' 0\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+1;dup;\n\
+\n\
+[60 60 2];c'( t.z == 0.0 ) ?\
+pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
+2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+print\n\
+\n\
+l'start'\n\
+0;dup\n\
+[60 60 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\
+";
+  
 // Global variables
 SDL_Window* window = NULL;
 SDL_GLContext glContext;

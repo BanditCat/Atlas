@@ -16,6 +16,7 @@ typedef struct{
     PRINT,
     TENSOR,
     TOP,
+    DUP,
     QUIT
   } type;
   union{

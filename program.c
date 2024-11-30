@@ -289,6 +289,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
     
+  } else if( !strcmp( command, "dup" ) ){ // Dup
+    curStep->type = DUP;
+    dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
+
+    
   } else if( !strcmp( command, "size" ) ){ // Top
     curStep->type = TOP;
     dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
@@ -466,6 +471,20 @@ bool runProgram( tensorStack* ts, program* p ){
       u32 axis = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
       tensorReverse( ts, ts->size - 1, axis );
+      //dbg( "%s %u", "reverse", axis );
+      break;
+    case DUP:
+      if( !ts->size )
+	error( "%s", "Attempt to duplicate with no parameter on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank )
+	error( "%s", "Attempt to duplicate with a nonscalar parameter." );
+      
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      u32 dup = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+      pop( ts );
+      if( dup > ts->size - 1 )
+	error( "%s", "Attempt to duplicate past the end of the stack." );
+      push( ts, copyTensor( ts->stack[ ( ts->size - 1 ) - dup ] ) );
       //dbg( "%s %u", "reverse", axis );
       break;
     case IF:
