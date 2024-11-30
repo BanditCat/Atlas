@@ -257,6 +257,27 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
 
 
+  } else if( !strncmp( command, "call'", 5 ) ){ // Call
+    char* starti = command + 5;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty call statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in call statement." );
+    char* branchName = mem( 1 + endi - starti, char );
+    memcpy( branchName, starti, endi - starti );
+    branchName[ endi - starti ] = '\0';
+    curStep->type = CALL;
+    curStep->branchName = branchName;
+    char* sizep = endi + 1;
+    if( *sizep )
+      error( "Line %u, command %u: %s", linenum, commandnum,
+	     "Extra characters after call statement." );
+    dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum, branchName );
+
+
   } else if( !strncmp( command, "c'", 2 ) ){ // Compute
     char* starti = command + 2;
     char* endi = starti;
@@ -298,6 +319,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = TOP;
     dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
 
+
+  } else if( !strcmp( command, "return" ) ){ // Return
+    curStep->type = RETURN;
+    dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
+    
     
   } else if( !strcmp( command, "t" ) ){ // Transpose
     curStep->type = TRANSPOSE;
@@ -371,10 +397,10 @@ program* newProgram( char* prog ){
 
   // After adding all steps now we can replace if statement branchNames with the label locations.
   for( u32 i = 0; i < ret->numSteps; ++i )
-    if( ret->steps[ i ].type == IF ){
+    if( ret->steps[ i ].type == IF || ret->steps[ i ].type == CALL ){
       u32 jumpTo;
       if( !trieSearch( ret->labels, ret->steps[ i ].branchName, &jumpTo ) )
-	error( "If statement with unknown label %s.", ret->steps[ i ].branchName );
+	error( "Statement with unknown label %s.", ret->steps[ i ].branchName );
       unmem( ret->steps[ i ].branchName );
       ret->steps[ i ].branch = jumpTo;
     }
@@ -447,6 +473,22 @@ bool runProgram( tensorStack* ts, program* p ){
     case PRINT:
       printStack( ts );
       //dbg( "%s", "print" );
+      break;
+    case CALL:
+      if( p->numReturns >= p->returnStackSize ){
+	p->returnStackSize *= 2;
+	u32* t = mem( p->returnStackSize, u32 );
+	memcpy( t, p->returns, p->numReturns * sizeof( u32 ) );
+	unmem( p->returns );
+	p->returns = t;	
+      }
+      p->returns[ p->numReturns++ ] = i;
+      i = s->branch - 1;
+      //dbg( "%s", "call" );
+      break;
+    case RETURN:
+      i = p->returns[ --p->numReturns ];
+      //dbg( "%s", "return" );
       break;
     case COMPUTE:
       if( !ts->size )

@@ -31,53 +31,21 @@ size;if'start'\n\
 	  ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0\
 	 ' 0;\
 [600 600 2];c'0.0' 0\n\
+1;if'skip'\n\
+l'mand'\n\
 1;dup;\n\
 \n\
 [600 600 2];c'( t.z == 0.0 ) ?\
 pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
 2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-print\n\
-\n\
+return\n\
+l'skip'\n\
+call'mand'\n\
+call'mand'\n\
+call'mand'\n\
+call'mand'\n\
+call'mand'\n\
+call'mand'\n\
 l'start'\n\
 [600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\
 ";
@@ -125,7 +93,7 @@ float shared_offsetY = 0.0f;
 
 // Vertex Shader Source
 const GLchar* vertexSource = "#version 300 es\n"
-                             "precision mediump float;\n"
+                             "precision highp float;\n"
                              "in vec2 position;\n"
                              "out vec2 fragCoord;\n"
                              "void main(){\n"
@@ -136,7 +104,7 @@ const GLchar* vertexSource = "#version 300 es\n"
 // Fragment Shader Source
 const GLchar* fragmentSource =
   "#version 300 es\n"
-  "precision mediump float;\n"
+  "precision highp float;\n"
   "in vec2 fragCoord;\n"
   "out vec4 fragColor;\n"
   "uniform float zoom;\n"
