@@ -232,8 +232,8 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     if( trieSearch( p->labels, label, NULL ) )
       error( "Line %u, command %u: duplicate label '%s'", linenum, commandnum, label );
     trieInsert( p->labels, label, p->numSteps );
-    unmem( label );
     dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
+    unmem( label );
     
     
   } else if( !strncmp( command, "if'", 3 ) ){ // If
