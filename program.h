@@ -6,6 +6,8 @@
 #define initSize 256
 #include "trie.h"
 
+
+// TODO: recursive programs.  uniforms. elementwise basic ops
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
 typedef struct{
   enum{
@@ -17,7 +19,9 @@ typedef struct{
     TENSOR,
     TOP,
     DUP,
-    QUIT
+    QUIT,
+    CALL,
+    RETURN
   } type;
   union{
     tensor* tensor;
@@ -35,6 +39,9 @@ typedef struct{
   trieNode* labels;
   u32 numSteps;
   u32 stepStackSize;
+  u32* returns;
+  u32 numReturns;
+  u32 returnStackSize;
 } program;
 
 program* newProgramFromString( const char* prog );

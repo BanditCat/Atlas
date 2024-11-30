@@ -346,7 +346,10 @@ program* newProgram( char* prog ){
   ret->numSteps = 0;
   ret->stepStackSize = initSize;
   ret->labels = newTrieNode( NULL, 0 );
-    
+  ret->numReturns = 0;
+  ret->returns = mem( initSize, step );
+  ret->returnStackSize = initSize;
+  
   char* ptr = prog;
   u32 linenum = 1;
   char* line;
@@ -428,6 +431,7 @@ void deleteProgram( program* p ){
     
   }
   deleteTrieNode( p->labels );
+  unmem( p->returns );
   unmem( p->computes );
   unmem( p->steps );
   unmem( p );
