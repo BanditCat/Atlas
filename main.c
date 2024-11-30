@@ -41,11 +41,6 @@ pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 
 return\n\
 l'skip'\n\
 call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
 l'start'\n\
 [600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\
 ";
