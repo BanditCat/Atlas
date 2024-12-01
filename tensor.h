@@ -44,7 +44,7 @@ tensor* copyTensor( const tensor* t );
 void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
-tensor* newTensor( u32 rank, u32* shape, f32* data );
+tensor* newTensor( u32 rank, const u32* shape, f32* data );
 compute* makeCompute( const char* glsl, u32 argCount );
 void deleteCompute( compute* i );
 tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compute* initializer );
@@ -54,6 +54,7 @@ void push( tensorStack* ts, tensor* t );
 void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  // BUGBUG
 void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
 void tensorReverse( tensorStack* ts, u32 index, u32 axis );
+void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis );
 void pop( tensorStack* ts );
 // Functions for printing tensors. These put the tensor in cpu memory if not already there.
 char* formatTensorData( tensor* t );

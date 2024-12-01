@@ -96,7 +96,7 @@ void tensorToGPUMemory( tensor* t ){
   t->ownsData = true;
 }
 // Warning! this takes ownership of data and will deallocate it.
-tensor* newTensor( u32 rank, u32* shape, f32* data ){
+tensor* newTensor( u32 rank, const u32* shape, f32* data ){
   tensor* ret = mem( 1, tensor );
 
   if( rank > 4 )
@@ -565,4 +565,97 @@ void tensorReverseHelper( tensor* t, u32 axis ){
 }
 void tensorReverse( tensorStack* ts, u32 index, u32 axis ){
   tensorReverseHelper( ts->stack[ index ], axis );
+}
+void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
+  tensorToHostMemory( t ); 
+  tensorToHostMemory( t2 );
+
+  if( t->rank != t2->rank )
+    error( "Attempt to concatenate tensors of different rank: %u vs %u", t->rank, t2->rank );
+
+  // Check that shapes are compatible except along the concatenation axis
+  u32 new_shape[ 4 ];
+  for( u32 i = 0; i < t->rank; ++i ){
+    if( i == axis ){
+      new_shape[ i ] = t->shape[ i ] + t2->shape[ i ];
+    } else{
+      if( t->shape[ i ] != t2->shape[ i ] )
+        error( "Shapes are not compatible for concatenation along axis %u.", axis );
+      new_shape[ i ] = t->shape[ i ];
+    }
+  }
+
+  // Compute new strides
+  u32 new_strides[ 4 ];
+  u32 size = 1;
+  for( int i = t->rank - 1; i >= 0; --i ){
+    new_strides[ i ] = size;
+    size *= new_shape[ i ];
+  }
+  size_t total_elements = size;
+
+  // Allocate new data buffer
+  f32* new_data = mem( total_elements, f32 );
+
+  // Initialize indices
+  u32 indices[ 4 ] = { 0, 0, 0, 0 };
+  u32 indices_t2[ 4 ];
+
+  // Iterate over all elements
+  for( size_t count = 0; count < total_elements; ++count ){
+
+    f32 val;
+
+    if( indices[ axis ] < t->shape[ axis ] ){
+      // Get data from t
+      size_t src_idx = t->offset;
+      for( u32 i = 0; i < t->rank; ++i )
+        src_idx += indices[ i ] * t->strides[ i ];
+      val = t->data[ src_idx ];
+    } else{
+      // Get data from t2
+      for( u32 i = 0; i < t->rank; ++i )
+        indices_t2[ i ] = indices[ i ];
+      indices_t2[ axis ] -= t->shape[ axis ];
+      size_t src_idx = t2->offset;
+      for( u32 i = 0; i < t2->rank; ++i )
+        src_idx += indices_t2[ i ] * t2->strides[ i ];
+      val = t2->data[ src_idx ];
+    }
+
+    // Compute dest_idx
+    size_t dest_idx = 0;
+    for( u32 i = 0; i < t->rank; ++i )
+      dest_idx += indices[ i ] * new_strides[ i ];
+
+    new_data[ dest_idx ] = val;
+
+    // Increment indices like in nested loops
+    for( int i = t->rank - 1; i >= 0; --i ){
+      indices[ i ]++;
+      if( indices[ i ] < new_shape[ i ] )
+        break;
+      else
+        indices[ i ] = 0;
+    }
+  }
+
+  // Free old data if owned
+  if( t->ownsData ){
+    unmem( t->data );
+  }
+
+  t->data = new_data;
+  t->ownsData = true;
+
+  // Update shape and strides
+  for( u32 i = 0; i < t->rank; ++i ){
+    t->shape[ i ] = new_shape[ i ];
+    t->strides[ i ] = new_strides[ i ];
+  }
+
+  t->size = total_elements;
+}
+void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
+  tensorCatHelper( ts->stack[ index1 ], ts->stack[ index2 ], axis );
 }

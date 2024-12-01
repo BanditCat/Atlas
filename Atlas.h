@@ -53,6 +53,10 @@ extern u64 memc;
 			  fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ),\
 			  fflush( stdout ) )
 
+// Global for ease.
+extern SDL_Window* window;
+extern SDL_GLContext glContext;
+
 #include "trie.h"
 #include "tensor.h"
 #include "program.h"

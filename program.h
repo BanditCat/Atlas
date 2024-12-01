@@ -15,13 +15,16 @@ typedef struct{
     IF,
     TRANSPOSE,
     REVERSE,
+    CAT,
     PRINT,
     TENSOR,
     TOP,
     DUP,
     QUIT,
     CALL,
-    RETURN
+    POP,
+    RETURN,
+    WINDOWSIZE
   } type;
   union{
     tensor* tensor;

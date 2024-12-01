@@ -13,18 +13,17 @@
 // Main must define this.
 u64 memc = 0;
 
+SDL_Window* window = NULL;
+SDL_GLContext glContext;
+
 // The compiled program to be run.
 program* prog;
 tensorStack* ts;
 
-/* char* testProg = "size;if'dstart'\n" */
-/*                  "[10];c'i / 20.0' 0;0;r;[[0.1] [0.2] [3] [4]];print;\n" */
-/*                  "[3 3 3];c't.x / 3.0 + t.y / 3.0 + b( vec4( t.z, 0.0, 0.0, 0.0 ) ) + a( vec4( 0.0, t.z, 0.0, 0.0 ) )' 2\n" */
-/*                  "l'start';print;l'dstart';0;r;[0 1];t\n" */
-/*                  "0;r;0;r;\n" */
-/*                  "\n"; */
+#include "mandelbrot.h"
 
 char* testProg = "\
+windowSize;[2];0;cat;print;pop\n\
 size;if'start'\n\
 [600 600 2];c'( t.z == 0.0 ) ?\
 	  ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 :\
@@ -36,27 +35,18 @@ l'mand'\n\
 1;dup;\n\
 \n\
 [600 600 2];c'( t.z == 0.0 ) ?\
-pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ): \
-2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
+              pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) \
+                                        + a( vec4( t.xy, 0.0, 0.0 ) ) :\
+              2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) \
+                                        + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
 return\n\
 l'skip'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-call'mand'\n\
-l'start'\n\
+mand;mand;mand;mand;mand;mand;mand;[1 2 3]\n\
+l'start';pop;mand;0;dup;\n\
 [600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\
 ";
   
 // Global variables
-SDL_Window* window = NULL;
-SDL_GLContext glContext;
 GLuint shaderProgram;
 GLuint vbo;
 
@@ -122,18 +112,11 @@ const GLchar* fragmentSource =
   "float sampleTensorIndex(vec4 i){\n"
   "  float lindex = dot( i, strides ) + toffset;\n"
   "  float pixel_index = floor( lindex / 4.0 );\n"
-  "  float channel = mod( lindex, 4.0 );\n"
+  "  int channel = int( mod( lindex, 4.0 ) );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x "
   ") ) + 0.5 ) / dims;\n"
   "  vec4 texel = texture( tex, uv );\n"
-  "  if( channel < 1.0 )\n"
-  "    return texel.r;\n"
-  "  else if( channel < 2.0 )\n"
-  "    return texel.g;\n"
-  "  else if( channel < 3.0 )\n"
-  "    return texel.b;\n"
-  "  else\n"
-  "    return texel.a;\n"
+  "  return texel[ channel ];\n"
   "}\n"
   "void main(){\n"
   "  vec2 uv = fragCoord;\n"
@@ -245,7 +228,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( testProg );
+  prog = newProgramFromString( (char*)mandelbrot_atl );
   ts = newStack();
 
   float zoom, offsetX, offsetY;

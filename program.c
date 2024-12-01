@@ -257,27 +257,6 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
 
 
-  } else if( !strncmp( command, "call'", 5 ) ){ // Call
-    char* starti = command + 5;
-    char* endi = starti;
-    while( *endi && *endi != '\'' )
-      endi++;
-    if( endi == starti )
-      error( "Line %u, command %u: %s", linenum, commandnum, "Empty call statement." );
-    if( *endi != '\'' )
-      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in call statement." );
-    char* branchName = mem( 1 + endi - starti, char );
-    memcpy( branchName, starti, endi - starti );
-    branchName[ endi - starti ] = '\0';
-    curStep->type = CALL;
-    curStep->branchName = branchName;
-    char* sizep = endi + 1;
-    if( *sizep )
-      error( "Line %u, command %u: %s", linenum, commandnum,
-	     "Extra characters after call statement." );
-    dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum, branchName );
-
-
   } else if( !strncmp( command, "c'", 2 ) ){ // Compute
     char* starti = command + 2;
     char* endi = starti;
@@ -310,6 +289,16 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
     
+  } else if( !strcmp( command, "cat" ) ){ // Concatenate
+    curStep->type = CAT;
+    dbg( "Linenum %u commandnum %u: cat\n", linenum, commandnum );
+
+    
+  } else if( !strcmp( command, "pop" ) ){ // Pop
+    curStep->type = POP;
+    dbg( "Linenum %u commandnum %u: pop\n", linenum, commandnum );
+
+    
   } else if( !strcmp( command, "dup" ) ){ // Dup
     curStep->type = DUP;
     dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
@@ -323,6 +312,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   } else if( !strcmp( command, "return" ) ){ // Return
     curStep->type = RETURN;
     dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
+    
+    
+  } else if( !strcmp( command, "windowSize" ) ){ // Window size
+    curStep->type = WINDOWSIZE;
+    dbg( "Linenum %u commandnum %u: window size\n", linenum, commandnum );
     
     
   } else if( !strcmp( command, "t" ) ){ // Transpose
@@ -358,8 +352,23 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
 
 
-  } else{ // Error
-    error( "Unknown command %s.", command );
+  } else{ // Call
+    char* starti = command;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty call statement." );
+    if( *endi == '\'' )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Quote error." );
+    char* branchName = mem( 1 + endi - starti, char );
+    memcpy( branchName, starti, endi - starti );
+    branchName[ endi - starti ] = '\0';
+    curStep->type = CALL;
+    curStep->branchName = branchName;
+    dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum, branchName );
+
+
   }
 }
 // Modifies prog.
@@ -467,12 +476,25 @@ bool runProgram( tensorStack* ts, program* p ){
     //dbg( "Step %u", i );
     step* s = p->steps + i;
     switch( s->type ){
+    case WINDOWSIZE:
+      static const u32 wsshape[ 1 ] = { 2 };
+      int windowWidth, windowHeight;
+      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+      f32* data = mem( 2, f32 );
+      data[ 0 ] = windowWidth;
+      data[ 1 ] = windowHeight;
+      push( ts, newTensor( 1, wsshape, data ) );
+      break;
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
       break;
     case PRINT:
       printStack( ts );
       //dbg( "%s", "print" );
+      break;
+    case POP:
+      pop( ts );
+      //dbg( "%s", "pop" );
       break;
     case CALL:
       if( p->numReturns >= p->returnStackSize ){
@@ -487,6 +509,8 @@ bool runProgram( tensorStack* ts, program* p ){
       //dbg( "%s", "call" );
       break;
     case RETURN:
+      if( !p->numReturns )
+	error( "%s", "Attempt to return with an empty return stack." );
       i = p->returns[ --p->numReturns ];
       //dbg( "%s", "return" );
       break;
@@ -507,18 +531,35 @@ bool runProgram( tensorStack* ts, program* p ){
 				      p->computes[ s->compute ] ) );
       //dbg( "%s", "compute" );
       break;
+    case CAT:
+      {
+	if( ts->size < 3 )
+	  error( "%s", "Attempt to concatenate without enough arguments on the stack." );
+	if( ts->stack[ ts->size - 1 ]->rank )
+	  error( "%s", "Attempt to concatenate with a nonscalar axis parameter." );
+	
+	tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+	u32 axis = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+	pop( ts );
+	tensorCat( ts, ts->size - 2, ts->size - 1, axis );
+	pop( ts );
+	dbg( "%s %u", "cat", axis );
+	break;
+      }
     case REVERSE:
-      if( !ts->size )
-	error( "%s", "Attempt to reverse with no axis parameter on the stack." );
-      if( ts->stack[ ts->size - 1 ]->rank )
-	error( "%s", "Attempt to reverse a nonscalar axis parameter." );
-      
-      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
-      u32 axis = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
-      pop( ts );
-      tensorReverse( ts, ts->size - 1, axis );
-      //dbg( "%s %u", "reverse", axis );
-      break;
+      {
+	if( !ts->size )
+	  error( "%s", "Attempt to reverse with no axis parameter on the stack." );
+	if( ts->stack[ ts->size - 1 ]->rank )
+	  error( "%s", "Attempt to reverse a nonscalar axis parameter." );
+	
+	tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+	u32 axis = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+	pop( ts );
+	tensorReverse( ts, ts->size - 1, axis );
+	//dbg( "%s %u", "reverse", axis );
+	break;
+      }
     case DUP:
       if( !ts->size )
 	error( "%s", "Attempt to duplicate with no parameter on the stack." );
@@ -564,7 +605,7 @@ bool runProgram( tensorStack* ts, program* p ){
 	f32* ssize = mem( 1, f32 );
 	*ssize = ts->size;
 	push( ts, newTensor( 0, NULL, ssize ) );
-	//dbg( "%s %u %u", "transpose", axis1, axis2 );
+	//dbg( "%s %u %u", "size", axis1, axis2 );
 	break;
       }
     case QUIT:

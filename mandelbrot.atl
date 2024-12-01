@@ -1,0 +1,14 @@
+windowSize;[2];0;cat;print;pop
+size;if'start'
+windowSize;[2];0;cat;c'( t.z == 0.0 ) ? ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 : ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0' 0
+windowSize;[2];0;cat;c'0.0' 0
+1;if'skip'
+l'mand'
+1;dup;
+
+windowSize;[2];0;cat;c'( t.z == 0.0 ) ? pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ) : 2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )' 2
+return
+l'skip'
+mand;mand;mand;mand;mand;mand;mand;[1 2 3]
+l'start';pop;mand;0;dup;
+[600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1
