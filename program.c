@@ -274,11 +274,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     int charsread;
     if( sscanf( sizep, "%u%n", &argCount, &charsread ) == 1 && !sizep[ charsread ] ){
       curStep->type = COMPUTE;
-      curStep->compute = addCompute( p, comp, argCount );
+      curStep->toCompute.glsl = comp;
+      curStep->toCompute.argCount = argCount;
       if( argCount > 4 )
 	error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
       dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n", linenum, commandnum, comp, argCount );
-      unmem( comp );
     } else
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Malformed compute statement." );
@@ -405,6 +405,7 @@ program* newProgram( char* prog ){
   }
 
   // After adding all steps now we can replace if statement branchNames with the label locations.
+  // Also compile shaders.
   for( u32 i = 0; i < ret->numSteps; ++i )
     if( ret->steps[ i ].type == IF || ret->steps[ i ].type == CALL ){
       u32 jumpTo;
@@ -412,7 +413,12 @@ program* newProgram( char* prog ){
 	error( "Statement with unknown label %s.", ret->steps[ i ].branchName );
       unmem( ret->steps[ i ].branchName );
       ret->steps[ i ].branch = jumpTo;
-    }
+    } else if( ret->steps[ i ].type == COMPUTE ){
+      char* glsl = ret->steps[ i ].toCompute.glsl;
+      ret->steps[ i ].compute = addCompute( ret, glsl, ret->steps[ i ].toCompute.argCount );
+      unmem( glsl );
+    }      
+
   return ret;
 }
 // Doesn't modify prog.

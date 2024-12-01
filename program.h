@@ -28,6 +28,10 @@ typedef struct{
   } type;
   union{
     tensor* tensor;
+    struct{
+      u32 argCount;
+      char* glsl;
+    } toCompute;
     u32 compute;
     u32 branch;
     char* branchName;
