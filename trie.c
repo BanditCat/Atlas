@@ -70,7 +70,7 @@ void trieInsert( trieNode* root, const char* key, u32 value ){
       remainingKey += prefixLen;
     } else {
       trieNode* splitNode =
-        newTrieNode( child->thisPart, 0 );  // New intermediate node
+        newTrieNode( child->thisPart, (u32)-1 );  // New intermediate node
       splitNode->thisPart[ prefixLen ] = '\0';
 
       // Adjust the existing child
@@ -125,7 +125,7 @@ bool trieSearch( trieNode* root, const char* key, u32* value ){
       return false;
   }
 
-  if( current->value != 0 ){
+  if( current->value != (u32)-1 ){
     if( value )
       *value = current->value;
     return true;

@@ -46,6 +46,7 @@ tensor* copyTensor( const tensor* t );
 void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
+// Warning! this takes ownership of data and will deallocate it.
 tensor* newTensor( u32 rank, const u32* shape, f32* data );
 compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount );
 void deleteCompute( compute* i );

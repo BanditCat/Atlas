@@ -164,20 +164,19 @@ u32 addCompute( program* p, const char* uniforms, const char* glsl, u32 argCount
   p->computes[ p->numComputes ] = makeCompute( uniforms, glsl, argCount );
   return p->numComputes++;
 }
-char* getNextLine(char** str) {
+char* getNextLine( char** str ){
   if( *str == NULL || **str == '\0' )
     return NULL;
 
   char* start = *str;
-  char* end = strchr(start, '\n');
+  char* end = strchr( start, '\n' );
 
-  if (end != NULL) {
+  if( end != NULL ){
     *end = '\0'; // Replace '\n' with '\0'
     *str = end + 1; // Move to the next line
   } else {
     *str = NULL; // No more lines
   }
-
   return start;
 }
 void trimWhitespace( char** str ){
@@ -235,7 +234,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     if( trieSearch( p->labels, label, NULL ) )
       error( "Line %u, command %u: duplicate label '%s'", linenum, commandnum, label );
     trieInsert( p->labels, label, p->numSteps );
-    dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
+    //dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
     unmem( label );
     
     
@@ -260,11 +259,30 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       curStep->var.size = varSize;
       if( !varSize || ( varSize > 4 && varSize != 16 ) )
 	error( "%s", "Invalid var size in set statement." );
-      dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n", linenum, commandnum, varName, varSize );
+      //dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n", linenum, commandnum, varName, varSize );
     } else
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Malformed set statement." );
-    dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum, varName );
+    //dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum, varName );
+  
+    
+  } else if( !strncmp( command, "get'", 4 ) ){ // Get
+    char* starti = command + 4;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty name in get statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in get statement." );
+    char* varName = mem( 1 + endi - starti, char );
+    memcpy( varName, starti, endi - starti );
+    varName[ endi - starti ] = '\0';
+    if( *( endi + 1 ) )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Extra characters after get statement." );
+    curStep->type = GET;
+    curStep->var.name = varName;
+    //dbg( "Linenum %u commandnum %u: get var %s\n", linenum, commandnum, varName );
   
     
   } else if( !strncmp( command, "if'", 3 ) ){ // If
@@ -284,7 +302,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     if( *( endi + 1 ) )
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Extra characters after if statement." );
-    dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
+    //dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
 
 
   } else if( !strncmp( command, "c'", 2 ) ){ // Compute
@@ -308,7 +326,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       curStep->toCompute.argCount = argCount;
       if( argCount > 4 )
 	error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
-      dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n", linenum, commandnum, comp, argCount );
+      //dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n", linenum, commandnum, comp, argCount );
     } else
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Malformed compute statement." );
@@ -316,42 +334,42 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     
   } else if( !strcmp( command, "r" ) ){ // Reverse
     curStep->type = REVERSE;
-    dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "cat" ) ){ // Concatenate
     curStep->type = CAT;
-    dbg( "Linenum %u commandnum %u: cat\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: cat\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "pop" ) ){ // Pop
     curStep->type = POP;
-    dbg( "Linenum %u commandnum %u: pop\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: pop\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "dup" ) ){ // Dup
     curStep->type = DUP;
-    dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "size" ) ){ // Top
     curStep->type = TOP;
-    dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
 
 
   } else if( !strcmp( command, "return" ) ){ // Return
     curStep->type = RETURN;
-    dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
     
     
   } else if( !strcmp( command, "windowSize" ) ){ // Window size
     curStep->type = WINDOWSIZE;
-    dbg( "Linenum %u commandnum %u: window size\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: window size\n", linenum, commandnum );
     
     
   } else if( !strcmp( command, "t" ) ){ // Transpose
     curStep->type = TRANSPOSE;
-    dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
 
     
   } else if( *command == '[' || *command == '.' || isdigit( *command ) ){ // A tensor
@@ -369,17 +387,17 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       curStep->tensor->ownsData = true;
     }else
       curStep->tensor = parseTensor( command );
-    dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "print" ) ){ // Print
     curStep->type = PRINT;
-    dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
 
     
   } else if( !strcmp( command, "quit" ) ){ // Quit
     curStep->type = QUIT;
-    dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
+    //dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
 
 
   } else{ // Call
@@ -396,7 +414,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     branchName[ endi - starti ] = '\0';
     curStep->type = CALL;
     curStep->branchName = branchName;
-    dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum, branchName );
+    //dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum, branchName );
 
 
   }
@@ -502,8 +520,7 @@ program* newProgram( char* prog ){
     //dng( "Block %s, totsize %u", glslUniformBlock, offset );
   }
   
-  // After adding all steps now we can replace if statement branchNames with the label locations.
-  // Also compile shaders.
+  // Second pass for ifs, calls, computes, and gets.
   for( u32 i = 0; i < ret->numSteps; ++i )
     if( ret->steps[ i ].type == IF || ret->steps[ i ].type == CALL ){
       u32 jumpTo;
@@ -511,6 +528,13 @@ program* newProgram( char* prog ){
 	error( "Statement with unknown label %s.", ret->steps[ i ].branchName );
       unmem( ret->steps[ i ].branchName );
       ret->steps[ i ].branch = jumpTo;
+    } else if( ret->steps[ i ].type == GET ){
+      u32 vi;
+      if( !trieSearch( ret->vars, ret->steps[ i ].var.name, &vi ) )
+	  error( "%s %s.", "Attempt to get an an unknown variable", ret->steps[ i ].var.name );
+      char* varName = ret->steps[ i ].var.name;
+      ret->steps[ i ].var.index = vi;
+      unmem( varName );
     } else if( ret->steps[ i ].type == COMPUTE ){
       char* glsl = ret->steps[ i ].toCompute.glsl;
       ret->steps[ i ].compute = addCompute( ret, glslUniformBlock, glsl, ret->steps[ i ].toCompute.argCount );
@@ -742,6 +766,32 @@ bool runProgram( tensorStack* ts, program* p ){
       pop( ts );
       //dbg( "%s", "set" );
       break;
+    case GET:
+      {
+	//dbg( "foo" );
+	static const u32 shape1[ 4 ] = { 1 };
+	static const u32 shape2[ 4 ] = { 2 };
+	static const u32 shape3[ 4 ] = { 3 };
+	static const u32 shape4[ 4 ] = { 4 };
+	static const u32 shape16[ 2 ] = { 4, 4 };
+	const u32* shape;
+	u32 rank = 1;
+	switch( p->varSizes[ s->var.index ] ){
+	case 1: shape = shape1; break;
+	case 2: shape = shape2; break;
+	case 3: shape = shape3; break;
+	case 4: shape = shape4; break;
+	case 16: shape = shape16; rank = 2; break;
+	default:
+	  error( "%s %u.", "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
+		 p->varSizes[ s->var.index ] );
+	}
+	tensor* t = newTensor( rank, shape, p->varBlock + p->varOffsets[ s->var.index ] );
+	t->ownsData = false;  // Ensure the tensor does not own the data
+	push( ts, t );
+	//dbg( "%s", "get" );
+	break;
+      }
     case QUIT:
       //dbg( "%s", "exit" );
       return false;
