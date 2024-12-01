@@ -1,4 +1,4 @@
-windowSize;[2];0;cat;print;pop
+windowSize;[2];0;cat;print;set'wsize' 3;[2];c'wsize.x' 0;print;pop
 size;if'start'
 windowSize;[2];0;cat;c'( t.z == 0.0 ) ? ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 : ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0' 0
 windowSize;[2];0;cat;c'0.0' 0
@@ -10,5 +10,6 @@ windowSize;[2];0;cat;c'( t.z == 0.0 ) ? pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) 
 return
 l'skip'
 mand;mand;mand;mand;mand;mand;mand;[1 2 3]
-l'start';pop;mand;0;dup;
-[600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1
+l'start';pop;print;mand;0;dup;
+windowSize;[3];0;cat;c'a( vec4( t.xy, 0.0, 0.0 ) )' 1
+

@@ -11,8 +11,8 @@
 #include "GL/glew.h" // For managing OpenGL extensions
 #else
 #include <SDL2/SDL_opengles2.h>
+#include <GLES3/gl3.h>
 #include <emscripten/emscripten.h>
-#define GL_RGBA32F 34836
 #endif 
 #include <stdio.h>
 

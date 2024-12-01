@@ -3,6 +3,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+#ifndef PROGRAM_H_INCLUDED
+#define PROGRAM_H_INCLUDED
+
 #define initSize 256
 #include "trie.h"
 
@@ -24,6 +27,8 @@ typedef struct{
     CALL,
     POP,
     RETURN,
+    SET,
+    GET,
     WINDOWSIZE
   } type;
   union{
@@ -32,9 +37,17 @@ typedef struct{
       u32 argCount;
       char* glsl;
     } toCompute;
+    struct{
+      union{
+	char* name;
+	u32 index;
+      };
+      u32 size;
+    } var;
     u32 compute;
     u32 branch;
     char* branchName;
+    char* varName;
   };
 } step;
 
@@ -49,6 +62,12 @@ typedef struct{
   u32* returns;
   u32 numReturns;
   u32 returnStackSize;
+  trieNode* vars;
+  u32* varOffsets;
+  u32* varSizes;
+  f32* varBlock;
+  GLuint ubo;
+  
 } program;
 
 program* newProgramFromString( const char* prog );
@@ -56,3 +75,5 @@ program* newProgramFromFile( const char* file );
 // Return false to exit program.
 bool runProgram( tensorStack* ts, program* p );
 void deleteProgram( program* p );
+
+#endif // PROGRAM_H_INCLUDED

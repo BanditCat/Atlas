@@ -22,29 +22,29 @@ tensorStack* ts;
 
 #include "mandelbrot.h"
 
-char* testProg = "\
-windowSize;[2];0;cat;print;pop\n\
-size;if'start'\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-	  ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 :\
-	  ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0\
-	 ' 0;\
-[600 600 2];c'0.0' 0\n\
-1;if'skip'\n\
-l'mand'\n\
-1;dup;\n\
-\n\
-[600 600 2];c'( t.z == 0.0 ) ?\
-              pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) \
-                                        + a( vec4( t.xy, 0.0, 0.0 ) ) :\
-              2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) \
-                                        + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\
-return\n\
-l'skip'\n\
-mand;mand;mand;mand;mand;mand;mand;[1 2 3]\n\
-l'start';pop;mand;0;dup;\n\
-[600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\
-";
+/* char* testProg = "\ */
+/* windowSize;[2];0;cat;print;pop\n\ */
+/* size;if'start'\n\ */
+/* [600 600 2];c'( t.z == 0.0 ) ?\ */
+/* 	  ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 :\ */
+/* 	  ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0\ */
+/* 	 ' 0;\ */
+/* [600 600 2];c'0.0' 0\n\ */
+/* 1;if'skip'\n\ */
+/* l'mand'\n\ */
+/* 1;dup;\n\ */
+/* \n\ */
+/* [600 600 2];c'( t.z == 0.0 ) ?\ */
+/*               pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) \ */
+/*                                         + a( vec4( t.xy, 0.0, 0.0 ) ) :\ */
+/*               2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) \ */
+/*                                         + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\ */
+/* return\n\ */
+/* l'skip'\n\ */
+/* mand;mand;mand;mand;mand;mand;mand;[1 2 3]\n\ */
+/* l'start';pop;mand;0;dup;\n\ */
+/* [600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\ */
+/* "; */
   
 // Global variables
 GLuint shaderProgram;
@@ -539,7 +539,7 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( testProg );
+  prog = newProgramFromString( (char*)mandelbrot_atl );
   ts = newStack();
 #endif
 

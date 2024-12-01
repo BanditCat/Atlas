@@ -31,6 +31,7 @@ typedef struct{
   GLuint argToffsetLocation[ 4 ];
   GLuint argTexLocation[ 4 ];
   GLuint VBO;
+  GLuint uboLoc;
 } compute;
 
 typedef struct{
@@ -39,15 +40,16 @@ typedef struct{
   u32 size;
 } tensorStack;
 
+#include "program.h"
 
 tensor* copyTensor( const tensor* t );
 void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
 tensor* newTensor( u32 rank, const u32* shape, f32* data );
-compute* makeCompute( const char* glsl, u32 argCount );
+compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount );
 void deleteCompute( compute* i );
-tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compute* initializer );
+tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* initializer );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );

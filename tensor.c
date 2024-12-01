@@ -144,7 +144,7 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-compute* makeCompute( const char* glsl, u32 argCount ){
+compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
@@ -217,7 +217,7 @@ compute* makeCompute( const char* glsl, u32 argCount ){
       vec4 texel = texture( _a_dtex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
-    \n\
+    %s\n\
     vec4 _a_toTensorIndices( float i ) {\n\
       vec4 ret;\n\
       ret.x = floor(i / _a_strides.x);\n\
@@ -246,10 +246,11 @@ compute* makeCompute( const char* glsl, u32 argCount ){
   // Buffer to hold the final fragment shader source
   u32 bufsize = 65536;
   char* fragmentShaderSource = mem( bufsize, char ); // Adjust size as needed
-  int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, glsl, glsl, glsl, glsl );
+  int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, uniforms, glsl, glsl, glsl, glsl );
   if( len < 0 || len >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
 
+  dbg( "%s", fragmentShaderSource );
   // Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
   glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
@@ -329,6 +330,9 @@ compute* makeCompute( const char* glsl, u32 argCount ){
 
   ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );
   ret->stridesLocation = glGetUniformLocation( ret->program, "_a_strides" );
+
+  ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
+  glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
   
   f32 vertices[] = {
     -1.0f, -1.0f,
@@ -352,7 +356,7 @@ void deleteCompute( compute* i ){
   glDeleteBuffers( 1, &i->VBO );
   unmem( i );
 }
-tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
+tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   tensor* ret = mem( 1, tensor );
   if( compute->argCount > ts->size )
     error( "A compute was called with %u arguments, but the stack size is only %u.",
@@ -407,7 +411,7 @@ tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compu
   glUniform2f( compute->dimsLocation, ret->tex.width, ret->tex.height );
   glUniform4f( compute->stridesLocation, ret->strides[ 0 ], ret->strides[ 1 ],
 	       ret->strides[ 2 ], ret->strides[ 3 ] );
-
+  
   // Bind arguments
   for( u32 i = 0; i < compute->argCount; ++i ){
     glActiveTexture( GL_TEXTURE0 + i );
@@ -421,7 +425,8 @@ tensor* newTensorInitialized( tensorStack* ts, u32 rank, u32* shape, const compu
   }
   
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
-
+  glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
+  
   // Enable the vertex attribute and set up the pointer
   glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position
   glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, (void* )0 );

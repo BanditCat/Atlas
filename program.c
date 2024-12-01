@@ -154,18 +154,19 @@ static tensor* parseTensor( const char* command ){
   return t;
 }
 // This adds an compute statement to p and returns its index.
-u32 addCompute( program* p, const char* glsl, u32 argCount ){
+u32 addCompute( program* p, const char* uniforms, const char* glsl, u32 argCount ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
     memcpy( tp, p->computes, sizeof( compute* ) * p->numComputes );
     unmem( p->computes ); p->computes = tp;
   }
-  p->computes[ p->numComputes ] = makeCompute( glsl, argCount );
+  p->computes[ p->numComputes ] = makeCompute( uniforms, glsl, argCount );
   return p->numComputes++;
 }
 char* getNextLine(char** str) {
-  if (*str == NULL || **str == '\0') return NULL;
+  if( *str == NULL || **str == '\0' )
+    return NULL;
 
   char* start = *str;
   char* end = strchr(start, '\n');
@@ -229,12 +230,42 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     memcpy( label, starti, endi - starti );
     label[ endi - starti ] = '\0';
     --p->numSteps;
+    if( *( endi + 1 ) )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Extra characters after label." );
     if( trieSearch( p->labels, label, NULL ) )
       error( "Line %u, command %u: duplicate label '%s'", linenum, commandnum, label );
     trieInsert( p->labels, label, p->numSteps );
     dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label );
     unmem( label );
     
+    
+  } else if( !strncmp( command, "set'", 4 ) ){ // Set
+    char* starti = command + 4;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty name in set statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in set statement." );
+    char* varName = mem( 1 + endi - starti, char );
+    memcpy( varName, starti, endi - starti );
+    varName[ endi - starti ] = '\0';
+    char* sizep = endi + 1;
+    u32 varSize;
+    int charsread;
+    if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 && !sizep[ charsread ] ){
+      curStep->type = SET;
+      curStep->var.name = varName;
+      curStep->var.size = varSize;
+      if( !varSize || ( varSize > 4 && varSize != 16 ) )
+	error( "%s", "Invalid var size in set statement." );
+      dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n", linenum, commandnum, varName, varSize );
+    } else
+      error( "Line %u, command %u: %s", linenum, commandnum,
+	     "Malformed set statement." );
+    dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum, varName );
+  
     
   } else if( !strncmp( command, "if'", 3 ) ){ // If
     char* starti = command + 3;
@@ -250,8 +281,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     branchName[ endi - starti ] = '\0';
     curStep->type = IF;
     curStep->branchName = branchName;
-    char* sizep = endi + 1;
-    if( *sizep )
+    if( *( endi + 1 ) )
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Extra characters after if statement." );
     dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
@@ -381,6 +411,7 @@ program* newProgram( char* prog ){
   ret->numSteps = 0;
   ret->stepStackSize = initSize;
   ret->labels = newTrieNode( NULL, 0 );
+  ret->vars = newTrieNode( NULL, 0 );
   ret->numReturns = 0;
   ret->returns = mem( initSize, step );
   ret->returnStackSize = initSize;
@@ -404,6 +435,73 @@ program* newProgram( char* prog ){
     ++linenum;
   }
 
+  // First collect variables and craft the uniform block and the program vars.
+  char* glslUniformBlock;
+  {
+    u32 numVars = 0;
+    u32 nameslen = 0;
+    u32 baselen = strlen( "float %s;" ) + 10;
+    for( u32 i = 0; i < ret->numSteps; ++i )
+      if( ret->steps[ i ].type == SET ){
+	nameslen += strlen( ret->steps[ i ].var.name ) + 2;
+	numVars++;
+      }
+    ret->varOffsets = mem( numVars, u32 );
+    ret->varSizes = mem( numVars, u32 );
+    u32 bufsize = baselen * numVars + nameslen + 200;
+    glslUniformBlock = mem( bufsize, u8 );
+    char* p = glslUniformBlock;
+    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "layout(std140) uniform vars{\n" );
+    numVars = 0;
+    u32 offset = 0;
+    for( u32 i = 0; i < ret->numSteps; ++i ){
+      if( ret->steps[ i ].type == SET ){
+	trieInsert( ret->vars, ret->steps[ i ].var.name, numVars );
+	switch( ret->steps[ i ].var.size ){
+	case 1:
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "float %s;\n",
+			 ret->steps[ i ].var.name );
+	  break;
+	case 2:
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "vec2 %s;\n",
+			 ret->steps[ i ].var.name );
+	  break;
+	case 3:
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "vec3 %s;\n",
+			 ret->steps[ i ].var.name );
+	  break;
+	case 4:
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "vec4 %s;\n",
+			 ret->steps[ i ].var.name );
+	  break;
+	case 16:
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "mat4 %s;\n",
+			 ret->steps[ i ].var.name );
+	  break;
+	default:
+	  error( "%s", "Logic error in Atlas! My code is ass!" );
+	}
+	unmem( ret->steps[ i ].var.name );
+	ret->varOffsets[ numVars ] = offset;
+	ret->varSizes[ numVars ] = ret->steps[ i ].var.size;
+	if( ret->steps[ i ].var.size == 1 || ret->steps[ i ].var.size == 2 )
+	  offset += 2;
+	else if( ret->steps[ i ].var.size == 3 || ret->steps[ i ].var.size == 4 )
+	  offset += 4;
+	else
+	  offset += 16;
+	ret->steps[ i ].var.index = numVars;
+	++numVars;
+      }
+    }
+    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
+    ret->varBlock = mem( offset, f32 );
+    glGenBuffers( 1, &ret->ubo );
+    glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
+    glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, NULL, GL_DYNAMIC_DRAW );
+    dbg( "Block %s, totsize %u", glslUniformBlock, offset );
+  }
+  
   // After adding all steps now we can replace if statement branchNames with the label locations.
   // Also compile shaders.
   for( u32 i = 0; i < ret->numSteps; ++i )
@@ -415,10 +513,10 @@ program* newProgram( char* prog ){
       ret->steps[ i ].branch = jumpTo;
     } else if( ret->steps[ i ].type == COMPUTE ){
       char* glsl = ret->steps[ i ].toCompute.glsl;
-      ret->steps[ i ].compute = addCompute( ret, glsl, ret->steps[ i ].toCompute.argCount );
+      ret->steps[ i ].compute = addCompute( ret, glslUniformBlock, glsl, ret->steps[ i ].toCompute.argCount );
       unmem( glsl );
     }      
-
+  unmem( glslUniformBlock );
   return ret;
 }
 // Doesn't modify prog.
@@ -472,6 +570,10 @@ void deleteProgram( program* p ){
     
   }
   deleteTrieNode( p->labels );
+  deleteTrieNode( p->vars );
+  unmem( p->varBlock );
+  unmem( p->varSizes );
+  unmem( p->varOffsets );
   unmem( p->returns );
   unmem( p->computes );
   unmem( p->steps );
@@ -483,14 +585,16 @@ bool runProgram( tensorStack* ts, program* p ){
     step* s = p->steps + i;
     switch( s->type ){
     case WINDOWSIZE:
-      static const u32 wsshape[ 1 ] = { 2 };
-      int windowWidth, windowHeight;
-      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-      f32* data = mem( 2, f32 );
-      data[ 0 ] = windowWidth;
-      data[ 1 ] = windowHeight;
-      push( ts, newTensor( 1, wsshape, data ) );
-      break;
+      {
+	static const u32 wsshape[ 1 ] = { 2 };
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+	f32* data = mem( 2, f32 );
+	data[ 0 ] = windowWidth;
+	data[ 1 ] = windowHeight;
+	push( ts, newTensor( 1, wsshape, data ) );
+	break;
+      }
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
       break;
@@ -533,7 +637,7 @@ bool runProgram( tensorStack* ts, program* p ){
       for( u32 i = 0; i < ts->stack[ ts->size - 1 ]->size; ++i )
 	shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
       pop( ts );
-      push( ts, newTensorInitialized( ts, size, shape,
+      push( ts, newTensorInitialized( p, ts, size, shape,
 				      p->computes[ s->compute ] ) );
       //dbg( "%s", "compute" );
       break;
@@ -578,7 +682,7 @@ bool runProgram( tensorStack* ts, program* p ){
       if( dup > ts->size - 1 )
 	error( "%s", "Attempt to duplicate past the end of the stack." );
       push( ts, copyTensor( ts->stack[ ( ts->size - 1 ) - dup ] ) );
-      //dbg( "%s %u", "reverse", axis );
+      //dbg( "%s %u", "dup", dup );
       break;
     case IF:
       if( !ts->size )
@@ -591,7 +695,7 @@ bool runProgram( tensorStack* ts, program* p ){
       pop( ts );
       if( cond != 0.0 )
 	i = s->branch - 1;
-      //dbg( "%s %u", "if", axis );
+      //dbg( "%s %f", "if", cond );
       break;
     case TRANSPOSE:
       if( !ts->size )
@@ -614,6 +718,28 @@ bool runProgram( tensorStack* ts, program* p ){
 	//dbg( "%s %u %u", "size", axis1, axis2 );
 	break;
       }
+    case SET:
+      if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
+	  ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
+	error( "%s", "Incorrect rank during set statement." );
+      if( s->var.size != ts->stack[ ts->size - 1 ]->size )
+	error( "%s", "Incorrect size during set statement." );
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
+      if( s->var.size <= 4 )
+	for( u32 i = 0; i < s->var.size; ++i ){
+	  uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
+			    + ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );
+ 
+	}
+      else
+	error( "%s", "BUGBUG IMPLEMENT 4x4 MATS!" );
+      glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
+      glBufferSubData( GL_UNIFORM_BUFFER, p->varOffsets[ s->var.index ] * sizeof( f32 ),
+		       p->varSizes[ s->var.index ] * sizeof( f32 ), uniform );
+      pop( ts );
+      //dbg( "%s", "set" );
+      break;
     case QUIT:
       //dbg( "%s", "exit" );
       return false;
