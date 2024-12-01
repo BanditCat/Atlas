@@ -325,8 +325,6 @@ compute* makeCompute( const char* glsl, u32 argCount ){
     ret->argToffsetLocation[ i ] = glGetUniformLocation( ret->program, toname );
     ret->argDimsLocation[ i ] = glGetUniformLocation( ret->program, dname );
     ret->argTexLocation[ i ] = glGetUniformLocation( ret->program, tname );
-    dbg( "%u %u %u %u", ret->argStridesLocation[ i ], ret->argToffsetLocation[ i ],
-	 ret->argDimsLocation[ i ],  ret->argTexLocation[ i ]  );
   }
 
   ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );

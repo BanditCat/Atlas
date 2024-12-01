@@ -549,7 +549,7 @@ bool runProgram( tensorStack* ts, program* p ){
 	pop( ts );
 	tensorCat( ts, ts->size - 2, ts->size - 1, axis );
 	pop( ts );
-	dbg( "%s %u", "cat", axis );
+	//dbg( "%s %u", "cat", axis );
 	break;
       }
     case REVERSE:
