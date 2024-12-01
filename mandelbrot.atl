@@ -1,4 +1,4 @@
-windowSize;[2];0;cat;print;set'wsize' 3;[2];c'wsize.x' 0;print;pop
+windowSize;[2];0;cat;print;set'wsize' 3;[2];c'wsize.y' 0;print;pop
 size;if'start'
 windowSize;[2];0;cat;c'( t.z == 0.0 ) ? ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 : ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0' 0
 windowSize;[2];0;cat;c'0.0' 0

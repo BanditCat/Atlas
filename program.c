@@ -499,7 +499,7 @@ program* newProgram( char* prog ){
     glGenBuffers( 1, &ret->ubo );
     glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
     glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, NULL, GL_DYNAMIC_DRAW );
-    dbg( "Block %s, totsize %u", glslUniformBlock, offset );
+    //dng( "Block %s, totsize %u", glslUniformBlock, offset );
   }
   
   // After adding all steps now we can replace if statement branchNames with the label locations.
@@ -727,13 +727,15 @@ bool runProgram( tensorStack* ts, program* p ){
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
       if( s->var.size <= 4 )
-	for( u32 i = 0; i < s->var.size; ++i ){
+	for( u32 i = 0; i < s->var.size; ++i )
 	  uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
 			    + ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );
- 
-	}
       else
-	error( "%s", "BUGBUG IMPLEMENT 4x4 MATS!" );
+	for( u32 i = 0; i < 4; ++i )
+	  for( u32 j = 0; j < 4; ++j )
+	    uniform[ i * 4 + j ] = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
+				      + ts->stack[ ts->size - 1 ]->strides[ 0 ] * i
+                                      + ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
       glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
       glBufferSubData( GL_UNIFORM_BUFFER, p->varOffsets[ s->var.index ] * sizeof( f32 ),
 		       p->varSizes[ s->var.index ] * sizeof( f32 ), uniform );

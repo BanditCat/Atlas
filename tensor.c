@@ -250,7 +250,7 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
   if( len < 0 || len >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
 
-  dbg( "%s", fragmentShaderSource );
+  //dbg( "%s", fragmentShaderSource );
   // Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
   glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
