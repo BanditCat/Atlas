@@ -425,9 +425,9 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   }
   
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
-  //glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
-  //glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
-  //glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
+  glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
+  glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
+  glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
   
   // Enable the vertex attribute and set up the pointer
   glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position
@@ -437,6 +437,7 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 
   glBindTexture( GL_TEXTURE_2D, 0 );
+  glBindBuffer( GL_UNIFORM_BUFFER, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
   // Pop arguments off the stack
