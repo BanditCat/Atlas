@@ -5,7 +5,7 @@ pop;pop;
 [6 6];set'wsize' 2; // Set the complex field size
 
 
-get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y : ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0' 0;print;quit;
+get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / 400.0 - 2.0 ) : ( t.y + 0.5 ) * 4.0 / 400.0 - 2.0' 0;print;quit;
 get'wsize';[2];0;cat;c'0.0' 0;
 1;if'skip';
 
