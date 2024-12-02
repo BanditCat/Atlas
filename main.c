@@ -520,7 +520,11 @@ int main( int argc, char* argv[] ){
   glContext = SDL_GL_CreateContext( window );
   if( !glContext )
     error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
-
+  if (SDL_GL_ExtensionSupported("GL_KHR_debug")) {
+    // KHR_debug is supported
+  } else {
+    error("%s", "No debug support." );
+  }
   // Initialize OpenGL
   int windowWidth, windowHeight;
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
