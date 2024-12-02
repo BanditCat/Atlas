@@ -176,7 +176,14 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
       vec2 uv = ( vec2( mod( pixel_index, _a_adims.x ), \n\
                   floor( pixel_index / _a_adims.x) ) + 0.5 ) / _a_adims;\n\
       vec4 texel = texture( _a_atex, uv );\n\
-      return texel[ int( channel ) ];\n\
+      if( channel < 1.0 )\n\
+        return texel.x;\n\
+      else if( channel < 2.0 )\n\
+        return texel.y;\n\
+      else if( channel < 3.0 )\n\
+        return texel.z;\n\
+      else\n\
+        return texel.w;\n\
     }\n\
     uniform vec4 _a_bstrides;\n\
     uniform float _a_btoffset;\n\
@@ -189,7 +196,14 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
       vec2 uv = ( vec2( mod( pixel_index, _a_bdims.x ), \n\
                   floor( pixel_index / _a_bdims.x) ) + 0.5 ) / _a_bdims;\n\
       vec4 texel = texture( _a_btex, uv );\n\
-      return texel[ int( channel ) ];\n\
+      if( channel < 1.0 )\n\
+        return texel.x;\n\
+      else if( channel < 2.0 )\n\
+        return texel.y;\n\
+      else if( channel < 3.0 )\n\
+        return texel.z;\n\
+      else\n\
+        return texel.w;\n\
     }\n\
     uniform vec4 _a_cstrides;\n\
     uniform float _a_ctoffset;\n\
@@ -202,7 +216,14 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
       vec2 uv = ( vec2( mod( pixel_index, _a_cdims.x ), \n\
                   floor( pixel_index / _a_cdims.x) ) + 0.5 ) / _a_cdims;\n\
       vec4 texel = texture( _a_ctex, uv );\n\
-      return texel[ int( channel ) ];\n\
+      if( channel < 1.0 )\n\
+        return texel.x;\n\
+      else if( channel < 2.0 )\n\
+        return texel.y;\n\
+      else if( channel < 3.0 )\n\
+        return texel.z;\n\
+      else\n\
+        return texel.w;\n\
     }\n\
     uniform vec4 _a_dstrides;\n\
     uniform float _a_dtoffset;\n\
@@ -215,7 +236,14 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
       vec2 uv = ( vec2( mod( pixel_index, _a_ddims.x ), \n\
                   floor( pixel_index / _a_ddims.x) ) + 0.5 ) / _a_ddims;\n\
       vec4 texel = texture( _a_dtex, uv );\n\
-      return texel[ int( channel ) ];\n\
+      if( channel < 1.0 )\n\
+        return texel.x;\n\
+      else if( channel < 2.0 )\n\
+        return texel.y;\n\
+      else if( channel < 3.0 )\n\
+        return texel.z;\n\
+      else\n\
+        return texel.w;\n\
     }\n\
     %s\n\
     vec4 _a_toTensorIndices( float i ) {\n\
