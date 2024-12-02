@@ -515,10 +515,10 @@ program* newProgram( char* prog ){
     p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
     ret->varBlock = mem( offset, f32 );
     glGenBuffers( 1, &ret->ubo );
-    //glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
-    //glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, NULL, GL_DYNAMIC_DRAW );
-    //glBindBufferBase( GL_UNIFORM_BUFFER, 0, ret->ubo );
-    //glBindBuffer( GL_UNIFORM_BUFFER, 0 );
+    glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
+    glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, NULL, GL_DYNAMIC_DRAW );
+    glBindBufferBase( GL_UNIFORM_BUFFER, 0, ret->ubo );
+    glBindBuffer( GL_UNIFORM_BUFFER, 0 );
     //dng( "Block %s, totsize %u", glslUniformBlock, offset );
   }
   

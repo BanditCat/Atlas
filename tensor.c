@@ -454,11 +454,6 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   //glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
   //glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
-  
-  CHECK_GL_ERROR();
-  // Enable the vertex attribute and set up the pointer
-  glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position
-  glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, (void* )0 );
 
   CHECK_GL_ERROR();
   // Draw the quad
