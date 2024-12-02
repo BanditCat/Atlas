@@ -335,8 +335,8 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
   ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );
   ret->stridesLocation = glGetUniformLocation( ret->program, "_a_strides" );
 
-  ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
-  glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
+  //  ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
+  //  glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
 
   glGenVertexArrays( 1, &ret->VAO );
   glBindVertexArray( ret->VAO );
