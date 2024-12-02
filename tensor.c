@@ -26,12 +26,7 @@ void tensorToHostMemory( tensor* t ){
 
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glReadPixels( 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
-  // Check for OpenGL errors
-  GLenum err = glGetError();
-  if (err != GL_NO_ERROR) {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    error("glReadPixels failed with error code: %x", err);
-  }
+  CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
   memcpy( hostData, tempData, t->size * sizeof( f32 ) );
