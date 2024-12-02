@@ -335,8 +335,8 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
   ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );
   ret->stridesLocation = glGetUniformLocation( ret->program, "_a_strides" );
 
-  //  ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
-  //  glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
+  ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
+  glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
 
   glGenVertexArrays( 1, &ret->VAO );
   glBindVertexArray( ret->VAO );
@@ -436,28 +436,28 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 	       ret->strides[ 2 ], ret->strides[ 3 ] );
   
   // Bind arguments
-  /* for( u32 i = 0; i < compute->argCount; ++i ){ */
-  /*   glActiveTexture( GL_TEXTURE0 + i ); */
-  /*   const tensor* at = ts->stack[ ( ts->size - 1 ) - i ]; */
-  /*   glBindTexture( GL_TEXTURE_2D, at->tex.texture ); */
-  /*   glUniform1i( compute->argTexLocation[ i ], i ); */
-  /*   glUniform2f( compute->argDimsLocation[ i ], at->tex.width, at->tex.height ); */
-  /*   glUniform4f( compute->argStridesLocation[ i ], at->strides[ 0 ], at->strides[ 1 ], */
-  /* 		 at->strides[ 2 ], at->strides[ 3 ] ); */
-  /*   glUniform1f( compute->argToffsetLocation[ i ], at->offset ); */
-  /* } */
+  for( u32 i = 0; i < compute->argCount; ++i ){
+    glActiveTexture( GL_TEXTURE0 + i );
+    const tensor* at = ts->stack[ ( ts->size - 1 ) - i ];
+    glBindTexture( GL_TEXTURE_2D, at->tex.texture );
+    glUniform1i( compute->argTexLocation[ i ], i );
+    glUniform2f( compute->argDimsLocation[ i ], at->tex.width, at->tex.height );
+    glUniform4f( compute->argStridesLocation[ i ], at->strides[ 0 ], at->strides[ 1 ],
+		 at->strides[ 2 ], at->strides[ 3 ] );
+    glUniform1f( compute->argToffsetLocation[ i ], at->offset );
+  }
 
   glBindVertexArray( compute->VAO );
   
   CHECK_GL_ERROR();
-  /* glBindBuffer( GL_ARRAY_BUFFER, compute->VBO ); */
-  /* glBindBuffer( GL_UNIFORM_BUFFER, p->ubo ); */
-  /* glUniformBlockBinding( compute->program, compute->uboLoc, 0 ); */
-  /* glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo ); */
+  glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
+  glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
+  glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
+  glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
 
   CHECK_GL_ERROR();
   // Draw the quad
-// Verify Framebuffer Completeness
+  // Verify Framebuffer Completeness
   GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
   if (status != GL_FRAMEBUFFER_COMPLETE) {
     fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
