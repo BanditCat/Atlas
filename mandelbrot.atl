@@ -2,7 +2,7 @@ size;if'start';
 1;1;
 l'start';
 pop;pop;
-[6 6];print;set'wsize' 2; // Set the complex field size
+[6 6];c'2.0' 0;print;set'wsize' 2; // Set the complex field size
 
 
 get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / 6.0 - 2.0 ) : ( t.y + 0.5 ) * 4.0 / 6.0 - 2.0' 0;print;quit;
