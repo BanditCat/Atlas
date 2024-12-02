@@ -379,8 +379,6 @@ void main_loop(){
       }
     }
   }
-  const char* version = (const char*)glGetString(GL_VERSION);
-dbg("OpenGL ES Version: %s\n", version);
 
   // Run the program
   if( !runProgram( ts, prog ) ){
