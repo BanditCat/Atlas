@@ -24,8 +24,8 @@ void tensorToHostMemory( tensor* t ){
   f32* hostData = mem( t->size, f32 );
   f32* tempData = mem( t->tex.width * t->tex.height * 4, f32 ); // RGBA channels
 
+  CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
-  glFinish();
   CHECK_GL_ERROR();
   glReadPixels( 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
   CHECK_GL_ERROR();
