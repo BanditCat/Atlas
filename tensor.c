@@ -444,9 +444,15 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 
   CHECK_GL_ERROR();
   // Draw the quad
-  glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 // Verify Framebuffer Completeness
 GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+if (status != GL_FRAMEBUFFER_COMPLETE) {
+    fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
+    // Handle error (e.g., cleanup and exit)
+}
+  glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+// Verify Framebuffer Completeness
+ status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 if (status != GL_FRAMEBUFFER_COMPLETE) {
     fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
     // Handle error (e.g., cleanup and exit)
