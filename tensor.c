@@ -16,16 +16,22 @@ tensor* copyTensor( const tensor* t ){
 }
 // This converts a tensor to cpu memory.
 void tensorToHostMemory( tensor* t ){
-  if( !t->gpu )
-    return;
   if( t == NULL )
     error( "%s", "Tensor is NULL in tensorToHostMemory." );
+  if( !t->gpu )
+    return;
 
   f32* hostData = mem( t->size, f32 );
   f32* tempData = mem( t->tex.width * t->tex.height * 4, f32 ); // RGBA channels
 
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glReadPixels( 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
+  // Check for OpenGL errors
+  GLenum err = glGetError();
+  if (err != GL_NO_ERROR) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    error("glReadPixels failed with error code: %x", err);
+  }
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
   memcpy( hostData, tempData, t->size * sizeof( f32 ) );
