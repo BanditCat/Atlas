@@ -297,7 +297,7 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
   glAttachShader( ret->program, fragmentShader );
 
   // Bind attribute locations (if any)
-  glBindAttribLocation( ret->program, 0, "a_position" );
+  glBindAttribLocation( ret->program, 0, "_a_position" );
 
   // Link the program
   glLinkProgram( ret->program );
