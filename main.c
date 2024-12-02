@@ -471,6 +471,7 @@ void main_loop(){
 
 // Main function
 int main( int argc, char* argv[] ){
+
 #ifndef __EMSCRIPTEN__
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );
@@ -549,6 +550,9 @@ int main( int argc, char* argv[] ){
   prog = newProgramFromString( (char*)mandelbrot_atl );
   ts = newStack();
 #endif
+
+  const char* version = (const char*)glGetString(GL_VERSION);
+dbg("OpenGL ES Version: %s\n", version);
 
 #ifndef __EMSCRIPTEN__
   // Create rendering and computation thread
