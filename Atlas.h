@@ -50,7 +50,7 @@ static inline const char* GetGLErrorString(GLenum error) {
     do {                                                 \
         GLenum err;                                      \
         while ((err = glGetError()) != GL_NO_ERROR) {   \
-            fprintf(stdout, "OpenGL Error: %s (0x%X) at %s:%d\n", \
+            fprintf(stderr, "OpenGL Error: %s (0x%X) at %s:%d\n", \
                     GetGLErrorString(err), err, __FILE__, __LINE__); \
             /* You can choose to exit or handle the error here */ \
         }                                                \
