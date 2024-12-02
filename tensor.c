@@ -433,8 +433,8 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   
   CHECK_GL_ERROR();
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
-  glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
-  glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
+  //glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
+  //glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
   
   CHECK_GL_ERROR();
