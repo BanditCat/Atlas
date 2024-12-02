@@ -469,7 +469,7 @@ program* newProgram( char* prog ){
     u32 bufsize = baselen * numVars + nameslen + 200;
     glslUniformBlock = mem( bufsize, u8 );
     char* p = glslUniformBlock;
-    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "layout(std140) uniform vars{\n" );
+    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "uniform vars{\n" );
     numVars = 0;
     u32 offset = 0;
     for( u32 i = 0; i < ret->numSteps; ++i ){
