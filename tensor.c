@@ -337,7 +337,10 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
 
   ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
   glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
-  
+
+  glGenVertexArrays( 1, &ret->VAO );
+  glBindVertexArray( ret->VAO );
+
   f32 vertices[] = {
     -1.0f, -1.0f,
      1.0f, -1.0f,
@@ -347,6 +350,16 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
 
   glGenBuffers( 1, &ret->VBO );
   glBindBuffer( GL_ARRAY_BUFFER, ret->VBO );
+  glEnableVertexAttribArray( 0 );
+  glVertexAttribPointer(
+			0,                // Attribute location (must match the shader)
+			2,                // Number of components per vertex attribute (e.g., vec2)
+			GL_FLOAT,         // Data type
+			GL_FALSE,         // Normalized
+			0,                // Stride (0 if tightly packed)
+			(void*)0          // Offset to the first component
+			);
+
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Cleanup shaders (they're no longer needed once the program is linked)
@@ -357,6 +370,7 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
 }
 void deleteCompute( compute* i ){
   glDeleteProgram( i->program );
+  glDeleteVertexArrays( 1, &i->VAO );
   glDeleteBuffers( 1, &i->VBO );
   unmem( i );
 }

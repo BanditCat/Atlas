@@ -31,6 +31,7 @@ typedef struct{
   GLuint argToffsetLocation[ 4 ];
   GLuint argTexLocation[ 4 ];
   GLuint VBO;
+  GLuint VAO;
   GLuint uboLoc;
 } compute;
 
