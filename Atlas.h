@@ -24,6 +24,39 @@
 #include <stdbool.h>
 #include <math.h>
 
+
+// Function to translate OpenGL error codes to human-readable strings
+static inline const char* GetGLErrorString(GLenum error) {
+    switch (error) {
+        case GL_NO_ERROR:
+            return "No error has been recorded.";
+        case GL_INVALID_ENUM:
+            return "An unacceptable value is specified for an enumerated argument.";
+        case GL_INVALID_VALUE:
+            return "A numeric argument is out of range.";
+        case GL_INVALID_OPERATION:
+            return "The specified operation is not allowed in the current state.";
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            return "The framebuffer object is not complete.";
+        case GL_OUT_OF_MEMORY:
+            return "There is not enough memory left to execute the command.";
+        default:
+            return "Unknown OpenGL error.";
+    }
+}
+
+// Macro to check and log OpenGL errors
+#define CHECK_GL_ERROR()                                 \
+    do {                                                 \
+        GLenum err;                                      \
+        while ((err = glGetError()) != GL_NO_ERROR) {   \
+            fprintf(stderr, "OpenGL Error: %s (0x%X) at %s:%d\n", \
+                    GetGLErrorString(err), err, __FILE__, __LINE__); \
+            /* You can choose to exit or handle the error here */ \
+        }                                                \
+    } while (0)
+
+
 #if ULLONG_MAX != 18446744073709551615ULL
 #error bad long size
 #endif 

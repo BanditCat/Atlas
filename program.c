@@ -607,6 +607,7 @@ void deleteProgram( program* p ){
 }
 bool runProgram( tensorStack* ts, program* p ){
   for( u32 i = 0; i < p->numSteps; ++i ){
+    CHECK_GL_ERROR();
     //dbg( "Step %u", i );
     step* s = p->steps + i;
     switch( s->type ){
