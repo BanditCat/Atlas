@@ -30,6 +30,7 @@ void tensorToHostMemory( tensor* t ){
   glReadPixels( 0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+  CHECK_GL_ERROR();
 
   memcpy( hostData, tempData, t->size * sizeof( f32 ) );
 
@@ -390,6 +391,7 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   ret->tex.width = (u32)ceilf( sqrtf( (f32)pixels ) );
   ret->tex.height = ( pixels + ret->tex.width - 1 ) / ret->tex.width;
 
+  CHECK_GL_ERROR();
   // Create OpenGL texture
   glGenTextures( 1, &ret->tex.texture );
   glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
@@ -397,6 +399,7 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
+  CHECK_GL_ERROR();
   // Create framebuffer
   glGenFramebuffers( 1, &ret->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
@@ -406,6 +409,7 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
     error( "%s", "Framebuffer is not complete." );
 
 
+  CHECK_GL_ERROR();
   // Use the compute program to render to the texture
   glViewport( 0, 0, ret->tex.width, ret->tex.height );
 
@@ -427,22 +431,27 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
     glUniform1f( compute->argToffsetLocation[ i ], at->offset );
   }
   
+  CHECK_GL_ERROR();
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
   glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
   glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
   
+  CHECK_GL_ERROR();
   // Enable the vertex attribute and set up the pointer
   glEnableVertexAttribArray( 0 ); // Assuming attribute location 0 for a_position
   glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, (void* )0 );
 
+  CHECK_GL_ERROR();
   // Draw the quad
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 
+  CHECK_GL_ERROR();
   glBindTexture( GL_TEXTURE_2D, 0 );
   glBindBuffer( GL_UNIFORM_BUFFER, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
+  CHECK_GL_ERROR();
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
