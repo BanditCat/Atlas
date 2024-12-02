@@ -472,7 +472,8 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   }
   CHECK_GL_ERROR();
   glBindTexture( GL_TEXTURE_2D, 0 );
-  glBindBuffer( GL_UNIFORM_BUFFER, 0 );
+  glBindBuffer( GL_UNIFORM_BUFFER, 0 );  
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   glBindVertexArray( 0 );
   glUseProgram( 0 );

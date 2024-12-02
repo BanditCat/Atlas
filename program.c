@@ -519,6 +519,7 @@ program* newProgram( char* prog ){
     glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, ret->varBlock, GL_DYNAMIC_DRAW );
     glBindBufferBase( GL_UNIFORM_BUFFER, 0, ret->ubo );
     glBindBuffer( GL_UNIFORM_BUFFER, 0 );
+    glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
     //dng( "Block %s, totsize %u", glslUniformBlock, offset );
   }
   
