@@ -361,7 +361,9 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
 			);
 
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
-
+  glBindBuffer( GL_ARRAY_BUFFER, 0 );
+  glBindVertexArray( 0 );
+  
   // Cleanup shaders (they're no longer needed once the program is linked)
   glDeleteShader( vertexShader );
   glDeleteShader( fragmentShader );
@@ -444,6 +446,8 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 		 at->strides[ 2 ], at->strides[ 3 ] );
     glUniform1f( compute->argToffsetLocation[ i ], at->offset );
   }
+
+  glBindVertexArray( compute->VAO );
   
   CHECK_GL_ERROR();
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
@@ -459,23 +463,25 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   CHECK_GL_ERROR();
   // Draw the quad
 // Verify Framebuffer Completeness
-GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-if (status != GL_FRAMEBUFFER_COMPLETE) {
+  GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (status != GL_FRAMEBUFFER_COMPLETE) {
     fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
     // Handle error (e.g., cleanup and exit)
-}
+  }
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
-// Verify Framebuffer Completeness
- status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-if (status != GL_FRAMEBUFFER_COMPLETE) {
+  // Verify Framebuffer Completeness
+  status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (status != GL_FRAMEBUFFER_COMPLETE) {
     fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
     // Handle error (e.g., cleanup and exit)
-}
+  }
   CHECK_GL_ERROR();
   glBindTexture( GL_TEXTURE_2D, 0 );
   glBindBuffer( GL_UNIFORM_BUFFER, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-
+  glBindVertexArray( 0 );
+  glUseProgram( 0 );
+  
   CHECK_GL_ERROR();
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )
