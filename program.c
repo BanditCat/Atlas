@@ -161,7 +161,7 @@ u32 addCompute( program* p, const char* uniforms, const char* glsl, u32 argCount
     memcpy( tp, p->computes, sizeof( compute* ) * p->numComputes );
     unmem( p->computes ); p->computes = tp;
   }
-  p->computes[ p->numComputes ] = makeCompute( "", glsl, argCount );
+  p->computes[ p->numComputes ] = makeCompute( uniforms, glsl, argCount );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
