@@ -161,7 +161,7 @@ u32 addCompute( program* p, const char* uniforms, const char* glsl, u32 argCount
     memcpy( tp, p->computes, sizeof( compute* ) * p->numComputes );
     unmem( p->computes ); p->computes = tp;
   }
-  p->computes[ p->numComputes ] = makeCompute( uniforms, glsl, argCount );
+  p->computes[ p->numComputes ] = makeCompute( p, uniforms, glsl, argCount );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -456,71 +456,73 @@ program* newProgram( char* prog ){
   // First collect variables and craft the uniform block and the program vars.
   char* glslUniformBlock;
   {
-    u32 numVars = 0;
+    ret->numVars = 0;
     u32 nameslen = 0;
-    u32 baselen = strlen( "float %s;" ) + 10;
+    u32 baselen = strlen( "uniform float %s;" ) + 30;
     for( u32 i = 0; i < ret->numSteps; ++i )
       if( ret->steps[ i ].type == SET ){
 	nameslen += strlen( ret->steps[ i ].var.name ) + 2;
-	numVars++;
+	ret->numVars++;
       }
-    ret->varOffsets = mem( numVars, u32 );
-    ret->varSizes = mem( numVars, u32 );
-    u32 bufsize = baselen * numVars + nameslen + 200;
+    ret->varOffsets = mem( ret->numVars, u32 );
+    ret->varSizes = mem( ret->numVars, u32 );
+    u32 bufsize = baselen * ret->numVars + nameslen + 200;
     glslUniformBlock = mem( bufsize, u8 );
     char* p = glslUniformBlock;
-    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "layout(std140) uniform vars{\n" );
-    numVars = 0;
+    //    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "layout(std140) uniform vars{\n" );
+    ret->varNames = mem( ret->numVars, char* );
+    ret->numVars = 0;
     u32 offset = 0;
     for( u32 i = 0; i < ret->numSteps; ++i ){
       if( ret->steps[ i ].type == SET ){
-	trieInsert( ret->vars, ret->steps[ i ].var.name, numVars );
+	trieInsert( ret->vars, ret->steps[ i ].var.name, ret->numVars );
 	switch( ret->steps[ i ].var.size ){
 	case 1:
-	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "float %s;\n",
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "uniform float %s;\n",
 			 ret->steps[ i ].var.name );
 	  break;
 	case 2:
-	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "vec2 %s;\n",
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "uniform vec2 %s;\n",
 			 ret->steps[ i ].var.name );
 	  break;
 	case 3:
-	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "vec3 %s;\n",
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "uniform vec3 %s;\n",
 			 ret->steps[ i ].var.name );
 	  break;
 	case 4:
-	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "vec4 %s;\n",
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "uniform vec4 %s;\n",
 			 ret->steps[ i ].var.name );
 	  break;
 	case 16:
-	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "mat4 %s;\n",
+	  p += snprintf( p, bufsize - ( p - glslUniformBlock ), "uniform mat4 %s;\n",
 			 ret->steps[ i ].var.name );
 	  break;
 	default:
 	  error( "%s", "Logic error in Atlas! My code is ass!" );
 	}
-	unmem( ret->steps[ i ].var.name );
-	ret->varOffsets[ numVars ] = offset;
-	ret->varSizes[ numVars ] = ret->steps[ i ].var.size;
+	ret->varNames[ ret->numVars ] =  ret->steps[ i ].var.name;
+	ret->varOffsets[ ret->numVars ] = offset;
+	ret->varSizes[ ret->numVars ] = ret->steps[ i ].var.size;
 	if( ret->steps[ i ].var.size == 1 || ret->steps[ i ].var.size == 2 )
 	  offset += 2;
 	else if( ret->steps[ i ].var.size == 3 || ret->steps[ i ].var.size == 4 )
 	  offset += 4;
 	else
 	  offset += 16;
-	ret->steps[ i ].var.index = numVars;
-	++numVars;
+	ret->steps[ i ].var.index = ret->numVars;
+	++ret->numVars;
       }
     }
-    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
+
+    //p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
     ret->varBlock = mem( offset, f32 );
-    glGenBuffers( 1, &ret->ubo );
-    glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
-    glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, ret->varBlock, GL_DYNAMIC_DRAW );
-    glBindBufferBase( GL_UNIFORM_BUFFER, 0, ret->ubo );
-    glBindBuffer( GL_UNIFORM_BUFFER, 0 );
-    glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
-    //dng( "Block %s, totsize %u", glslUniformBlock, offset );
+    //glGenBuffers( 1, &ret->ubo );
+    //glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
+    //glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, ret->varBlock, GL_DYNAMIC_DRAW );
+    //glBindBufferBase( GL_UNIFORM_BUFFER, 0, ret->ubo );
+    //glBindBuffer( GL_UNIFORM_BUFFER, 0 );
+    //glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
+    //dbg( "Block %s, totsize %u", glslUniformBlock, offset );
   }
   
   // Second pass for ifs, calls, computes, and gets.
@@ -597,6 +599,9 @@ void deleteProgram( program* p ){
     
   }
   deleteTrieNode( p->labels );
+  for( u32 i = 0; i < p->numVars; ++i )
+    unmem( p->varNames[ i ] );
+  unmem( p->varNames );
   deleteTrieNode( p->vars );
   unmem( p->varBlock );
   unmem( p->varSizes );
@@ -607,6 +612,7 @@ void deleteProgram( program* p ){
   unmem( p );
 }
 bool runProgram( tensorStack* ts, program* p ){
+  CHECK_GL_ERROR();
   for( u32 i = 0; i < p->numSteps; ++i ){
     //dbg( "Step %u", i );
     step* s = p->steps + i;
@@ -763,9 +769,37 @@ bool runProgram( tensorStack* ts, program* p ){
 	    uniform[ i * 4 + j ] = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
 				      + ts->stack[ ts->size - 1 ]->strides[ 0 ] * i
                                       + ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
-      glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
-      glBufferSubData( GL_UNIFORM_BUFFER, p->varOffsets[ s->var.index ] * sizeof( f32 ),
-		       p->varSizes[ s->var.index ] * sizeof( f32 ), uniform );
+      for( u32 i = 0; i < p->numComputes; ++i ){
+	glUseProgram( p->computes[ i ]->program );
+	switch( p->varSizes[ s->var.index ] ){
+	case 1:
+	  glUniform1fv( p->computes[ i ]->uniformLocs[ s->var.index ], 1,
+			p->varBlock + p->varOffsets[ s->var.index ] );
+	  break;
+	case 2:
+	  glUniform2fv( p->computes[ i ]->uniformLocs[ s->var.index ], 1,
+			p->varBlock + p->varOffsets[ s->var.index ] );
+	  break;
+	case 3:
+	  glUniform3fv( p->computes[ i ]->uniformLocs[ s->var.index ], 1,
+			p->varBlock + p->varOffsets[ s->var.index ] );
+	  break;
+	case 4:
+	  glUniform4fv( p->computes[ i ]->uniformLocs[ s->var.index ], 1,
+			p->varBlock + p->varOffsets[ s->var.index ] );
+	  break;
+	case 16:
+	  glUniformMatrix4fv( p->computes[ i ]->uniformLocs[ s->var.index ], 1, 0,
+			      p->varBlock + p->varOffsets[ s->var.index ] );
+	  break;
+	default:
+	  error( "%s", "Logic error in Atlas! Bad variable size." );
+	}
+      }
+	
+      //glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
+      //glBufferSubData( GL_UNIFORM_BUFFER, p->varOffsets[ s->var.index ] * sizeof( f32 ),
+      //p->varSizes[ s->var.index ] * sizeof( f32 ), uniform );
       pop( ts );
       //dbg( "%s", "set" );
       break;

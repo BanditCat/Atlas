@@ -148,7 +148,7 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
+compute* makeCompute( const program* prog, const char* uniforms, const char* glsl, u32 argCount ){
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
@@ -335,9 +335,11 @@ compute* makeCompute( const char* uniforms, const char* glsl, u32 argCount ){
   ret->dimsLocation = glGetUniformLocation( ret->program, "_a_dims" );
   ret->stridesLocation = glGetUniformLocation( ret->program, "_a_strides" );
 
-  ret->uboLoc = glGetUniformBlockIndex( ret->program, "vars" );
-  glUniformBlockBinding( ret->program, ret->uboLoc, 0 );
-
+  // Get uniforms locations from program.
+  ret->uniformLocs = mem( prog->numVars, GLuint );
+  for( u32 i = 0; i < prog->numVars; ++i )
+    ret->uniformLocs[ i ] = glGetUniformLocation( ret->program, prog->varNames[ i ] );
+  
   glGenVertexArrays( 1, &ret->VAO );
   glBindVertexArray( ret->VAO );
 
@@ -374,9 +376,11 @@ void deleteCompute( compute* i ){
   glDeleteProgram( i->program );
   glDeleteVertexArrays( 1, &i->VAO );
   glDeleteBuffers( 1, &i->VBO );
+  unmem( i->uniformLocs );
   unmem( i );
 }
 tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
+  CHECK_GL_ERROR();
   tensor* ret = mem( 1, tensor );
   if( compute->argCount > ts->size )
     error( "A compute was called with %u arguments, but the stack size is only %u.",
@@ -451,9 +455,9 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   
   CHECK_GL_ERROR();
   glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
-  glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
-  glUniformBlockBinding( compute->program, compute->uboLoc, 1 );
-  glBindBufferBase( GL_UNIFORM_BUFFER, 1, p->ubo );
+  //glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
+  //glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
+  //glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
 
   CHECK_GL_ERROR();
   // Draw the quad
@@ -472,8 +476,8 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
   }
   CHECK_GL_ERROR();
   glBindTexture( GL_TEXTURE_2D, 0 );
-  glBindBuffer( GL_UNIFORM_BUFFER, 0 );  
-  glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0 );
+  //glBindBuffer( GL_UNIFORM_BUFFER, 0 );  
+  //glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   glBindVertexArray( 0 );
   glUseProgram( 0 );

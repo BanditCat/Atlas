@@ -51,6 +51,21 @@ GLuint shaderProgram;
 GLuint vbo;
 
 #ifndef __EMSCRIPTEN__
+void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
+				   GLenum severity, GLsizei length,
+				   const GLchar* message, const void* userParam ){
+  dbg( "OpenGL Debug Message:\n" );
+  dbg( "Source: %d, Type: %d, ID: %d, Severity: %d\n", source, type, id, severity );
+  dbg( "Message: %s\n", message );
+}
+
+void enableDebugCallback() {
+  glEnable( GL_DEBUG_OUTPUT );
+  glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+  glDebugMessageCallback( openglDebugCallback, NULL );
+}
+
+
 // Thread synchronization variables
 SDL_atomic_t running;
 SDL_mutex* data_mutex = NULL;
@@ -207,6 +222,7 @@ int renderThreadFunction( void* data ){
     return 1;
   }
 
+  //enableDebugCallback();
   // Initialize OpenGL
   int windowWidth, windowHeight;
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
@@ -243,6 +259,7 @@ int renderThreadFunction( void* data ){
   while( SDL_AtomicGet( &running ) ){
     SDL_PumpEvents();
     // Run the program
+    CHECK_GL_ERROR();
     if( !runProgram( ts, prog ) ){
       SDL_AtomicSet( &running, 0 );
       break;
@@ -380,6 +397,7 @@ void main_loop(){
   }
 
   // Run the program
+  CHECK_GL_ERROR();
   if( !runProgram( ts, prog ) ){
     running = 0;
     emscripten_cancel_main_loop();

@@ -63,11 +63,11 @@ typedef struct{
   u32 numReturns;
   u32 returnStackSize;
   trieNode* vars;
+  u32 numVars;
+  char** varNames;
   u32* varOffsets;
   u32* varSizes;
-  f32* varBlock;
-  GLuint ubo;
-  
+  f32* varBlock;  
 } program;
 
 program* newProgramFromString( const char* prog );
