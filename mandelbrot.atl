@@ -2,7 +2,7 @@ size;if'skip'
 windowSize;set'wsize' 2
 get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) : ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0' 0;
 get'wsize';[2];0;cat;c'0.0' 0;
-1;if'skip';
+1;if'skip'; 
 
 l'mand';
 1;dup;
@@ -13,4 +13,4 @@ return;
 
 l'skip';
 mand;mand;mand;mand;mand;mand;mand;
-get'wsize';[3];0;cat;c'a( vec4( t.xy, 0.0, 0.0 ) )' 1; print
+get'wsize';[3];0;cat;c'a( vec4( t.xy, 0.0, 0.0 ) )' 1;
