@@ -45,19 +45,19 @@ static inline const char* GetGLErrorString(GLenum error) {
     }
 }
 
-// Macro to check and log OpenGL errors
-#define CHECK_GL_ERROR()                                 \
-    do {                                                 \
-        GLenum err;                                      \
-        while ((err = glGetError()) != GL_NO_ERROR) {   \
-            fprintf(stderr, "OpenGL Error: %s (0x%X) at %s:%d\n", \
-                    GetGLErrorString(err), err, __FILE__, __LINE__); \
-            fprintf(stdout, "OpenGL Error: %s (0x%X) at %s:%d\n", \
-                    GetGLErrorString(err), err, __FILE__, __LINE__); \
-            /* You can choose to exit or handle the error here */ \
-        }                                                \
-    } while (0)
-
+/* // Macro to check and log OpenGL errors */
+/* #define CHECK_GL_ERROR()                                 \ */
+/*     do {                                                 \ */
+/*         GLenum err;                                      \ */
+/*         while ((err = glGetError()) != GL_NO_ERROR) {   \ */
+/*             fprintf(stderr, "OpenGL Error: %s (0x%X) at %s:%d\n", \ */
+/*                     GetGLErrorString(err), err, __FILE__, __LINE__); \ */
+/*             fprintf(stdout, "OpenGL Error: %s (0x%X) at %s:%d\n", \ */
+/*                     GetGLErrorString(err), err, __FILE__, __LINE__); \ */
+/*             /\* You can choose to exit or handle the error here *\/ \ */
+/*         }                                                \ */
+/*     } while (0) */
+#define CHECK_GL_ERROR() { (void)0; }
 
 #if ULLONG_MAX != 18446744073709551615ULL
 #error bad long size
