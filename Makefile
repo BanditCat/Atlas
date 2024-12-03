@@ -42,7 +42,7 @@ $(TARGET): $(OBJS) icon.res
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.h: %.atl
-	xxd -i $< > $@
+	(cat $<; echo -n -e '\0') > $<.tmp ; xxd -i $<.tmp > $@
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.res
 

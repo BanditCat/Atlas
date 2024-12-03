@@ -16,6 +16,7 @@ typedef struct{
   enum{
     COMPUTE,
     IF,
+    IFN,
     TRANSPOSE,
     REVERSE,
     CAT,

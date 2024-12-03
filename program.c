@@ -177,6 +177,7 @@ char* getNextLine( char** str ){
   } else {
     *str = NULL; // No more lines
   }
+
   return start;
 }
 void trimWhitespace( char** str ){
@@ -303,6 +304,26 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Extra characters after if statement." );
     //dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum, branchName );
+
+
+  } else if( !strncmp( command, "ifn'", 4 ) ){ // Ifn
+    char* starti = command + 4;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Empty ifn statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s", linenum, commandnum, "Unmatched quote in ifn statement." );
+    char* branchName = mem( 1 + endi - starti, char );
+    memcpy( branchName, starti, endi - starti );
+    branchName[ endi - starti ] = '\0';
+    curStep->type = IFN;
+    curStep->branchName = branchName;
+    if( *( endi + 1 ) )
+      error( "Line %u, command %u: %s", linenum, commandnum,
+	     "Extra characters after ifn statement." );
+    //dbg( "Linenum %u commandnum %u: ifn to %s\n", linenum, commandnum, branchName );
 
 
   } else if( !strncmp( command, "c'", 2 ) ){ // Compute
@@ -583,7 +604,6 @@ program* newProgramFromFile( const char* filename ){
 
   buffer[ fileSize ] = '\0';
   fclose( file );
-
   program* ret = newProgram( buffer );
   unmem( buffer );
   return ret;
@@ -718,18 +738,35 @@ bool runProgram( tensorStack* ts, program* p ){
       //dbg( "%s %u", "dup", dup );
       break;
     case IF:
-      if( !ts->size )
-	error( "%s", "Attempt to if with no parameter on the stack." );
-      if( ts->stack[ ts->size - 1 ]->rank )
-	error( "%s", "Attempt to if with a non-scalar parameter." );
+      {
+	if( !ts->size )
+	  error( "%s", "Attempt to if with no parameter on the stack." );
+	if( ts->stack[ ts->size - 1 ]->rank )
+	  error( "%s", "Attempt to if with a non-scalar parameter." );
       
-      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
-      f32 cond = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
-      pop( ts );
-      if( cond != 0.0 )
-	i = s->branch - 1;
-      //dbg( "%s %f", "if", cond );
-      break;
+	tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+	f32 cond = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+	pop( ts );
+	if( cond != 0.0 )
+	  i = s->branch - 1;
+	//dbg( "%s %f", "if", cond );
+	break;
+      }
+    case IFN:
+      {
+	if( !ts->size )
+	  error( "%s", "Attempt to ifn with no parameter on the stack." );
+	if( ts->stack[ ts->size - 1 ]->rank )
+	  error( "%s", "Attempt to ifn with a non-scalar parameter." );
+      
+	tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+	f32 cond = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+	pop( ts );
+	if( cond == 0.0 )
+	  i = s->branch - 1;
+	//dbg( "%s %f", "ifn", cond );
+	break;
+      }
     case TRANSPOSE:
       if( !ts->size )
 	error( "%s", "Attempt to transpose with no axes parameter on the stack." );

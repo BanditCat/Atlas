@@ -250,7 +250,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( (char*)mandelbrot_atl );
+  prog = newProgramFromString( (char*)mandelbrot_atl_tmp );
   ts = newStack();
 
   float zoom, offsetX, offsetY;
@@ -564,7 +564,7 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( (char*)mandelbrot_atl );
+  prog = newProgramFromString( (char*)mandelbrot_atl_tmp );
   ts = newStack();
 #endif
 
