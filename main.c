@@ -10,8 +10,9 @@
 #include <windows.h>
 #endif
 
-// Main must define this.
+// Main must define these.
 u64 memc = 0;
+s32 mouseWheelDelta = 0;
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -600,12 +601,15 @@ int main( int argc, char* argv[] ){
         } else if( event.wheel.y < 0 ){
           shared_zoom *= 1.1f;  // Zoom out
         }
+	mouseWheelDelta = event.wheel.y;
         SDL_UnlockMutex( data_mutex );
       } else if( event.type == SDL_MOUSEMOTION ){
         if( event.motion.state & SDL_BUTTON_LMASK ){
           SDL_LockMutex( data_mutex );
-          float deltaX = (float)event.motion.xrel / 600 * shared_zoom * 2.0f;
-          float deltaY = (float)event.motion.yrel / 600 * shared_zoom * 2.0f;
+	  int width, height;
+	  SDL_GetWindowSize( window, &width, &height );
+          float deltaX = (float)event.motion.xrel / height * shared_zoom * 2.0f;
+          float deltaY = (float)event.motion.yrel / height * shared_zoom * 2.0f;
           shared_offsetX -= deltaX;
           shared_offsetY += deltaY;
           SDL_UnlockMutex( data_mutex );

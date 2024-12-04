@@ -383,6 +383,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     //dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
     
     
+  } else if( !strcmp( command, "input" ) ){ // Input; 3 axes and three buttons
+    curStep->type = GETINPUT;
+    //dbg( "Linenum %u commandnum %u: input\n", linenum, commandnum );
+    
+    
   } else if( !strcmp( command, "windowSize" ) ){ // Window size
     curStep->type = WINDOWSIZE;
     //dbg( "Linenum %u commandnum %u: window size\n", linenum, commandnum );
@@ -648,6 +653,20 @@ bool runProgram( tensorStack* ts, program* p ){
 	data[ 1 ] = windowHeight;
 	push( ts, newTensor( 1, wsshape, data ) );
 	break;
+      }
+    case GETINPUT:
+      {
+	static const u32 wsshape[ 1 ] = { 6 };
+	f32* data = mem( 6, f32 );
+	int dx, dy;
+	SDL_GetRelativeMouseState( &dx, &dy ); // Get mouse delta
+	data[ 0 ] = dx;
+	data[ 1 ] = dy;
+	data[ 2 ] = mouseWheelDelta;
+	mouseWheelDelta = 0;
+	push( ts, newTensor( 1, wsshape, data ) );
+	break;
+	
       }
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );

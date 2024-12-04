@@ -91,6 +91,8 @@ extern u64 memc;
 // Global for ease.
 extern SDL_Window* window;
 extern SDL_GLContext glContext;
+extern s32 mouseWheelDelta;
+
 
 #include "trie.h"
 #include "tensor.h"
