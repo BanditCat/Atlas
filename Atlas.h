@@ -92,7 +92,9 @@ extern u64 memc;
 extern SDL_Window* window;
 extern SDL_GLContext glContext;
 extern s32 mouseWheelDelta;
-
+#ifndef __EMSCRIPTEN__
+extern SDL_mutex* data_mutex;
+#endif
 
 #include "trie.h"
 #include "tensor.h"

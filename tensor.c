@@ -754,31 +754,34 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
 void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
   tensorCatHelper( ts->stack[ index1 ], ts->stack[ index2 ], axis );
 }
-void tensorSliceHelper(tensor* t, u32 axis, s32 start, s32 end) {
-    if (t == NULL)
-        error("%s", "Tensor is NULL in tensorSliceHelper.");
-    if (axis >= t->rank)
-        error("Axis %u is out of bounds for tensor of rank %u.", axis, t->rank);
+void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
+  if( t == NULL )
+    error( "%s", "Tensor is NULL in tensorSliceHelper." );
+  if( axis >= t->rank )
+    error( "Axis %u is out of bounds for tensor of rank %u.", axis, t->rank );
 
-    s32 len = t->shape[axis];
+  s32 len = t->shape[ axis ];
 
-    // Adjust negative indices
-    if (start < 0)
-        start += len;
-    if (end < 0)
-        end += len;
+  // Adjust negative indices
+  if( start < 0 )
+    start += len;
+  if( end < 0 )
+    end += len;
 
-    // Ensure indices are within bounds
-    if (start < 0 || end > len || start > end)
-        error("Slice indices out of range: start=%d, end=%d, length=%d", start, end, len);
+  // Ensure indices are within bounds
+  if( start < 0 || end > len || start > end )
+    error( "Slice indices out of range: start=%d, end=%d, length=%d",
+           start,
+           end,
+           len );
 
-    s32 new_len = end - start;
+  s32 new_len = end - start;
 
-    // Adjust the offset based on the stride
-    t->offset += t->strides[axis] * start;
+  // Adjust the offset based on the stride
+  t->offset += t->strides[ axis ] * start;
 
-    // Update the shape
-    t->shape[axis] = new_len;
+  // Update the shape
+  t->shape[ axis ] = new_len;
 }
 
 void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end ){

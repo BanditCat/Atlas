@@ -347,12 +347,18 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       curStep->toCompute.argCount = argCount;
       if( argCount > 4 )
 	error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
-      //dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n", linenum, commandnum, comp, argCount );
+      //dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
+      //linenum, commandnum, comp, argCount );
     } else
       error( "Line %u, command %u: %s", linenum, commandnum,
 	     "Malformed compute statement." );
 
     
+  } else if( !strcmp( command, "+" ) ){ // Add
+    curStep->type = ADD;
+    //dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+
+
   } else if( !strcmp( command, "r" ) ){ // Reverse
     curStep->type = REVERSE;
     //dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
@@ -667,8 +673,14 @@ bool runProgram( tensorStack* ts, program* p ){
 	SDL_GetRelativeMouseState( &dx, &dy ); // Get mouse delta
 	data[ 0 ] = dx;
 	data[ 1 ] = dy;
+#ifndef __EMSCRIPTEN__	
+	SDL_LockMutex( data_mutex );
+#endif
 	data[ 2 ] = mouseWheelDelta;
 	mouseWheelDelta = 0;
+#ifndef __EMSCRIPTEN__	
+	SDL_UnlockMutex( data_mutex );
+#endif
 	push( ts, newTensor( 1, wsshape, data ) );
 	break;
 	

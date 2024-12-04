@@ -2,7 +2,7 @@ l'start'
 size;ifn'started'
 pop;1;if'start'
 l'started' 
-input;0;r;[4 6 0];slice;print;pop;
+input;print;pop;
 
 windowSize;set'wsize' 2
 get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y : ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0' 0;

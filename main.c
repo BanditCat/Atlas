@@ -377,10 +377,11 @@ void main_loop(){
       }
     } else if( event.type == SDL_MOUSEWHEEL ){
       if( event.wheel.y > 0 ){
-        shared_zoom *= 0.9f;  // Zoom in
+	shared_zoom /= 1.1f;  // Zoom in
       } else if( event.wheel.y < 0 ){
-        shared_zoom *= 1.1f;  // Zoom out
+	shared_zoom *= 1.1f;  // Zoom out
       }
+      mouseWheelDelta = event.wheel.y;
     } else if( event.type == SDL_MOUSEMOTION ){
       if( event.motion.state & SDL_BUTTON_LMASK ){
         float deltaX = (float)event.motion.xrel / 600 * shared_zoom * 2.0f;
@@ -597,7 +598,7 @@ int main( int argc, char* argv[] ){
       } else if( event.type == SDL_MOUSEWHEEL ){
         SDL_LockMutex( data_mutex );
         if( event.wheel.y > 0 ){
-          shared_zoom *= 0.9f;  // Zoom in
+          shared_zoom /= 1.1f;  // Zoom in
         } else if( event.wheel.y < 0 ){
           shared_zoom *= 1.1f;  // Zoom out
         }
