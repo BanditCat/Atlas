@@ -17,6 +17,7 @@ typedef struct{
     IF,
     IFN,
     TRANSPOSE,
+    SLICE,
     REVERSE,
     CAT,
     PRINT,

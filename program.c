@@ -373,6 +373,11 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     //dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
 
     
+  } else if( !strcmp( command, "slice" ) ){ // Slice
+    curStep->type = SLICE;
+    //dbg( "Linenum %u commandnum %u: slice\n", linenum, commandnum );
+
+    
   } else if( !strcmp( command, "size" ) ){ // Top
     curStep->type = TOP;
     //dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
@@ -798,6 +803,21 @@ bool runProgram( tensorStack* ts, program* p ){
 		     + ts->stack[ ts->size - 1 ]->strides[ 0 ] );
       pop( ts );
       tensorTranspose( ts, ts->size - 1, axis1, axis2 );
+      //dbg( "%s %u %u", "transpose", axis1, axis2 );
+      break;
+    case SLICE:
+      if( !ts->size )
+	error( "%s", "Attempt to slice with an empty stack." );
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
+	error( "%s", "Attempt to slice with a parameter not of rank 1." );
+
+      u32 start = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
+      u32 end = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
+		     + ts->stack[ ts->size - 1 ]->strides[ 0 ] );
+      u32 axis = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
+		    + ts->stack[ ts->size - 1 ]->strides[ 0 ] * 2 );
+      pop( ts );
+      tensorSlice( ts, ts->size - 1, axis, start, end );
       //dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
     case TOP:
