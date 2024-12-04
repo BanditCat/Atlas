@@ -50,6 +50,7 @@ typedef struct{
 
 #include "program.h"
 
+void takeOwnership( tensor* t );
 tensor* copyTensor( const tensor* t );
 void tensorToHostMemory( tensor* t );
 void tensorToGPUMemory( tensor* t );

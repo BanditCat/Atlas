@@ -15,6 +15,10 @@ typedef struct{
   enum{
     COMPUTE,
     ADD,
+    SUB,
+    MUL,
+    DIV,
+    POW,
     IF,
     IFN,
     TRANSPOSE,

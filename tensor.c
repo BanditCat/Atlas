@@ -4,6 +4,23 @@
 
 #include "Atlas.h"
 
+void takeOwnership( tensor* t ){
+  if( t == NULL || t->gpu )
+    error( "%s", "Tensor is NULL or GPU in takeOwnership." );
+  if( t->ownsData )
+    return; // Already owns data, nothing to do
+
+  // Allocate new memory for the data
+  f32* newData = mem( t->size, f32 );
+  // Copy the data from the original tensor, considering the offset
+  memcpy( newData, t->data + t->offset, t->size * sizeof( f32 ) );
+  // Reset the offset since data is now at the beginning
+  t->offset = 0;
+  // Update the data pointer to the new data
+  t->data = newData;
+  // Mark that the tensor now owns the data
+  t->ownsData = true;
+};
 // DANGER this sets owns data to false, therefore the undelyinng data MUST NOT
 // be destroyed BEFORE the copy while the programming is running. At exit
 // cleanup, it shouldn't matter the order of deallocation.
@@ -782,6 +799,10 @@ void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
 
   // Update the shape
   t->shape[ axis ] = new_len;
+
+  t->size = 1;
+  for( u32 i = 0; i < t->rank; ++i )
+    t->size *= t->shape[ i ];
 }
 
 void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end ){

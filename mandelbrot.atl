@@ -1,11 +1,16 @@
-l'start'
-size;ifn'started'
-pop;1;if'start'
-l'started' 
-input;print;pop;
+size;if'started';
+1;1;1;
+[0.5];set'zoom' 1;
+[0 0];set'offs' 2;
+l'started';
+pop;pop;pop;
+
+input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
+[1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1 // set zoom unconditionally
+print;
 
 windowSize;set'wsize' 2
-get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y : ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0' 0;
+get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom : ( ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom' 0;
 get'wsize';[2];0;cat;c'0.0' 0;
 1;if'skip'; 
 
