@@ -1,6 +1,10 @@
-size;if'skip'
+l'start'
+size;ifn'started'
+pop;1;if'start'
+l'started' 
+
 windowSize;set'wsize' 2
-get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) : ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0' 0;
+get'wsize';[2];0;cat;c'( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y : ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0' 0;
 get'wsize';[2];0;cat;c'0.0' 0;
 1;if'skip'; 
 
@@ -12,5 +16,36 @@ return;
 
 
 l'skip';
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
+mand;mand;mand;mand;mand;mand;mand;
 mand;mand;mand;mand;mand;mand;mand;
 get'wsize';[3];0;cat;c'a( vec4( t.xy, 0.0, 0.0 ) )' 1;

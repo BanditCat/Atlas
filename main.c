@@ -250,7 +250,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( (char*)mandelbrot_atl_tmp );
+  prog = newProgramFromString( (char*)mandelbrot_atl, mandelbrot_atl_len );
   ts = newStack();
 
   float zoom, offsetX, offsetY;
@@ -360,7 +360,6 @@ int renderThreadFunction( void* data ){
   return 0;
 }
 #else
-#include <emscripten/emscripten.h>
 
 // Main loop function for Emscripten
 void main_loop(){
@@ -564,7 +563,7 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( (char*)mandelbrot_atl_tmp );
+  prog = newProgramFromString( (char*)mandelbrot_atl, mandelbrot_atl_len );
   ts = newStack();
 #endif
 

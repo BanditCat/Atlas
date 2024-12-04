@@ -3,12 +3,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// This is the number of popped gpu tensors to keep cached.
+// THIS LIST IS CRAWLED THROUGH LINEARLY, DONT make it huge
+
+#define TENSOR_CACHE 16
+
+
 typedef struct{
   u32 rank;              // Rank of the tensor (0 to 4)
   u32 size;              // Total number of elements
   u32 shape[4];          // Dimensions of the tensor
   s32 strides[4];        // Strides for indexing
-  u32 offset;
+  s32 offset;
   bool gpu;              // True if in gpu memory, false if in cpu memory.
   union{
     f32* data;
@@ -39,6 +45,7 @@ typedef struct{
   u32 allocSize;
   tensor** stack;
   u32 size;
+  tensor* cache[ TENSOR_CACHE ];
 } tensorStack;
 
 #include "program.h"

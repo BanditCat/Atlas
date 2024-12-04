@@ -52,11 +52,11 @@ void tensorToHostMemory( tensor* t ){
   t->ownsData = true;
 }
 void tensorToGPUMemory( tensor* t ){
-  if( t->gpu )
-    return;
   if( t == NULL )
     error( "%s", "Tensor is NULL in tensorToGPUMemory." );
-
+  if( t->gpu )
+    return;
+  dbg( "%p", t->data );
   // Calculate texture dimensions for GPU storage
   f32* tdata = t->data;
   u32 pixels = ( t->size + 3 ) / 4; // RGBA = 4 floats per pixel
@@ -381,54 +381,82 @@ void deleteCompute( compute* i ){
 }
 tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   CHECK_GL_ERROR();
-  tensor* ret = mem( 1, tensor );
   if( compute->argCount > ts->size )
     error( "A compute was called with %u arguments, but the stack size is only %u.",
-	   compute->argCount, ts->size );
+	     compute->argCount, ts->size );
+  tensor* ret;
   for( u32 i = 0; i < compute->argCount; ++i )
     tensorToGPUMemory( ts->stack[ ( ts->size - 1 ) - i ] );
-  if( rank > 4 )
-    error( "%s", "Rank exceeds maximum of 4." );
-
-  // Initialize basic properties
-  ret->rank = rank;
-  ret->size = 1;
-  ret->offset = 0;
-  ret->ownsData = true;
-  ret->gpu = true;
-  for( u32 i = 0; i < rank; ++i ){
-    ret->shape[ i ] = shape[ i ];
-    ret->strides[ rank - i - 1 ] = ret->size;
-    ret->size *= shape[ rank - i - 1 ];
+  u32 size = 1;
+  for( u32 i = 0; i < rank; ++i )
+    size *= shape[ i ];
+  u32 found = TENSOR_CACHE;
+  for( u32 i = 0; i < TENSOR_CACHE; ++i )
+    if( ts->cache[ i ] &&
+	size == ts->cache[ i ]->size ){
+      found = i;
+      break;
+    }
+  if( found != TENSOR_CACHE ){
+    ret = ts->cache[ found ];
+    ts->cache[ found ] = NULL;
+    ret->rank = rank;
+    ret->size = 1;
+    ret->offset = 0;
+    ret->ownsData = true;
+    ret->gpu = true;
+    for( u32 i = 0; i < rank; ++i ){
+      ret->shape[ i ] = shape[ i ];
+      ret->strides[ rank - i - 1 ] = ret->size;
+      ret->size *= shape[ rank - i - 1 ];
+    }
+    for( u32 i = rank; i < 4; ++i ){
+      ret->shape[ i ] = 1;
+      ret->strides[ i ] = 1;
+    }
+    glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+    glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
+  }else{
+    ret = mem( 1, tensor );
+    if( rank > 4 )
+      error( "%s", "Rank exceeds maximum of 4." );
+    
+    // Initialize basic properties
+    ret->rank = rank;
+    ret->size = 1;
+    ret->offset = 0;
+    ret->ownsData = true;
+    ret->gpu = true;
+    for( u32 i = 0; i < rank; ++i ){
+      ret->shape[ i ] = shape[ i ];
+      ret->strides[ rank - i - 1 ] = ret->size;
+      ret->size *= shape[ rank - i - 1 ];
+    }
+    for( u32 i = rank; i < 4; ++i ){
+      ret->shape[ i ] = 1;
+      ret->strides[ i ] = 1;
+    }
+    
+    // Compute the smallest square dimensions
+    u32 pixels = ( ret->size + 3 ) / 4;
+    ret->tex.width = (u32)ceilf( sqrtf( (f32)pixels ) );
+    ret->tex.height = ( pixels + ret->tex.width - 1 ) / ret->tex.width;
+  
+    CHECK_GL_ERROR();
+    // Create OpenGL texture
+    glGenTextures( 1, &ret->tex.texture );
+    glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->tex.width, ret->tex.height, 0, GL_RGBA, GL_FLOAT, NULL );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+    
+    CHECK_GL_ERROR();
+    // Create framebuffer
+    glGenFramebuffers( 1, &ret->tex.framebuffer );
+    glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
+    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->tex.texture, 0 );
   }
-  for( u32 i = rank; i < 4; ++i ){
-    ret->shape[ i ] = 1;
-    ret->strides[ i ] = 1;
-  }
-
-  // Compute the smallest square dimensions
-  u32 pixels = ( ret->size + 3 ) / 4;
-  ret->tex.width = (u32)ceilf( sqrtf( (f32)pixels ) );
-  ret->tex.height = ( pixels + ret->tex.width - 1 ) / ret->tex.width;
-
-  CHECK_GL_ERROR();
-  // Create OpenGL texture
-  glGenTextures( 1, &ret->tex.texture );
-  glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, ret->tex.width, ret->tex.height, 0, GL_RGBA, GL_FLOAT, NULL );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-
-  CHECK_GL_ERROR();
-  // Create framebuffer
-  glGenFramebuffers( 1, &ret->tex.framebuffer );
-  glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ret->tex.texture, 0 );
-
-  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
-    error( "%s", "Framebuffer is not complete." );
-
-
+  
   CHECK_GL_ERROR();
   // Use the compute program to render to the texture
   glViewport( 0, 0, ret->tex.width, ret->tex.height );
@@ -461,26 +489,14 @@ tensor* newTensorInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 
   CHECK_GL_ERROR();
   // Draw the quad
-  // Verify Framebuffer Completeness
-  GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  if (status != GL_FRAMEBUFFER_COMPLETE) {
-    fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
-    // Handle error (e.g., cleanup and exit)
-  }
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
-  // Verify Framebuffer Completeness
-  status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  if (status != GL_FRAMEBUFFER_COMPLETE) {
-    fprintf(stderr, "Framebuffer incomplete after glDrawArrays: 0x%x\n", status);
-    // Handle error (e.g., cleanup and exit)
-  }
   CHECK_GL_ERROR();
-  glBindTexture( GL_TEXTURE_2D, 0 );
+  //  glBindTexture( GL_TEXTURE_2D, 0 );
   //glBindBuffer( GL_UNIFORM_BUFFER, 0 );  
   //glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   glBindVertexArray( 0 );
-  glUseProgram( 0 );
+  //glUseProgram( 0 );
   
   CHECK_GL_ERROR();
   // Pop arguments off the stack
@@ -505,13 +521,23 @@ void push( tensorStack* ts, tensor* t ){
 void pop( tensorStack* ts ){
   if( !ts->size )
     error( "%s", "Atempt to pop an empty stack!" );
-  deleteTensor( ts->stack[ --ts->size ] );
+  --ts->size;
+  if( !ts->stack[ ts->size ]->gpu || !ts->stack[ ts->size ]->ownsData )
+    deleteTensor( ts->stack[ ts->size ] );
+  else{
+    if( ts->cache[ TENSOR_CACHE - 1 ] )
+      deleteTensor( ts->cache[ TENSOR_CACHE - 1 ] );
+    for( int i = TENSOR_CACHE - 1; i > 0; --i )
+      ts->cache[ i ] = ts->cache[ i - 1 ];
+    ts->cache[ 0 ] = ts->stack[ ts->size ];
+    ts->stack[ ts->size ] = NULL;
+  }
 }
 
 tensorStack* newStack( void ){
   tensorStack* ret = mem( 1, tensorStack );
   ret->allocSize = 256;
-  ret->stack = mem( ret->allocSize, tensor );
+  ret->stack = mem( ret->allocSize, tensor* );
   ret->size = 0;
   return ret;
 }
@@ -519,6 +545,9 @@ tensorStack* newStack( void ){
 void deleteStack( tensorStack* ts ){
   for( u32 i = 0; i < ts->size; ++i )
     deleteTensor( ts->stack[ i ] );
+  for( u32 i = 0; i < TENSOR_CACHE; ++i )
+    if( ts->cache[ i ] )
+      deleteTensor( ts->cache[ i ] );
   unmem( ts->stack );
   unmem( ts );
 }

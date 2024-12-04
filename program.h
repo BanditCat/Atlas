@@ -10,7 +10,6 @@
 #include "trie.h"
 
 
-// TODO: recursive programs.  uniforms. elementwise basic ops
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
 typedef struct{
   enum{
@@ -71,7 +70,7 @@ typedef struct{
   f32* varBlock;  
 } program;
 
-program* newProgramFromString( const char* prog );
+program* newProgramFromString( const char* prog, u32 strlen );
 program* newProgramFromFile( const char* file );
 // Return false to exit program.
 bool runProgram( tensorStack* ts, program* p );

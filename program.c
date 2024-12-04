@@ -546,9 +546,9 @@ program* newProgram( char* prog ){
     //dbg( "Block %s, totsize %u", glslUniformBlock, offset );
   }
   
-  // Second pass for ifs, calls, computes, and gets.
+  // Second pass for ifs, ifns, calls, computes, and gets.
   for( u32 i = 0; i < ret->numSteps; ++i )
-    if( ret->steps[ i ].type == IF || ret->steps[ i ].type == CALL ){
+    if( ret->steps[ i ].type == IF || ret->steps[ i ].type == IFN || ret->steps[ i ].type == CALL ){
       u32 jumpTo;
       if( !trieSearch( ret->labels, ret->steps[ i ].branchName, &jumpTo ) )
 	error( "Statement with unknown label %s.", ret->steps[ i ].branchName );
@@ -557,7 +557,7 @@ program* newProgram( char* prog ){
     } else if( ret->steps[ i ].type == GET ){
       u32 vi;
       if( !trieSearch( ret->vars, ret->steps[ i ].var.name, &vi ) )
-	  error( "%s %s.", "Attempt to get an an unknown variable", ret->steps[ i ].var.name );
+	error( "%s %s.", "Attempt to get an an unknown variable", ret->steps[ i ].var.name );
       char* varName = ret->steps[ i ].var.name;
       ret->steps[ i ].var.index = vi;
       unmem( varName );
@@ -570,9 +570,10 @@ program* newProgram( char* prog ){
   return ret;
 }
 // Doesn't modify prog.
-program* newProgramFromString( const char* prog ){
-  char* cp = mem( strlen( prog ) + 1, char );
-  strcpy( cp, prog );
+program* newProgramFromString( const char* prog, u32 len ){
+  char* cp = mem( len + 3, char );
+  strncpy( cp, prog, len );
+  cp[ len ] = '\0';
   program* ret = newProgram( cp );
   unmem( cp );
   return ret;
@@ -775,7 +776,7 @@ bool runProgram( tensorStack* ts, program* p ){
 
       u32 axis1 = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset );
       u32 axis2 = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
-		    + ts->stack[ ts->size - 1 ]->strides[ 0 ] );
+		     + ts->stack[ ts->size - 1 ]->strides[ 0 ] );
       pop( ts );
       tensorTranspose( ts, ts->size - 1, axis1, axis2 );
       //dbg( "%s %u %u", "transpose", axis1, axis2 );
@@ -805,7 +806,7 @@ bool runProgram( tensorStack* ts, program* p ){
 	  for( u32 j = 0; j < 4; ++j )
 	    uniform[ i * 4 + j ] = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset
 				      + ts->stack[ ts->size - 1 ]->strides[ 0 ] * i
-                                      + ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
+				      + ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
       for( u32 i = 0; i < p->numComputes; ++i ){
 	glUseProgram( p->computes[ i ]->program );
 	switch( p->varSizes[ s->var.index ] ){
