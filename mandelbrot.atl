@@ -9,7 +9,7 @@ input; // deal with input, a 6 value rank 1 tensor; three axes then three button
 [1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1 // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse';
 [0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;1
-l'nomouse'
+l'nomouse' 
 pop;
 
 windowSize;set'wsize' 2
