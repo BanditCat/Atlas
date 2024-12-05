@@ -13,7 +13,7 @@ HDRS = Atlas.h tensor.h trie.h program.h
 MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
 SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
 OBJS = $(SRCS:.c=.o)
-ATLS = mandelbrot.atl 
+ATLS = mandelbrot.atl
 ATLHS = $(ATLS:.atl=.h)
 
 .PHONY: all rall clean backup release tidy
@@ -32,11 +32,11 @@ release: $(TARGET) $(HTML)
 	cp -f $(TARGET) $(HTML) $(JS) $(WASM) ./bin
 	upx -9 ./bin/$(TARGET)
 
-$(HTML): $(SRCS)
+$(HTML): $(SRCS) $(ATLHS) 
 	$(EMCC) $(EMCCFLAGS) -o $(HTML) $(SRCS)
 
 $(TARGET): $(OBJS) icon.res
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) $^ -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
