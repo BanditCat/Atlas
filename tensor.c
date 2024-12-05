@@ -275,13 +275,18 @@ compute* makeCompute( const program* prog,
     void main(){\n\
       float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0;\n\
       vec4 t = _a_toTensorIndices( i + 0.5 );\n\
-      float _a_r = (%s); ++i;\n\
+      float ret;\n\
+      {%s}\n\
+      float _a_r = ret; ++i;\n\
       t = _a_toTensorIndices( i + 0.5 );\n\
-      float _a_g = (%s); ++i;\n\
+      {%s}\n\
+      float _a_g = ret; ++i;\n\
       t = _a_toTensorIndices( i + 0.5 );\n\
-      float _a_b = (%s); ++i;\n\
+      {%s}\n\
+      float _a_b = ret; ++i;\n\
       t = _a_toTensorIndices( i + 0.5 );\n\
-      float _a_a = (%s);\n\
+      {%s}\n\
+      float _a_a = ret;\n\
       _a_fragColor = vec4( _a_r, _a_g, _a_b, _a_a );\n\
     }\n\
   ";

@@ -392,6 +392,10 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
              "Unmatched quote in compute statement." );
     char* comp = mem( 1 + endi - starti, char );
     memcpy( comp, starti, endi - starti );
+    // Replace \ with ;
+    for( u32 i = 0; i < endi - starti; ++i )
+      if( comp[ i ] == '\\' )
+	comp[ i ] = ';';
     comp[ endi - starti ] = '\0';
     char* sizep = endi + 1;
     u32 argCount;
