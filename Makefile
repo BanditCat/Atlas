@@ -13,7 +13,7 @@ HDRS = Atlas.h tensor.h trie.h program.h
 MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
 SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
 OBJS = $(SRCS:.c=.o)
-ATLS = file1.atl file2.atl  # Add your .atl files here
+ATLS = mandelbrot.atl
 ATLHS = $(ATLS:.atl=.h)
 
 .PHONY: all rall clean backup release tidy

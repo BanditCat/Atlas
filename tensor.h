@@ -6,7 +6,7 @@
 // This is the number of popped gpu tensors to keep cached.
 // THIS LIST IS CRAWLED THROUGH LINEARLY, DONT make it huge
 
-#define TENSOR_CACHE 16
+#define TENSOR_CACHE 4
 
 
 typedef struct{
