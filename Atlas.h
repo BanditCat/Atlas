@@ -78,6 +78,136 @@ typedef signed char s8;
 typedef float f32;
 typedef double f64;
 
+
+
+
+
+
+
+
+
+
+
+
+/* typedef struct MemAlloc { */
+/*     void* ptr; */
+/*     size_t size; */
+/*     const char* file; */
+/*     int line; */
+/*     int freed; // Indicates if the memory has been freed */
+/*     struct MemAlloc* next; */
+/* } MemAlloc; */
+
+/* extern MemAlloc* mem_list; */
+/* extern SDL_mutex* mem_list_mutex; // Use SDL mutex */
+
+/* inline void* mem_track(size_t count, size_t size, const char* file, int line) { */
+/*     // Initialize the mutex if it's not already initialized */
+/*     if (!mem_list_mutex) { */
+/*         mem_list_mutex = SDL_CreateMutex(); */
+/*         if (!mem_list_mutex) { */
+/*             fprintf(stderr, "Failed to create mutex: %s\n", SDL_GetError()); */
+/*             exit(EXIT_FAILURE); */
+/*         } */
+/*     } */
+
+/*     void* ptr = calloc(count, size); */
+/*     if (!ptr) { */
+/*         fprintf(stderr, "Memory allocation failed at %s:%d\n", file, line); */
+/*         exit(EXIT_FAILURE); */
+/*     } */
+/*     MemAlloc* alloc = calloc(1,sizeof(MemAlloc)); */
+/*     if (!alloc) { */
+/*         fprintf(stderr, "Failed to allocate memory for tracking at %s:%d\n", file, line); */
+/*         free(ptr); */
+/*         exit(EXIT_FAILURE); */
+/*     } */
+/*     alloc->ptr = ptr; */
+/*     alloc->size = count * size; */
+/*     alloc->file = file; */
+/*     alloc->line = line; */
+/*     alloc->freed = 0; // Set freed flag to 0 */
+
+/*     SDL_LockMutex(mem_list_mutex); */
+/*     alloc->next = mem_list; */
+/*     mem_list = alloc; */
+/*     SDL_UnlockMutex(mem_list_mutex); */
+
+/*     return ptr; */
+/* } */
+
+/* inline void unmem_track(void* ptr, const char* file, int line) { */
+/*     if (!ptr) { */
+/*         fprintf(stderr, "Attempted to free NULL pointer at %s:%d\n", file, line); */
+/*         return; */
+/*     } */
+
+/*     if (!mem_list_mutex) { */
+/*         fprintf(stderr, "Memory tracker mutex not initialized when freeing at %s:%d\n", file, line); */
+/*         return; */
+/*     } */
+
+/*     SDL_LockMutex(mem_list_mutex); */
+/*     MemAlloc* current = mem_list; */
+/*     while (current) { */
+/*         if (current->ptr == ptr) { */
+/*             if (current->freed) { */
+/*                 // Double free detected */
+/*                 fprintf(stderr, "Double free detected at %s:%d (originally allocated at %s:%d)\n", */
+/*                         file, line, current->file, current->line); */
+/*             } else { */
+/*                 // Mark as freed and free the memory */
+/*                 current->freed = 1; */
+/*                 free(ptr); */
+/*             } */
+/*             SDL_UnlockMutex(mem_list_mutex); */
+/*             return; */
+/*         } */
+/*         current = current->next; */
+/*     } */
+/*     SDL_UnlockMutex(mem_list_mutex); */
+/*     fprintf(stderr, "Attempted to free untracked or already freed memory at %s:%d\n", file, line); */
+/* } */
+
+/* inline void check_memory_leaks(void) { */
+/*     if (mem_list_mutex) { */
+/*         SDL_LockMutex(mem_list_mutex); */
+/*     } */
+/*     MemAlloc* current = mem_list; */
+/*     int leaks_found = 0; */
+/*     while (current) { */
+/*         if (!current->freed) { */
+/*             fprintf(stderr, "Memory leak of %zu bytes allocated at %s:%d\n", */
+/*                     current->size, current->file, current->line); */
+/*             leaks_found = 1; */
+/*         } */
+/*         MemAlloc* to_free = current; */
+/*         current = current->next; */
+/*         free(to_free); // Free the tracking struct itself */
+/*     } */
+/*     mem_list = NULL; */
+/*     if (mem_list_mutex) { */
+/*         SDL_UnlockMutex(mem_list_mutex); */
+/*         SDL_DestroyMutex(mem_list_mutex); */
+/*         mem_list_mutex = NULL; */
+/*     } */
+/*     if (!leaks_found) { */
+/*         printf("No memory leaks detected.\n"); */
+/*     } */
+/* } */
+/* // Macros to automatically capture file and line information */
+/* #define mem(count, type) mem_track(count, sizeof(type), __FILE__, __LINE__) */
+/* #define unmem(ptr) unmem_track(ptr, __FILE__, __LINE__) */
+
+
+
+
+
+
+
+
+
+
 extern u64 memc;
 #define mem( size, T ) ( memc++, calloc( ( size ), sizeof( T ) ) )
 #define unmem( F ) ( memc--, free( F ) ) 

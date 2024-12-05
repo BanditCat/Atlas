@@ -591,6 +591,7 @@ program* newProgram( char* prog ){
             error(
               "%s",
               "Incorrect size setting already set value. Size is static." );
+	  unmem( ret->steps[ i ].var.name );
           ret->steps[ i ].var.index = val;
         } else {
           trieInsert( ret->vars, ret->steps[ i ].var.name, ret->numVars );

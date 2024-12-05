@@ -13,6 +13,8 @@
 // Main must define these.
 u64 memc = 0;
 s32 mouseWheelDelta = 0;
+//MemAlloc* mem_list = NULL;
+//SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -630,7 +632,7 @@ int main( int argc, char* argv[] ){
   SDL_Quit();
 
   dbg( "mem count %llu", memc );
-
+  //check_memory_leaks();
   return 0;
 }
 
