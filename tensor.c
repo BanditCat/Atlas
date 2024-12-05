@@ -192,6 +192,7 @@ compute* makeCompute( const program* prog,
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
+    precision highp int;\n\
     in vec2 _a_position;\n\
     void main(){\n\
       gl_Position = vec4( _a_position, 0.0, 1.0);\n\
@@ -202,6 +203,7 @@ compute* makeCompute( const program* prog,
   const char* fragmentShaderTemplate = "\
     #version 300 es\n\
     precision highp float;\n\
+    precision highp int;\n\
     out vec4 _a_fragColor;\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\

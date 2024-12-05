@@ -35,8 +35,8 @@ release: $(TARGET) $(HTML)
 $(HTML): $(SRCS) $(ATLHS) 
 	$(EMCC) $(EMCCFLAGS) -o $(HTML) $(SRCS)
 
-$(TARGET): $(OBJS) icon.res
-	$(CC) $(LDFLAGS) $^ -o $@
+$(TARGET): $(OBJS) $(ATLHS) icon.res
+	$(CC) $(LDFLAGS) $(OBJS) icon.res -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
