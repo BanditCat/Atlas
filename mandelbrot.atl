@@ -27,4 +27,4 @@ return;
 l'skip';
 mand;mand;mand;mand;mand;mand;mand;
 mand;mand;mand;mand;mand;mand;mand;
-get'wsize';[3];0;cat;c'a( vec4( t.xy, 0.0, 0.0 ) )' 1;
+get'wsize';[3];0;cat;c'a( vec4( t.xy, t.z, 0.0 ) )' 1;
