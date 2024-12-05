@@ -128,6 +128,10 @@ static tensor* parseTensor( const char* command ){
   parsePtr = clone;
   parseTensorRecursive( &parsePtr, 0, tempShape, tempData, &dataCount );
 
+  skipWhitespace( &parsePtr );
+  if( *parsePtr != '\0' )
+    error( "%s", "Unexpected characters after tensor definition." );
+    
   if( dataCount != totalElements )
     error( "%s", "Mismatch in expected and actual number of tensor elements." );
 
@@ -408,6 +412,14 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
              linenum,
              commandnum,
              "Malformed compute statement." );
+
+  } else if( !strcmp( command, "first" ) ){  // First
+    curStep->type = FIRST;
+    // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "last" ) ){  // Last
+    curStep->type = LAST;
+    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
   } else if( !strcmp( command, "+" ) ){  // Add
     curStep->type = ADD;
@@ -763,6 +775,20 @@ bool runProgram( tensorStack* ts, program* p ){
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif
+      Uint32 buttons = SDL_GetMouseState( NULL, NULL );
+      if( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) )
+	data[ 3 ] = 1;
+      else
+	data[ 3 ] = 0;
+      if( buttons & SDL_BUTTON( SDL_BUTTON_RIGHT ) )
+	data[ 4 ] = 1;
+      else
+	data[ 4 ] = 0;
+      if( buttons & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
+	data[ 5 ] = 1;
+      else
+	data[ 5 ] = 0;
+      
       push( ts, newTensor( 1, wsshape, data ) );
       break;
     }
@@ -925,7 +951,7 @@ bool runProgram( tensorStack* ts, program* p ){
       break;
     case POP:
       pop( ts );
-      // dbg( "%s", "pop" );
+      //dbg( "%s %u", "pop", ts->size );
       break;
     case CALL:
       if( p->numReturns >= p->returnStackSize ){
@@ -996,6 +1022,24 @@ bool runProgram( tensorStack* ts, program* p ){
       pop( ts );
       tensorReverse( ts, ts->size - 1, axis );
       // dbg( "%s %u", "reverse", axis );
+      break;
+    }
+    case FIRST: {
+      if( !ts->size )
+        error( "%s",
+	       "Attempt to take the first element with no parameter on the stack." );
+
+      tensorTakeFirst( ts, ts->size - 1 );
+      // dbg( "%s", "first" );
+      break;
+    }
+    case LAST: {
+      if( !ts->size )
+        error( "%s",
+	       "Attempt to take the first element with no parameter on the stack." );
+
+      tensorTakeLast( ts, ts->size - 1 );
+      // dbg( "%s", "first" );
       break;
     }
     case DUP:

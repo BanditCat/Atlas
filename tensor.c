@@ -8,7 +8,7 @@ void takeOwnership( tensor* t ){
   if( t == NULL || t->gpu )
     error( "%s", "Tensor is NULL or GPU in takeOwnership." );
   if( t->ownsData )
-    return; // Already owns data, nothing to do
+    return;  // Already owns data, nothing to do
 
   // Allocate new memory for the data
   f32* newData = mem( t->size, f32 );
@@ -579,7 +579,7 @@ void push( tensorStack* ts, tensor* t ){
 
 void pop( tensorStack* ts ){
   if( !ts->size )
-    error( "%s", "Atempt to pop an empty stack!" );
+    error( "%s", "Attempt to pop an empty stack!" );
   --ts->size;
   if( !ts->stack[ ts->size ]->gpu || !ts->stack[ ts->size ]->ownsData )
     deleteTensor( ts->stack[ ts->size ] );
@@ -679,6 +679,10 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
   tensorToHostMemory( t );
   tensorToHostMemory( t2 );
 
+  // Ensure both tensors own their data
+  takeOwnership( t );
+  takeOwnership( t2 );
+
   if( t->rank != t2->rank )
     error( "Attempt to concatenate tensors of different rank: %u vs %u",
            t->rank,
@@ -697,7 +701,7 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
     }
   }
 
-  // Compute new strides
+  // Compute new strides for standard contiguous layout
   u32 new_strides[ 4 ];
   u32 size = 1;
   for( int i = t->rank - 1; i >= 0; --i ){
@@ -711,12 +715,14 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
 
   // Initialize indices
   u32 indices[ 4 ] = { 0, 0, 0, 0 };
-  u32 indices_t2[ 4 ];
 
   // Iterate over all elements
   for( size_t count = 0; count < total_elements; ++count ){
 
     f32 val;
+    size_t dest_idx = 0;
+    for( u32 i = 0; i < t->rank; ++i )
+      dest_idx += indices[ i ] * new_strides[ i ];
 
     if( indices[ axis ] < t->shape[ axis ] ){
       // Get data from t
@@ -726,23 +732,22 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
       val = t->data[ src_idx ];
     } else {
       // Get data from t2
-      for( u32 i = 0; i < t->rank; ++i )
-        indices_t2[ i ] = indices[ i ];
-      indices_t2[ axis ] -= t->shape[ axis ];
+      u32 idx_in_t2[ 4 ];
+      for( u32 i = 0; i < t->rank; ++i ){
+        if( i == axis )
+          idx_in_t2[ i ] = indices[ i ] - t->shape[ i ];
+        else
+          idx_in_t2[ i ] = indices[ i ];
+      }
       size_t src_idx = t2->offset;
       for( u32 i = 0; i < t2->rank; ++i )
-        src_idx += indices_t2[ i ] * t2->strides[ i ];
+        src_idx += idx_in_t2[ i ] * t2->strides[ i ];
       val = t2->data[ src_idx ];
     }
 
-    // Compute dest_idx
-    size_t dest_idx = 0;
-    for( u32 i = 0; i < t->rank; ++i )
-      dest_idx += indices[ i ] * new_strides[ i ];
-
     new_data[ dest_idx ] = val;
 
-    // Increment indices like in nested loops
+    // Increment indices
     for( int i = t->rank - 1; i >= 0; --i ){
       indices[ i ]++;
       if( indices[ i ] < new_shape[ i ] )
@@ -752,13 +757,15 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
     }
   }
 
-  // Free old data if owned
+  // Free old data
   if( t->ownsData ){
     unmem( t->data );
   }
 
+  // Update tensor t to be the concatenated tensor
   t->data = new_data;
   t->ownsData = true;
+  t->offset = 0;
 
   // Update shape and strides
   for( u32 i = 0; i < t->rank; ++i ){
@@ -768,6 +775,7 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
 
   t->size = total_elements;
 }
+
 void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
   tensorCatHelper( ts->stack[ index1 ], ts->stack[ index2 ], axis );
 }
@@ -807,4 +815,63 @@ void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
 
 void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end ){
   tensorSliceHelper( ts->stack[ index ], axis, start, end );
+}
+
+// Function to take the first item of a tensor, reducing its rank by one
+void tensorTakeFirstHelper( tensor* t ){
+  if( t == NULL )
+    error( "%s", "Tensor is NULL in tensorTakeFirstHelper." );
+  if( t->rank == 0 )
+    error( "%s", "Cannot reduce rank of a tensor with rank 0." );
+
+  // Adjust the offset to point to the first element along axis 0
+  t->offset += 0 * t->strides[ 0 ];
+
+  // Reduce the rank by one
+  t->rank -= 1;
+
+  // Shift the shapes and strides arrays to remove the first axis
+  for( u32 i = 0; i < t->rank; ++i ){
+    t->shape[ i ] = t->shape[ i + 1 ];
+    t->strides[ i ] = t->strides[ i + 1 ];
+  }
+
+  // Update the size of the tensor
+  t->size = 1;
+  for( u32 i = 0; i < t->rank; ++i )
+    t->size *= t->shape[ i ];
+}
+
+// Function to apply tensorTakeFirstHelper on a tensor in the stack
+void tensorTakeFirst( tensorStack* ts, u32 index ){
+  tensorTakeFirstHelper( ts->stack[ index ] );
+}
+// Function to take the last item of a tensor, reducing its rank by one
+void tensorTakeLastHelper( tensor* t ){
+  if( t == NULL )
+    error( "%s", "Tensor is NULL in tensorTakeLastHelper." );
+  if( t->rank == 0 )
+    error( "%s", "Cannot reduce rank of a tensor with rank 0." );
+
+  // Adjust the offset to point to the last element along axis 0
+  t->offset += ( t->shape[ 0 ] - 1 ) * t->strides[ 0 ];
+
+  // Reduce the rank by one
+  t->rank -= 1;
+
+  // Shift the shapes and strides arrays to remove the first axis
+  for( u32 i = 0; i < t->rank; ++i ){
+    t->shape[ i ] = t->shape[ i + 1 ];
+    t->strides[ i ] = t->strides[ i + 1 ];
+  }
+
+  // Update the size of the tensor
+  t->size = 1;
+  for( u32 i = 0; i < t->rank; ++i )
+    t->size *= t->shape[ i ];
+}
+
+// Function to apply tensorTakeLastHelper on a tensor in the stack
+void tensorTakeLast( tensorStack* ts, u32 index ){
+  tensorTakeLastHelper( ts->stack[ index ] );
 }

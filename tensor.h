@@ -68,6 +68,8 @@ void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
 void tensorReverse( tensorStack* ts, u32 index, u32 axis );
 void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis );
 void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end );
+void tensorTakeFirst( tensorStack* ts, u32 index );
+void tensorTakeLast( tensorStack* ts, u32 index );
 void pop( tensorStack* ts );
 // Functions for printing tensors. These put the tensor in cpu memory if not already there.
 char* formatTensorData( tensor* t );

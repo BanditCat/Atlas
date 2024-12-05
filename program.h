@@ -25,6 +25,8 @@ typedef struct{
     SLICE,
     REVERSE,
     CAT,
+    FIRST,
+    LAST,
     PRINT,
     TENSOR,
     TOP,
