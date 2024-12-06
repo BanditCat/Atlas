@@ -24,6 +24,53 @@
 #include <stdbool.h>
 #include <math.h>
 
+#include <GL/gl.h>
+#include <stdio.h>
+
+#ifdef DEBUG
+void inline checkFramebufferStatus(GLuint framebuffer) {
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    switch (status) {
+        case GL_FRAMEBUFFER_COMPLETE:
+            printf("Framebuffer is complete.\n");
+            break;
+        case GL_FRAMEBUFFER_UNDEFINED:
+            printf("Framebuffer is undefined.\n");
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+            printf("Framebuffer has incomplete attachment.\n");
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+            printf("Framebuffer is missing an attachment.\n");
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+            printf("Framebuffer has incomplete draw buffer.\n");
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+            printf("Framebuffer has incomplete read buffer.\n");
+            break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:
+            printf("Framebuffer format is unsupported.\n");
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+            printf("Framebuffer has incomplete multisample settings.\n");
+            break;
+        case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+            printf("Framebuffer has incomplete layer targets.\n");
+            break;
+        default:
+            printf("Unknown framebuffer status: 0x%x\n", status);
+            break;
+    }
+
+    // Unbind framebuffer to avoid affecting other operations
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+#else
+void inline checkFramebufferStatus( GLuint framebuffer ){}
+#endif
 
 // Function to translate OpenGL error codes to human-readable strings
 static inline const char* GetGLErrorString(GLenum error) {

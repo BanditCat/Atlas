@@ -207,7 +207,8 @@ compute* makeCompute( const program* prog,
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
-    out vec4 _a_fragColor;\n\
+    layout(location = 0) out vec4 _a_fragColor;\n\
+    layout(location = 1) out vec4 _a_fragColor2;\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\
     \n\
@@ -291,6 +292,7 @@ compute* makeCompute( const program* prog,
       {%s}\n\
       float _a_a = ret;\n\
       _a_fragColor = vec4( _a_r, _a_g, _a_b, _a_a );\n\
+      _a_fragColor2 = vec4( 2.0, _a_g, _a_b, _a_a );\n\
     }\n\
   ";
 
@@ -445,7 +447,7 @@ tensor** newTensorsInitialized(
   u32 size = 1;
   for( u32 i = 0; i < rank; ++i )
     size *= shape[ i ];
-  // Compute the smallest square dimensions
+  // Compute the smallest square dimensions BUGBUG TODO move frambuffer into compute and out of tex
   u32 pixels = ( size + 3 ) / 4;
   u32 width = (u32)ceilf( sqrtf( (f32)pixels ) );
   u32 height = ( pixels + width - 1 ) / width;
@@ -473,13 +475,6 @@ tensor** newTensorsInitialized(
 	ret->shape[ i ] = 1;
 	ret->strides[ i ] = 1;
       }
-      glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
-      glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
-      glFramebufferTexture2D( GL_FRAMEBUFFER,
-			      GL_COLOR_ATTACHMENT0 + reti,
-			      GL_TEXTURE_2D,
-			      ret->tex.texture,
-			      0 );
     } else {
       ret = mem( 1, tensor );
       if( rank > 4 )
@@ -523,16 +518,16 @@ tensor** newTensorsInitialized(
       CHECK_GL_ERROR();
       // Create framebuffer
       glGenFramebuffers( 1, &ret->tex.framebuffer );
-      glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
-      glFramebufferTexture2D( GL_FRAMEBUFFER,
-			      GL_COLOR_ATTACHMENT0 + reti,
-			      GL_TEXTURE_2D,
-			      ret->tex.texture,
-			      0 );
     }
     rets[ reti ] = ret;
   }
 
+  glBindFramebuffer( GL_FRAMEBUFFER, rets[ 0 ]->tex.framebuffer );
+  for( u32 i = 0; i < compute->retCount; ++i )
+    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, rets[ i ]->tex.texture
+			    , 0 );
+
+      
   CHECK_GL_ERROR();
   glViewport( 0, 0, width, height );
 
