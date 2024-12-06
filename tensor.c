@@ -294,13 +294,10 @@ compute* makeCompute( const program* prog,
       for( int j = 0; j < %u; ++j ) _a_b[ j ] = ret[ j ];\n\
       ++i; t = _a_toTensorIndices( i + 0.5 );\n\
       {%s}\n\
-      for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n\
-      _a_fragColor[ 0 ] = vec4( _a_r[ 0 ], _a_g[ 0 ], _a_b[ 0 ], _a_a[ 0 ] );\n\
-    }\n\
-  ";
+      for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n";
 
   // Buffer to hold the final fragment shader source
-  u32 bufsize = 65536;
+  u32 bufsize = 1048576;
   char* fragmentShaderSource = mem( bufsize, char );  // Adjust size as needed
   int len = snprintf( fragmentShaderSource,
                       bufsize,
@@ -312,9 +309,21 @@ compute* makeCompute( const program* prog,
                       glsl, retCount, 
                       glsl, retCount, 
                       glsl, retCount, retCount );
-  if( len < 0 || len >= bufsize )
+  u32 smallbufsize = 65536;
+  if( len < 0 || len >= bufsize - smallbufsize )
     error( "%s", "Shader source exceeds buffer size." );
+  for( u32 i = 0; i < retCount; ++i ){
+    char* smallbuf = mem( smallbufsize, char );
+    snprintf( smallbuf, smallbufsize,
+	      "    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u ], _a_a[ %u ] );\n",
+	      i, i, i, i, i );
+    strncat( fragmentShaderSource, smallbuf, 1000 );
+    dbg( "%s", smallbuf );
 
+    unmem( smallbuf );
+  }
+  strncat( fragmentShaderSource, "}", 1000 );
+  
    dbg( "%s", fragmentShaderSource );
   //  Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
