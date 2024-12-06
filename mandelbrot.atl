@@ -1,3 +1,4 @@
+[2 3 4];c'ret=t.x\' 0 1;print;quit
 size;if'started';
 1;1;
 [1];set'zoom' 1;

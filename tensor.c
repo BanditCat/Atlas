@@ -567,6 +567,10 @@ tensor** newTensorsInitialized(
   // glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   // glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
 
+  GLenum drawBuffers[ 4 ] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
+			      GL_COLOR_ATTACHMENT3 };
+  glDrawBuffers( compute->retCount, drawBuffers );
+ 
   CHECK_GL_ERROR();
   // Draw the quad
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
