@@ -208,7 +208,6 @@ compute* makeCompute( const program* prog,
     precision highp float;\n\
     precision highp int;\n\
     out vec4 _a_fragColor;\n\
-    out vec4 _a_fragColor2;\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\
     \n\
