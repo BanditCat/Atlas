@@ -131,7 +131,7 @@ static tensor* parseTensor( const char* command ){
   skipWhitespace( &parsePtr );
   if( *parsePtr != '\0' )
     error( "%s", "Unexpected characters after tensor definition." );
-    
+
   if( dataCount != totalElements )
     error( "%s", "Mismatch in expected and actual number of tensor elements." );
 
@@ -156,12 +156,30 @@ static tensor* parseTensor( const char* command ){
 
   return t;
 }
+// Function to remove all '//' comments from the program string
+void removeComments( char* prog ){
+  char* src = prog;
+  char* dst = prog;
+
+  while( *src != '\0' ){
+    if( src[ 0 ] == '/' && src[ 1 ] == '/' ){
+      // Skip characters until the end of the line
+      src += 2;
+      while( *src != '\n' && *src != '\0' ){
+        src++;
+      }
+    } else {
+      *dst++ = *src++;
+    }
+  }
+  *dst = '\0';  // Null-terminate the modified string
+}
 // This adds an compute statement to p and returns its index.
 u32 addCompute( program* p,
                 const char* uniforms,
                 const char* glsl,
                 u32 argCount,
-		u32 retCount ){
+                u32 retCount ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
@@ -169,7 +187,8 @@ u32 addCompute( program* p,
     unmem( p->computes );
     p->computes = tp;
   }
-  p->computes[ p->numComputes ] = makeCompute( p, uniforms, glsl, argCount, retCount );
+  p->computes[ p->numComputes ] =
+    makeCompute( p, uniforms, glsl, argCount, retCount );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -396,7 +415,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     // Replace \ with ;
     for( u32 i = 0; i < endi - starti; ++i )
       if( comp[ i ] == '\\' )
-	comp[ i ] = ';';
+        comp[ i ] = ';';
     comp[ endi - starti ] = '\0';
     char* sizep = endi + 1;
     u32 argCount, retCount;
@@ -536,6 +555,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
 }
 // Modifies prog.
 program* newProgram( char* prog ){
+  removeComments( prog );
   program* ret = mem( 1, program );
   ret->computes = mem( initSize, compute* );
   ret->numComputes = 0;
@@ -549,23 +569,54 @@ program* newProgram( char* prog ){
   ret->returns = mem( initSize, step );
   ret->returnStackSize = initSize;
 
+  // Step 1: Remove all comments from the program
+  removeComments( prog );
+
+  // Step 2: Initialize parsing pointers
   char* ptr = prog;
   u32 linenum = 1;
-  char* line;
-  while( ( line = getNextLine( &ptr ) ) ){
-    char* comment = strstr( line, "//" );
-    if( comment ){
-      *comment = '\0';
-      comment += 2;
+  u32 commandnum = 1;
+
+  while( *ptr != '\0' ){
+    // Find the next semicolon
+    char* semicolon = strchr( ptr, ';' );
+    if( !semicolon ){
+      semicolon =
+        ptr + strlen( ptr );  // Point to the end if no semicolon found
     }
-    u32 commandnum = 1;
-    char* token = strtok( line, ";" );
-    while( token ){
-      addStep( ret, linenum, commandnum, token );
-      ++commandnum;
-      token = strtok( NULL, ";" );
+
+    // Calculate the length of the current command
+    size_t cmd_length = semicolon - ptr;
+    if( cmd_length == 0 ){
+      // Empty command (e.g., consecutive semicolons), skip
+      ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon;
+      if( *semicolon == '\n' )
+        linenum++;
+      continue;
     }
-    ++linenum;
+
+    // Extract the command into a temporary buffer
+    char* command = mem( cmd_length + 1, char );
+    strncpy( command, ptr, cmd_length );
+    command[ cmd_length ] = '\0';
+
+    // Add the command to the program steps
+    addStep( ret, linenum, commandnum, command );
+    unmem( command );
+
+    // Update the parsing pointer
+    ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon;
+
+    // Update line and command numbers
+    for( size_t i = 0; i < cmd_length; ++i ){
+      if( ptr[ -cmd_length + i ] == '\n' ){
+        linenum++;
+        commandnum = 1;
+      }
+    }
+    if( *semicolon == ';' ){
+      commandnum++;
+    }
   }
 
   // First collect variables and craft the uniform block and the program vars.
@@ -597,7 +648,7 @@ program* newProgram( char* prog ){
             error(
               "%s",
               "Incorrect size setting already set value. Size is static." );
-	  unmem( ret->steps[ i ].var.name );
+          unmem( ret->steps[ i ].var.name );
           ret->steps[ i ].var.index = val;
         } else {
           trieInsert( ret->vars, ret->steps[ i ].var.name, ret->numVars );
@@ -683,8 +734,11 @@ program* newProgram( char* prog ){
     } else if( ret->steps[ i ].type == COMPUTE ){
       char* glsl = ret->steps[ i ].toCompute.glsl;
       ret->steps[ i ].compute =
-	addCompute(ret, glslUniformBlock, glsl, ret->steps[ i ].toCompute.argCount,
-		   ret->steps[ i ].toCompute.retCount );
+        addCompute( ret,
+                    glslUniformBlock,
+                    glsl,
+                    ret->steps[ i ].toCompute.argCount,
+                    ret->steps[ i ].toCompute.retCount );
       unmem( glsl );
     }
   unmem( glslUniformBlock );
@@ -785,18 +839,18 @@ bool runProgram( tensorStack* ts, program* p ){
 #endif
       Uint32 buttons = SDL_GetMouseState( NULL, NULL );
       if( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) )
-	data[ 3 ] = 1;
+        data[ 3 ] = 1;
       else
-	data[ 3 ] = 0;
+        data[ 3 ] = 0;
       if( buttons & SDL_BUTTON( SDL_BUTTON_RIGHT ) )
-	data[ 4 ] = 1;
+        data[ 4 ] = 1;
       else
-	data[ 4 ] = 0;
+        data[ 4 ] = 0;
       if( buttons & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
-	data[ 5 ] = 1;
+        data[ 5 ] = 1;
       else
-	data[ 5 ] = 0;
-      
+        data[ 5 ] = 0;
+
       push( ts, newTensor( 1, wsshape, data ) );
       break;
     }
@@ -959,7 +1013,7 @@ bool runProgram( tensorStack* ts, program* p ){
       break;
     case POP:
       pop( ts );
-      //dbg( "%s %u", "pop", ts->size );
+      // dbg( "%s %u", "pop", ts->size );
       break;
     case CALL:
       if( p->numReturns >= p->returnStackSize ){
@@ -994,10 +1048,11 @@ bool runProgram( tensorStack* ts, program* p ){
       for( u32 i = 0; i < ts->stack[ ts->size - 1 ]->size; ++i )
         shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
       pop( ts );
-      //dbg( "%u rc", p->computes[ s->compute ]->retCount );
-      tensor** rets = newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] );
+      // dbg( "%u rc", p->computes[ s->compute ]->retCount );
+      tensor** rets =
+        newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] );
       for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
-	push( ts, rets[ i ] );
+        push( ts, rets[ p->computes[ s->compute ]->retCount - i - 1 ] );
       unmem( rets );
       // dbg( "%s", "compute" );
       break;
@@ -1036,8 +1091,9 @@ bool runProgram( tensorStack* ts, program* p ){
     }
     case FIRST: {
       if( !ts->size )
-        error( "%s",
-	       "Attempt to take the first element with no parameter on the stack." );
+        error(
+          "%s",
+          "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -1045,8 +1101,9 @@ bool runProgram( tensorStack* ts, program* p ){
     }
     case LAST: {
       if( !ts->size )
-        error( "%s",
-	       "Attempt to take the first element with no parameter on the stack." );
+        error(
+          "%s",
+          "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -1144,7 +1201,7 @@ bool runProgram( tensorStack* ts, program* p ){
           ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
         error( "%s", "Incorrect rank during set statement." );
       if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
-        //dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
+        // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
         error( "%s", "Incorrect size during set statement." );
       }
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );

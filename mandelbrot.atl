@@ -1,27 +1,34 @@
 size;if'started';
-1;1;
+1;1;1;1;
 [1];set'zoom' 1;
 [0 0];set'offs' 2;
 l'started';
-pop;pop;
+pop;pop;pop;pop;
 
 input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
-[1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1 // set zoom unconditionally
-0;dup;[3 4 0];s;first;ifn'nomouse';
-[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;1
-l'nomouse' 
+[1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
+0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
+[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;1;
+l'nomouse';
 pop;
 
-windowSize;set'wsize' 2
+windowSize;set'wsize' 2;
 get'wsize';
-c'ret[1]= ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\ret[0]= ( ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\' 0 2;
+c'
+ret[ 0 ] = ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\
+ret[ 1 ] = ( ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\
+'0 2;
 get'wsize';c'ret[0]=0.0\ret[1]=0.0\' 0 2;
 1;if'skip'; 
 
 l'mand';
-3;dup;3;dup
-get'wsize'
-c'ret[1]=pow( c( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( d( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) )\ret[0]=2.0 * c( vec4( t.xy, 0.0, 0.0 ) ) * d( vec4( t.xy, 0.0, 0.0 ) ) + b( vec4( t.xy, 0.0, 0.0 ) )\' 4 2;
+3;dup;3;dup;
+get'wsize';
+c'
+ret[ 0 ] = pow( c( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( d( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) +
+                a( vec4( t.xy, 0.0, 0.0 ) )\
+ret[ 1 ] = 2.0 * c( vec4( t.xy, 0.0, 0.0 ) ) * d( vec4( t.xy, 0.0, 0.0 ) ) +
+                 b( vec4( t.xy, 0.0, 0.0 ) )\' 4 2;
 return;
 
 
