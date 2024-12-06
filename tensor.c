@@ -431,6 +431,7 @@ void deleteCompute( compute* i ){
 tensor* newTensorsInitialized(
   program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   CHECK_GL_ERROR();
+  glUseProgram( compute->program );
   if( compute->argCount > ts->size )
     error(
       "A compute was called with %u arguments, but the stack size is only %u.",
@@ -524,7 +525,6 @@ tensor* newTensorsInitialized(
   // Use the compute program to render to the texture
   glViewport( 0, 0, ret->tex.width, ret->tex.height );
 
-  glUseProgram( compute->program );
 
   glUniform2f( compute->dimsLocation, ret->tex.width, ret->tex.height );
   glUniform4f( compute->stridesLocation,
