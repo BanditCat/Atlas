@@ -185,10 +185,12 @@ void deleteTensor( tensor* t ){
 compute* makeCompute( const program* prog,
                       const char* uniforms,
                       const char* glsl,
-                      u32 argCount ){
+                      u32 argCount,
+		      u32 retCount ){
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
+  ret->retCount = retCount;
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
@@ -426,7 +428,7 @@ void deleteCompute( compute* i ){
   unmem( i->uniformLocs );
   unmem( i );
 }
-tensor* newTensorInitialized(
+tensor* newTensorsInitialized(
   program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   CHECK_GL_ERROR();
   if( compute->argCount > ts->size )

@@ -43,6 +43,7 @@ typedef struct{
   union{
     tensor* tensor;
     struct{
+      u32 retCount; 
       u32 argCount;
       char* glsl;
     } toCompute;

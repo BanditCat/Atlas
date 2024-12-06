@@ -160,7 +160,8 @@ static tensor* parseTensor( const char* command ){
 u32 addCompute( program* p,
                 const char* uniforms,
                 const char* glsl,
-                u32 argCount ){
+                u32 argCount,
+		u32 retCount ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
@@ -168,7 +169,7 @@ u32 addCompute( program* p,
     unmem( p->computes );
     p->computes = tp;
   }
-  p->computes[ p->numComputes ] = makeCompute( p, uniforms, glsl, argCount );
+  p->computes[ p->numComputes ] = makeCompute( p, uniforms, glsl, argCount, retCount );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -398,12 +399,13 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
 	comp[ i ] = ';';
     comp[ endi - starti ] = '\0';
     char* sizep = endi + 1;
-    u32 argCount;
+    u32 argCount, retCount;
     int charsread;
-    if( sscanf( sizep, "%u%n", &argCount, &charsread ) == 1 &&
+    if( sscanf( sizep, "%u%u%n", &argCount, &retCount, &charsread ) == 2 &&
         !sizep[ charsread ] ){
       curStep->type = COMPUTE;
       curStep->toCompute.glsl = comp;
+      curStep->toCompute.retCount = retCount;
       curStep->toCompute.argCount = argCount;
       if( argCount > 4 )
         error(
@@ -680,8 +682,9 @@ program* newProgram( char* prog ){
       unmem( varName );
     } else if( ret->steps[ i ].type == COMPUTE ){
       char* glsl = ret->steps[ i ].toCompute.glsl;
-      ret->steps[ i ].compute = addCompute(
-        ret, glslUniformBlock, glsl, ret->steps[ i ].toCompute.argCount );
+      ret->steps[ i ].compute =
+	addCompute(ret, glslUniformBlock, glsl, ret->steps[ i ].toCompute.argCount,
+		   ret->steps[ i ].toCompute.retCount );
       unmem( glsl );
     }
   unmem( glslUniformBlock );
@@ -991,9 +994,10 @@ bool runProgram( tensorStack* ts, program* p ){
       for( u32 i = 0; i < ts->stack[ ts->size - 1 ]->size; ++i )
         shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
       pop( ts );
+      dbg( "%u rc", p->computes[ s->compute ]->retCount );
       push(
         ts,
-        newTensorInitialized( p, ts, size, shape, p->computes[ s->compute ] ) );
+        newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] ) );
       // dbg( "%s", "compute" );
       break;
     case CAT: {

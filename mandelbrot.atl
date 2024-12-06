@@ -14,18 +14,18 @@ pop;
 
 windowSize;set'wsize' 2
 get'wsize';[2];0;cat;
-c'ret=( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x : ( ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\' 0;
-get'wsize';[2];0;cat;c'ret=0.0\' 0;
+c'ret=( t.z == 0.0 ) ? ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x : ( ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\' 0 1;
+get'wsize';[2];0;cat;c'ret=0.0\' 0 1;
 1;if'skip'; 
 
 l'mand';
 1;dup;
 get'wsize';[2];0;cat;
-c'ret=( t.z == 0.0 ) ? pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ) : 2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )\' 2;
+c'ret=( t.z == 0.0 ) ? pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) + a( vec4( t.xy, 0.0, 0.0 ) ) : 2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) + a( vec4( t.xy, 1.0, 0.0 ) )\' 2 1;
 return;
 
 
 l'skip';
 mand;mand;mand;mand;mand;mand;mand;
 mand;mand;mand;mand;mand;mand;mand;
-get'wsize';[3];0;cat;c'ret=pow( a( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) + pow( a( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) > 4.0 ? 0.0 : 1.0\' 1;
+get'wsize';[3];0;cat;c'ret=pow( a( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) + pow( a( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) > 4.0 ? 0.0 : 1.0\' 1 1;
