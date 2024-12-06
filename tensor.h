@@ -61,7 +61,7 @@ tensor* newTensor( u32 rank, const u32* shape, f32* data );
 compute* makeCompute( const program* prog, const char* uniforms, const char* glsl,
 		      u32 argCount, u32 retCount );
 void deleteCompute( compute* i );
-tensor* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
+tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 			      const compute* initializer );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );

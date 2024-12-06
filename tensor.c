@@ -188,6 +188,7 @@ compute* makeCompute( const program* prog,
                       u32 argCount,
 		      u32 retCount ){
   // Vertex shader source (simple pass-through)
+  dbg( "%u dasdsa", retCount );
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
   ret->retCount = retCount;
@@ -428,7 +429,7 @@ void deleteCompute( compute* i ){
   unmem( i->uniformLocs );
   unmem( i );
 }
-tensor* newTensorsInitialized(
+tensor** newTensorsInitialized(
   program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   CHECK_GL_ERROR();
   glUseProgram( compute->program );
@@ -437,6 +438,7 @@ tensor* newTensorsInitialized(
       "A compute was called with %u arguments, but the stack size is only %u.",
       compute->argCount,
       ts->size );
+  tensor** rets = mem( compute->retCount, tensor* );
   tensor* ret;
   for( u32 i = 0; i < compute->argCount; ++i )
     tensorToGPUMemory( ts->stack[ ( ts->size - 1 ) - i ] );
@@ -567,11 +569,13 @@ tensor* newTensorsInitialized(
   glBindVertexArray( 0 );
   // glUseProgram( 0 );
 
+  rets[ 0 ] = ret;
   CHECK_GL_ERROR();
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
-  return ret;
+  
+  return rets;
 }
 
 void push( tensorStack* ts, tensor* t ){

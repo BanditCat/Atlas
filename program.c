@@ -994,10 +994,10 @@ bool runProgram( tensorStack* ts, program* p ){
       for( u32 i = 0; i < ts->stack[ ts->size - 1 ]->size; ++i )
         shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
       pop( ts );
-      dbg( "%u rc", p->computes[ s->compute ]->retCount );
-      push(
-        ts,
-        newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] ) );
+      //dbg( "%u rc", p->computes[ s->compute ]->retCount );
+      tensor** rets = newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] );
+      for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
+	push( ts, rets[ i ] );
       // dbg( "%s", "compute" );
       break;
     case CAT: {
@@ -1143,7 +1143,7 @@ bool runProgram( tensorStack* ts, program* p ){
           ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
         error( "%s", "Incorrect rank during set statement." );
       if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
-        dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
+        //dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
         error( "%s", "Incorrect size during set statement." );
       }
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
