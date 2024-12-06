@@ -208,6 +208,7 @@ compute* makeCompute( const program* prog,
     precision highp float;\n\
     precision highp int;\n\
     out vec4 _a_fragColor;\n\
+    out vec4 _a_fragColor2;\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\
     \n\
@@ -445,90 +446,99 @@ tensor** newTensorsInitialized(
   u32 size = 1;
   for( u32 i = 0; i < rank; ++i )
     size *= shape[ i ];
-  u32 found = TENSOR_CACHE;
-  for( u32 i = 0; i < TENSOR_CACHE; ++i )
-    if( ts->cache[ i ] && size == ts->cache[ i ]->size ){
-      found = i;
-      break;
+  // Compute the smallest square dimensions
+  u32 pixels = ( size + 3 ) / 4;
+  u32 width = (u32)ceilf( sqrtf( (f32)pixels ) );
+  u32 height = ( pixels + width - 1 ) / width;
+  for( u32 reti = 0; reti < compute->retCount; ++reti ){
+    u32 found = TENSOR_CACHE;
+    for( u32 i = 0; i < TENSOR_CACHE; ++i )
+      if( ts->cache[ i ] && size == ts->cache[ i ]->size ){
+	found = i;
+	break;
+      }
+    if( found != TENSOR_CACHE ){
+      ret = ts->cache[ found ];
+      ts->cache[ found ] = NULL;
+      ret->rank = rank;
+      ret->size = 1;
+      ret->offset = 0;
+      ret->ownsData = true;
+      ret->gpu = true;
+      for( u32 i = 0; i < rank; ++i ){
+	ret->shape[ i ] = shape[ i ];
+	ret->strides[ rank - i - 1 ] = ret->size;
+	ret->size *= shape[ rank - i - 1 ];
+      }
+      for( u32 i = rank; i < 4; ++i ){
+	ret->shape[ i ] = 1;
+	ret->strides[ i ] = 1;
+      }
+      glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+      glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
+      glFramebufferTexture2D( GL_FRAMEBUFFER,
+			      GL_COLOR_ATTACHMENT0 + reti,
+			      GL_TEXTURE_2D,
+			      ret->tex.texture,
+			      0 );
+    } else {
+      ret = mem( 1, tensor );
+      if( rank > 4 )
+	error( "%s", "Rank exceeds maximum of 4." );
+      
+      // Initialize basic properties
+      ret->rank = rank;
+      ret->size = 1;
+      ret->offset = 0;
+      ret->ownsData = true;
+      ret->gpu = true;
+      for( u32 i = 0; i < rank; ++i ){
+	ret->shape[ i ] = shape[ i ];
+	ret->strides[ rank - i - 1 ] = ret->size;
+	ret->size *= shape[ rank - i - 1 ];
+      }
+      for( u32 i = rank; i < 4; ++i ){
+	ret->shape[ i ] = 1;
+	ret->strides[ i ] = 1;
+      }
+      
+      ret->tex.width = width;
+      ret->tex.height = height;
+      
+      CHECK_GL_ERROR();
+      // Create OpenGL texture
+      glGenTextures( 1, &ret->tex.texture );
+      glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+      glTexImage2D( GL_TEXTURE_2D,
+		    0,
+		    GL_RGBA32F,
+		    width,
+		    height,
+		    0,
+		    GL_RGBA,
+		    GL_FLOAT,
+		    NULL );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+      
+      CHECK_GL_ERROR();
+      // Create framebuffer
+      glGenFramebuffers( 1, &ret->tex.framebuffer );
+      glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
+      glFramebufferTexture2D( GL_FRAMEBUFFER,
+			      GL_COLOR_ATTACHMENT0 + reti,
+			      GL_TEXTURE_2D,
+			      ret->tex.texture,
+			      0 );
     }
-  if( found != TENSOR_CACHE ){
-    ret = ts->cache[ found ];
-    ts->cache[ found ] = NULL;
-    ret->rank = rank;
-    ret->size = 1;
-    ret->offset = 0;
-    ret->ownsData = true;
-    ret->gpu = true;
-    for( u32 i = 0; i < rank; ++i ){
-      ret->shape[ i ] = shape[ i ];
-      ret->strides[ rank - i - 1 ] = ret->size;
-      ret->size *= shape[ rank - i - 1 ];
-    }
-    for( u32 i = rank; i < 4; ++i ){
-      ret->shape[ i ] = 1;
-      ret->strides[ i ] = 1;
-    }
-    glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
-    glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
-  } else {
-    ret = mem( 1, tensor );
-    if( rank > 4 )
-      error( "%s", "Rank exceeds maximum of 4." );
-
-    // Initialize basic properties
-    ret->rank = rank;
-    ret->size = 1;
-    ret->offset = 0;
-    ret->ownsData = true;
-    ret->gpu = true;
-    for( u32 i = 0; i < rank; ++i ){
-      ret->shape[ i ] = shape[ i ];
-      ret->strides[ rank - i - 1 ] = ret->size;
-      ret->size *= shape[ rank - i - 1 ];
-    }
-    for( u32 i = rank; i < 4; ++i ){
-      ret->shape[ i ] = 1;
-      ret->strides[ i ] = 1;
-    }
-
-    // Compute the smallest square dimensions
-    u32 pixels = ( ret->size + 3 ) / 4;
-    ret->tex.width = (u32)ceilf( sqrtf( (f32)pixels ) );
-    ret->tex.height = ( pixels + ret->tex.width - 1 ) / ret->tex.width;
-
-    CHECK_GL_ERROR();
-    // Create OpenGL texture
-    glGenTextures( 1, &ret->tex.texture );
-    glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
-    glTexImage2D( GL_TEXTURE_2D,
-                  0,
-                  GL_RGBA32F,
-                  ret->tex.width,
-                  ret->tex.height,
-                  0,
-                  GL_RGBA,
-                  GL_FLOAT,
-                  NULL );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-
-    CHECK_GL_ERROR();
-    // Create framebuffer
-    glGenFramebuffers( 1, &ret->tex.framebuffer );
-    glBindFramebuffer( GL_FRAMEBUFFER, ret->tex.framebuffer );
-    glFramebufferTexture2D( GL_FRAMEBUFFER,
-                            GL_COLOR_ATTACHMENT0,
-                            GL_TEXTURE_2D,
-                            ret->tex.texture,
-                            0 );
+    rets[ reti ] = ret;
   }
 
   CHECK_GL_ERROR();
-  // Use the compute program to render to the texture
-  glViewport( 0, 0, ret->tex.width, ret->tex.height );
+  glViewport( 0, 0, width, height );
 
 
-  glUniform2f( compute->dimsLocation, ret->tex.width, ret->tex.height );
+  glUniform2f( compute->dimsLocation, width, height );
   glUniform4f( compute->stridesLocation,
                ret->strides[ 0 ],
                ret->strides[ 1 ],
@@ -569,7 +579,6 @@ tensor** newTensorsInitialized(
   glBindVertexArray( 0 );
   // glUseProgram( 0 );
 
-  rets[ 0 ] = ret;
   CHECK_GL_ERROR();
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )

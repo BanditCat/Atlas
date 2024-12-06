@@ -470,6 +470,7 @@ char* helper( u32 dimIndex,
 
 // Main function to format tensor data
 char* formatTensorData( tensor* t ) {
+  tensorToHostMemory( t );
   u32 shape_length = t->rank + 1;
   u32* shape = (u32*)mem( sizeof( u32 ) * shape_length, u32 );
   s32* strides = (s32*)mem( sizeof( s32 ) * shape_length, s32 );
