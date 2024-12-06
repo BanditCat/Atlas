@@ -998,6 +998,7 @@ bool runProgram( tensorStack* ts, program* p ){
       tensor** rets = newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] );
       for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
 	push( ts, rets[ i ] );
+      unmem( rets );
       // dbg( "%s", "compute" );
       break;
     case CAT: {
