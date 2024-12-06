@@ -43,11 +43,12 @@ void tensorToHostMemory( tensor* t ){
 
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
   CHECK_GL_ERROR();
   glReadPixels(
     0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
   CHECK_GL_ERROR();
-  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+  //  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   CHECK_GL_ERROR();
 
   memcpy( hostData, tempData, t->size * sizeof( f32 ) );
@@ -207,8 +208,7 @@ compute* makeCompute( const program* prog,
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
-    layout(location = 0) out vec4 _a_fragColor;\n\
-    layout(location = 1) out vec4 _a_fragColor2;\n\
+    layout(location = 0) out vec4 _a_fragColor[ %u ];\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\
     \n\
@@ -279,20 +279,24 @@ compute* makeCompute( const program* prog,
     void main(){\n\
       float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0;\n\
       vec4 t = _a_toTensorIndices( i + 0.5 );\n\
-      float ret;\n\
+      float ret[ %u ];\n\
+      float _a_r[ %u ];\n\
+      float _a_g[ %u ];\n\
+      float _a_b[ %u ];\n\
+      float _a_a[ %u ];\n\
       {%s}\n\
-      float _a_r = ret; ++i;\n\
-      t = _a_toTensorIndices( i + 0.5 );\n\
+      for( int j = 0; j < %u; ++j ) _a_r[ j ] = ret[ j ];\n\
+      ++i; t = _a_toTensorIndices( i + 0.5 );\n\
       {%s}\n\
-      float _a_g = ret; ++i;\n\
-      t = _a_toTensorIndices( i + 0.5 );\n\
+      for( int j = 0; j < %u; ++j ) _a_g[ j ] = ret[ j ];\n\
+      ++i; t = _a_toTensorIndices( i + 0.5 );\n\
       {%s}\n\
-      float _a_b = ret; ++i;\n\
-      t = _a_toTensorIndices( i + 0.5 );\n\
+      for( int j = 0; j < %u; ++j ) _a_b[ j ] = ret[ j ];\n\
+      ++i; t = _a_toTensorIndices( i + 0.5 );\n\
       {%s}\n\
-      float _a_a = ret;\n\
-      _a_fragColor = vec4( _a_r, _a_g, _a_b, _a_a );\n\
-      _a_fragColor2 = vec4( 2.0, _a_g, _a_b, _a_a );\n\
+      for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n\
+      for( int j = 0; j < %u; ++j )\n\
+        _a_fragColor[ j ] = vec4( _a_r[ j ], _a_g[ j ], _a_b[ j ], _a_a[ j ] );\n\
     }\n\
   ";
 
@@ -302,15 +306,17 @@ compute* makeCompute( const program* prog,
   int len = snprintf( fragmentShaderSource,
                       bufsize,
                       fragmentShaderTemplate,
+		      retCount,
                       uniforms,
-                      glsl,
-                      glsl,
-                      glsl,
-                      glsl );
+		      retCount, retCount, retCount, retCount, retCount, 
+                      glsl, retCount, 
+                      glsl, retCount, 
+                      glsl, retCount, 
+                      glsl, retCount, retCount );
   if( len < 0 || len >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
 
-  // dbg( "%s", fragmentShaderSource );
+   dbg( "%s", fragmentShaderSource );
   //  Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
   glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
