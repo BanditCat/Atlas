@@ -295,8 +295,7 @@ compute* makeCompute( const program* prog,
       ++i; t = _a_toTensorIndices( i + 0.5 );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n\
-      for( int j = 0; j < %u; ++j )\n\
-        _a_fragColor[ j ] = vec4( _a_r[ j ], _a_g[ j ], _a_b[ j ], _a_a[ j ] );\n\
+      _a_fragColor[ 0 ] = vec4( _a_r[ 0 ], _a_g[ 0 ], _a_b[ 0 ], _a_a[ 0 ] );\n\
     }\n\
   ";
 
