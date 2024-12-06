@@ -75,7 +75,6 @@ void tensorToGPUMemory( tensor* t ){
     error( "%s", "Tensor is NULL in tensorToGPUMemory." );
   if( t->gpu )
     return;
-  dbg( "%p", t->data );
   // Calculate texture dimensions for GPU storage
   f32* tdata = t->data;
   u32 pixels = ( t->size + 3 ) / 4;  // RGBA = 4 floats per pixel
@@ -102,7 +101,9 @@ void tensorToGPUMemory( tensor* t ){
                 GL_FLOAT,
                 NULL );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
@@ -189,7 +190,6 @@ compute* makeCompute( const program* prog,
                       u32 argCount,
 		      u32 retCount ){
   // Vertex shader source (simple pass-through)
-  dbg( "%u dasdsa", retCount );
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
   ret->retCount = retCount;
@@ -318,13 +318,9 @@ compute* makeCompute( const program* prog,
 	      "    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u ], _a_a[ %u ] );\n",
 	      i, i, i, i, i );
     strncat( fragmentShaderSource, smallbuf, 1000 );
-    dbg( "%s", smallbuf );
-
     unmem( smallbuf );
   }
   strncat( fragmentShaderSource, "}", 1000 );
-  
-   dbg( "%s", fragmentShaderSource );
   //  Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
   glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
@@ -527,8 +523,10 @@ tensor** newTensorsInitialized(
 		    GL_FLOAT,
 		    NULL );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-      
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+ 
       CHECK_GL_ERROR();
       // Create framebuffer
       glGenFramebuffers( 1, &ret->tex.framebuffer );
