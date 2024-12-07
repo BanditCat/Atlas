@@ -1,9 +1,9 @@
 size;if'started';
-1;1;1;1;
+1;1;1;
 [1];set'zoom' 1;
 [0 0];set'offs' 2;
 l'started';
-pop;pop;pop;pop;
+pop;pop;pop;
 
 input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
 [1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
@@ -14,25 +14,39 @@ pop;
 
 windowSize;set'wsize' 2;
 get'wsize';
-c'
+c''
 ret[ 0 ] = ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\
 ret[ 1 ] = ( ( t.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\
 '0 2;
-get'wsize';c'ret[0]=0.0\ret[1]=0.0\' 0 2;
+get'wsize';c''ret[0]=0.0\ret[1]=0.0\' 0 2;
 1;if'skip'; 
 
 l'mand';
 3;dup;3;dup;
 get'wsize';
 c'
-ret[ 0 ] = pow( c( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( d( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) +
-                a( vec4( t.xy, 0.0, 0.0 ) )\
-ret[ 1 ] = 2.0 * c( vec4( t.xy, 0.0, 0.0 ) ) * d( vec4( t.xy, 0.0, 0.0 ) ) +
-                 b( vec4( t.xy, 0.0, 0.0 ) )\' 4 2;
+vec2 mand( vec2 x, vec2 c ){
+  return vec2( x.x * x.x - x.y * x.y + c.x, 2.0 * x.x * x.y + c.y )\
+}
+float mand2( vec2 x, vec2 c ){
+  float count = 0.0\
+  vec2 nx = vec2( 0.0, 0.0 )\
+  for( int i = 0\ i < 256\ ++i ){
+    nx = mand( nx, c )\
+    if( length( nx ) > 4.0 )
+      break\
+    ++count\
+  }
+  return count\
+}
+'
+vec2 x = vec2( c( vec4( t.xy, 0.0, 0.0 ) ), d( vec4( t.xy, 0.0, 0.0 ) ) )\
+vec2 c = vec2( a( vec4( t.xy, 0.0, 0.0 ) ), b( vec4( t.xy, 0.0, 0.0 ) ) )\
+float r = mand2( x, c )\
+ret[ 0 ] = r\' 4 1;
 return;
 
 
 l'skip';
-mand;mand;mand;mand;mand;mand;mand;mand;
-mand;mand;mand;mand;mand;mand;mand;
-get'wsize';[3];0;cat;c'ret[0]=pow( a( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) + pow( a( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) > 4.0 ? 0.0 : 1.0\' 1 1;
+mand;
+get'wsize';[3];0;cat;c''ret[0]=a( vec4( t.xy, 0.0, 0.0 ) ) / 256.0\' 1 1;

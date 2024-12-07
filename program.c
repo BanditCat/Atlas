@@ -174,9 +174,10 @@ void removeComments( char* prog ){
   }
   *dst = '\0';  // Null-terminate the modified string
 }
-// This adds an compute statement to p and returns its index.
+// This adds a compute statement to p and returns its index.
 u32 addCompute( program* p,
                 const char* uniforms,
+                const char* glslpre,
                 const char* glsl,
                 u32 argCount,
                 u32 retCount ){
@@ -188,7 +189,7 @@ u32 addCompute( program* p,
     p->computes = tp;
   }
   p->computes[ p->numComputes ] =
-    makeCompute( p, uniforms, glsl, argCount, retCount );
+    makeCompute( p, uniforms, glslpre, glsl, argCount, retCount );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -400,11 +401,22 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     char* endi = starti;
     while( *endi && *endi != '\'' )
       endi++;
-    if( endi == starti )
+    if( *endi != '\'' )
       error( "Line %u, command %u: %s",
              linenum,
              commandnum,
-             "Empty compute statement." );
+             "Unmatched quote in compute statement pre block." );
+    char* pre = mem( 1 + endi - starti, char );
+    memcpy( pre, starti, endi - starti );
+    // Replace \ with ;
+    for( u32 i = 0; i < endi - starti; ++i )
+      if( pre[ i ] == '\\' )
+        pre[ i ] = ';';
+    pre[ endi - starti ] = '\0';
+    starti = endi + 1;
+    ++endi; // now get compute statements
+    while( *endi && *endi != '\'' )
+      endi++;
     if( *endi != '\'' )
       error( "Line %u, command %u: %s",
              linenum,
@@ -417,12 +429,15 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       if( comp[ i ] == '\\' )
         comp[ i ] = ';';
     comp[ endi - starti ] = '\0';
+    dbg( "p %s", pre );
+    
     char* sizep = endi + 1;
     u32 argCount, retCount;
     int charsread;
     if( sscanf( sizep, "%u%u%n", &argCount, &retCount, &charsread ) == 2 &&
         !sizep[ charsread ] ){
       curStep->type = COMPUTE;
+      curStep->toCompute.glslpre = pre;
       curStep->toCompute.glsl = comp;
       curStep->toCompute.retCount = retCount;
       curStep->toCompute.argCount = argCount;
@@ -732,14 +747,16 @@ program* newProgram( char* prog ){
       ret->steps[ i ].var.index = vi;
       unmem( varName );
     } else if( ret->steps[ i ].type == COMPUTE ){
+      char* glslpre = ret->steps[ i ].toCompute.glslpre;
       char* glsl = ret->steps[ i ].toCompute.glsl;
       ret->steps[ i ].compute =
         addCompute( ret,
                     glslUniformBlock,
-                    glsl,
+                    glslpre, glsl,
                     ret->steps[ i ].toCompute.argCount,
                     ret->steps[ i ].toCompute.retCount );
       unmem( glsl );
+      unmem( glslpre );
     }
   unmem( glslUniformBlock );
   return ret;

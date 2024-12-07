@@ -104,8 +104,6 @@ void tensorToGPUMemory( tensor* t ){
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
@@ -188,6 +186,7 @@ void deleteTensor( tensor* t ){
 }
 compute* makeCompute( const program* prog,
                       const char* uniforms,
+                      const char* glslpre,
                       const char* glsl,
                       u32 argCount,
 		      u32 retCount ){
@@ -278,6 +277,7 @@ compute* makeCompute( const program* prog,
       ret.w = i;\n\
       return ret;\n\
     }\n\
+    %s\n\
     void main(){\n\
       float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0;\n\
       vec4 t = _a_toTensorIndices( i + 0.5 );\n\
@@ -306,6 +306,7 @@ compute* makeCompute( const program* prog,
                       fragmentShaderTemplate,
 		      retCount,
                       uniforms,
+		      glslpre,
 		      retCount, retCount, retCount, retCount, retCount, 
                       glsl, retCount, 
                       glsl, retCount, 
