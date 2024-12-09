@@ -25,27 +25,28 @@
     <script>
         const canvas = document.getElementById('atlasCanvas');
         const context = canvas.getContext('webgl2', { antialias: true });
-	function resizeCanvas() {
-	    canvas.width = window.innerWidth;
-	    canvas.height = window.innerHeight;
-	    if (context) {
-		context.viewport(0, 0, canvas.width, canvas.height);
-	    }
-	    if (Module && Module.onResize) {
-		Module.onResize(canvas.width, canvas.height);
-	    }
-	}
 
-        // Resize canvas on window resize
-        window.addEventListener('resize', resizeCanvas);
-
-        // Set initial size
-        resizeCanvas();
-
-        // Ensure Emscripten initializes the canvas context
-        if (typeof Module !== 'undefined') {
-            Module.canvas = canvas;
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (context) {
+                context.viewport(0, 0, canvas.width, canvas.height);
+            }
+            if (typeof Module !== 'undefined' && Module.onResize) {
+                Module.onResize(canvas.width, canvas.height);
+            }
         }
+
+        // Initialize Module after it's ready
+        if (typeof Module === 'undefined') {
+            Module = {};
+        }
+
+        Module.onRuntimeInitialized = function () {
+            console.log("Module initialized");
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        };
     </script>
 </body>
 </html>
