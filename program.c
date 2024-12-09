@@ -429,7 +429,6 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       if( comp[ i ] == '\\' )
         comp[ i ] = ';';
     comp[ endi - starti ] = '\0';
-    dbg( "p %s", pre );
     
     char* sizep = endi + 1;
     u32 argCount, retCount;

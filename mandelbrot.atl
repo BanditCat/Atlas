@@ -16,8 +16,8 @@ l'nomouse';
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;
 get'perturb';+;set'perturb' 2;
 l'nomouse2';
-0;dup;[5 6 0];s;first;ifn'nomouse3'; // if mouse button 2 not held jump to nomouse2
-0;dup;[1 2 0];s;[100];/;get'exp';+;set'exp' 1;
+0;dup;[5 6 0];s;first;ifn'nomouse3'; // if mouse button 3 not held jump to nomouse3
+0;dup;[1 2 0];s;[400];/;get'exp';+;set'exp' 1;
 l'nomouse3';
 pop;
 
