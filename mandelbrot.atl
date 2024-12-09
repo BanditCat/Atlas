@@ -1,7 +1,7 @@
 size;if'started';
 1;1;1;
 [1];set'zoom' 1;
-[0 0];set'offs' 2;
+[0.5 0];set'offs' 2;
 [0 0];set'perturb' 2;
 [2];set'exp' 1;
 l'started';
