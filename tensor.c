@@ -198,6 +198,7 @@ compute* makeCompute( const program* prog,
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
+    precision highp sampler2D;\n\
     in vec2 _a_position;\n\
     void main(){\n\
       gl_Position = vec4( _a_position, 0.0, 1.0);\n\
@@ -209,6 +210,7 @@ compute* makeCompute( const program* prog,
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
+    precision highp sampler2D;\n\
     layout(location = 0) out vec4 _a_fragColor[ %u ];\n\
     uniform vec2 _a_dims; // Texture dimensions\n\
     uniform vec4 _a_strides; // Tensor shape\n\
