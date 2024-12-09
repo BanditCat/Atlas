@@ -42,11 +42,14 @@
             Module = {};
         }
 
+        Module.canvas = canvas;
+      
         Module.onRuntimeInitialized = function () {
             console.log("Module initialized");
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
         };
+
     </script>
 </body>
 </html>
