@@ -25,14 +25,16 @@
     <script>
         const canvas = document.getElementById('atlasCanvas');
         const context = canvas.getContext('webgl2', { antialias: true });
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            if (Module && Module.onResize) {
-                Module.onResize(canvas.width, canvas.height);
-            }
-        }
+	function resizeCanvas() {
+	    canvas.width = window.innerWidth;
+	    canvas.height = window.innerHeight;
+	    if (context) {
+		context.viewport(0, 0, canvas.width, canvas.height);
+	    }
+	    if (Module && Module.onResize) {
+		Module.onResize(canvas.width, canvas.height);
+	    }
+	}
 
         // Resize canvas on window resize
         window.addEventListener('resize', resizeCanvas);
