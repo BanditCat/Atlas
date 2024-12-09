@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="atlasCanvas"></canvas>
+    {{{ SCRIPT }}}
+    <script>
+        const canvas = document.getElementById('atlasCanvas');
+        const context = canvas.getContext('webgl2', { antialias: true });
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (Module && Module.onResize) {
+                Module.onResize(canvas.width, canvas.height);
+            }
+        }
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', resizeCanvas);
+
+        // Set initial size
+        resizeCanvas();
+
+        // Ensure Emscripten initializes the canvas context
+        if (typeof Module !== 'undefined') {
+            Module.canvas = canvas;
+        }
+    </script>
+</body>
+</html>
