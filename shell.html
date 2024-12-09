@@ -29,12 +29,14 @@
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            if (context) {
-                context.viewport(0, 0, canvas.width, canvas.height);
-            }
-            if (typeof Module !== 'undefined' && Module.onResize) {
-                Module.onResize(canvas.width, canvas.height);
-            }
+	    if( canvas.width != 0 && canvas.height != 0 ){
+		if (context) {
+                    context.viewport(0, 0, canvas.width, canvas.height);
+		}
+		if (typeof Module !== 'undefined' && Module.onResize) {
+                    Module.onResize(canvas.width, canvas.height);
+		}
+	    }
         }
 
         // Initialize Module after it's ready
