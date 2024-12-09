@@ -48,8 +48,8 @@
                     Module.canvas.width = window.innerWidth;
                     Module.canvas.height = window.innerHeight;
                     // If your program needs to handle resizing, invoke necessary functions here
-                    if (Module._resize) {
-                        Module._resize(window.innerWidth, window.innerHeight);
+                    if (Module.resize) {
+                        Module.resize(window.innerWidth, window.innerHeight);
                     }
                 });
             },
