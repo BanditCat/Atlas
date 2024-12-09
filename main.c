@@ -408,6 +408,9 @@ void main_loop(){
   int windowWidth, windowHeight;
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
 
+  if( windowWidth == 0 || windowHeight == 0 )
+    error("%s","kaboom");
+  
   float zoom = shared_zoom;
   float offsetX = shared_offsetX;
   float offsetY = shared_offsetY;
