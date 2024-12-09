@@ -53,6 +53,17 @@ tensorStack* ts;
 GLuint shaderProgram;
 GLuint vbo;
 
+#ifdef __EMSCRIPTEN__
+// This function will be called from JavaScript on resize
+EMSCRIPTEN_KEEPALIVE
+void onResize(int width, int height) {
+  // Update any internal variables dependent on canvas size
+  printf("Canvas resized to: %d x %d\n", width, height);
+  // For example, update your rendering viewport if necessary
+  glViewport(0, 0, width, height);
+}
+#endif
+
 #ifndef __EMSCRIPTEN__
 void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
 				   GLenum severity, GLsizei length,
