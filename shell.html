@@ -21,6 +21,11 @@
             height: 100%;
         }
     </style>
+    <script>
+      document.addEventListener('contextmenu', function(event) {
+  event.preventDefault();
+});
+    </script>
 </head>
 <body>
     <!-- Canvas where the Emscripten program will render -->
@@ -67,10 +72,6 @@
             })()
 
         };
-var canvas = document.getElementById('canvas');
-canvas.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-}, false);
 
     </script>
 </body>
