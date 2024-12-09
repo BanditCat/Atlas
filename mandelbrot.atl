@@ -21,7 +21,7 @@ l'nomouse2';
 l'nomouse3';
 pop;
 
-windowSize;set'wsize' 2;
+windowSize;print;set'wsize' 2;
 get'wsize';
 c''
 ret[ 0 ] = ( ( t.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\
