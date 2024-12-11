@@ -25,30 +25,6 @@ tensorStack* ts;
 
 #include "mandelbrot.h"
 
-/* char* testProg = "\ */
-/* windowSize;[2];0;cat;print;pop\n\ */
-/* size;if'start'\n\ */
-/* [600 600 2];c'( t.z == 0.0 ) ?\ */
-/* 	  ( t.x + 0.5 ) * 4.0 / 600.0 - 2.0 :\ */
-/* 	  ( t.y + 0.5 ) * 4.0 / 600.0 - 2.0\ */
-/* 	 ' 0;\ */
-/* [600 600 2];c'0.0' 0\n\ */
-/* 1;if'skip'\n\ */
-/* l'mand'\n\ */
-/* 1;dup;\n\ */
-/* \n\ */
-/* [600 600 2];c'( t.z == 0.0 ) ?\ */
-/*               pow( b( vec4( t.xy, 0.0, 0.0 ) ), 2.0 ) - pow( b( vec4( t.xy, 1.0, 0.0 ) ), 2.0 ) \ */
-/*                                         + a( vec4( t.xy, 0.0, 0.0 ) ) :\ */
-/*               2.0 * b( vec4( t.xy, 0.0, 0.0 ) ) * b( vec4( t.xy, 1.0, 0.0 ) ) \ */
-/*                                         + a( vec4( t.xy, 1.0, 0.0 ) )' 2\n\ */
-/* return\n\ */
-/* l'skip'\n\ */
-/* mand;mand;mand;mand;mand;mand;mand;[1 2 3]\n\ */
-/* l'start';pop;mand;0;dup;\n\ */
-/* [600 600 3];c'a( vec4( t.xy, 0.0, 0.0 ) )' 1\n\ */
-/* "; */
-  
 // Global variables
 GLuint shaderProgram;
 GLuint vbo;
@@ -521,8 +497,8 @@ int main( int argc, char* argv[] ){
   window = SDL_CreateWindow( "Atlas",
                              SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED,
-                             800,
-                             600,  // Initial window size
+                             768,
+                             512,  // Initial window size
                              SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
                                SDL_WINDOW_RESIZABLE );
   if( !window )
@@ -652,32 +628,3 @@ int main( int argc, char* argv[] ){
   return 0;
 }
 
-void test( void ){
-  // Create the root of the trie
-  trieNode* root = newTrieNode( NULL, 0 );
-
-  // Insert some keys and values
-  trieInsert( root, "apple", 100 );
-  trieInsert( root, "app", 50 );
-  trieInsert( root, "banana", 150 );
-  trieInsert( root, "band", 75 );
-  trieInsert( root, "bandana", 200 );
-
-  // Search for keys
-  const char* keysToSearch[] = {
-    "apple", "app", "banana", "band", "bandana", "bandit", "apricot", "ban" };
-  size_t numKeys = sizeof( keysToSearch ) / sizeof( keysToSearch[ 0 ] );
-
-  for( size_t i = 0; i < numKeys; ++i ){
-    u32 value;
-    bool found = trieSearch( root, keysToSearch[ i ], &value );
-    if( found ){
-      printf( "Key '%s' found with value: %u\n", keysToSearch[ i ], value );
-    } else {
-      printf( "Key '%s' not found.\n", keysToSearch[ i ] );
-    }
-  }
-
-  // Clean up
-  deleteTrieNode( root );
-}
