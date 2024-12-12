@@ -42,7 +42,7 @@ vec2 mand( vec2 x, vec2 c, float e ){
 float mand2( vec2 x, vec2 c ){
   float count = 0.0\
   vec2 nx = x\
-  for( int i = 0\ i < 256\ ++i ){
+  for( int i = 0\ i < 32\ ++i ){
     nx = mand( nx, c, exp )\
     if( length( nx ) > 4.0 )
       break\
@@ -67,5 +67,5 @@ get'wsize';[3];0;cat;c''
 ret[0]= ( t.x < 6.0 * fontSize * wlen && t.y < 8.0 * fontSize ? ( ( mod( floor( t.x / fontSize ), 6.0 ) != 5.0 ?
           b( vec4( mod( floor( t.x / fontSize ), 6.0 ),
 	  floor( t.y / fontSize ) + 1328.0 - 8.0 * a( vec4( floor( t.x / ( fontSize * 6.0 ) ), 0.0, 0.0, 0.0 ) )
-	  , 1.0, 0.0 ) ) : 1.0 ) ) : 1.0 ) * c( vec4( t.xy, 0.0, 0.0 ) ) / 255.0\
+	  , 1.0, 0.0 ) ) : 1.0 ) ) : 1.0 ) * c( vec4( t.xy, 0.0, 0.0 ) ) / 31.0\
 ' 3 1;
