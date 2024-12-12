@@ -31,6 +31,8 @@ typedef struct{
     TENSOR,
     TOP,
     DUP,
+    REPEAT,
+    SHAPE,
     QUIT,
     CALL,
     POP,

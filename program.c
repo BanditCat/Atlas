@@ -521,6 +521,14 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = POP;
     // dbg( "Linenum %u commandnum %u: pop\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "rep" ) ){  // Rep
+    curStep->type = REPEAT;
+    // dbg( "Linenum %u commandnum %u: repeat\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "shape" ) ){  // Shape
+    curStep->type = SHAPE;
+    // dbg( "Linenum %u commandnum %u: shape\n", linenum, commandnum );
+
   } else if( !strcmp( command, "dup" ) ){  // Dup
     curStep->type = DUP;
     // dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
@@ -1163,6 +1171,17 @@ bool runProgram( tensorStack* ts, program* p ){
       // dbg( "%s %u", "reverse", axis );
       break;
     }
+    case SHAPE: {
+      tensor* cur = ts->stack[ ts->size - 1 ];
+      f32* newData = mem( cur->rank, f32 );
+      for( u32 i = 0; i < cur->rank; ++i )
+	newData[ i ] = cur->shape[ i ];
+      pop( ts );
+      u32 newShape[ 1 ] = { cur->rank };
+      push( ts, newTensor( 1, newShape, newData ) );
+      // dbg( "%s %u", "shape", axis );
+      break;
+    }
     case FIRST: {
       if( !ts->size )
         error(
@@ -1198,6 +1217,20 @@ bool runProgram( tensorStack* ts, program* p ){
       push( ts, copyTensor( ts->stack[ ( ts->size - 1 ) - dup ] ) );
       // dbg( "%s %u", "dup", dup );
       break;
+    case REPEAT: {
+      if( ts->size < 2 )
+        error( "%s", "Attempt to repeate without enough parameters on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank )
+        error( "%s", "Attempt to repeat with a nonscalar count." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      u32 count = *( ts->stack[ ts->size - 1 ]->data +
+                     ts->stack[ ts->size - 1 ]->offset );
+      pop( ts );
+      tensorRepeat( ts, ts->size - 1, count );
+      // dbg( "%s %u", "rep", count );
+      break;
+    }
     case IF: {
       if( !ts->size )
         error( "%s", "Attempt to if with no parameter on the stack." );

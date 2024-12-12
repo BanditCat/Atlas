@@ -932,68 +932,27 @@ void tensorTakeLastHelper( tensor* t ){
 void tensorTakeLast( tensorStack* ts, u32 index ){
   tensorTakeLastHelper( ts->stack[ index ] );
 }
-void tensorRepeatHelper( tensor* t, u32 count ){
-  if( !t )
-    error( "%s", "Tensor is NULL in tensorRepeatHelper." );
-  if( count == 0 )
-    error( "%s", "Repeat count must be greater than 0." );
-  if( t->rank == 4 )
-    error( "%s", "Cannot increse rank of a tensor with rank 4." );
-
-  // Ensure data is on CPU and owned
-  tensorToHostMemory(t);
-  takeOwnership(t);
-
-  // The old rank and size
-  u32 old_rank = t->rank;
-  u32 old_size = t->size;
-
-  u32 new_rank = old_rank + 1;
-  u32 new_size = old_size * count;
-  f32* new_data = mem( new_size, f32 );
-  for( u32 i = 0; i < count; i++ )
-    memcpy( new_data + i * old_size, t->data + t->offset, old_size * sizeof( f32 ) );
-  if( t->ownsData && t->data )
-    unmem( t->data );
-
-  t->data = new_data;
-  t->offset = 0;
-  t->ownsData = true;
-  t->size = new_size;
-
-  t->rank = new_rank;
-
-  for( int i = (int)old_rank - 1; i >= 0; --i )
-    t->shape[ i + 1 ] = t->shape[ i ];
-  t->shape[ 0 ] = count;
-
-  u32 sz = 1;
-  for( int i = (int)new_rank - 1; i >= 0; --i ){
-    t->strides[ i ] = sz;
-    sz *= t->shape[ i ];
-  }
-}
-Uint32 getPixel(SDL_Surface *surface, int x, int y) {
+Uint32 getPixel( SDL_Surface* surface, int x, int y ){
   int bpp = surface->format->BytesPerPixel;
   // The start of the pixel row in memory
-  Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
-  
+  Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
+
   switch( bpp ){
   case 1:
     return *p;
-    
+
   case 2:
-    return *(Uint16 *)p;
+    return *(Uint16*)p;
 
   case 3:
-    if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-      return (p[0] << 16) | (p[1] << 8) | p[2];
+    if( SDL_BYTEORDER == SDL_BIG_ENDIAN )
+      return ( p[ 0 ] << 16 ) | ( p[ 1 ] << 8 ) | p[ 2 ];
     else
-      return p[0] | (p[1] << 8) | (p[2] << 16);
-    
+      return p[ 0 ] | ( p[ 1 ] << 8 ) | ( p[ 2 ] << 16 );
+
   case 4:
-    return *(Uint32 *)p;
-    
+    return *(Uint32*)p;
+
   default:
     // This should never happen for a valid surface
     return 0;
@@ -1001,7 +960,6 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y) {
 }
 tensor* tensorFromImageFile( const char* filename ){
   tensor* ret = mem( 1, tensor );
-  dbg( "loading image... %s", filename );
   SDL_Surface* image = SDL_LoadBMP( filename );
   if( !image )
     error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
@@ -1045,4 +1003,119 @@ tensor* tensorFromString( const char* string ){
   for( u32 i = 0; i < size; ++i )
     ret->data[ i ] = string[ i ];
   return ret;
+}
+void tensorRepeatHelper( tensor* t, u32 count ){
+  if( !t )
+    error( "%s", "Tensor is NULL in tensorRepeatHelper." );
+  if( count == 0 )
+    error( "%s", "Repeat count must be greater than 0." );
+  if( t->rank == 4 )
+    error( "%s", "Cannot increse rank of a tensor with rank 4." );
+
+  // Ensure data is on CPU and owned
+  tensorToHostMemory( t );
+  takeOwnership( t );
+  if( !tensorIsContiguous( t ) )
+    tensorEnsureContiguous( t );
+
+  // The old rank and size
+  u32 old_rank = t->rank;
+  u32 old_size = t->size;
+
+  u32 new_rank = old_rank + 1;
+  u32 new_size = old_size * count;
+  f32* new_data = mem( new_size, f32 );
+  for( u32 i = 0; i < count; i++ )
+    memcpy(
+      new_data + i * old_size, t->data + t->offset, old_size * sizeof( f32 ) );
+  if( t->ownsData && t->data )
+    unmem( t->data );
+
+  t->data = new_data;
+  t->offset = 0;
+  t->ownsData = true;
+  t->size = new_size;
+
+  t->rank = new_rank;
+
+  for( int i = (int)old_rank - 1; i >= 0; --i )
+    t->shape[ i + 1 ] = t->shape[ i ];
+  t->shape[ 0 ] = count;
+
+  u32 sz = 1;
+  for( int i = (int)new_rank - 1; i >= 0; --i ){
+    t->strides[ i ] = sz;
+    sz *= t->shape[ i ];
+  }
+}
+void tensorRepeat( tensorStack* ts, u32 index, u32 count ){
+  tensorRepeatHelper( ts->stack[ index ], count );
+}
+bool tensorIsContiguous( const tensor* t ){
+  if( t == NULL )
+    return false;
+
+  u32 expected_stride = 1;
+  for( int i = t->rank - 1; i >= 0; --i ){
+    if( t->strides[ i ] != expected_stride )
+      return false;
+    expected_stride *= t->shape[ i ];
+  }
+  return true;
+}
+void tensorEnsureContiguous( tensor* t ){
+  if( t == NULL )
+    error( "%s", "Tensor is NULL in tensorEnsureContiguous." );
+
+  if( tensorIsContiguous( t ) )
+    return;  // Already contiguous, nothing to do.
+
+  if( t->gpu )
+    tensorToHostMemory( t );
+
+  f32* newData = mem( t->size, f32 );
+
+  u32 std_strides[ 4 ] = { 1, 1, 1, 1 };
+  if( t->rank > 0 ){
+    std_strides[ t->rank - 1 ] = 1;
+    for( int i = t->rank - 2; i >= 0; --i ){
+      std_strides[ i ] = std_strides[ i + 1 ] * t->shape[ i + 1 ];
+    }
+  }
+
+  // Iterate over all elements and copy them to newData in standard order.
+  // This can be optimized, but here's a straightforward implementation.
+  u32 indices[ 4 ] = { 0, 0, 0, 0 };
+  for( u32 i = 0; i < t->size; ++i ){
+    // Compute multi-dimensional index based on standard strides.
+    u32 tmp = i;
+    for( u32 dim = 0; dim < t->rank; ++dim ){
+      indices[ dim ] = tmp / std_strides[ dim ];
+      tmp %= std_strides[ dim ];
+    }
+
+    // Compute source index based on current strides.
+    size_t src_idx = t->offset;
+    for( u32 dim = 0; dim < t->rank; ++dim ){
+      src_idx += indices[ dim ] * t->strides[ dim ];
+    }
+
+    // Copy the element to the new data buffer.
+    newData[ i ] = t->data[ src_idx ];
+  }
+
+  // Free old data if owned.
+  if( t->ownsData ){
+    unmem( t->data );
+  }
+
+  // Update tensor with new contiguous data.
+  t->data = newData;
+  t->offset = 0;
+  t->ownsData = true;
+
+  // Update strides to standard.
+  for( u32 i = 0; i < t->rank; ++i ){
+    t->strides[ i ] = std_strides[ i ];
+  }
 }

@@ -61,7 +61,10 @@ return;
 l'skip';
 mand;
 img'font.bmp';
-//'H llo';[32 32 32 32 32];print;-;print;quit;
+'Hello, World!!!';
 get'wsize';[3];0;cat;c''
-ret[0]= ( mod( floor( t.x / 2.0 ), 6.0 ) != 5.0 ?
-          a( vec4( mod( floor( t.x / 2.0 ), 6.0 ),floor( t.y / 2.0 ) + 320.0, t.z, 0.0 ) ) : 0.5 ) * b( vec4( t.xy, 0.0, 0.0 ) ) / 255.0\' 2 1;
+ret[0]= ( t.x < 6.0 * 4.0 * 15.0 && t.y < 8.0 * 4.0 ? ( ( mod( floor( t.x / 4.0 ), 6.0 ) != 5.0 ?
+          b( vec4( mod( floor( t.x / 4.0 ), 6.0 ),
+	  floor( t.y / 4.0 ) + 1328.0 - 8.0 * a( vec4( floor( t.x / ( 4.0 * 6.0 ) ), 0.0, 0.0, 0.0 ) )
+	  , 1.0, 0.0 ) ) : 1.0 ) ) : 1.0 ) * c( vec4( t.xy, 0.0, 0.0 ) ) / 255.0\
+' 3 1;
