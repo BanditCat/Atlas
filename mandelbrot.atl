@@ -60,4 +60,8 @@ return;
 
 l'skip';
 mand;
-get'wsize';[3];0;cat;c''ret[0]=a( vec4( t.xy, 0.0, 0.0 ) ) / 256.0\' 1 1;
+img'font.bmp';
+//'H llo';[32 32 32 32 32];print;-;print;quit;
+get'wsize';[3];0;cat;c''
+ret[0]= ( mod( floor( t.x / 2.0 ), 6.0 ) != 5.0 ?
+          a( vec4( mod( floor( t.x / 2.0 ), 6.0 ),floor( t.y / 2.0 ) + 320.0, t.z, 0.0 ) ) : 0.5 ) * b( vec4( t.xy, 0.0, 0.0 ) ) / 255.0\' 2 1;

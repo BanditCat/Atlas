@@ -43,7 +43,8 @@ void tensorToHostMemory( tensor* t ){
 
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
+  glFramebufferTexture2D(
+    GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
   CHECK_GL_ERROR();
   glReadPixels(
     0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
@@ -189,7 +190,7 @@ compute* makeCompute( const program* prog,
                       const char* glslpre,
                       const char* glsl,
                       u32 argCount,
-		      u32 retCount ){
+                      u32 retCount ){
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
@@ -220,11 +221,12 @@ compute* makeCompute( const program* prog,
     uniform vec2 _a_adims;\n\
     uniform sampler2D _a_atex;\n\
     float a( vec4 i ){\n\
-      float lindex = dot( i, _a_astrides ) + _a_atoffset;\n\
-      float pixel_index = floor( lindex / 4.0 );\n\
+      vec4 ij = floor( i + 0.1 );\n\
+      float lindex = dot( ij, _a_astrides ) + _a_atoffset;\n\
+      float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_adims.x ), \n\
-                  floor( pixel_index / _a_adims.x) ) + 0.5 ) / _a_adims;\n\
+                  floor( pixel_index / _a_adims.x) ) + 0.25 ) / _a_adims;\n\
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -234,10 +236,10 @@ compute* makeCompute( const program* prog,
     uniform sampler2D _a_btex;\n\
     float b( vec4 i ){\n\
       float lindex = dot( i, _a_bstrides ) + _a_btoffset;\n\
-      float pixel_index = floor( lindex / 4.0 );\n\
+      float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_bdims.x ), \n\
-                  floor( pixel_index / _a_bdims.x) ) + 0.5 ) / _a_bdims;\n\
+                  floor( pixel_index / _a_bdims.x) ) + 0.25 ) / _a_bdims;\n\
       vec4 texel = texture( _a_btex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -247,10 +249,10 @@ compute* makeCompute( const program* prog,
     uniform sampler2D _a_ctex;\n\
     float c( vec4 i ){\n\
       float lindex = dot( i, _a_cstrides ) + _a_ctoffset;\n\
-      float pixel_index = floor( lindex / 4.0 );\n\
+      float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_cdims.x ), \n\
-                  floor( pixel_index / _a_cdims.x) ) + 0.5 ) / _a_cdims;\n\
+                  floor( pixel_index / _a_cdims.x) ) + 0.25 ) / _a_cdims;\n\
       vec4 texel = texture( _a_ctex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -260,10 +262,10 @@ compute* makeCompute( const program* prog,
     uniform sampler2D _a_dtex;\n\
     float d( vec4 i ){\n\
       float lindex = dot( i, _a_dstrides ) + _a_dtoffset;\n\
-      float pixel_index = floor( lindex / 4.0 );\n\
+      float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_ddims.x ), \n\
-                  floor( pixel_index / _a_ddims.x) ) + 0.5 ) / _a_ddims;\n\
+                  floor( pixel_index / _a_ddims.x) ) + 0.25 ) / _a_ddims;\n\
       vec4 texel = texture( _a_dtex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -281,8 +283,8 @@ compute* makeCompute( const program* prog,
     }\n\
     %s\n\
     void main(){\n\
-      float i = ( ( gl_FragCoord.x - 0.5 ) + ( gl_FragCoord.y - 0.5 ) * _a_dims.x ) * 4.0;\n\
-      vec4 t = _a_toTensorIndices( i + 0.5 );\n\
+      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * _a_dims.x ) * 4.0;\n\
+      vec4 t = _a_toTensorIndices( i );\n\
       float ret[ %u ];\n\
       float _a_r[ %u ];\n\
       float _a_g[ %u ];\n\
@@ -290,13 +292,13 @@ compute* makeCompute( const program* prog,
       float _a_a[ %u ];\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_r[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i + 0.5 );\n\
+      ++i; t = _a_toTensorIndices( i );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_g[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i + 0.5 );\n\
+      ++i; t = _a_toTensorIndices( i );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_b[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i + 0.5 );\n\
+      ++i; t = _a_toTensorIndices( i );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n";
 
@@ -306,22 +308,37 @@ compute* makeCompute( const program* prog,
   int len = snprintf( fragmentShaderSource,
                       bufsize,
                       fragmentShaderTemplate,
-		      retCount,
+                      retCount,
                       uniforms,
-		      glslpre,
-		      retCount, retCount, retCount, retCount, retCount, 
-                      glsl, retCount, 
-                      glsl, retCount, 
-                      glsl, retCount, 
-                      glsl, retCount, retCount );
+                      glslpre,
+                      retCount,
+                      retCount,
+                      retCount,
+                      retCount,
+                      retCount,
+                      glsl,
+                      retCount,
+                      glsl,
+                      retCount,
+                      glsl,
+                      retCount,
+                      glsl,
+                      retCount,
+                      retCount );
   u32 smallbufsize = 65536;
   if( len < 0 || len >= bufsize - smallbufsize )
     error( "%s", "Shader source exceeds buffer size." );
   for( u32 i = 0; i < retCount; ++i ){
     char* smallbuf = mem( smallbufsize, char );
-    snprintf( smallbuf, smallbufsize,
-	      "    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u ], _a_a[ %u ] );\n",
-	      i, i, i, i, i );
+    snprintf( smallbuf,
+              smallbufsize,
+              "    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u "
+              "], _a_a[ %u ] );\n",
+              i,
+              i,
+              i,
+              i,
+              i );
     strncat( fragmentShaderSource, smallbuf, 1000 );
     unmem( smallbuf );
   }
@@ -462,7 +479,8 @@ tensor** newTensorsInitialized(
   u32 size = 1;
   for( u32 i = 0; i < rank; ++i )
     size *= shape[ i ];
-  // Compute the smallest square dimensions BUGBUG TODO move frambuffer into compute and out of tex
+  // Compute the smallest square dimensions BUGBUG TODO move frambuffer into
+  // compute and out of tex
   u32 pixels = ( size + 3 ) / 4;
   u32 width = (u32)ceilf( sqrtf( (f32)pixels ) );
   u32 height = ( pixels + width - 1 ) / width;
@@ -470,8 +488,8 @@ tensor** newTensorsInitialized(
     u32 found = TENSOR_CACHE;
     for( u32 i = 0; i < TENSOR_CACHE; ++i )
       if( ts->cache[ i ] && size == ts->cache[ i ]->size ){
-	found = i;
-	break;
+        found = i;
+        break;
       }
     if( found != TENSOR_CACHE ){
       ret = ts->cache[ found ];
@@ -482,19 +500,19 @@ tensor** newTensorsInitialized(
       ret->ownsData = true;
       ret->gpu = true;
       for( u32 i = 0; i < rank; ++i ){
-	ret->shape[ i ] = shape[ i ];
-	ret->strides[ rank - i - 1 ] = ret->size;
-	ret->size *= shape[ rank - i - 1 ];
+        ret->shape[ i ] = shape[ i ];
+        ret->strides[ rank - i - 1 ] = ret->size;
+        ret->size *= shape[ rank - i - 1 ];
       }
       for( u32 i = rank; i < 4; ++i ){
-	ret->shape[ i ] = 1;
-	ret->strides[ i ] = 1;
+        ret->shape[ i ] = 1;
+        ret->strides[ i ] = 1;
       }
     } else {
       ret = mem( 1, tensor );
       if( rank > 4 )
-	error( "%s", "Rank exceeds maximum of 4." );
-      
+        error( "%s", "Rank exceeds maximum of 4." );
+
       // Initialize basic properties
       ret->rank = rank;
       ret->size = 1;
@@ -502,36 +520,36 @@ tensor** newTensorsInitialized(
       ret->ownsData = true;
       ret->gpu = true;
       for( u32 i = 0; i < rank; ++i ){
-	ret->shape[ i ] = shape[ i ];
-	ret->strides[ rank - i - 1 ] = ret->size;
-	ret->size *= shape[ rank - i - 1 ];
+        ret->shape[ i ] = shape[ i ];
+        ret->strides[ rank - i - 1 ] = ret->size;
+        ret->size *= shape[ rank - i - 1 ];
       }
       for( u32 i = rank; i < 4; ++i ){
-	ret->shape[ i ] = 1;
-	ret->strides[ i ] = 1;
+        ret->shape[ i ] = 1;
+        ret->strides[ i ] = 1;
       }
-      
+
       ret->tex.width = width;
       ret->tex.height = height;
-      
+
       CHECK_GL_ERROR();
       // Create OpenGL texture
       glGenTextures( 1, &ret->tex.texture );
       glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
       glTexImage2D( GL_TEXTURE_2D,
-		    0,
-		    GL_RGBA32F,
-		    width,
-		    height,
-		    0,
-		    GL_RGBA,
-		    GL_FLOAT,
-		    NULL );
+                    0,
+                    GL_RGBA32F,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_FLOAT,
+                    NULL );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
- 
+
       CHECK_GL_ERROR();
       // Create framebuffer
       glGenFramebuffers( 1, &ret->tex.framebuffer );
@@ -541,13 +559,14 @@ tensor** newTensorsInitialized(
 
   glBindFramebuffer( GL_FRAMEBUFFER, rets[ 0 ]->tex.framebuffer );
   for( u32 i = 0; i < compute->retCount; ++i )
-    glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, rets[ i ]->tex.texture
-			    , 0 );
+    glFramebufferTexture2D( GL_FRAMEBUFFER,
+                            GL_COLOR_ATTACHMENT0 + i,
+                            GL_TEXTURE_2D,
+                            rets[ i ]->tex.texture,
+                            0 );
 
-      
   CHECK_GL_ERROR();
   glViewport( 0, 0, width, height );
-
 
   glUniform2f( compute->dimsLocation, width, height );
   glUniform4f( compute->stridesLocation,
@@ -579,10 +598,12 @@ tensor** newTensorsInitialized(
   // glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   // glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
 
-  GLenum drawBuffers[ 4 ] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-			      GL_COLOR_ATTACHMENT3 };
+  GLenum drawBuffers[ 4 ] = { GL_COLOR_ATTACHMENT0,
+                              GL_COLOR_ATTACHMENT1,
+                              GL_COLOR_ATTACHMENT2,
+                              GL_COLOR_ATTACHMENT3 };
   glDrawBuffers( compute->retCount, drawBuffers );
- 
+
   CHECK_GL_ERROR();
   // Draw the quad
   glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
@@ -598,7 +619,7 @@ tensor** newTensorsInitialized(
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
-  
+
   return rets;
 }
 
@@ -907,8 +928,121 @@ void tensorTakeLastHelper( tensor* t ){
   for( u32 i = 0; i < t->rank; ++i )
     t->size *= t->shape[ i ];
 }
-
 // Function to apply tensorTakeLastHelper on a tensor in the stack
 void tensorTakeLast( tensorStack* ts, u32 index ){
   tensorTakeLastHelper( ts->stack[ index ] );
+}
+void tensorRepeatHelper( tensor* t, u32 count ){
+  if( !t )
+    error( "%s", "Tensor is NULL in tensorRepeatHelper." );
+  if( count == 0 )
+    error( "%s", "Repeat count must be greater than 0." );
+  if( t->rank == 4 )
+    error( "%s", "Cannot increse rank of a tensor with rank 4." );
+
+  // Ensure data is on CPU and owned
+  tensorToHostMemory(t);
+  takeOwnership(t);
+
+  // The old rank and size
+  u32 old_rank = t->rank;
+  u32 old_size = t->size;
+
+  u32 new_rank = old_rank + 1;
+  u32 new_size = old_size * count;
+  f32* new_data = mem( new_size, f32 );
+  for( u32 i = 0; i < count; i++ )
+    memcpy( new_data + i * old_size, t->data + t->offset, old_size * sizeof( f32 ) );
+  if( t->ownsData && t->data )
+    unmem( t->data );
+
+  t->data = new_data;
+  t->offset = 0;
+  t->ownsData = true;
+  t->size = new_size;
+
+  t->rank = new_rank;
+
+  for( int i = (int)old_rank - 1; i >= 0; --i )
+    t->shape[ i + 1 ] = t->shape[ i ];
+  t->shape[ 0 ] = count;
+
+  u32 sz = 1;
+  for( int i = (int)new_rank - 1; i >= 0; --i ){
+    t->strides[ i ] = sz;
+    sz *= t->shape[ i ];
+  }
+}
+Uint32 getPixel(SDL_Surface *surface, int x, int y) {
+  int bpp = surface->format->BytesPerPixel;
+  // The start of the pixel row in memory
+  Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+  
+  switch( bpp ){
+  case 1:
+    return *p;
+    
+  case 2:
+    return *(Uint16 *)p;
+
+  case 3:
+    if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+      return (p[0] << 16) | (p[1] << 8) | p[2];
+    else
+      return p[0] | (p[1] << 8) | (p[2] << 16);
+    
+  case 4:
+    return *(Uint32 *)p;
+    
+  default:
+    // This should never happen for a valid surface
+    return 0;
+  }
+}
+tensor* tensorFromImageFile( const char* filename ){
+  tensor* ret = mem( 1, tensor );
+  dbg( "loading image... %s", filename );
+  SDL_Surface* image = SDL_LoadBMP( filename );
+  if( !image )
+    error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
+  ret->size = image->w * image->h * 4;
+  for( u32 i = 0; i < 4; ++i )
+    ret->shape[ i ] = ret->strides[ i ] = 1;
+  ret->shape[ 0 ] = image->w;
+  ret->shape[ 1 ] = image->h;
+  ret->shape[ 2 ] = 4;
+  ret->strides[ 1 ] = 4;
+  ret->rank = 3;
+  ret->strides[ 0 ] = image->h * 4;
+  ret->data = mem( ret->size, f32 );
+  ret->ownsData = true;
+
+  for( u32 y = 0; y < image->h; ++y ){
+    for( u32 x = 0; x < image->w; ++x ){
+      Uint32 pixel = getPixel( image, x, image->h - y - 1 );
+      Uint8 r, g, b, a;
+      SDL_GetRGBA( pixel, image->format, &r, &g, &b, &a );
+      ret->data[ ( x * image->h + y ) * 4 + 0 ] = b / 255.0;
+      ret->data[ ( x * image->h + y ) * 4 + 1 ] = g / 255.0;
+      ret->data[ ( x * image->h + y ) * 4 + 2 ] = r / 255.0;
+      ret->data[ ( x * image->h + y ) * 4 + 3 ] = a / 255.0;
+    }
+  }
+  SDL_FreeSurface( image );
+  return ret;
+}
+tensor* tensorFromString( const char* string ){
+  tensor* ret = mem( 1, tensor );
+  ret->ownsData = true;
+  for( u32 i = 0; i < 4; ++i )
+    ret->shape[ i ] = ret->strides[ i ] = 1;
+  u32 size = strlen( string );
+  ret->shape[ 0 ] = size;
+  ret->size = size;
+  ret->rank = 1;
+  ret->data = mem( size, f32 );
+  ret->data[ size ] = '\0';
+  for( u32 i = 0; i < size; ++i )
+    ret->data[ i ] = string[ i ];
+  return ret;
 }

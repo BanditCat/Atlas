@@ -63,6 +63,8 @@ compute* makeCompute( const program* prog, const char* uniforms, const char* gls
 void deleteCompute( compute* i );
 tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 			      const compute* initializer );
+tensor* tensorFromImageFile( const char* fileName );
+tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );

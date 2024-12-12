@@ -396,6 +396,35 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     // dbg( "Linenum %u commandnum %u: ifn to %s\n", linenum, commandnum,
     // branchName );
 
+  } else if( !strncmp( command, "img'", 4 ) ){  // img
+    char* starti = command + 4;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s",
+             linenum,
+             commandnum,
+             "Empty img statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s",
+             linenum,
+             commandnum,
+             "Unmatched quote in img statement." );
+    char* imgName = mem( 1 + endi - starti, char );
+    memcpy( imgName, starti, endi - starti );
+    imgName[ endi - starti ] = '\0';
+    curStep->type = TENSOR;
+    curStep->tensor = tensorFromImageFile( imgName );
+    unmem( imgName );
+    if( *( endi + 1 ) )
+      error( "Line %u, command %u: %s",
+             linenum,
+             commandnum,
+             "Extra characters after img statement." );
+    // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
+    // imgName );
+
   } else if( !strncmp( command, "c'", 2 ) ){  // Compute
     char* starti = command + 2;
     char* endi = starti;
@@ -462,23 +491,23 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
 
   } else if( !strcmp( command, "+" ) ){  // Add
     curStep->type = ADD;
-    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: add\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "-" ) ){  // Add
+  } else if( !strcmp( command, "-" ) ){  // Sub
     curStep->type = SUB;
-    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: sub\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "*" ) ){  // Add
+  } else if( !strcmp( command, "*" ) ){  // Mul
     curStep->type = MUL;
-    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: mul\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "/" ) ){  // Add
+  } else if( !strcmp( command, "/" ) ){  // Div
     curStep->type = DIV;
-    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: div\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "^" ) ){  // Add
+  } else if( !strcmp( command, "^" ) ){  // Exp
     curStep->type = POW;
-    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
 
   } else if( !strcmp( command, "r" ) ){  // Reverse
     curStep->type = REVERSE;
@@ -521,21 +550,50 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     // dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
 
   } else if( *command == '[' || *command == '.' ||
-             isdigit( *command ) ){  // A tensor
+             isdigit( *command ) || *command == '\'' ){  // A tensor
     curStep->type = TENSOR;
-    char* tp = command;
-    f32 scalar;
-    int charsread;
-    if( sscanf( tp, "%f%n", &scalar, &charsread ) == 1 && !tp[ charsread ] ){
-      curStep->tensor = mem( 1, tensor );
-      curStep->tensor->size = 1;
-      for( u32 i = 0; i < 4; ++i )
-        curStep->tensor->shape[ i ] = curStep->tensor->strides[ i ] = 1;
-      curStep->tensor->data = mem( 1, f32 );
-      *curStep->tensor->data = scalar;
-      curStep->tensor->ownsData = true;
-    } else
-      curStep->tensor = parseTensor( command );
+    if( *command == '\'' ){
+      char* starti = command + 1;
+      char* endi = starti;
+      while( *endi && *endi != '\'' )
+	endi++;
+      if( endi == starti )
+	error( "Line %u, command %u: %s",
+	       linenum,
+	       commandnum,
+	       "Empty string statement." );
+      if( *endi != '\'' )
+	error( "Line %u, command %u: %s",
+	       linenum,
+	       commandnum,
+	       "Unmatched quote in string statement." );
+      char* str = mem( 1 + endi - starti, char );
+      memcpy( str, starti, endi - starti );
+      str[ endi - starti ] = '\0';
+      curStep->tensor = tensorFromString( str );
+      unmem( str );
+      if( *( endi + 1 ) )
+	error( "Line %u, command %u: %s",
+	       linenum,
+	       commandnum,
+	       "Extra characters after string statement." );
+      // dbg( "Linenum %u commandnum %u: string %s\n", linenum, commandnum,
+      // string );
+    } else{
+      char* tp = command;
+      f32 scalar;
+      int charsread;
+      if( sscanf( tp, "%f%n", &scalar, &charsread ) == 1 && !tp[ charsread ] ){
+	curStep->tensor = mem( 1, tensor );
+	curStep->tensor->size = 1;
+	for( u32 i = 0; i < 4; ++i )
+	  curStep->tensor->shape[ i ] = curStep->tensor->strides[ i ] = 1;
+	curStep->tensor->data = mem( 1, f32 );
+	*curStep->tensor->data = scalar;
+	curStep->tensor->ownsData = true;
+      } else
+	curStep->tensor = parseTensor( command );
+    }
     // dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
 
   } else if( !strcmp( command, "print" ) ){  // Print
