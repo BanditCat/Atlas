@@ -11,6 +11,7 @@ TARGET = Atlas.exe
 HTML = index.html
 JS = $(HTML:.html=.js)
 WASM = $(HTML:.html=.wasm)
+DATA = $(HTML:.html=.data)
 
 HDRS = Atlas.h tensor.h trie.h program.h
 MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
@@ -61,7 +62,7 @@ clean:
 backup:
 	$(MAKE) release
 	$(MAKE) $(HTML)
-	cp -f $(TARGET) $(HTML) $(JS) $(WASM) ./bin
+	cp -f $(TARGET) $(HTML) $(JS) $(WASM) $(DATA) ./bin
 	upx -9 ./bin/$(TARGET)
 	$(MAKE) clean
 	git add -A
