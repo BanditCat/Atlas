@@ -66,7 +66,7 @@ backup:
 	upx -9 ./bin/$(TARGET)
 	$(MAKE) clean
 	git add -A
-	git commit -m 'Auto-commit'
+	git commit -m 'keys'
 	git push -u origin main
 
 # Include dependency files

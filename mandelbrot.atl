@@ -1,3 +1,6 @@
+keys;[41 42 0];s;first;ifn'go';
+quit;  // Quit if escape pressed.
+l'go';
 size;if'started';
 1;1;1;
 [1];set'zoom' 1;

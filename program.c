@@ -489,6 +489,10 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "keys" ) ){  // Last
+    curStep->type = KEYS;
+    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+
   } else if( !strcmp( command, "+" ) ){  // Add
     curStep->type = ADD;
     // dbg( "Linenum %u commandnum %u: add\n", linenum, commandnum );
@@ -1301,6 +1305,15 @@ bool runProgram( tensorStack* ts, program* p ){
       *ssize = ts->size;
       push( ts, newTensor( 0, NULL, ssize ) );
       // dbg( "%s %u %u", "size", axis1, axis2 );
+      break;
+    }
+    case KEYS: {
+      f32* data = mem( SDL_NUM_SCANCODES, f32 );
+      const u8* ks = SDL_GetKeyboardState(NULL);
+      u32 size = SDL_NUM_SCANCODES;
+      for( u32 i = 0; i < SDL_NUM_SCANCODES; ++i )
+	data[ i ] = ks[ i ];
+      push( ts, newTensor( 1, &size, data ) );
       break;
     }
     case SET:

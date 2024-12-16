@@ -27,6 +27,7 @@ typedef struct{
     CAT,
     FIRST,
     LAST,
+    KEYS,
     PRINT,
     TENSOR,
     TOP,

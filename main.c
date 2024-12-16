@@ -365,11 +365,6 @@ void main_loop(){
         shared_offsetX -= deltaX;
         shared_offsetY += deltaY;
       }
-    } else if( event.type == SDL_KEYDOWN ){
-      if( event.key.keysym.sym == SDLK_ESCAPE ){
-        running = 0;
-        emscripten_cancel_main_loop();
-      }
     }
   }
 
@@ -592,11 +587,7 @@ int main( int argc, char* argv[] ){
           shared_offsetY += deltaY;
           SDL_UnlockMutex( data_mutex );
         }
-      } else if( event.type == SDL_KEYDOWN ){
-        if( event.key.keysym.sym == SDLK_ESCAPE )
-          SDL_AtomicSet( &running, 0 );
-        break;
-      }
+      } 
     }
   }
 
