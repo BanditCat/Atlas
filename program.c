@@ -944,6 +944,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       static const u32 wsshape[ 1 ] = { 6 };
       f32* data = mem( 6, f32 );
       int dx, dy;
+      mainPoll();
       SDL_GetRelativeMouseState( &dx, &dy );  // Get mouse delta
       data[ 0 ] = dx;
       data[ 1 ] = dy;
@@ -1351,7 +1352,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case KEYS: {
       f32* data = mem( SDL_NUM_SCANCODES, f32 );
-      const u8* ks = SDL_GetKeyboardState(NULL);
+      mainPoll();
+      const u8* ks = SDL_GetKeyboardState( NULL );
       u32 size = SDL_NUM_SCANCODES;
       for( u32 i = 0; i < SDL_NUM_SCANCODES; ++i )
 	data[ i ] = ks[ i ];
