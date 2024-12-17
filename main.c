@@ -11,10 +11,15 @@
 #endif
 
 // Main must define these.
+
+#ifdef DEBUG
+MemAlloc* mem_list = NULL;
+SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
+#endif
+
 u64 memc = 0;
+
 s32 mouseWheelDelta = 0;
-//MemAlloc* mem_list = NULL;
-//SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -238,6 +243,9 @@ int renderThreadFunction( void* data ){
     // Run the program
     CHECK_GL_ERROR();
     if( !runProgram( ts, prog ) ){
+#ifdef DBG
+      check_memory_leaks();
+#endif      
       SDL_AtomicSet( &running, 0 );
       break;
     }

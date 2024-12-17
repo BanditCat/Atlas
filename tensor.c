@@ -999,7 +999,6 @@ tensor* tensorFromString( const char* string ){
   ret->size = size;
   ret->rank = 1;
   ret->data = mem( size, f32 );
-  ret->data[ size ] = '\0';
   for( u32 i = 0; i < size; ++i )
     ret->data[ i ] = string[ i ];
   return ret;

@@ -1317,12 +1317,15 @@ bool runProgram( tensorStack* ts, program* p ){
       break;
     }
     case SET:
+#ifdef DBG
+      check_memory_leaks();
+#endif      
       if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
           ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
         error( "%s", "Incorrect rank during set statement." );
       if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
         // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
-        error( "%s", "Incorrect size %u during set statement. Expecting %u.",
+        error( "Incorrect size %u during set statement. Expecting %u.",
 	       s->var.size, ts->stack[ ts->size - 1 ]->size );
       }
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
