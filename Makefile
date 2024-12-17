@@ -64,7 +64,7 @@ backup:
 	upx -9 ./bin/$(TARGET)
 	$(MAKE) clean
 	git add -A
-	git commit -m 'keys'
+	git commit -m 'reset and load'
 	git push -u origin main
 
 # Include dependency files

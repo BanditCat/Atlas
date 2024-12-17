@@ -102,7 +102,16 @@ void mainPoll( void ){
 #else      
       emscripten_cancel_main_loop();
 #endif      
-    }
+    } else if( event.type == SDL_MOUSEWHEEL ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      mouseWheelDelta += event.wheel.y;
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+      
+    }      
   }
 }
 
