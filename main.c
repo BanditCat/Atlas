@@ -28,8 +28,6 @@ SDL_GLContext glContext;
 program* prog;
 tensorStack* ts;
 
-#include "mandelbrot.h"
-
 // Global variables
 GLuint shaderProgram;
 GLuint vbo;
@@ -232,7 +230,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( (char*)mandelbrot_atl, mandelbrot_atl_len );
+  prog = newProgramFromFile( "mandelbrot.atl" );
   ts = newStack();
 
   float zoom, offsetX, offsetY;
@@ -545,7 +543,7 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromString( (char*)mandelbrot_atl, mandelbrot_atl_len );
+  prog = newProgramFromFile( "mandelbrot.atl" );
   ts = newStack();
 #endif
 
