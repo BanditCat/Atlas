@@ -1,7 +1,7 @@
-keys;[41 42 0];s;first;ifn'go';
+keys;0;dup;[41 42 0];s;first;ifn'go';
 quit;  // Quit if escape pressed.
 l'go';
-keys;[21 22 0];s;first;ifn'go2';
+[21 22 0];s;first;ifn'go2';
 load'mandelbrot.atl';  // Reload if r pressed.
 l'go2';
 
