@@ -129,13 +129,15 @@ typedef double f64;
 
 
 
+// The main poll function, can be called to get active input.
+void mainPoll( void );
 
 
 
 
 
-
-
+////////////////////////////////////////////////////////////////////
+// Memory instrucmentation
 
 #ifdef DEBUG
 

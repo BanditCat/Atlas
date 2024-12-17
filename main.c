@@ -10,6 +10,8 @@
 #include <windows.h>
 #endif
 
+
+
 // Main must define these.
 
 #ifdef DEBUG
@@ -90,10 +92,19 @@ void SetDarkTitleBar( SDL_Window* sdlWindow ){
 int running;  // Simple integer for the running flag in single-threaded mode
 #endif
 
-// Variables shared between threads
-float shared_zoom = 1.0f;
-float shared_offsetX = -0.5f;
-float shared_offsetY = 0.0f;
+void mainPoll( void ){
+  SDL_Event event;
+  while( SDL_PollEvent( &event ) ){
+    if( event.type == SDL_QUIT ||
+	( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
+#ifndef __EMSCRIPTEN__
+      SDL_AtomicSet( &running, 0 );
+#else      
+      emscripten_cancel_main_loop();
+#endif      
+    }
+  }
+}
 
 // Vertex Shader Source
 const GLchar* vertexSource = "#version 300 es\n"
@@ -233,8 +244,6 @@ int renderThreadFunction( void* data ){
   prog = newProgramFromFile( "mandelbrot.atl" );
   ts = newStack();
 
-  float zoom, offsetX, offsetY;
-
   // Main loop
   while( SDL_AtomicGet( &running ) ){
     SDL_PumpEvents();
@@ -247,13 +256,6 @@ int renderThreadFunction( void* data ){
       SDL_AtomicSet( &running, 0 );
       break;
     }
-
-    // Lock mutex to read shared variables
-    SDL_LockMutex( data_mutex );
-    zoom = shared_zoom;
-    offsetX = shared_offsetX;
-    offsetY = shared_offsetY;
-    SDL_UnlockMutex( data_mutex );
 
     // Get current window size
     SDL_GetWindowSize( window, &windowWidth, &windowHeight );
@@ -284,12 +286,6 @@ int renderThreadFunction( void* data ){
     glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->size - 1 ]->tex.texture );
 
     // Set uniforms
-    GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom" );
-    glUniform1f( zoomLoc, zoom );
-
-    GLint offsetLoc = glGetUniformLocation( shaderProgram, "offset" );
-    glUniform2f( offsetLoc, offsetX, offsetY );
-
     GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
     glUniform2f( dimsLoc,
                  ts->stack[ ts->size - 1 ]->tex.width,
@@ -345,35 +341,11 @@ int renderThreadFunction( void* data ){
 #else
 
 // Main loop function for Emscripten
-void main_loop(){
+void main_loop( void ){
   // Process events
   SDL_Event event;
-  while( SDL_PollEvent( &event ) ){
-    if( event.type == SDL_QUIT ){
-      running = 0;
-      emscripten_cancel_main_loop();
-    } else if( event.type == SDL_WINDOWEVENT ){
-      if( event.window.event == SDL_WINDOWEVENT_CLOSE ){
-        running = 0;
-        emscripten_cancel_main_loop();
-      }
-    } else if( event.type == SDL_MOUSEWHEEL ){
-      if( event.wheel.y > 0 ){
-	shared_zoom /= 1.1f;  // Zoom in
-      } else if( event.wheel.y < 0 ){
-	shared_zoom *= 1.1f;  // Zoom out
-      }
-      mouseWheelDelta = event.wheel.y;
-    } else if( event.type == SDL_MOUSEMOTION ){
-      if( event.motion.state & SDL_BUTTON_LMASK ){
-        float deltaX = (float)event.motion.xrel / 600 * shared_zoom * 2.0f;
-        float deltaY = (float)event.motion.yrel / 600 * shared_zoom * 2.0f;
-        shared_offsetX -= deltaX;
-        shared_offsetY += deltaY;
-      }
-    }
-  }
-
+  mainPoll();
+  
   // Run the program
   CHECK_GL_ERROR();
   if( !runProgram( ts, &prog ) ){
@@ -386,11 +358,7 @@ void main_loop(){
   // Get current window size
   int windowWidth, windowHeight;
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-
   
-  float zoom = shared_zoom;
-  float offsetX = shared_offsetX;
-  float offsetY = shared_offsetY;
 
   // Adjust the viewport
   glViewport( 0, 0, windowWidth, windowHeight );
@@ -418,12 +386,6 @@ void main_loop(){
   glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->size - 1 ]->tex.texture );
 
   // Set uniforms
-  GLint zoomLoc = glGetUniformLocation( shaderProgram, "zoom" );
-  glUniform1f( zoomLoc, zoom );
-
-  GLint offsetLoc = glGetUniformLocation( shaderProgram, "offset" );
-  glUniform2f( offsetLoc, offsetX, offsetY );
-
   GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
   glUniform2f( dimsLoc,
                ts->stack[ ts->size - 1 ]->tex.width,
@@ -559,42 +521,7 @@ int main( int argc, char* argv[] ){
   // Main thread handles SDL event loop
   while( SDL_AtomicGet( &running ) ){
     // Process events
-    SDL_Event event;
-    while( SDL_PollEvent( &event ) ){
-      if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-	int width, height;
-	SDL_GetWindowSize( window, &width, &height );
-	glViewport( 0, 0, width, height );
-	DwmFlush();
-      } else if( event.type == SDL_QUIT ){
-        SDL_AtomicSet( &running, 0 );
-      } else if( event.type == SDL_WINDOWEVENT ){
-        if( event.window.event == SDL_WINDOWEVENT_CLOSE ){
-          SDL_AtomicSet( &running, 0 );
-        }
-        // No need to handle SDL_WINDOWEVENT_RESIZED
-      } else if( event.type == SDL_MOUSEWHEEL ){
-        SDL_LockMutex( data_mutex );
-        if( event.wheel.y > 0 ){
-          shared_zoom /= 1.1f;  // Zoom in
-        } else if( event.wheel.y < 0 ){
-          shared_zoom *= 1.1f;  // Zoom out
-        }
-	mouseWheelDelta = event.wheel.y;
-        SDL_UnlockMutex( data_mutex );
-      } else if( event.type == SDL_MOUSEMOTION ){
-        if( event.motion.state & SDL_BUTTON_LMASK ){
-          SDL_LockMutex( data_mutex );
-	  int width, height;
-	  SDL_GetWindowSize( window, &width, &height );
-          float deltaX = (float)event.motion.xrel / height * shared_zoom * 2.0f;
-          float deltaY = (float)event.motion.yrel / height * shared_zoom * 2.0f;
-          shared_offsetX -= deltaX;
-          shared_offsetY += deltaY;
-          SDL_UnlockMutex( data_mutex );
-        }
-      } 
-    }
+    mainPoll();
   }
 
   // Wait for rendering thread to finish
