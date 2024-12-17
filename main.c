@@ -15,9 +15,9 @@
 #ifdef DEBUG
 MemAlloc* mem_list = NULL;
 SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
-#endif
-
+#else
 u64 memc = 0;
+#endif
 
 s32 mouseWheelDelta = 0;
 
@@ -242,7 +242,7 @@ int renderThreadFunction( void* data ){
     SDL_PumpEvents();
     // Run the program
     CHECK_GL_ERROR();
-    if( !runProgram( ts, prog ) ){
+    if( !runProgram( ts, &prog ) ){
 #ifdef DBG
       check_memory_leaks();
 #endif      
@@ -378,7 +378,7 @@ void main_loop(){
 
   // Run the program
   CHECK_GL_ERROR();
-  if( !runProgram( ts, prog ) ){
+  if( !runProgram( ts, &prog ) ){
     running = 0;
     emscripten_cancel_main_loop();
     return;
@@ -622,7 +622,11 @@ int main( int argc, char* argv[] ){
   SDL_DestroyWindow( window );
   SDL_Quit();
 
+#ifdef DEBUG
+  check_memory_leaks();
+#else
   dbg( "mem count %llu", memc );
+#endif  
   //check_memory_leaks();
   return 0;
 }

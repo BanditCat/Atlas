@@ -425,6 +425,34 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
     // imgName );
 
+  } else if( !strncmp( command, "load'", 5 ) ){  // load
+    char* starti = command + 5;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "Line %u, command %u: %s",
+             linenum,
+             commandnum,
+             "Empty load statement." );
+    if( *endi != '\'' )
+      error( "Line %u, command %u: %s",
+             linenum,
+             commandnum,
+             "Unmatched quote in load statement." );
+    char* progName = mem( 1 + endi - starti, char );
+    memcpy( progName, starti, endi - starti );
+    progName[ endi - starti ] = '\0';
+    curStep->type = LOAD;
+    curStep->progName = progName;
+    if( *( endi + 1 ) )
+      error( "Line %u, command %u: %s",
+             linenum,
+             commandnum,
+             "Extra characters after load statement." );
+    // dbg( "Linenum %u commandnum %u: load %s\n", linenum, commandnum,
+    // progName );
+
   } else if( !strncmp( command, "c'", 2 ) ){  // Compute
     char* starti = command + 2;
     char* endi = starti;
@@ -874,7 +902,9 @@ void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numComputes; ++i )
     deleteCompute( p->computes[ i ] );
   for( u32 i = 0; i < p->numSteps; ++i ){
-    if( p->steps[ i ].type == TENSOR ){
+    if( p->steps[ i ].type == LOAD )
+      unmem( p->steps[ i ].progName );
+    else if( p->steps[ i ].type == TENSOR ){
       deleteTensor( p->steps[ i ].tensor );
       p->steps[ i ].tensor = NULL;
     }
@@ -892,7 +922,9 @@ void deleteProgram( program* p ){
   unmem( p->steps );
   unmem( p );
 }
-bool runProgram( tensorStack* ts, program* p ){
+// A pointer pointer because program might change during e.g. a load.
+bool runProgram( tensorStack* ts, program** progp ){
+  program* p = *progp;
   CHECK_GL_ERROR();
   for( u32 i = 0; i < p->numSteps; ++i ){
     // dbg( "Step %u", i );
@@ -1180,10 +1212,20 @@ bool runProgram( tensorStack* ts, program* p ){
       f32* newData = mem( cur->rank, f32 );
       for( u32 i = 0; i < cur->rank; ++i )
 	newData[ i ] = cur->shape[ i ];
-      pop( ts );
       u32 newShape[ 1 ] = { cur->rank };
+      pop( ts );
       push( ts, newTensor( 1, newShape, newData ) );
       // dbg( "%s %u", "shape", axis );
+      break;
+    }
+    case LOAD: {
+      i = -1;
+      p = newProgramFromFile( s->progName );
+      deleteProgram( *progp );
+      *progp = p;
+      while( ts->size )
+	pop( ts );
+      // dbg( "%s'%s'", "load ", s=>progName );
       break;
     }
     case FIRST: {

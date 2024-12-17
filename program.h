@@ -23,6 +23,7 @@ typedef struct{
     IFN,
     TRANSPOSE,
     SLICE,
+    LOAD,
     REVERSE,
     CAT,
     FIRST,
@@ -62,6 +63,7 @@ typedef struct{
     u32 branch;
     char* branchName;
     char* varName;
+    char* progName;
   };
 } step;
 
@@ -87,7 +89,7 @@ typedef struct{
 program* newProgramFromString( const char* prog, u32 strlen );
 program* newProgramFromFile( const char* file );
 // Return false to exit program.
-bool runProgram( tensorStack* ts, program* p );
+bool runProgram( tensorStack* ts, program** progp );
 void deleteProgram( program* p );
 
 #endif // PROGRAM_H_INCLUDED

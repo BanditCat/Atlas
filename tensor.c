@@ -528,7 +528,6 @@ tensor** newTensorsInitialized(
         ret->shape[ i ] = 1;
         ret->strides[ i ] = 1;
       }
-
       ret->tex.width = width;
       ret->tex.height = height;
 
@@ -556,7 +555,6 @@ tensor** newTensorsInitialized(
     }
     rets[ reti ] = ret;
   }
-
   glBindFramebuffer( GL_FRAMEBUFFER, rets[ 0 ]->tex.framebuffer );
   for( u32 i = 0; i < compute->retCount; ++i )
     glFramebufferTexture2D( GL_FRAMEBUFFER,
