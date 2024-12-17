@@ -1220,14 +1220,13 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     }
     case LOAD: {
-      i = -1;
       p = newProgramFromFile( s->progName );
       deleteProgram( *progp );
       *progp = p;
       while( ts->size )
 	pop( ts );
       // dbg( "%s'%s'", "load ", s=>progName );
-      break;
+      return true;
     }
     case FIRST: {
       if( !ts->size )
