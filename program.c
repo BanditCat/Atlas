@@ -1322,7 +1322,8 @@ bool runProgram( tensorStack* ts, program* p ){
         error( "%s", "Incorrect rank during set statement." );
       if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
         // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
-        error( "%s", "Incorrect size during set statement." );
+        error( "%s", "Incorrect size %u during set statement. Expecting %u.",
+	       s->var.size, ts->stack[ ts->size - 1 ]->size );
       }
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
