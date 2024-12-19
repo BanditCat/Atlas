@@ -1,5 +1,3 @@
-[[0 1][2 3][4 5]];[1 2 0];s;print;quit;
-
 keys;0;dup;[41 42 0];s;first;ifn'go';
 quit;  // Quit if escape pressed.
 l'go';
