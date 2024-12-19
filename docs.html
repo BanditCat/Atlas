@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Atlas Language Reference</title>
+<style>
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: row;
+  background: #1e1e1e;
+  color: #ddd;
+}
+
+/* Sidebar (Table of Contents) */
+nav {
+  width: 300px;
+  padding: 1em;
+  border-right: 1px solid #444;
+  background: #232323;
+  box-sizing: border-box;
+  overflow-y: auto;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+nav h2 {
+  margin-top: 0;
+  color: #ddd;
+}
+
+nav details summary {
+  font-weight: bold;
+  cursor: pointer;
+  outline: none;
+  color: #ddd;
+}
+
+nav ul {
+  margin: 0.5em 0 1em 1.5em;
+  padding-left: 0;
+  list-style-type: disc;
+  color: #ccc;
+}
+
+nav a {
+  text-decoration: none;
+  color: #4da6ff;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* Main content area */
+main {
+  flex: 1;
+  padding: 2em;
+  box-sizing: border-box;
+  background: #1e1e1e;
+}
+
+main section h1, main section h2, main section h3 {
+  margin-top: 2em;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.25em;
+  color: #eee;
+}
+
+code {
+  background: #333;
+  padding: 0.1em 0.3em;
+  line-height: 1.0;
+  border-radius: 3px;
+  color: #eee;
+}
+
+pre code {
+  display: block;
+  padding: 1em;
+  background: #333;
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <h2>Table of Contents</h2>
+  <details open>
+    <summary>Overview</summary>
+    <ul>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#basic-concepts">Basic Concepts</a></li>
+    </ul>
+  </details>
+
+  <details open>
+    <summary>Language Outline</summary>
+    <ul>
+      <li><a href="#data-types">Data Types</a></li>
+      <li><a href="#tensors">Tensors</a></li>
+      <li><a href="#variables">Variables</a></li>
+      <li><a href="#control-structures">Control Structures</a></li>
+      <li><a href="#functions">Functions</a></li>
+      <li><a href="#looping">looping</a></li>
+    </ul>
+  </details>
+
+  <details open>
+    <summary>Commands Reference</summary>
+    <ul>
+      <li><a href="#cmd-set">set</a></li>
+      <li><a href="#cmd-print">print</a></li>
+      <li><a href="#cmd-if">if / else</a></li>
+      <li><a href="#cmd-while">while / for</a></li>
+      <li><a href="#cmd-return">return</a></li>
+      <li><a href="#cmd-load">load</a></li>
+      <li><a href="#cmd-r">r (reverse)</a></li>
+      <li><a href="#cmd-s">s (slice)</a></li>
+    </ul>
+  </details>
+</nav>
+
+<main>
+<section id="introduction">
+  <h1>Introduction</h1>
+  <p>This document describes the syntax and semantics of the <em>Atlas</em> programming language. 
+  Atlas is a lightweight, extensible language focusing on ease of gpu utilization. The paradigm used by
+  Atlas is a stack of tensors.  This offers advantages relating to memory managment, making
+  copying, slicing, reversing, and transposing all constant time operations.  The workhorse of Atlas is the compute statements, which allow the definition of arbitary glsl functions, multiple return values and parameters of different sizes. Compute statements always compute on the accelerator, and consequently should be restricted to large tensors.</p>
+</section>
+
+<hr>
+
+<section id="basic-concepts">
+  <h1>Basic Concepts</h1>
+  <p>Atlas code is stack-oriented and uses a simple command-oriented syntax. Comments start with <code>//</code> and extend to the end of the line. Whitespace and indentation are primarily for readability and do not affect the program’s semantics.  All commands are terminated with semicolons, ;.  Labels are declared with l and qoutes such as l'aLabel'. The core point of this language is to make it easier to program the GPU. Most commands consume their arguments, for example the sequence <code>1;if'go';</code> would push a 1 onto the stack, and then immediatly consume it as a truth value and branch to the label 'go'.</p>
+</section>
+
+<section id="data-types">
+  <h1>Data Types</h1>
+  <p>All data in Atlas is floating point.  This means that indexing only works out to about 16 million
+  (24 bits), and the effective maximum size of a tensor is 16 million elements. All other types of data
+  (e.g. strings) is converted into a tensor of floating point values.</p>
+  <ul>
+    <li><strong>Number:</strong> Integers and floats, singletons are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
+    <li><strong>String:</strong> Text codepoints in single quotes (e.g., <code>'Hello'</code>).</li>
+    <li><strong>Image:</strong> Bitmaps may be loaded with the <code>load'image.bmp'</code> command.</li>
+    <li><strong>Tensor:</strong> A multi-dimensional array used for advanced data manipulation (e.g. <code>[[1 2] [3 4]]</code> or <code>[1.0 2.0]</code> or just <code>0.0</code>).</li>
+  </ul>
+</section>
+
+<section id="tensors">
+  <h1>Tensors</h1>
+  <p>Tensors are central to Atlas, as they are the only data structure built into the language. 
+  A tensor is a generalized multi-dimensional array. For example, a vector is a 1D tensor, a matrix is 
+  a 2D tensor, and dimensions up to 4 are also supported.</p>
+</section>
+
+<section id="variables">
+  <h1>Variables</h1>
+  <p>Variables are set with a set command like <code>set'varName' 2</code> with varName a valid glsl identifier.  Variables set this way will be avaible as uniforms in shaders, as well as through get'varName' commands.</p>
+  
+<section id="control-structures">
+  <h1>Control Structures</h1>
+  <p>Atlas uses labels and if statements for control flow.  These two structures alone are sufficient to reconstruct the rest.  For example <code>1;if'label';</code> does an uncoditional branch to <code>l'label'</code> located elsewhere in the code.</p>
+</section>
+
+<section id="functions">
+  <h1>Functions</h1>
+  <p>Functions are just labels in Atlas follow by a return command.  For example to add the top two elelments on the stack:</p>
+  <pre><code>l'add'; // Add the top two tensors element-wise
++;
+return;
+</code></pre> and then later in the code this function is called by name with just <code>add</code>.
+</section>
+
+<section id="looping">
+  <h1>Looping</h1>
+  <p>Atlas programs are run in a loop, once per each frame of animation.  Consequently, your program should be designed to pass through rather than block.  To quit the program, you can manually call <code>quit</code>.</p>
+</section>
+
+<hr>
+
+
+<section id="cmd-set">
+  <h2>set</h2>
+  <p>Sets a named variable to a certain value.  The size must be explicitly set, as the variables are also set up as uniforms for the shaders. Example <pre><code>[1 2 3];set'vec' 3;</pre></code> would set
+  a variable named vec with the value [1 2 3], and make it avaible as a vec3 in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 for a 4x4 matrix.</p>
+</section>
+
+<section id="cmd-print">
+  <h2>print</h2>
+  <p>Prints the stack.
+  <pre><code>[1 2 .3];"Hello, world!";print;</code><pre>results in <pre><code>Tensor 1
+Shape: 13
+Strides: 1
+┌────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 72.00  101.00 108.00 108.00 111.00 44.00  32.00  119.00 111.00 114.00 108.00 100.00 33.00  │
+└────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Tensor 0
+Shape: 3
+Strides: 1
+┌────────────────┐
+│ 1.00 2.00 0.30 │
+└────────────────┘</code></pre></p>
+</section>
+
+<section id="cmd-if">
+  <h2>if / ifn</h2>
+  <p>Conditional branching:
+    <pre><code>1;if'jump'; // Unconditional branch, 1 != 0, or
+0;ifn'jump'; // Does the same thing, 0 == 0</code></pre>
+    Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't non-zero.  The top of the stack must be a scalar and is consumed by the if/ifn command.</p>
+</section>
+
+<section id="cmd-while">
+  <h2>while / for</h2>
+  <p>To do a while loop until i is 5, for example, you can do the following:</p>
+  <pre><code>[0];set'i' 1; // Set i to 0
+l'start'; // The start label
+get'i';print;[1];+; // Get i onto the stack and increment it
+0;dup;set'i' 1; // Set i to new value, leave i on stack
+[6];-;first;if'start'; // loop if i != 6
+quit;</code></pre>
+</section>
+
+<section id="cmd-return">
+  <h2>return</h2>
+  <p>Returns from a function to the place that called that label:</p>
+  <pre><code>1;if'past';
+l'square'; // Square a singleton on the top of the stack
+0;dup;*;
+return;
+l'past';2;square;square;print;quit;</code></pre> prints <code>16</code>.
+</section>
+
+<section id="cmd-load">
+  <h2>load</h2>
+  <p>Loads a 4-channel bitmap from file.
+  <pre><code>load'font.bmp'</code></pre> load font.bmp as a [width height 4] tensor.</p>
+</section>
+
+<section id="cmd-r">
+  <h2>r (reverse)</h2>
+  <p>Reverses a tensor along a specified dimension (axis). The axis, a scalar, should be on top of the stack, and the tensor below that. For example:
+  <pre><code>[[0 1][2 3]];0;r;print;quit;</code></pre>
+  prints <pre><code>Tensor 0
+Shape: 2 2
+Strides: -2 1
+┌───────────────┐
+│ ┌───────────┐ │
+│ │ 2.00 3.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 0.00 1.00 │ │
+│ └───────────┘ │
+└───────────────┘</code></pre>
+  and
+  <pre><code>[[0 1][2 3]];1;r;print;quit;</code></pre>
+  prints <pre><code>Tensor 0
+Shape: 2 2
+Strides: 2 -1
+┌───────────────┐
+│ ┌───────────┐ │
+│ │ 1.00 0.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 3.00 2.00 │ │
+│ └───────────┘ │
+└───────────────┘</code></pre>
+  
+<section id="cmd-s">
+  <h2>s (slice)</h2>
+  <p>Extracts a slice from a tensor along a given axis. The arguments are given as rank 1 tensor (array) in the form [start end axis] and will slice the tensor below it from start inclusive to end exclusive along dimension axis. For example:
+    <pre><code>[[0 1][2 3][4 5]];[1 2 1];s;print;quit;</code></pre> prints 
+  <pre><code>Tensor 0
+Shape: 3 1
+Strides: 2 1
+┌──────────┐
+│ ┌──────┐ │
+│ │ 1.00 │ │
+│ └──────┘ │
+│ ┌──────┐ │
+│ │ 3.00 │ │
+│ └──────┘ │
+│ ┌──────┐ │
+│ │ 5.00 │ │
+│ └──────┘ │
+└──────────┘</code></pre> and
+    <pre><code>[[0 1][2 3][4 5]];[1 2 0];s;print;quit;</code></pre> prints 
+  <pre><code>Tensor 0
+Shape: 1 2
+Strides: 2 1
+┌───────────────┐
+│ ┌───────────┐ │
+│ │ 2.00 3.00 │ │
+│ └───────────┘ │
+└───────────────┘</code></pre>
+</section>
+
+</main>
+</body>
+</html>

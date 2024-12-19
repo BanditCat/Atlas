@@ -52,8 +52,6 @@ $(TARGET): $(OBJS) $(ATLHS) icon.res
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-%.h: %.atl
-	xxd -i $< > $@
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.res
 
