@@ -116,7 +116,7 @@ html {
       <li><a href="#variables">Variables</a></li>
       <li><a href="#control-structures">Control Structures</a></li>
       <li><a href="#functions">Functions</a></li>
-      <li><a href="#looping">looping</a></li>
+      <li><a href="#looping">Looping</a></li>
     </ul>
   </details>
 
@@ -131,13 +131,19 @@ html {
       <li><a href="#cmd-load">load</a></li>
       <li><a href="#cmd-r">r (reverse)</a></li>
       <li><a href="#cmd-s">s (slice)</a></li>
+      <li><a href="#cmd-t">t (transpose)</a></li>
     </ul>
   </details>
 </nav>
 
 <main>
+  <div style="display: flex; align-items: center; gap: 1em;">
+    <img src="logo.png" alt="Atlas Logo" style="width:128px; height:auto;">  
+    <h1 style="margin: 0; font-size: 5em; font-weight: bold; font-family: serif;">Atlas</h1>
+  </div>
+
 <section id="introduction">
-  <h1>Introduction</h1>
+  <h2>Introduction</h2>
   <p>This document describes the syntax and semantics of the <em>Atlas</em> programming language. 
   Atlas is a lightweight, extensible language focusing on ease of gpu utilization. The paradigm used by
   Atlas is a stack of tensors.  This offers advantages relating to memory managment, making
@@ -147,12 +153,13 @@ html {
 <hr>
 
 <section id="basic-concepts">
-  <h1>Basic Concepts</h1>
+  <h2>Basic Concepts</h2>
   <p>Atlas code is stack-oriented and uses a simple command-oriented syntax. Comments start with <code>//</code> and extend to the end of the line. Whitespace and indentation are primarily for readability and do not affect the program’s semantics.  All commands are terminated with semicolons, ;.  Labels are declared with l and qoutes such as l'aLabel'. The core point of this language is to make it easier to program the GPU. Most commands consume their arguments, for example the sequence <code>1;if'go';</code> would push a 1 onto the stack, and then immediatly consume it as a truth value and branch to the label 'go'.</p>
+  <p>Atlas runs natively on Windows 10 and 11, and also on the web using emscripten.  Porting to Linux is unlikely without third party help, but shouldn't be too hard in principle.</p>
 </section>
 
 <section id="data-types">
-  <h1>Data Types</h1>
+  <h2>Data Types</h2>
   <p>All data in Atlas is floating point.  This means that indexing only works out to about 16 million
   (24 bits), and the effective maximum size of a tensor is 16 million elements. All other types of data
   (e.g. strings) is converted into a tensor of floating point values.</p>
@@ -165,23 +172,23 @@ html {
 </section>
 
 <section id="tensors">
-  <h1>Tensors</h1>
+  <h2>Tensors</h2>
   <p>Tensors are central to Atlas, as they are the only data structure built into the language. 
   A tensor is a generalized multi-dimensional array. For example, a vector is a 1D tensor, a matrix is 
   a 2D tensor, and dimensions up to 4 are also supported.</p>
 </section>
 
 <section id="variables">
-  <h1>Variables</h1>
+  <h2>Variables</h2>
   <p>Variables are set with a set command like <code>set'varName' 2</code> with varName a valid glsl identifier.  Variables set this way will be avaible as uniforms in shaders, as well as through get'varName' commands.</p>
   
 <section id="control-structures">
-  <h1>Control Structures</h1>
+  <h2>Control Structures</h2>
   <p>Atlas uses labels and if statements for control flow.  These two structures alone are sufficient to reconstruct the rest.  For example <code>1;if'label';</code> does an uncoditional branch to <code>l'label'</code> located elsewhere in the code.</p>
 </section>
 
 <section id="functions">
-  <h1>Functions</h1>
+  <h2>Functions</h2>
   <p>Functions are just labels in Atlas follow by a return command.  For example to add the top two elelments on the stack:</p>
   <pre><code>l'add'; // Add the top two tensors element-wise
 +;
@@ -190,7 +197,7 @@ return;
 </section>
 
 <section id="looping">
-  <h1>Looping</h1>
+  <h2>Looping</h2>
   <p>Atlas programs are run in a loop, once per each frame of animation.  Consequently, your program should be designed to pass through rather than block.  To quit the program, you can manually call <code>quit</code>.</p>
 </section>
 
@@ -252,13 +259,13 @@ l'past';2;square;square;print;quit;</code></pre> prints <code>16</code>.
 
 <section id="cmd-load">
   <h2>load</h2>
-  <p>Loads a 4-channel bitmap from file.
-  <pre><code>load'font.bmp'</code></pre> load font.bmp as a [width height 4] tensor.</p>
+  <p>Loads a 4-channel bitmap from file. For example:
+  <pre><code>load'font.bmp'</code></pre> loads font.bmp as a [width height 4] tensor.</p>
 </section>
 
 <section id="cmd-r">
   <h2>r (reverse)</h2>
-  <p>Reverses a tensor along a specified dimension (axis). The axis, a scalar, should be on top of the stack, and the tensor below that. For example:
+  <p>Reverses a tensor along a specified dimension (axis). The axis, a scalar, should be on top of the stack, and the tensor below that. This is equivalent to mirroring along an axis. For example:
   <pre><code>[[0 1][2 3]];0;r;print;quit;</code></pre>
   prints <pre><code>Tensor 0
 Shape: 2 2
@@ -284,10 +291,11 @@ Strides: 2 -1
 │ │ 3.00 2.00 │ │
 │ └───────────┘ │
 └───────────────┘</code></pre>
+</section>
   
 <section id="cmd-s">
   <h2>s (slice)</h2>
-  <p>Extracts a slice from a tensor along a given axis. The arguments are given as rank 1 tensor (array) in the form [start end axis] and will slice the tensor below it from start inclusive to end exclusive along dimension axis. For example:
+  <p>Extracts a slice from a tensor along a given axis. The arguments are given as a rank 1 tensor (array) in the form [start end axis] and will slice the tensor below it from start inclusive to end exclusive along dimension axis. For example:
     <pre><code>[[0 1][2 3][4 5]];[1 2 1];s;print;quit;</code></pre> prints 
   <pre><code>Tensor 0
 Shape: 3 1
@@ -310,6 +318,35 @@ Strides: 2 1
 ┌───────────────┐
 │ ┌───────────┐ │
 │ │ 2.00 3.00 │ │
+│ └───────────┘ │
+└───────────────┘</code></pre>
+</section>
+
+<section id="cmd-t">
+  <h2>t (transpose)</h2>
+  <p>Transposes two dimensions in a tensor. The argument is a rank 1 tensor (array) in the form [axis1 axis2], the tensor below that has those axes swapped. This is equivalent to mirroring along a diagonal. For example:
+    <pre><code>[[0 1][2 3]];print;[0 1];t;print;quit;</code></pre> prints 
+  <pre><code>Tensor 0
+Shape: 2 2
+Strides: 2 1
+┌───────────────┐
+│ ┌───────────┐ │
+│ │ 0.00 1.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 2.00 3.00 │ │
+│ └───────────┘ │
+└───────────────┘
+
+Tensor 0
+Shape: 2 2
+Strides: 1 2
+┌───────────────┐
+│ ┌───────────┐ │
+│ │ 0.00 2.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 1.00 3.00 │ │
 │ └───────────┘ │
 └───────────────┘</code></pre>
 </section>

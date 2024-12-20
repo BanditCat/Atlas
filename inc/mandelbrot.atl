@@ -1,10 +1,12 @@
-keys;
-0;dup;[41 42 0];s;first;ifn'go'; 
+keys;0;dup;[41 42 0];s;first;ifn'go';
 quit;  // Quit if escape pressed.
 l'go';
-[21 22 0];s;first;ifn'go2'; 
-print;load'inc/mandelbrot.atl';  // Reload if r pressed.
+0;dup;[21 22 0];s;first;ifn'go2';
+load'inc/mandelbrot.atl';  // Reload if r pressed.
 l'go2';
+[6 7 0];s;first;ifn'go3';  // Load next demo if c pressed.
+load'inc/hello.atl';
+l'go3';
 
 size;if'started';
 1;1;1;
@@ -15,7 +17,7 @@ size;if'started';
 l'started';
 pop;pop;pop;
 
-input; // deal with mouse input, a 6 value rank 1 tensor; three axes then three buttons.
+input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
 [1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;
@@ -68,9 +70,9 @@ return;
 
 l'skip';
 mand;
-img'inc/font.bmp';
+img'inc\font.bmp';
 [2];set'fontSize' 1;
-'The quick black dog jumps over the lazy brown fox.';0;dup;shape;print;set'wlen' 1;
+'The quick black dog jumps over the lazy brown fox.';0;dup;shape;set'wlen' 1;
 get'wsize';[3];0;cat;c''
 ret[0]= ( t.x < 6.0 * fontSize * wlen && t.y < 8.0 * fontSize ? ( ( mod( floor( t.x / fontSize ), 6.0 ) != 5.0 ?
           b( vec4( mod( floor( t.x / fontSize ), 6.0 ),

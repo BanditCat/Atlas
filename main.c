@@ -248,7 +248,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromFile( "mandelbrot.atl" );
+  prog = newProgramFromFile( "inc/mandelbrot.atl" );
   ts = newStack();
 
   // Main loop
