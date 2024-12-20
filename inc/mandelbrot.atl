@@ -70,7 +70,7 @@ return;
 
 l'skip';
 mand;
-img'inc\font.bmp';
+img'inc/font.bmp';
 [2];set'fontSize' 1;
 'The quick black dog jumps over the lazy brown fox.';0;dup;shape;set'wlen' 1;
 get'wsize';[3];0;cat;c''
