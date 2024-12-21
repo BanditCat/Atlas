@@ -80,6 +80,7 @@ void SetDarkTitleBar( SDL_Window* sdlWindow ){
     if( SUCCEEDED( hr ) ){
       ShowWindow( hwnd, SW_HIDE );
       ShowWindow( hwnd, SW_SHOW );
+      SetFocus( hwnd );
     } else {
       MessageBoxA(
         NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR );
