@@ -589,7 +589,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = TRANSPOSE;
     // dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
 
-  } else if( *command == '[' || *command == '.' ||
+  } else if( *command == '[' || *command == '.' || *command == '-' ||
              isdigit( *command ) || *command == '\'' ){  // A tensor
     curStep->type = TENSOR;
     if( *command == '\'' ){

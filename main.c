@@ -248,7 +248,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromFile( "inc/mandelbrot.atl" );
+  prog = newProgramFromFile( "inc/hello.atl" );
   ts = newStack();
 
   // Main loop
@@ -512,7 +512,7 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromFile( "inc/mandelbrot.atl" );
+  prog = newProgramFromFile( "inc/hello.atl" );
   ts = newStack();
 #endif
 
@@ -559,7 +559,6 @@ int main( int argc, char* argv[] ){
 #else
   dbg( "mem count %llu", memc );
 #endif  
-  //check_memory_leaks();
   return 0;
 }
 

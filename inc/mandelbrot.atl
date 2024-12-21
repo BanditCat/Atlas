@@ -1,11 +1,13 @@
+// First we handle the keyboard, leaving the stack alone.
+// See https://wiki.libsdl.org/SDL2/SDL_Scancode.
 keys;0;dup;[41 42 0];s;first;ifn'go';
 quit;  // Quit if escape pressed.
 l'go';
-0;dup;[21 22 0];s;first;ifn'go2';
-load'inc/mandelbrot.atl';  // Reload if r pressed.
-l'go2';
-[6 7 0];s;first;ifn'go3';  // Load next demo if c pressed.
+0;dup;[30 31 0];s;first;ifn'go2';
 load'inc/hello.atl';
+l'go2';
+[31 32 0];s;first;ifn'go3';
+load'inc/mandelbrot.atl';
 l'go3';
 
 size;if'started';
@@ -70,12 +72,8 @@ return;
 
 l'skip';
 mand;
-img'inc/font.bmp';
-[2];set'fontSize' 1;
-'The quick black dog jumps over the lazy brown fox.';0;dup;shape;set'wlen' 1;
 get'wsize';[3];0;cat;c''
-ret[0]= ( t.x < 6.0 * fontSize * wlen && t.y < 8.0 * fontSize ? ( ( mod( floor( t.x / fontSize ), 6.0 ) != 5.0 ?
-          b( vec4( mod( floor( t.x / fontSize ), 6.0 ),
-	  floor( t.y / fontSize ) + 1328.0 - 8.0 * a( vec4( floor( t.x / ( fontSize * 6.0 ) ), 0.0, 0.0, 0.0 ) )
-	  , 1.0, 0.0 ) ) : 1.0 ) ) : 1.0 ) * c( vec4( t.xy, 0.0, 0.0 ) ) / 31.0\
-' 3 1;
+ret[0]= a( vec4( t.xy, 0.0, 0.0 ) ) / 31.0\
+' 1 1;
+
+// Do keyboard input down her becase it might load.
