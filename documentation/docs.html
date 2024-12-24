@@ -317,7 +317,7 @@ l'skip';
 
 <section id="cmd-arith">
   <h2>+ / - / * / / / ^</h2>
-  <p>These arithmetic commands take two arguments and do one of add, subtract, multiply, divide or exponentiate them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefor should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print<pre><code>Tensor 0
+  <p>These arithmetic commands take two arguments and do one of add, subtract, multiply, divide or exponentiate them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print<pre><code>Tensor 0
 Shape: 3
 Strides: 1
 ┌────────────────┐
