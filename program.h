@@ -11,37 +11,39 @@
 
 
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
+// Also add it to the documentation, docs.html.
 typedef struct{
   enum{
-    COMPUTE,
+    COMPUTE, // documented
     ADD,
     SUB,
     MUL,
     DIV,
     POW,
-    IF,
-    IFN,
-    TRANSPOSE,
-    SLICE,
-    LOAD,
-    REVERSE,
-    CAT,
-    FIRST,
-    LAST,
+    IF, // documented
+    IFN, // documented
+    TRANSPOSE, // documented
+    SLICE, // documented
+    LOAD, // documented
+    REVERSE, // documented
+    CAT, // documented
+    FIRST, // documented
+    LAST, // documented
+    ENCLOSE, // documented
     KEYS,
-    PRINT,
-    TENSOR,
-    TOP,
+    PRINT, // documented
+    TENSOR, // documented
+    TOP, 
     DUP,
     REPEAT,
     SHAPE,
     QUIT,
-    CALL,
+    CALL, // documented
     POP,
-    RETURN,
+    RETURN, // documented
     GETINPUT,  // Three axis and three buttons
-    SET,
-    GET,
+    SET, // documented
+    GET, // documented
     WINDOWSIZE
   } type;
   union{

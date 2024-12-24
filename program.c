@@ -545,6 +545,10 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = REVERSE;
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "e" ) ){  // Enclose
+    curStep->type = ENCLOSE;
+    // dbg( "Linenum %u commandnum %u: enclose\n", linenum, commandnum );
+
   } else if( !strcmp( command, "cat" ) ){  // Concatenate
     curStep->type = CAT;
     // dbg( "Linenum %u commandnum %u: cat\n", linenum, commandnum );
@@ -986,10 +990,10 @@ bool runProgram( tensorStack* ts, program** progp ){
           t1->shape[ 1 ] != t2->shape[ 1 ] ||
           t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
         error( "%s", "Attempt to pow tensors with incompatible shapes." );
-      for( u32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
-        for( u32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
-          for( u32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
-            for( u32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
                              i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
                              i3 * t1->strides[ 3 ];
@@ -1016,10 +1020,10 @@ bool runProgram( tensorStack* ts, program** progp ){
           t1->shape[ 1 ] != t2->shape[ 1 ] ||
           t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
         error( "%s", "Attempt to add tensors with incompatible shapes." );
-      for( u32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
-        for( u32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
-          for( u32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
-            for( u32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
                              i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
                              i3 * t1->strides[ 3 ];
@@ -1046,10 +1050,10 @@ bool runProgram( tensorStack* ts, program** progp ){
           t1->shape[ 1 ] != t2->shape[ 1 ] ||
           t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
         error( "%s", "Attempt to sub tensors with incompatible shapes." );
-      for( u32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
-        for( u32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
-          for( u32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
-            for( u32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
                              i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
                              i3 * t1->strides[ 3 ];
@@ -1076,10 +1080,10 @@ bool runProgram( tensorStack* ts, program** progp ){
           t1->shape[ 1 ] != t2->shape[ 1 ] ||
           t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
         error( "%s", "Attempt to mul tensors with incompatible shapes." );
-      for( u32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
-        for( u32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
-          for( u32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
-            for( u32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
                              i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
                              i3 * t1->strides[ 3 ];
@@ -1106,10 +1110,10 @@ bool runProgram( tensorStack* ts, program** progp ){
           t1->shape[ 1 ] != t2->shape[ 1 ] ||
           t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
         error( "%s", "Attempt to div tensors with incompatible shapes." );
-      for( u32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
-        for( u32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
-          for( u32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
-            for( u32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
                              i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
                              i3 * t1->strides[ 3 ];
@@ -1324,6 +1328,21 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensorTranspose( ts, ts->size - 1, axis1, axis2 );
       // dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
+    case ENCLOSE: {
+      tensor* t = ts->stack[ ts->size - 1 ];
+      if( !ts->size )
+        error( "%s", "Attempt to enclose with an empty stack." );
+      if( t->rank == 4 )
+        error( "%s", "Attempt to enclose a parameter of rank 4 (rank too high)." );
+      for( int i = t->rank; i >= 1; --i ){
+	t->shape[ i ] = t->shape[ i - 1 ];
+	t->strides[ i ] = t->strides[ i - 1 ];
+      }
+      t->shape[ 0 ] = 1;
+      t->strides[ 0 ] = t->strides[ 1 ];
+      t->rank++;
+      break;
+    }
     case SLICE:
       if( !ts->size )
         error( "%s", "Attempt to slice with an empty stack." );
@@ -1374,7 +1393,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
       if( s->var.size <= 4 )
-        for( u32 i = 0; i < s->var.size; ++i )
+        for( s32 i = 0; i < s->var.size; ++i )
           uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data +
                             ts->stack[ ts->size - 1 ]->offset +
                             ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );

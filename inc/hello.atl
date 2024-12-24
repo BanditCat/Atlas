@@ -23,24 +23,26 @@ input; // deal with input, a 6 value rank 1 tensor; three axes then three button
 0;dup;[0 2 0];s;[-1 1];*;get'offs';+;set'offs' 2;
 l'nomouse';
 
-pop;
+pop; // pop input
 
 windowSize;set'wsize' 2;
 
 img'inc/font.bmp';
 [4];set'fontSize' 1;
-'Hello, world!';0;dup;shape;0;dup;set'wlen' 1;[1];0;cat;[6 8];*;0;dup;set'tsize' 2;
+'Hello world!                                    ';e;
+'Press the 1 - 2 keys to see the different demos.';e;0;cat;[0 1];t;1;r;
+0;dup;shape;[6 8];*;0;dup;set'tsize' 2;
 c''
 float x = t.x\
 float y = t.y\
 ret[0] = ( ( mod( floor( x ), 6.0 ) != 5.0 ?
           b( vec4( mod( floor( x ), 6.0 ),
-          floor( y ) + 1328.0 - 8.0 * a( vec4( floor( x / 6.0 ), 0.0, 0.0, 0.0 ) )
+          mod( y, 8.0 ) + 1328.0 - 8.0 * a( vec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
 	  ,1.0, 0.0 ) ) : 1.0 ) )\
 ' 2 1;
 get'wsize';[3];0;cat;
 c''
 ret[0] = ( t.x + offs.x >= 0.0 && t.y + offs.y >= 0.0 &&
-           t.x + offs.x <= tsize.x * zoom && t.y + offs.y <= tsize.y * zoom ) ?
+           t.x + offs.x < tsize.x * zoom && t.y + offs.y < tsize.y * zoom ) ?
            1.0 - a( vec4( ( t.xy + offs ) / zoom, 0.0, 0.0 ) ) : 0.0\
 ' 1 1;

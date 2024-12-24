@@ -75,5 +75,3 @@ mand;
 get'wsize';[3];0;cat;c''
 ret[0]= a( vec4( t.xy, 0.0, 0.0 ) ) / 31.0\
 ' 1 1;
-
-// Do keyboard input down her becase it might load.
