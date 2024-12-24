@@ -101,7 +101,7 @@ html {
 
 <nav>
   <h2>Table of Contents</h2>
-  <details open>
+  <details>
     <summary>Overview</summary>
     <ul>
       <li><a href="#introduction">Introduction</a></li>
@@ -111,7 +111,7 @@ html {
     </ul>
   </details>
 
-  <details open>
+  <details>
     <summary>Language Outline</summary>
     <ul>
       <li><a href="#data-types">Data Types</a></li>
@@ -123,24 +123,32 @@ html {
     </ul>
   </details>
 
+  <details>
+    <summary>Examples</summary>
+    <ul>
+      <li><a href="#example-1">Fibonacci Sequence</a></li>
+      <li><a href="#example-2">Simple Gradient</a></li>
+    </ul>
+  </details>
+  
   <details open>
     <summary>Commands Reference</summary>
     <ul>
       <li><a href="#cmd-c">c (compute)</a></li>
-      <li><a href="#cmd-set">set</a></li>
-      <li><a href="#cmd-get">get</a></li>
-      <li><a href="#cmd-print">print</a></li>
-      <li><a href="#cmd-if">if / ifn</a></li>
-      <li><a href="#cmd-while">while / for</a></li>
-      <li><a href="#cmd-return">return</a></li>
-      <li><a href="#cmd-load">load</a></li>
-      <li><a href="#cmd-img">img (image)</a></li>
-      <li><a href="#cmd-r">r (reverse)</a></li>
-      <li><a href="#cmd-s">s (slice)</a></li>
-      <li><a href="#cmd-t">t (transpose)</a></li>
-      <li><a href="#cmd-first">first / last</a></li>
-      <li><a href="#cmd-enclose">e (enclose)</a></li>
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
+      <li><a href="#cmd-enclose">e (enclose)</a></li>
+      <li><a href="#cmd-first">first / last</a></li>
+      <li><a href="#cmd-get">get</a></li>
+      <li><a href="#cmd-if">if / ifn</a></li>
+      <li><a href="#cmd-img">img (image)</a></li>
+      <li><a href="#cmd-load">load</a></li>
+      <li><a href="#cmd-print">print</a></li>
+      <li><a href="#cmd-r">r (reverse)</a></li>
+      <li><a href="#cmd-return">return</a></li>
+      <li><a href="#cmd-s">s (slice)</a></li>
+      <li><a href="#cmd-set">set</a></li>
+      <li><a href="#cmd-t">t (transpose)</a></li>
+      <li><a href="#cmd-while">while / for</a></li>
     </ul>
   </details>
 </nav>
@@ -245,6 +253,67 @@ return;
 
 <hr>
 
+<section id="example-1">
+  <h2>Fibonacci Sequence</h2>
+  <p><pre><code>0;1; // Push the first two elements of the sequence.
+l'fib';1;dup;1;dup;+; // Duplicate the top two elements and then add them.
+0;dup;21;-;if'fib'; // Loop back to l'fib' if the top of the stack isn't 21.
+print;quit; // Show the results.</code></pre>prints<pre><code>Tensor 8
+Shape:
+Strides:
+21.00
+
+Tensor 7
+Shape:
+Strides:
+13.00
+
+Tensor 6
+Shape:
+Strides:
+8.00
+
+Tensor 5
+Shape:
+Strides:
+5.00
+
+Tensor 4
+Shape:
+Strides:
+3.00
+
+Tensor 3
+Shape:
+Strides:
+2.00
+
+Tensor 2
+Shape:
+Strides:
+1.00
+
+Tensor 1
+Shape:
+Strides:
+1.00
+
+Tensor 0
+Shape:
+Strides:
+0.00</code></pre></p>
+</section>
+
+<section id="example-2">
+  <h2>Simple Gradient</h2>
+  <p><pre><code>size;if'skip'; // Skip if we've already created the gardient.
+[16 16 3];c''ret[0]=i / 767.0\' 0 1; // The linear index goes to 16*16*3 - 1 = 767.0.
+l'skip';
+</code></pre>will display<pre><code><img src="gradient.png"></code></pre></p>
+</section>
+
+<hr>
+
 <section id="cmd-c">
   <h2>c (compute)</h2>
   <p><em>This is the main command of Atlas. The rest of the language is in support of this.</em> The <code>c</code> command takes one shape argument (the shape of the output tensor) and 0-4 argument tensors to feed 
@@ -298,13 +367,82 @@ Strides: 2 1
 </code></pre>
 </section>
 
-<section id="cmd-set">
-  <h2>set</h2>
-  <p>Sets a named variable to a certain value. The size must be explicitly set, as the variables 
-  are also set up as uniforms for the shaders. For example 
-  <pre><code>[1 2 3];set'vec' 3;</code></pre> would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and 
-  make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 
-  for a 4x4 matrix.</p>
+<section id="cmd-cat">
+  <h2>cat (concatenate)</h2>
+  <p>Given a stack of <code>t1</code>, <code>t2</code>, and <code>axis</code>, a scalar, the command concatenates <code>t2</code> onto <code>t1</code> along axis <code>axis</code>. For example:
+    <pre><code>[[0 1][2 3]];[[4 5][6 7]];0;cat;
+[[0 1][2 3]];[[4 5][6 7]];1;cat;
+print;quit;</code></pre> prints <pre><code>Tensor 1
+Shape: 2 4
+Strides: 4 1
+┌─────────────────────────┐
+│ ┌─────────────────────┐ │
+│ │ 0.00 1.00 4.00 5.00 │ │
+│ └─────────────────────┘ │
+│ ┌─────────────────────┐ │
+│ │ 2.00 3.00 6.00 7.00 │ │
+│ └─────────────────────┘ │
+└─────────────────────────┘
+
+Tensor 0
+Shape: 4 2
+Strides: 2 1
+┌───────────────┐
+│ ┌───────────┐ │
+│ │ 0.00 1.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 2.00 3.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 4.00 5.00 │ │
+│ └───────────┘ │
+│ ┌───────────┐ │
+│ │ 6.00 7.00 │ │
+│ └───────────┘ │
+└───────────────┘</code></pre>
+</code></pre></p>
+</section>
+
+<section id="cmd-enclose">
+  <h2>e (enclose)</h2>
+  <p>This takes the tensor on top of the stack and raises its rank by 1 appending [1] onto its shape. For example:
+    <pre><code>.5;e;[[0 1][2 3]];e;print;quit;</code></pre> prints <pre><code>Tensor 1
+Shape: 1 2 2
+Strides: 2 2 1
+┌─────────────────────────────────┐
+│ ┌─────────────────────────────┐ │
+│ │ ┌───────────┐ ┌───────────┐ │ │
+│ │ │ 0.00 1.00 │ │ 2.00 3.00 │ │ │
+│ │ └───────────┘ └───────────┘ │ │
+│ └─────────────────────────────┘ │
+└─────────────────────────────────┘
+
+Tensor 0
+Shape: 1
+Strides: 1
+┌──────┐
+│ 0.50 │
+└──────┘</code></pre>
+</code></pre></p>
+</section>
+
+<section id="cmd-first">
+  <h2>first / last</h2>
+  <p>These commands return the first or last element along the first axis, reducing rank by 1. For example:
+    <pre><code>[[0 1][2 3]];first;print;last;print;quit;</code></pre>
+    prints 
+  <pre><code>Tensor 0
+Shape: 2
+Strides: 1
+┌───────────┐
+│ 0.00 1.00 │
+└───────────┘
+
+Tensor 0
+Shape:
+Strides:
+1.00</code></pre></p>
 </section>
 
 <section id="cmd-get">
@@ -313,10 +451,32 @@ Strides: 2 1
   <pre><code>get'vec';</code></pre> would get a variable named <code>vec</code> and push it onto the stack.</p>
 </section>
 
+<section id="cmd-if">
+  <h2>if / ifn</h2>
+  <p>The two if and ifn commands implement conditional branching:
+    <pre><code>get'bool';first;if'jump'; // This branches to the label l'jump' if the variable 'bool' is nonzero.
+0;ifn'jump'; // This unconditionally jumps to l'jump' because a 0 was pushed on the stack and ifn branches on zero.
+</code></pre>
+    Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't non-zero. The top of 
+    the stack must be a scalar and is consumed by the <code>if</code>/<code>ifn</code> command.</p>
+</section>
+
+<section id="cmd-img">
+  <h2>img (image)</h2>
+  <p>Loads a 4-channel bitmap from a file. For example:
+  <pre><code>lmg'font.bmp'</code></pre>
+  loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.</p>
+</section>
+
+<section id="cmd-load">
+  <h2>load</h2>
+  <p>Loads another atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>.</p>
+</section>
+
 <section id="cmd-print">
   <h2>print</h2>
   <p>Prints the stack.</p>
-  <pre><code>[1 2 .3];"Hello, world!";print;</code></pre>
+  <pre><code>[1 2 .3];'Hello, world!';print;</code></pre>
   <p>results in</p>
   <pre><code>Tensor 1
 Shape: 13
@@ -332,53 +492,6 @@ Strides: 1
 │ 1.00 2.00 0.30 │
 └────────────────┘
 </code></pre>
-</section>
-
-<section id="cmd-if">
-  <h2>if / ifn</h2>
-  <p>The two if and ifn commands implement conditional branching:
-    <pre><code>get'bool';first;if'jump'; // This branches to the label l'jump' if the variable 'bool' is nonzero.
-0;ifn'jump'; // This unconditionally jumps to the l'jump' because a 0 was pushed on the stack and ifn branches on zero.
-</code></pre>
-    Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't non-zero. The top of 
-    the stack must be a scalar and is consumed by the <code>if</code>/<code>ifn</code> command.</p>
-</section>
-
-<section id="cmd-while">
-  <h2>while / for</h2>
-  <p>To do a while loop until <code>i</code> is 5, for example, you can do the following:</p>
-  <pre><code>[0];set'i' 1; // Set i to 0
-l'start';   // The start label
-get'i';print;[1];+; // Get i onto the stack and increment it
-0;dup;set'i' 1;     // Set i to new value, leave i on stack
-[6];-;first;if'start'; // Loop if i != 6
-quit;
-</code></pre>
-</section>
-
-<section id="cmd-return">
-  <h2>return</h2>
-  <p>Returns from a function to the place that called that label:</p>
-  <pre><code>1;if'past';
-l'square'; // Square a singleton on the top of the stack
-0;dup;*;
-return;
-
-l'past';2;square;square;print;quit;
-</code></pre>
-  <p>This prints <code>16</code>.</p>
-</section>
-
-<section id="cmd-load">
-  <h2>load</h2>
-  <p>Loads another atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>.</p>
-</section>
-
-<section id="cmd-img">
-  <h2>img (image)</h2>
-  <p>Loads a 4-channel bitmap from a file. For example:
-  <pre><code>lmg'font.bmp'</code></pre>
-  loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.</p>
 </section>
 
 <section id="cmd-r">
@@ -416,6 +529,19 @@ Strides: 2 -1
 </code></pre></p>
 </section>
   
+<section id="cmd-return">
+  <h2>return</h2>
+  <p>Returns from a function to the place that called that label:</p>
+  <pre><code>1;if'past';
+l'square'; // Square a singleton on the top of the stack
+0;dup;*;
+return;
+
+l'past';2;square;square;print;quit;
+</code></pre>
+  <p>This prints <code>16</code>.</p>
+</section>
+
 <section id="cmd-s">
   <h2>s (slice)</h2>
   <p>Extracts a slice from a tensor along a given axis. The arguments are given as a rank 1 tensor (array) 
@@ -452,6 +578,15 @@ Strides: 2 1
 </code></pre></p>
 </section>
 
+<section id="cmd-set">
+  <h2>set</h2>
+  <p>Sets a named variable to a certain value. The size must be explicitly set, as the variables 
+  are also set up as uniforms for the shaders. For example 
+  <pre><code>[1 2 3];set'vec' 3;</code></pre> would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and 
+  make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 
+  for a 4x4 matrix.</p>
+</section>
+
 <section id="cmd-t">
   <h2>t (transpose)</h2>
   <p>Transposes two dimensions in a tensor. The argument is a rank 1 tensor (array) in the form 
@@ -485,83 +620,18 @@ Strides: 1 2
 </code></pre></p>
 </section>
 
-<section id="cmd-first">
-  <h2>first / last</h2>
-  <p>These commands return the first or last element along the first axis, reducing rank by 1. For example:
-    <pre><code>[[0 1][2 3]];first;print;last;print;quit;</code></pre>
-    prints 
-  <pre><code>Tensor 0
-Shape: 2
-Strides: 1
-┌───────────┐
-│ 0.00 1.00 │
-└───────────┘
-
-Tensor 0
-Shape:
-Strides:
-1.00</code></pre></p>
+<section id="cmd-while">
+  <h2>while / for</h2>
+  <p>To do a while loop until <code>i</code> is 5, for example, you can do the following:</p>
+  <pre><code>[0];set'i' 1; // Set i to 0
+l'start';   // The start label
+get'i';print;[1];+; // Get i onto the stack and increment it
+0;dup;set'i' 1;     // Set i to new value, leave i on stack
+[6];-;first;if'start'; // Loop if i != 6
+quit;
+</code></pre>
 </section>
 
-<section id="cmd-enclose">
-  <h2>e (enclose)</h2>
-  <p>This takes the tensor on top of the stack and raises its rank by 1 appending [1] onto its shape. For example:
-    <pre><code>.5;e;[[0 1][2 3]];e;print;quit;</code></pre> prints <pre><code>Tensor 1
-Shape: 1 2 2
-Strides: 2 2 1
-┌─────────────────────────────────┐
-│ ┌─────────────────────────────┐ │
-│ │ ┌───────────┐ ┌───────────┐ │ │
-│ │ │ 0.00 1.00 │ │ 2.00 3.00 │ │ │
-│ │ └───────────┘ └───────────┘ │ │
-│ └─────────────────────────────┘ │
-└─────────────────────────────────┘
-
-Tensor 0
-Shape: 1
-Strides: 1
-┌──────┐
-│ 0.50 │
-└──────┘</code></pre>
-</code></pre></p>
-</section>
-
-<section id="cmd-cat">
-  <h2>cat (concatenate)</h2>
-  <p>Given a stack of t1, t2, and axis, a scalar, the command concatenates t2 to t1 along axis <code>axis</code>. For example:
-    <pre><code>[[0 1][2 3]];[[4 5][6 7]];0;cat;
-[[0 1][2 3]];[[4 5][6 7]];1;cat;
-print;quit;</code></pre> prints <pre><code>Tensor 1
-Shape: 2 4
-Strides: 4 1
-┌─────────────────────────┐
-│ ┌─────────────────────┐ │
-│ │ 0.00 1.00 4.00 5.00 │ │
-│ └─────────────────────┘ │
-│ ┌─────────────────────┐ │
-│ │ 2.00 3.00 6.00 7.00 │ │
-│ └─────────────────────┘ │
-└─────────────────────────┘
-
-Tensor 0
-Shape: 4 2
-Strides: 2 1
-┌───────────────┐
-│ ┌───────────┐ │
-│ │ 0.00 1.00 │ │
-│ └───────────┘ │
-│ ┌───────────┐ │
-│ │ 2.00 3.00 │ │
-│ └───────────┘ │
-│ ┌───────────┐ │
-│ │ 4.00 5.00 │ │
-│ └───────────┘ │
-│ ┌───────────┐ │
-│ │ 6.00 7.00 │ │
-│ └───────────┘ │
-└───────────────┘</code></pre>
-</code></pre></p>
-</section>
 </main>
 </body>
 </html>
