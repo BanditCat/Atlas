@@ -134,6 +134,7 @@ html {
   <details open>
     <summary>Commands Reference</summary>
     <ul>
+      <li><a href="#cmd-arith">+ / - / * / / / ^ (arithmatic)</a></li>
       <li><a href="#cmd-c">c (compute)</a></li>
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
       <li><a href="#cmd-enclose">e (enclose)</a></li>
@@ -173,7 +174,7 @@ html {
 <section id="audience">
   <h2>Audience</h2>
   <p>In order for Atlas to be useful to you, you will need to know GLSL well. There are many tutorials 
-  available online.</p>
+  available online, and some examples in this document. Atlas is ideal for testing out new GPU algorithms quickly, this is it's main use case.</p>
 </section>
 
 <hr>
@@ -313,6 +314,17 @@ l'skip';
 </section>
 
 <hr>
+
+<section id="cmd-arith">
+  <h2>+ / - / * / / / ^</h2>
+  <p>These arithmatic commands take two arguments and do one of add, subtract, multiply, divide or exponentiate them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefor should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print<pre><code>Tensor 0
+Shape: 3
+Strides: 1
+┌────────────────┐
+│ 0.50 8.00 0.30 │
+└────────────────┘</code></pre></p>
+
+</section>
 
 <section id="cmd-c">
   <h2>c (compute)</h2>

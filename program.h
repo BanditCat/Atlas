@@ -11,15 +11,15 @@
 
 
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
-// Also add it to the documentation, docs.html.
+// Also add it to the documentation, documentation/docs.html.
 typedef struct{
   enum{
     COMPUTE, // documented
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    POW,
+    ADD, // documented
+    SUB, // documented
+    MUL, // documented
+    DIV, // documented
+    POW, // documented
     IF, // documented
     IFN, // documented
     TRANSPOSE, // documented
