@@ -137,7 +137,7 @@ void mainPoll( void );
 
 
 ////////////////////////////////////////////////////////////////////
-// Memory instrucmentation
+// Memory instrumentation
 
 #ifdef DEBUG
 

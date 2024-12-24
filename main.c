@@ -75,19 +75,18 @@ void SetDarkTitleBar( SDL_Window* sdlWindow ){
     BOOL enable = TRUE;
 
     // Apply dark mode attribute
-    HRESULT hr = DwmSetWindowAttribute(
-      hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof( enable ) );
-    if( SUCCEEDED( hr ) ){
-      ShowWindow( hwnd, SW_HIDE );
-      ShowWindow( hwnd, SW_SHOW );
-      SetFocus( hwnd );
+    HRESULT hr = DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
+    if (SUCCEEDED(hr)) {
+      ShowWindow(hwnd, SW_MINIMIZE);
+      ShowWindow(hwnd, SW_RESTORE);
     } else {
-      MessageBoxA(
-        NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR );
+      MessageBoxA(NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR);
     }
+    
   } else {
     SDL_Log( "Unable to get window handle: %s", SDL_GetError() );
   }
+  
 }
 #else
 int running;  // Simple integer for the running flag in single-threaded mode

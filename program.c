@@ -1262,10 +1262,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       u32 dup = *( ts->stack[ ts->size - 1 ]->data +
                    ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      if( dup > ts->size - 1 )
+      if( dup + 1 > ts->size )
         error( "%s", "Attempt to duplicate past the end of the stack." );
       push( ts, copyTensor( ts->stack[ ( ts->size - 1 ) - dup ] ) );
-      // dbg( "%s %u", "dup", dup );
       break;
     case REPEAT: {
       if( ts->size < 2 )
