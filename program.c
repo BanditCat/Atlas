@@ -1438,9 +1438,6 @@ bool runProgram( tensorStack* ts, program** progp ){
         }
       }
 
-      // glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
-      // glBufferSubData( GL_UNIFORM_BUFFER, p->varOffsets[ s->var.index ] *
-      // sizeof( f32 ), p->varSizes[ s->var.index ] * sizeof( f32 ), uniform );
       pop( ts );
       // dbg( "%s", "set" );
       break;
