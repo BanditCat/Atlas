@@ -137,17 +137,25 @@ html {
       <li><a href="#cmd-arith">+ / - / * / / / ^ (arithmetic)</a></li>
       <li><a href="#cmd-c">c (compute)</a></li>
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
+      <li><a href="#cmd-dup">dup (duplicate)</a></li>
       <li><a href="#cmd-enclose">e (enclose)</a></li>
       <li><a href="#cmd-first">first / last</a></li>
       <li><a href="#cmd-get">get</a></li>
       <li><a href="#cmd-if">if / ifn</a></li>
       <li><a href="#cmd-img">img (image)</a></li>
+      <li><a href="#cmd-input">input</a></li>
+      <li><a href="#cmd-keys">keys</a></li>
       <li><a href="#cmd-load">load</a></li>
+      <li><a href="#cmd-pop">pop</a></li>
       <li><a href="#cmd-print">print</a></li>
+      <li><a href="#cmd-quit">quit</a></li>
       <li><a href="#cmd-r">r (reverse)</a></li>
+      <li><a href="#cmd-repeat">rep (repeat)</a></li>
       <li><a href="#cmd-return">return</a></li>
       <li><a href="#cmd-s">s (slice)</a></li>
       <li><a href="#cmd-set">set</a></li>
+      <li><a href="#cmd-shape">shape</a></li>
+      <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
       <li><a href="#cmd-while">while / for</a></li>
     </ul>
@@ -163,10 +171,10 @@ html {
 <section id="introduction">
   <h2>Introduction</h2>
   <p>This document describes the syntax and semantics of the <em>Atlas</em> programming language. 
-  Atlas is a lightweight, extensible language focusing on ease of GPU utilization. The paradigm used by
+  Atlas is a real-time visualization language focusing on ease of GPU utilization. The paradigm used by
   Atlas is a stack of tensors. This offers advantages relating to memory management, making
   copying, slicing, reversing, and transposing all constant time operations. The workhorse of Atlas is 
-  the compute statements, which allow the definition of arbitrary GLSL functions, multiple return values 
+  the <code>c</code>(compute) statements, which allow the definition of arbitrary GLSL functions, multiple return values, 
   and parameters of different sizes. Compute statements always compute on the accelerator, and 
   consequently should be restricted to large tensors.</p>
 </section>
@@ -174,7 +182,7 @@ html {
 <section id="audience">
   <h2>Audience</h2>
   <p>In order for Atlas to be useful to you, you will need to know GLSL well. There are many tutorials 
-  available online, and some examples in this document. Atlas is ideal for testing out new GPU algorithms quickly, this is its main use case.</p>
+  available online, and some examples in this document. Atlas is ideal for testing out new GPU algorithms quickly. This is its main use case.</p>
 </section>
 
 <section id="basic-concepts">
@@ -416,6 +424,24 @@ Strides: 2 1
 </code></pre></p>
 </section>
 
+<section id="cmd-dup">
+  <h2>dup (duplicate)</h2>
+  <p>Given a scalar integer N on top of the stack, duplicates the Nth item on the stack and places it on top. For example:<pre><code>[0 1 2];0;dup;print;quit;</code></pre> prints <pre><code>Tensor 1
+Shape: 3
+Strides: 1
+┌────────────────┐
+│ 0.00 1.00 2.00 │
+└────────────────┘
+
+Tensor 0
+Shape: 3
+Strides: 1
+┌────────────────┐
+│ 0.00 1.00 2.00 │
+└────────────────┘</code></pre>
+</code></pre></p>
+</section>
+
 <section id="cmd-enclose">
   <h2>e (enclose)</h2>
   <p>This takes the tensor on top of the stack and raises its rank by 1 appending [1] onto its shape. For example:
@@ -476,13 +502,29 @@ Strides:
 <section id="cmd-img">
   <h2>img (image)</h2>
   <p>Loads a 4-channel bitmap from a file. For example:
-  <pre><code>lmg'font.bmp'</code></pre>
+  <pre><code>img'font.bmp'</code></pre>
   loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.</p>
+</section>
+
+<section id="cmd-input">
+  <h2>input</h2>
+  <p>This loads a 6 element input tensor corresponding to the mouse cursor. The first two elements are the x and y mouse deltas, and the 3rd element is the mouse wheel delta. The next 3 elements correspond to the left, right, and middle mouse buttons, 1.0 if held, 0.0 if released.</p>
+</section>
+
+<section id="cmd-keys">
+  <h2>keys</h2>
+  <p>This command loads a [512] shaped tensor corresponding to keyboard presses.  The array will have a 1 if the corresponding key is being being pressed, and 0 if not. For example:
+  <pre><code>keys;[41 42 0];s;first;ifn'go';quit;l'go';</code></pre> will exit if esc (SDL_Scancode 41) is pressed. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.</p>
 </section>
 
 <section id="cmd-load">
   <h2>load</h2>
-  <p>Loads another atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>.</p>
+  <p>Loads another Atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>.</p>
+</section>
+
+<section id="cmd-pop">
+  <h2>pop</h2>
+  <p>Pops the stack, resulting in a fatal error if it was empty.</p>
 </section>
 
 <section id="cmd-print">
@@ -504,6 +546,11 @@ Strides: 1
 │ 1.00 2.00 0.30 │
 └────────────────┘
 </code></pre>
+</section>
+
+<section id="cmd-quit">
+  <h2>quit</h2>
+  <p>Quits the program.</p>
 </section>
 
 <section id="cmd-r">
@@ -541,9 +588,30 @@ Strides: 2 -1
 </code></pre></p>
 </section>
   
+<section id="cmd-repeat">
+  <h2>rep (repeat)</h2>
+  <p>Given a scalar and tensor on top of the stack, this command repeats the tensor a number of times equal to the
+    scalar. For example: 
+  <pre><code>[0 1 2];3;rep;print;quit;</code></pre>
+  This prints <pre><code>Tensor 0
+Shape: 3 3
+Strides: 3 1
+┌────────────────────┐
+│ ┌────────────────┐ │
+│ │ 0.00 1.00 2.00 │ │
+│ └────────────────┘ │
+│ ┌────────────────┐ │
+│ │ 0.00 1.00 2.00 │ │
+│ └────────────────┘ │
+│ ┌────────────────┐ │
+│ │ 0.00 1.00 2.00 │ │
+│ └────────────────┘ │
+└────────────────────┘</code><pre></p>
+</section>
+
 <section id="cmd-return">
   <h2>return</h2>
-  <p>Returns from a function to the place that called that label:</p>
+  <p>Returns from a function to the place that called that label:
   <pre><code>1;if'past';
 l'square'; // Square a singleton on the top of the stack
 0;dup;*;
@@ -551,7 +619,10 @@ return;
 
 l'past';2;square;square;print;quit;
 </code></pre>
-  <p>This prints <code>16</code>.</p>
+  This prints <pre><code>Tensor 0
+Shape:
+Strides:
+16.00</code></pre></p>
 </section>
 
 <section id="cmd-s">
@@ -580,7 +651,7 @@ Strides: 2 1
     <pre><code>[[0 1][2 3][4 5]];[1 2 0];s;print;quit;</code></pre>
     prints 
   <pre><code>Tensor 0
-Shape: 1 2
+2Shape: 1 2
 Strides: 2 1
 ┌───────────────┐
 │ ┌───────────┐ │
@@ -597,6 +668,49 @@ Strides: 2 1
   <pre><code>[1 2 3];set'vec' 3;</code></pre> would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and 
   make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 
   for a 4x4 matrix.</p>
+</section>
+
+<section id="cmd-shape">
+  <h2>shape</h2>
+  <p>This returns a vector containg the shape of a tensor, if called twice it will return the rank of a tensor as a vector. For example:<pre><code>[[[1] [2]][[1] [2]][[1] [2]]];print;shape;print;shape;print;quit;</code></pre> will print <pre><code>Tensor 0
+Shape: 3 2 1
+Strides: 2 1 1
+┌───────────────────────┐
+│ ┌───────────────────┐ │
+│ │ ┌──────┐ ┌──────┐ │ │
+│ │ │ 1.00 │ │ 2.00 │ │ │
+│ │ └──────┘ └──────┘ │ │
+│ └───────────────────┘ │
+│ ┌───────────────────┐ │
+│ │ ┌──────┐ ┌──────┐ │ │
+│ │ │ 1.00 │ │ 2.00 │ │ │
+│ │ └──────┘ └──────┘ │ │
+│ └───────────────────┘ │
+│ ┌───────────────────┐ │
+│ │ ┌──────┐ ┌──────┐ │ │
+│ │ │ 1.00 │ │ 2.00 │ │ │
+│ │ └──────┘ └──────┘ │ │
+│ └───────────────────┘ │
+└───────────────────────┘
+
+Tensor 0
+Shape: 3
+Strides: 1
+┌────────────────┐
+│ 3.00 2.00 1.00 │
+└────────────────┘
+
+Tensor 0
+Shape: 1
+Strides: 1
+┌──────┐
+│ 3.00 │
+└──────┘</code></pre></p>
+</section>
+
+<section id="cmd-size">
+  <h2>size</h2>
+  <p>This pushes the size of the stack onto the top of the stack.</p>
 </section>
 
 <section id="cmd-t">

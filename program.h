@@ -30,18 +30,18 @@ typedef struct{
     FIRST, // documented
     LAST, // documented
     ENCLOSE, // documented
-    KEYS, 
+    KEYS, // documented
     PRINT, // documented
     TENSOR, // documented
-    TOP, 
-    DUP,
-    REPEAT,
-    SHAPE,
-    QUIT,
+    TOP, // documented
+    DUP, // documented
+    REPEAT, // documented
+    SHAPE, // documented
+    QUIT, // documented
     CALL, // documented
-    POP,
+    POP, // documented
     RETURN, // documented
-    GETINPUT,  // Three axis and three buttons
+    GETINPUT, // documented, three axis and three buttons
     SET, // documented
     GET, // documented
     WINDOWSIZE

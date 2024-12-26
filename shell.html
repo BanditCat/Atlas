@@ -34,32 +34,28 @@
     {{{ SCRIPT }}}
      
 
-    <!-- Optional: Additional configuration for the Emscripten Module -->
     <script>
         // Configure the Module object before the Emscripten script runs
         var Module = {
-            // Specify the canvas element to use
             canvas: (function() {
                 var canvas = document.getElementById('canvas');
-                // Adjust canvas size if needed
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
                 return canvas;
             })(),
             
-            // Optional: Adjust the canvas size when the window resizes
+            // Adjust the canvas size when the window resizes
             onRuntimeInitialized: function() {
                 window.addEventListener('resize', function() {
                     Module.canvas.width = window.innerWidth;
                     Module.canvas.height = window.innerHeight;
-                    // If your program needs to handle resizing, invoke necessary functions here
                     if (Module.resize) {
                         Module.resize(window.innerWidth, window.innerHeight);
                     }
                 });
             },
 
-             // Optional: Redirect print and printErr to the console
+             // Redirect print and printErr to the console
             print: (function() {
                 return function(text) {
                     console.log(text);

@@ -1,3 +1,4 @@
+
 // First we handle the keyboard, leaving the stack alone.
 // See https://wiki.libsdl.org/SDL2/SDL_Scancode.
 keys;0;dup;[41 42 0];s;first;ifn'go';
