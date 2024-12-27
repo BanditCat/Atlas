@@ -100,6 +100,7 @@
     pre code {
       /* Inherit the pre’s background so the box is seamless. */
       display: block;
+      font-family: "Roboto Mono";
       padding: 1em;
       background: transparent;
       white-space: pre;      /* keep code formatting intact */
@@ -135,20 +136,6 @@
     html {
       scroll-behavior: smooth;
       }
-
-   code,
-pre code {
-  font-family: "SFMono-Regular",  /* macOS, iOS */
-               Menlo,            /* macOS older fallback */
-               Consolas,         /* Windows fallback */
-               "Droid Sans Mono",/* Some older Android devices */
-               "Roboto Mono",    /* Newer Android devices */
-               "Liberation Mono",
-               "DejaVu Sans Mono",
-               "Source Code Pro",/* If installed or self-hosted */
-               Courier,
-               monospace;        /* Generic fallback */
-}
 
     /* --- Responsive layout for smaller screens --- */
     @media (max-width: 800px) {
