@@ -113,7 +113,26 @@
       height: auto;
     }
 
-     /* Smooth scroll behavior */
+    /* 
+     * LOGO CONTAINER fix:
+     * Create a flexible container for the logo + heading so it doesn’t get “bunched up.”
+     */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      margin: 1em;    /* space below the logo/title */
+      padding: 1em;	  
+      font-size: 90%;
+    }
+    .logo-container img {
+      /* Let it shrink or grow nicely; use a fixed max-width if you want to cap it. */
+      /* max-width: 150px; */
+      height: auto;
+      display: block;
+    }
+
+    /* Smooth scroll behavior */
     html {
       scroll-behavior: smooth;
       }
