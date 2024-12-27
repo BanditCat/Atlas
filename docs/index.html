@@ -135,16 +135,19 @@
       scroll-behavior: smooth;
       }
 
-    pre,
-    code {
-      font-family: "SFMono-Regular", /* macOS / iOS */
-      Consolas,         /* Windows */
-      "Liberation Mono",
-      Menlo,
-      Courier, 
-      monospace;        /* fallback */
-    }
-
+   code,
+pre code {
+  font-family: "SFMono-Regular",  /* macOS, iOS */
+               Menlo,            /* macOS older fallback */
+               Consolas,         /* Windows fallback */
+               "Droid Sans Mono",/* Some older Android devices */
+               "Roboto Mono",    /* Newer Android devices */
+               "Liberation Mono",
+               "DejaVu Sans Mono",
+               "Source Code Pro",/* If installed or self-hosted */
+               Courier,
+               monospace;        /* Generic fallback */
+}
 
     /* --- Responsive layout for smaller screens --- */
     @media (max-width: 800px) {
