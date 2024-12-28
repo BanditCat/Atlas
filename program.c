@@ -871,6 +871,14 @@ program* newProgramFromString( const char* prog, u32 len ){
   unmem( cp );
   return ret;
 }
+bool fileExists( const char *filename ){
+  FILE *file = fopen( filename, "rb" );
+  if( file ){
+    fclose( file );
+    return 1;
+  }
+  return 0;
+}
 program* newProgramFromFile( const char* filename ){
   FILE* file = fopen( filename, "rb" );
 

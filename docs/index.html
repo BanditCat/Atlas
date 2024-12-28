@@ -164,6 +164,7 @@
       <li><a href="#audience">Audience</a></li>
       <li><a href="#basic-concepts">Basic Concepts</a></li>
       <li><a href="#program-model">Program Model</a></li>
+      <li><a href="#invocation">Invocation</a></li>
     </ul>
   </details>
 
@@ -260,6 +261,11 @@
     <p>The program model used by Atlas is a loop. At the end of the program running, the tensor on top of 
       the stack is used as the RGB 3-channel display tensor, filling the window with that tensor, and then 
       the program restarts from the beginning. The examples and documentation below will make this clearer.</p>
+  </section>      
+
+  <section id="invocation">
+    <h2>Invocation</h2>
+    <p>Atlas takes one parameter as an argument: the file to be run.  If not given a filename, Atlas will run "main.atl" if present, or print a brief usage message if not.</p>
   </section>      
 
   <hr>

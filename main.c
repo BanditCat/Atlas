@@ -34,6 +34,15 @@ tensorStack* ts;
 GLuint shaderProgram;
 GLuint vbo;
 
+
+void start( program** prog, tensorStack** ts, const char* fileName ){
+  const char* realName = fileName ? fileName : "main.atl";
+  if( !fileExists( realName ) )
+    error( "File %s does not exist.", realName );
+  *prog = newProgramFromFile( realName );
+  *ts = newStack();
+}
+
 #ifdef __EMSCRIPTEN__
 // This function will be called from JavaScript on resize
 EMSCRIPTEN_KEEPALIVE
@@ -248,8 +257,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromFile( "inc/hello.atl" );
-  ts = newStack();
+  start( &prog, &ts, data );
 
   // Main loop
   while( SDL_AtomicGet( &running ) ){
@@ -512,15 +520,15 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  prog = newProgramFromFile( "inc/hello.atl" );
-  ts = newStack();
+  start( &prog, &ts, NULL );
 #endif
 
 
 #ifndef __EMSCRIPTEN__
   // Create rendering and computation thread
+  void* arg = argc == 2 ? argv[ 1 ] : NULL;
   SDL_Thread* renderThread =
-    SDL_CreateThread( renderThreadFunction, "RenderThread", NULL );
+    SDL_CreateThread( renderThreadFunction, "RenderThread", arg );
   if( renderThread == NULL ){
     error( "%s", "Failed to create rendering thread" );
   }
@@ -557,7 +565,8 @@ int main( int argc, char* argv[] ){
 #ifdef DEBUG
   check_memory_leaks();
 #else
-  dbg( "mem count %llu", memc );
+  if( memc )
+    dbg( "mem count %llu", memc );
 #endif  
   return 0;
 }

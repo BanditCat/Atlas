@@ -1,14 +1,18 @@
-// First we handle the keyboard, leaving the stack alone.
+keys; // First we handle the keyboard, leaving the stack alone.
 // See https://wiki.libsdl.org/SDL2/SDL_Scancode.
-keys;0;dup;[41 42 0];s;first;ifn'go';
+0;dup;[41 42 0];s;first;ifn'go';
 quit;  // Quit if escape pressed.
 l'go';
 0;dup;[30 31 0];s;first;ifn'go2';
-load'inc/hello.atl';
+load'main.atl';
 l'go2';
-[31 32 0];s;first;ifn'go3';
-load'inc/mandelbrot.atl';
+0;dup;[31 32 0];s;first;ifn'go3';
+load'inc/fire.atl';
 l'go3';
+0;dup;[32 33 0];s;first;ifn'go4';
+load'inc/mandelbrot.atl';
+l'go4';
+pop; // pop keys
 
 size;if'started';
 1;1;1;

@@ -280,4 +280,6 @@ extern SDL_mutex* data_mutex;
 #include "tensor.h"
 #include "program.h"
 
+bool fileExists( const char *filename );
+
 #endif //ATLAS_H_INCLUDED

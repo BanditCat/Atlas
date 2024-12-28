@@ -1,0 +1,42 @@
+keys; // First we handle the keyboard, leaving the stack alone.
+// See https://wiki.libsdl.org/SDL2/SDL_Scancode.
+0;dup;[41 42 0];s;first;ifn'go';
+quit;  // Quit if escape pressed.
+l'go';
+0;dup;[30 31 0];s;first;ifn'go2';
+load'main.atl';
+l'go2';
+0;dup;[31 32 0];s;first;ifn'go3';
+load'inc/fire.atl';
+l'go3';
+0;dup;[32 33 0];s;first;ifn'go4';
+load'inc/mandelbrot.atl';
+l'go4';
+pop; // pop keys
+
+windowSize;set'wsize' 2;
+
+
+size;if'started';
+[0];set'time' 1;
+get'wsize';[3];0;cat;
+c''
+ret[0] = t.y < 20.0 ? ( t.z == 0.0 ? 1.0 : 0.0 ) : 0.0\
+' 0 1;
+l'started';
+
+get'time';[1];+;set'time' 1;
+get'wsize';[3];0;cat;
+c'
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
+    return fract( sin( h ) * 43758.5453123 )\
+}
+
+'
+float down = 0.0 - floor( hash( t.xy, time ) * 10.0 )\
+float sideways = floor( hash( t.xy, time * 10.32213 ) * 15.0 ) - 7.0\
+vec4 t2 = clamp( t + vec4( sideways, down, 0.0, 0.0 ), 0.0, 10000.0 )\
+ret[0] = t.z == 0.0 ? ( t.y < 20.0 ? 1.0 : a( t2 ) - 0.005725 ) : 0.0\
+' 1 1;
+

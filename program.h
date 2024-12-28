@@ -41,7 +41,7 @@ typedef struct{
     CALL, // documented
     POP, // documented
     RETURN, // documented
-    GETINPUT, // documented, three axis and three buttons
+    GETINPUT, // documented, three axes and three buttons
     SET, // documented
     GET, // documented
     WINDOWSIZE
