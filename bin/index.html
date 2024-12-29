@@ -1,1 +1,124 @@
-<!doctypehtml><html lang=en><head><meta charset=UTF-8><title>Atlas</title><meta content="width=device-width,initial-scale=1,user-scalable=no"name=viewport><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#000}#canvas{display:block;width:100%;height:100%}#hidden-input{position:absolute;opacity:0;pointer-events:none;z-index:-1}</style><script>document.addEventListener("contextmenu",(function(e){e.preventDefault()}))</script></head><body><canvas id=canvas></canvas><input autocapitalize=off autocomplete=off autocorrect=off id=hidden-input inputmode=text spellcheck=false><script async src=index.js></script><script>function showKeyboard(){var e=document.getElementById("hidden-input");e.focus(),e.value=""}canvas.addEventListener("touchstart",(e=>{e.preventDefault(),showKeyboard()}));var Module={canvas:function(){var e=document.getElementById("canvas");return e.width=window.innerWidth,e.height=window.innerHeight,e}(),onRuntimeInitialized:function(){window.addEventListener("resize",(function(){Module.canvas.width=window.innerWidth,Module.canvas.height=window.innerHeight,Module.resize&&Module.resize(window.innerWidth,window.innerHeight)})),document.getElementById("hidden-input").addEventListener("input",(function(e){var n=e.target.value;n.length>0&&(console.log("Key pressed:",n),e.target.value="")})),document.addEventListener("keydown",(e=>{const n=document.getElementById("canvas");document.activeElement!==n&&(e.preventDefault(),n.focus())}))},print:function(e){console.log(e)},printErr:function(e){console.error(e)}}</script></body></html>
+<!doctypehtml><html lang=en><head><meta charset=UTF-8><title>Atlas</title><meta content="width=device-width,initial-scale=1,user-scalable=no"name=viewport><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background-color:#000}#canvas{display:block;width:100%;height:100%}#hidden-input{position:absolute;opacity:0;pointer-events:none;z-index:-1}</style><script>document.addEventListener("contextmenu",(function(e){e.preventDefault()}))</script></head><body><canvas id=canvas></canvas><input autocapitalize=off autocomplete=off autocorrect=off id=hidden-input inputmode=text spellcheck=false><script async src=index.js></script><script>function showKeyboard() {
+            // Focus the hidden input to trigger the virtual keyboard
+            var input = document.getElementById('hidden-input');
+            input.focus();
+
+            // Optionally, clear the input's value to ensure clean key capture
+            input.value = "";
+        }
+	canvas.addEventListener('touchstart', (event) => {
+            event.preventDefault(); // Prevent default touch behavior
+            showKeyboard(); // Show the keyboard
+        });
+        // Configure the Module object before the Emscripten script runs
+        var Module = {
+            canvas: (function() {
+                var canvas = document.getElementById('canvas');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                return canvas;
+            })(),
+            
+
+            onst textinput_elem = document.getElementById('textinput')
+Module.canvas = document.getElementById('canvas')
+
+// Mobile input event handlers
+Module.canvas.addEventListener('touchstart', ev => {
+    textinput_elem.focus()
+})
+textinput_elem.addEventListener('input', ev => {
+    const char = ev.data
+    if (char) {
+        const char_keycode = char.codePointAt(0)
+        const upper_key = char.toUpperCase()
+        const upper_keycode = upper_key.codePointAt(0)
+        const down_up_options = {
+            code: 'Key' + upper_key,
+            key: char,
+            keyCode: upper_keycode,
+            which: upper_keycode,
+        }
+        window.dispatchEvent(new KeyboardEvent('keydown', down_up_options))
+        window.dispatchEvent(new KeyboardEvent('keypress', {
+            charCode: char_keycode,
+            code: 'Key' + upper_key,
+            key: char,
+            keyCode: char_keycode,
+            which: char_keycode,
+        }))
+        window.dispatchEvent(new KeyboardEvent('keyup', down_up_options))
+    }
+
+    // To fully reset we have to clear the value then blur and refocus, otherwise Android will keep trying to do its IME magic, which we don't want.
+    textinput_elem.value = ''
+    textinput_elem.blur()
+    textinput_elem.focus()
+
+    ev.preventDefault()
+    ev.stopPropagation()
+})
+textinput_elem.addEventListener('keydown', ev => {
+    if (ev.which === 8) {
+        const options = {
+            code: 'Backspace',
+            key: 'Backspace',
+            keyCode: 8,
+            which: 8,
+        }
+        window.dispatchEvent(new KeyboardEvent('keydown', options))
+        window.dispatchEvent(new KeyboardEvent('keyup', options))
+        ev.preventDefault()
+        ev.stopPropagation()
+    }
+    if (ev.which === 13) {
+        const options = {
+            charCode: 13,
+            code: 'Enter',
+            key: 'Enter',
+            keyCode: 13,
+            which: 13,
+        }
+        window.dispatchEvent(new KeyboardEvent('keydown', options))
+        window.dispatchEvent(new KeyboardEvent('keypress', options))
+        window.dispatchEvent(new KeyboardEvent('keyup', options))
+        ev.preventDefault()
+        ev.stopPropagation()
+    }
+    if (ev.which === 229) {
+        ev.preventDefault()
+        ev.stopPropagation()
+    }
+})
+textinput_elem.addEventListener('keyup', ev => {
+    if (ev.which === 8 || ev.which === 13 || ev.which === 229) {
+        ev.preventDefault()
+        ev.stopPropagation()
+    }
+	})
+	// Adjust the canvas size when the window resizes
+            onRuntimeInitialized: function() {
+                window.addEventListener('resize', function() {
+                    Module.canvas.width = window.innerWidth;
+                    Module.canvas.height = window.innerHeight;
+                    if (Module.resize) {
+                        Module.resize(window.innerWidth, window.innerHeight);
+                    }
+                });
+
+		
+            },
+
+	    
+            // Redirect print and printErr to the console
+            print: (function() {
+                return function(text) {
+                    console.log(text);
+                };
+            })(),
+            printErr: (function() {
+                return function(text) {
+                    console.error(text);
+                };
+            })()
+        };</script></body></html>
