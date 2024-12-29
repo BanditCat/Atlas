@@ -96,25 +96,6 @@
                 });
             },
 
-	    // Listen for keydown events
-            hiddenInput.addEventListener('keydown', (event) => {
-		const key = event.key;
-		
-		if (!activeKeys.has(key)) {
-                activeKeys.add(key);
-                    simulateKeyEvent(key, 'keydown'); // Forward the keydown event to SDL
-		}
-            });
-	    
-            // Listen for keyup events
-            hiddenInput.addEventListener('keyup', (event) => {
-		const key = event.key;
-		
-		if (activeKeys.has(key)) {
-                    activeKeys.delete(key);
-                    simulateKeyEvent(key, 'keyup'); // Forward the keyup event to SDL
-		}
-            });
 	    
             // Redirect print and printErr to the console
             print: (function() {
