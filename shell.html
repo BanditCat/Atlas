@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Atlas</title>
     <style>
-        /* Reset default margins and ensure the canvas fills the entire viewport */
         html, body {
             margin: 0;
             padding: 0;
@@ -14,19 +13,17 @@
             background-color: #000; /* Optional: Set a background color */
         }
 
-        /* Style the canvas to occupy full width and height */
         #canvas {
             display: block; /* Removes the small gap below the canvas */
             width: 100%;
             height: 100%;
         }
 
-        /* Invisible input for mobile keyboards */
-        #hidden-input {
+        #temp-input {
             position: absolute;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -1;
+            top: -9999px; /* Move it out of view */
+            left: -9999px;
+            opacity: 0; /* Make it invisible */
         }
     </style>
     <script>
@@ -36,45 +33,43 @@
     </script>
 </head>
 <body>
-    <!-- Canvas where the Emscripten program will render -->
     <canvas id="canvas"></canvas>
-    <!-- Hidden input for mobile keyboard -->
-    <input id="hidden-input" type="text" />
+    <!-- Temporary input for keyboard interaction -->
+    <input id="temp-input" type="text" />
 
     {{{ SCRIPT }}}
 
     <script>
-        // Configure the Module object before the Emscripten script runs
         var Module = {
             canvas: (function() {
                 var canvas = document.getElementById('canvas');
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
 
-                // Add click/tap listener to focus the hidden input
+                // Add a click/tap listener to show the keyboard
                 canvas.addEventListener('click', function() {
-                    var hiddenInput = document.getElementById('hidden-input');
-                    hiddenInput.style.left = "0px"; // Make input accessible for keyboard focus
-                    hiddenInput.style.top = "0px";
-                    hiddenInput.focus();
+                    var tempInput = document.getElementById('temp-input');
+                    tempInput.style.top = '0'; // Temporarily make input visible
+                    tempInput.style.left = '0';
+                    tempInput.style.opacity = '1';
+                    tempInput.focus(); // Focus to trigger the keyboard
+
+                    // Hide the input again after interaction
+                    setTimeout(() => {
+                        tempInput.style.top = '-9999px';
+                        tempInput.style.left = '-9999px';
+                        tempInput.style.opacity = '0';
+                    }, 100); // Adjust the timeout as needed
                 });
 
                 return canvas;
             })(),
 
-            // Adjust the canvas size when the window resizes
             onRuntimeInitialized: function() {
-                window.addEventListener('resize', function() {
-                    Module.canvas.width = window.innerWidth;
-                    Module.canvas.height = window.innerHeight;
-                    if (Module.resize) {
-                        Module.resize(window.innerWidth, window.innerHeight);
-                    }
-                });
-
-                // Add keypress handler to pass input to SDL
-                var hiddenInput = document.getElementById('hidden-input');
-                hiddenInput.addEventListener('input', function(e) {
+                var tempInput = document.getElementById('temp-input');
+                
+                // Handle input events
+                tempInput.addEventListener('input', function(e) {
                     var text = e.target.value;
                     if (text.length > 0) {
                         var keyCode = text.charCodeAt(text.length - 1); // Get the last character
