@@ -37,7 +37,7 @@
 </head>
 <body>
     <!-- Canvas where the Emscripten program will render -->
-    <canvas id="canvas" ontouchstart="showKeyboard()"></canvas>
+    <canvas id="canvas"></canvas>
     <!-- Hidden input for triggering keyboard -->
     <input 
     id="hidden-input" 
@@ -60,7 +60,10 @@
             // Optionally, clear the input's value to ensure clean key capture
             input.value = "";
         }
-
+	canvas.addEventListener('touchstart', (event) => {
+            event.preventDefault(); // Prevent default touch behavior
+            showKeyboard(); // Show the keyboard
+        });
         // Configure the Module object before the Emscripten script runs
         var Module = {
             canvas: (function() {
