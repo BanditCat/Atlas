@@ -459,6 +459,7 @@ int main( int argc, char* argv[] ){
 
 #else
   running = 1;
+  SDL_StartTextInput();
 #endif
 
   setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
