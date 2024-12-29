@@ -39,8 +39,16 @@
     <!-- Canvas where the Emscripten program will render -->
     <canvas id="canvas" onclick="showKeyboard()"></canvas>
     <!-- Hidden input for triggering keyboard -->
-    <input id="hidden-input" type="text" />
-
+    <input 
+    id="hidden-input" 
+    type="text" 
+    autocomplete="off" 
+    autocorrect="off" 
+    autocapitalize="off" 
+    spellcheck="false" 
+    inputmode="text"
+      />
+    
     {{{ SCRIPT }}}
 
     <script>
