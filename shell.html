@@ -84,18 +84,7 @@
                     }
                 });
 
-                // Listen for keyboard input
-                var hiddenInput = document.getElementById('hidden-input');
-                hiddenInput.addEventListener('input', function(event) {
-                    var inputValue = event.target.value;
-                    if (inputValue.length > 0) {
-                        // Pass key input to the application (optional handling logic)
-                        console.log("Key pressed:", inputValue);
-                        event.target.value = ""; // Clear the input after processing
-                    }
-                });
-            },
-
+		
 	            // Listen for keydown events
         hiddenInput.addEventListener('keydown', (event) => {
             const key = event.key;
@@ -115,6 +104,20 @@
                 simulateKeyEvent(key, 'keyup'); // Forward the keyup event to SDL
             }
         });
+
+                // Listen for keyboard input
+                var hiddenInput = document.getElementById('hidden-input');
+                hiddenInput.addEventListener('input', function(event) {
+                    var inputValue = event.target.value;
+                    if (inputValue.length > 0) {
+                        // Pass key input to the application (optional handling logic)
+                        console.log("Key pressed:", inputValue);
+                        event.target.value = ""; // Clear the input after processing
+                    }
+                });
+            },
+
+	    
             // Redirect print and printErr to the console
             print: (function() {
                 return function(text) {
