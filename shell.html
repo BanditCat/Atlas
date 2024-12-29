@@ -74,7 +74,14 @@
                     }
                 });
 
-		textinput_elem.addEventListener('input', ev => {
+		const textinput_elem = document.getElementById('textinput')
+Module.canvas = document.getElementById('canvas')
+
+// Mobile input event handlers
+Module.canvas.addEventListener('touchstart', ev => {
+    textinput_elem.focus()
+})
+textinput_elem.addEventListener('input', ev => {
     const char = ev.data
     if (char) {
         const char_keycode = char.codePointAt(0)
