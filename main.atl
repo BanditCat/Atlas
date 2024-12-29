@@ -18,9 +18,11 @@ size;if'started';
 
 // Draw the text just once.
 img'inc/font.bmp';
-'Hello world! Click and drag with mouse buttons!     ';e;
-'Press the 1 - 1 keys to see the different demos.    ';e;0;cat;
-'1. A mandelbrot set with peturbations (right click).';e;0;cat;
+'Hello world! Click and drag with mouse buttons! Esc to exit. ';e;
+'Press the 1 - 3 keys to see the different demos.             ';e;0;cat;
+'1. This text.                                                ';e;0;cat;
+'2. fire.                                                     ';e;0;cat;
+'3. A mandelbrot set with peturbations.                       ';e;0;cat;
 [0 1];t;1;r;
 0;dup;shape;[6 8];*;0;dup;set'tsize' 2;
 c''
@@ -38,7 +40,7 @@ l'started';
 pop;
 
 input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
-[1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
+[1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;[-1 1];*;get'offs';+;set'offs' 2;
 l'nomouse';

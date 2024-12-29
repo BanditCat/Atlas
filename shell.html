@@ -20,19 +20,28 @@
             width: 100%;
             height: 100%;
         }
+
+        /* Invisible input for mobile keyboards */
+        #hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
     </style>
     <script>
-      document.addEventListener('contextmenu', function(event) {
-  event.preventDefault();
-});
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
     </script>
 </head>
 <body>
     <!-- Canvas where the Emscripten program will render -->
     <canvas id="canvas"></canvas>
+    <!-- Hidden input for mobile keyboard -->
+    <input id="hidden-input" type="text" />
 
     {{{ SCRIPT }}}
-     
 
     <script>
         // Configure the Module object before the Emscripten script runs
@@ -41,9 +50,18 @@
                 var canvas = document.getElementById('canvas');
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
+
+                // Add click/tap listener to focus the hidden input
+                canvas.addEventListener('click', function() {
+                    var hiddenInput = document.getElementById('hidden-input');
+                    hiddenInput.style.left = "0px"; // Make input accessible for keyboard focus
+                    hiddenInput.style.top = "0px";
+                    hiddenInput.focus();
+                });
+
                 return canvas;
             })(),
-            
+
             // Adjust the canvas size when the window resizes
             onRuntimeInitialized: function() {
                 window.addEventListener('resize', function() {
@@ -53,9 +71,22 @@
                         Module.resize(window.innerWidth, window.innerHeight);
                     }
                 });
+
+                // Add keypress handler to pass input to SDL
+                var hiddenInput = document.getElementById('hidden-input');
+                hiddenInput.addEventListener('input', function(e) {
+                    var text = e.target.value;
+                    if (text.length > 0) {
+                        var keyCode = text.charCodeAt(text.length - 1); // Get the last character
+                        if (Module.onKey) {
+                            Module.onKey(keyCode);
+                        }
+                        e.target.value = ""; // Clear input after processing
+                    }
+                });
             },
 
-             // Redirect print and printErr to the console
+            // Redirect print and printErr to the console
             print: (function() {
                 return function(text) {
                     console.log(text);
@@ -66,9 +97,7 @@
                     console.error(text);
                 };
             })()
-
         };
-
     </script>
 </body>
 </html>

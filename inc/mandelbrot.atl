@@ -24,7 +24,7 @@ l'started';
 pop;pop;pop;
 
 input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
-[1.1];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
+[1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;
 l'nomouse';
@@ -58,7 +58,7 @@ vec2 mand( vec2 x, vec2 c, float e ){
 float mand2( vec2 x, vec2 c ){
   float count = 0.0\
   vec2 nx = x\
-  for( int i = 0\ i < 256\ ++i ){
+  for( int i = 0\ i < 32\ ++i ){
     nx = mand( nx, c, exp )\
     if( length( nx ) > 4.0 )
       break\
@@ -77,5 +77,5 @@ return;
 l'skip';
 mand;
 get'wsize';[3];0;cat;c''
-ret[0]= a( vec4( t.xy, 0.0, 0.0 ) ) / 255.0\
+ret[0]= a( vec4( t.xy, 0.0, 0.0 ) ) / 31.0\
 ' 1 1;
