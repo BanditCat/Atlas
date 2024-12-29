@@ -95,7 +95,13 @@
                         event.target.value = ""; // Clear the input after processing
                     }
                 });
-	      
+	      document.addEventListener('keydown', (event) => {
+		  const canvas = document.getElementById('canvas');
+		  if (document.activeElement !== canvas) {
+		      event.preventDefault();
+		      canvas.focus();
+		  }
+	      });
 		
             },
 
