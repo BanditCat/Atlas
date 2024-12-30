@@ -23,6 +23,7 @@ u64 memc = 0;
 
 s32 mouseWheelDelta = 0;
 bool doubleClicks[ 3 ] = { 0 };
+bool touchClicks[ 3 ] = { 0 };
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -53,11 +54,19 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 
 EMSCRIPTEN_KEEPALIVE
 EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
-    printf( "Touch Start Event Detected\n" );
-    for (int i = 0; i < touchEvent->numTouches; i++) {
-        printf("Touch %d: (%d, %d)\n", i, touchEvent->touches[i].clientX, touchEvent->touches[i].clientY);
-    }
-    return EM_TRUE; // Indicate that the event was handled
+  if( touchEvent->numTouches == 1 )
+    touchClicks[ 0 ] = 1;
+  else
+    touchClicks[ 0 ] = 0;
+  if( touchEvent->numTouches == 2 )
+    touchClicks[ 1 ] = 1;
+  else
+    touchClicks[ 1 ] = 0;
+  if( touchEvent->numTouches == 3 )
+    touchClicks[ 2 ] = 1;
+  else
+    touchClicks[ 2 ] = 0;
+  return EM_TRUE;
 }
 
 #endif // touch interface

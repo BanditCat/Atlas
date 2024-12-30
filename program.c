@@ -966,15 +966,15 @@ bool runProgram( tensorStack* ts, program** progp ){
       data[ 2 ] = mouseWheelDelta;
       mouseWheelDelta = 0;
       Uint32 buttons = SDL_GetMouseState( NULL, NULL );
-      if( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) )
+      if( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) || touchClicks[ 0 ] )
         data[ 3 ] = 1;
       else
         data[ 3 ] = 0;
-      if( buttons & SDL_BUTTON( SDL_BUTTON_RIGHT ) )
+      if( buttons & SDL_BUTTON( SDL_BUTTON_RIGHT ) || touchClicks[ 1 ] )
         data[ 4 ] = 1;
       else
         data[ 4 ] = 0;
-      if( buttons & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
+      if( buttons & SDL_BUTTON( SDL_BUTTON_MIDDLE ) || touchClicks[ 2 ] )
         data[ 5 ] = 1;
       else
         data[ 5 ] = 0;
