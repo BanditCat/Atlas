@@ -43,19 +43,23 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
   *ts = newStack();
 }
 
+
+// Here we define the touch interface.
 #ifdef __EMSCRIPTEN__
 #include <emscripten/html5.h>
-// This function will be called from JavaScript on resize
+
 EMSCRIPTEN_KEEPALIVE
 EM_BOOL on_touch_start( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
-    printf("Touch Start Event Detected\n");
+    printf( "Touch Start Event Detected\n" );
     for (int i = 0; i < touchEvent->numTouches; i++) {
         printf("Touch %d: (%d, %d)\n", i, touchEvent->touches[i].clientX, touchEvent->touches[i].clientY);
     }
     return EM_TRUE; // Indicate that the event was handled
 }
 
-#endif
+#endif // touch interface
+
+
 
 #ifndef __EMSCRIPTEN__
 void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
@@ -460,7 +464,7 @@ int main( int argc, char* argv[] ){
 
 #else
   running = 1;
-  SDL_StartTextInput();
+  emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, on_touch_start );
 #endif
 
   setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
