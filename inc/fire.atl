@@ -25,7 +25,11 @@ ret[0] = t.y < 20.0 ? ( t.z == 0.0 ? 1.0 : 0.0 ) : 0.0\
 ' 0 1;
 l'started';
 
-input;[3 4 0];s;first;if'still';
+input;
+0;dup;[3 4 0];s;first;2;-;if'nodblclick';
+load'inc/mandelbrot.atl';l'nodblclick'; // Load next demo on double click.
+
+[3 4 0];s;first;if'still';
 get'time';[1];+;set'time' 1;
 l'still';
 get'wsize';[3];0;cat;

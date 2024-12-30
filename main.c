@@ -22,6 +22,7 @@ u64 memc = 0;
 #endif
 
 s32 mouseWheelDelta = 0;
+bool doubleClicks[ 3 ] = { 0 };
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -126,8 +127,16 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif      
-      
-    }      
+    } else if( event.type == SDL_MOUSEBUTTONDOWN ){
+      if( event.button.clicks == 2 ){
+	if( event.button.button & SDL_BUTTON( SDL_BUTTON_LEFT ) )
+	  doubleClicks[ 0 ] = 1;
+	if( event.button.button & SDL_BUTTON( SDL_BUTTON_RIGHT ) )
+	  doubleClicks[ 1 ] = 1;
+	if( event.button.button & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
+	  doubleClicks[ 2 ] = 1;
+      }
+    }
   }
 }
 

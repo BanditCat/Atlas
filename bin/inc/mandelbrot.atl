@@ -14,16 +14,10 @@ load'inc/mandelbrot.atl';
 l'go4';
 pop; // pop keys
 
-size;if'started';
-1;1;1;
-[1];set'zoom' 1;
-[0.5 0];set'offs' 2;
-[0 0];set'perturb' 2;
-[2];set'exp' 1;
-l'started';
-pop;pop;pop;
-
 input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
+0;dup;[3 4 0];s;first;2;-;if'nodblclick';
+load'main.atl';l'nodblclick'; // Load next demo on double click.
+
 [1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;
@@ -36,6 +30,18 @@ l'nomouse2';
 0;dup;[1 2 0];s;[400];/;get'exp';+;set'exp' 1;
 l'nomouse3';
 pop;
+
+
+size;if'started';
+1;1;1;
+[1];set'zoom' 1;
+[0.5 0];set'offs' 2;
+[0 0];set'perturb' 2;
+[2];set'exp' 1;
+l'started';
+pop;pop;pop;
+
+
 
 windowSize;set'wsize' 2;
 get'wsize';

@@ -965,9 +965,6 @@ bool runProgram( tensorStack* ts, program** progp ){
 #endif
       data[ 2 ] = mouseWheelDelta;
       mouseWheelDelta = 0;
-#ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
-#endif
       Uint32 buttons = SDL_GetMouseState( NULL, NULL );
       if( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) )
         data[ 3 ] = 1;
@@ -982,6 +979,21 @@ bool runProgram( tensorStack* ts, program** progp ){
       else
         data[ 5 ] = 0;
 
+      if( doubleClicks[ 0 ] ){
+	doubleClicks[ 0 ] = 0;
+	data[ 3 ] = 2;
+      } 
+      if( doubleClicks[ 1 ] ){
+	doubleClicks[ 1 ] = 0;
+	data[ 4 ] = 2;
+      } 
+      if( doubleClicks[ 2 ] ){
+	doubleClicks[ 2 ] = 0;
+	data[ 5 ] = 2;
+      } 
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif
       push( ts, newTensor( 1, wsshape, data ) );
       break;
     }

@@ -62,7 +62,7 @@ backup:
 	upx -9 ./bin/$(TARGET)
 	$(MAKE) clean
 	git add -A
-	git commit -m 'Phone'
+	git commit -m 'Double clicking'
 	git push -u origin main
 
 # Include dependency files
