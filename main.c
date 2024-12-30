@@ -44,13 +44,15 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 }
 
 #ifdef __EMSCRIPTEN__
+#include <emscripten/html5.h>
 // This function will be called from JavaScript on resize
 EMSCRIPTEN_KEEPALIVE
-void onResize( int width, int height ){
-  dbg( "%s", "asdnlnalnd" );
-  if( width != 0 && height != 0 ){
-    glViewport(0, 0, width, height);
-  }
+EM_BOOL on_touch_start( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
+    printf("Touch Start Event Detected\n");
+    for (int i = 0; i < touchEvent->numTouches; i++) {
+        printf("Touch %d: (%d, %d)\n", i, touchEvent->touches[i].clientX, touchEvent->touches[i].clientY);
+    }
+    return EM_TRUE; // Indicate that the event was handled
 }
 
 #endif
