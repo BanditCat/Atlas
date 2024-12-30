@@ -54,18 +54,24 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 
 EMSCRIPTEN_KEEPALIVE
 EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
-  if( touchEvent->numTouches == 1 )
-    touchClicks[ 0 ] = 1;
-  else
-    touchClicks[ 0 ] = 0;
-  if( touchEvent->numTouches == 2 )
-    touchClicks[ 1 ] = 1;
-  else
-    touchClicks[ 1 ] = 0;
-  if( touchEvent->numTouches == 3 )
-    touchClicks[ 2 ] = 1;
-  else
-    touchClicks[ 2 ] = 0;
+  if (eventType == EMSCRIPTEN_EVENT_TOUCHEND) {
+    for (int i = 0; i < 3; ++i) {
+      touchClicks[i] = 0;
+    }
+  } else{
+    if( touchEvent->numTouches == 1 )
+      touchClicks[ 0 ] = 1;
+    else
+      touchClicks[ 0 ] = 0;
+    if( touchEvent->numTouches == 2 )
+      touchClicks[ 1 ] = 1;
+    else
+      touchClicks[ 1 ] = 0;
+    if( touchEvent->numTouches == 3 )
+      touchClicks[ 2 ] = 1;
+    else
+      touchClicks[ 2 ] = 0;
+  }
   return EM_TRUE;
 }
 
