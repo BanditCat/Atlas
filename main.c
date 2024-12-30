@@ -46,14 +46,13 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 #ifdef __EMSCRIPTEN__
 // This function will be called from JavaScript on resize
 EMSCRIPTEN_KEEPALIVE
-void onResize(int width, int height) {
+void onResize( int width, int height ){
+  dbg( "%s", "asdnlnalnd" );
   if( width != 0 && height != 0 ){
-    // Update any internal variables dependent on canvas size
-    printf("Canvas resized to: %d x %d\n", width, height);
-    // For example, update your rendering viewport if necessary
     glViewport(0, 0, width, height);
   }
 }
+
 #endif
 
 #ifndef __EMSCRIPTEN__
