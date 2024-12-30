@@ -979,7 +979,6 @@ bool runProgram( tensorStack* ts, program** progp ){
       else
         data[ 5 ] = 0;
 
-	exit( 0 );
       if( pinchZoom != 0.0 ){
 	data[ 2 ] += pinchZoom;
 	pinchZoom = 0.0;
