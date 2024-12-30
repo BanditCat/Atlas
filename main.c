@@ -24,6 +24,7 @@ u64 memc = 0;
 s32 mouseWheelDelta = 0;
 bool doubleClicks[ 3 ] = { 0 };
 bool touchClicks[ 3 ] = { 0 };
+float pinchZoom = 0.0;
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -54,22 +55,32 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 
 EMSCRIPTEN_KEEPALIVE
 EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
-  if (eventType == EMSCRIPTEN_EVENT_TOUCHEND) {
-    for (int i = 0; i < 3; ++i) {
+  static float oldPinchZoom = 0.0;
+  static float newPinchZoom = 0.0;
+  if( eventType == EMSCRIPTEN_EVENT_TOUCHEND ){
+    for( int i = 0; i < 3; ++i ){
       touchClicks[i] = 0;
     }
+    oldPinchZoom = 0.0;
   } else{
-    if( touchEvent->numTouches == 1 )
+    if( touchEvent->numTouches == 1 ){
       touchClicks[ 0 ] = 1;
-    else
+      oldPinchZoom = 0.0;
+    } else
       touchClicks[ 0 ] = 0;
-    if( touchEvent->numTouches == 2 )
+    if( touchEvent->numTouches == 2 ){
+      float x1 = touchEvent->touches[0].canvasX;
+      float y1 = touchEvent->touches[0].canvasY;
+      float x2 = touchEvent->touches[1].canvasX;
+      float y2 = touchEvent->touches[1].canvasY;
+      newPinchZoom = sqrtf((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
       touchClicks[ 1 ] = 1;
-    else
+    }else
       touchClicks[ 1 ] = 0;
-    if( touchEvent->numTouches == 3 )
+    if( touchEvent->numTouches == 3 ){
       touchClicks[ 2 ] = 1;
-    else
+      oldPinchZoom = 0.0;
+    }else
       touchClicks[ 2 ] = 0;
   }
   return EM_TRUE;
