@@ -1,76 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Atlas</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <style>
-        /* Reset default margins and ensure the canvas fills the entire viewport */
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000; /* Optional: Set a background color */
-        }
+  <meta charset="UTF-8">
+  <title>Atlas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    /* Reset default margins and ensure the canvas fills the entire viewport */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000; /* Optional: Set a background color */
+    }
 
-        /* Style the canvas to occupy full width and height */
-        #canvas {
-            display: block; /* Removes the small gap below the canvas */
-            width: 100%;
-            height: 100%;
-        }
-
-    </style>
-    <script>
-        document.addEventListener('contextmenu', function(event) {
-            event.preventDefault();
-        });
-    </script>
+    /* Style the canvas to occupy full width and height */
+    #canvas {
+      display: block; /* Removes the small gap below the canvas */
+      width: 100%;
+      height: 100%;
+      /* Crucial for multi-touch in some browsers: 
+         ensures the browser doesn't handle pinch-to-zoom or scrolling */
+      touch-action: none; 
+      -ms-touch-action: none; 
+    }
+  </style>
+  <script>
+    document.addEventListener('contextmenu', function(event) {
+      event.preventDefault();
+    });
+  </script>
 </head>
 <body>
-    <!-- Canvas where the Emscripten program will render -->
-    <canvas id="canvas"></canvas>
-    
-    {{{ SCRIPT }}}
+  <!-- Canvas where the Emscripten program will render -->
+  <canvas id="canvas"></canvas>
 
-    <script>
-        // Configure the Module object before the Emscripten script runs
-        var Module = {
-            canvas: (function() {
-                var canvas = document.getElementById('canvas');
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                return canvas;
-            })(),
-            
+  {{{ SCRIPT }}}
 
-            // Adjust the canvas size when the window resizes
-            onRuntimeInitialized: function() {
-                window.addEventListener('resize', function() {
-                    Module.canvas.width = window.innerWidth;
-                    Module.canvas.height = window.innerHeight;
+  <script>
+    // Configure the Module object before the Emscripten script runs
+    var Module = {
+      canvas: (function() {
+        var canvas = document.getElementById('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        return canvas;
+      })(),
 
-                });
+      // Adjust the canvas size when the window resizes
+      onRuntimeInitialized: function() {
+        window.addEventListener('resize', function() {
+          Module.canvas.width = window.innerWidth;
+          Module.canvas.height = window.innerHeight;
+        });
+        
+        // Prevent default browser actions on touch to allow multi-touch in C
+        Module.canvas.addEventListener('touchstart',  function(e) { e.preventDefault(); }, { passive: false });
+        Module.canvas.addEventListener('touchmove',   function(e) { e.preventDefault(); }, { passive: false });
+        Module.canvas.addEventListener('touchend',    function(e) { e.preventDefault(); }, { passive: false });
+        Module.canvas.addEventListener('touchcancel', function(e) { e.preventDefault(); }, { passive: false });
+      },
 
-		
-				
-            },
-
-	    
-            // Redirect print and printErr to the console
-            print: (function() {
-                return function(text) {
-                    console.log(text);
-                };
-            })(),
-            printErr: (function() {
-                return function(text) {
-                    console.error(text);
-                };
-            })()
-        };
-    </script>
+      // Redirect print and printErr to the console
+      print: function(text) {
+        console.log(text);
+      },
+      printErr: function(text) {
+        console.error(text);
+      }
+    };
+  </script>
 </body>
 </html>
