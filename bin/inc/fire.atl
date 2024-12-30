@@ -36,8 +36,8 @@ float hash( vec2 p, float time ){
 }
 
 '
-float down = -1.0 - floor( hash( t.xy, time ) * 9.0 )\
-float sideways = floor( hash( t.xy, time * 10.32213 ) * 9.0 ) - 4.0\
+float down = -1.0 - floor( hash( t.xy, time ) * 4.0 )\
+float sideways = floor( hash( t.xy, time * 10.32213 ) * 3.0 ) - 1.0\
 vec4 t2 = clamp( t + vec4( sideways, down, 0.0, 0.0 ), vec4( 0.0 ), vec4( wsize.xy, 0.0, 0.0 ) )\
 ret[0] = ( t.z == 0.0 ? ( ( t.y < 20.0 && t.x > 50.0 && t.x < wsize.x - 50.0 ) ? hash( t.xy, time * 100.12132 ) / 2.0 + 0.5 : a( t2 ) - 0.005725 ) : 0.0 )\
 ' 1 1;
