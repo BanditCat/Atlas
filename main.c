@@ -47,9 +47,11 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 // Here we define the touch interface.
 #ifdef __EMSCRIPTEN__
 #include <emscripten/html5.h>
+// Globals for dealing with touch.
+
 
 EMSCRIPTEN_KEEPALIVE
-EM_BOOL on_touch_start( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
+EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
     printf( "Touch Start Event Detected\n" );
     for (int i = 0; i < touchEvent->numTouches; i++) {
         printf("Touch %d: (%d, %d)\n", i, touchEvent->touches[i].clientX, touchEvent->touches[i].clientY);
@@ -464,7 +466,10 @@ int main( int argc, char* argv[] ){
 
 #else
   running = 1;
-  emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, on_touch_start );
+  emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
+  emscripten_set_touchend_callback( "#canvas", NULL, EM_TRUE, onTouch );
+  emscripten_set_touchmove_callback( "#canvas", NULL, EM_TRUE, onTouch );
+  emscripten_set_touchcancel_callback( "#canvas", NULL, EM_TRUE, onTouch );
 #endif
 
   setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
