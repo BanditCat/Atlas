@@ -7,16 +7,16 @@ l'go';
 load'main.atl';
 l'go2';
 0;dup;[31 32 0];s;first;ifn'go3';
-load'inc/fire.atl';
+load'inc\fire.atl';
 l'go3';
 0;dup;[32 33 0];s;first;ifn'go4';
-load'inc/mandelbrot.atl';
+load'inc\mandelbrot.atl';
 l'go4';
 pop; // pop keys
 
 input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
 0;dup;[3 4 0];s;first;2;-;if'nodblclick';
-load'inc/fire.atl';l'nodblclick'; // Load next demo on double click.
+load'inc\fire.atl';l'nodblclick'; // Load next demo on double click.
 
 [1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse

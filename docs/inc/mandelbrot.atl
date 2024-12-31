@@ -7,10 +7,10 @@ l'go';
 load'main.atl';
 l'go2';
 0;dup;[31 32 0];s;first;ifn'go3';
-load'inc/fire.atl';
+load'inc\fire.atl';
 l'go3';
 0;dup;[32 33 0];s;first;ifn'go4';
-load'inc/mandelbrot.atl';
+load'inc\mandelbrot.atl';
 l'go4';
 pop; // pop keys
 
