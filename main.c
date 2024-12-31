@@ -51,13 +51,6 @@ void loadProg( program** prog, tensorStack** ts, const char* fileName ){
 #ifdef __EMSCRIPTEN__
 #include <emscripten/html5.h>
 
-EMSCRIPTEN_KEEPALIVE
-int main( int argc, char** argv );
-void start( void ){
-  dbg( "%s", "asddsfahi" );
-  char* name[ 1 ] = { "Atlas.exe" };
-  //main( 1, name );
-}
 
 EMSCRIPTEN_KEEPALIVE
 EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
@@ -495,8 +488,12 @@ void main_loop( void ){
 #endif
 
 // Main function
+#ifndef __EMSCRIPTEN__
 int main( int argc, char* argv[] ){
-
+#else
+void start( void ){  
+#endif
+  
 #ifndef __EMSCRIPTEN__
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );
@@ -627,6 +624,9 @@ int main( int argc, char* argv[] ){
   if( memc )
     dbg( "mem count %llu", memc );
 #endif  
+
+#ifndef __EMSCRIPTEN__
   return 0;
+#endif  
 }
 
