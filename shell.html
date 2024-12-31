@@ -39,20 +39,39 @@
   {{{ SCRIPT }}}
 
   <script>
-    // Configure the Module object before the Emscripten script runs
+async function fetchAndStoreInFS(filename) {
+  try {
+    // Fetch the file as binary data
+    const response = await fetch(filename);
+    if (!response.ok) {
+      throw new Error("HTTP error, status = " + response.status);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+
+    // Write into Emscripten FS under the same name (or choose any path you like)
+    FS.writeFile(filename, new Uint8Array(arrayBuffer));
+
+    console.log("Successfully loaded", filename, "into Emscripten FS!");
+  } catch (err) {
+    console.error("Failed to fetch or store", filename, err);
+  }
+}    // Configure the Module object before the Emscripten script runs
     var Module = {
-      canvas: (function() {
-        var canvas = document.getElementById('canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        return canvas;
+	canvas: (function() {
+          var canvas = document.getElementById('canvas');
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          return canvas;
       })(),
 
-      // Adjust the canvas size when the window resizes
-      onRuntimeInitialized: function() {
-        window.addEventListener('resize', function() {
-          Module.canvas.width = window.innerWidth;
-          Module.canvas.height = window.innerHeight;
+	// Adjust the canvas size when the window resizes
+	onRuntimeInitialized: function() {
+
+            window.addEventListener('resize', function() {
+		Module.canvas.width = window.innerWidth;
+		Module.canvas.height = window.innerHeight;
+	    
         });
         
         // Prevent default browser actions on touch to allow multi-touch in C
