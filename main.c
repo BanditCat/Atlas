@@ -41,7 +41,7 @@ GLuint vbo;
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
   if( !fileExists( realName ) )
-    error( "File %s does not exist.", realName );
+    error( "File %s does not exist. Either provide a filename argument, or provide a main.atl", realName );
   *prog = newProgramFromFile( realName );
   *ts = newStack();
 }
@@ -508,7 +508,6 @@ void start( void ){
   }
 
 #else
-  // Wait until started.
   running = 1;
   emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
   emscripten_set_touchend_callback( "#canvas", NULL, EM_TRUE, onTouch );
@@ -522,8 +521,6 @@ void start( void ){
   // Initialize SDL and create window in the main thread
   if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
-
-  
 
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
