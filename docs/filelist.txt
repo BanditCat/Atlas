@@ -1,3 +1,4 @@
 main.atl
 inc/font.bmp
-foo.bmp
+inc/fire.atl
+inc/mandelbrot.atl
