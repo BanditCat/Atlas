@@ -284,7 +284,7 @@ compute* makeCompute( const program* prog,
     }\n\
     %s\n\
     void main(){\n\
-      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * _a_dims.x ) * 4.0;\n\
+      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * _a_dims.x ) * 4.0 + 0.5;\n\
       vec4 t = _a_toTensorIndices( i );\n\
       float ret[ %u ];\n\
       float _a_r[ %u ];\n\
