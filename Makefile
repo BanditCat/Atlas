@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Web integration'
+	git commit -m 'Smoothe zoom'
 	git push -u origin main
 
 # Include dependency files

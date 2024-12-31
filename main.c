@@ -21,7 +21,9 @@ SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
 u64 memc = 0;
 #endif
 
-s32 mouseWheelDelta = 0;
+f32 mouseWheel = 0;
+f32 mouseWheelPos = 0.0;
+
 bool doubleClicks[ 3 ] = { 0 };
 bool touchClicks[ 3 ] = { 0 };
 float pinchZoom = 0.0;
@@ -152,7 +154,7 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       SDL_LockMutex( data_mutex );
 #endif
-      mouseWheelDelta += event.wheel.y;
+      mouseWheel += event.wheel.y;
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif      

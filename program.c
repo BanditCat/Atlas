@@ -963,8 +963,9 @@ bool runProgram( tensorStack* ts, program** progp ){
 #ifndef __EMSCRIPTEN__
       SDL_LockMutex( data_mutex );
 #endif
-      data[ 2 ] = mouseWheelDelta;
-      mouseWheelDelta = 0;
+      f32 delta = ( mouseWheel - mouseWheelPos ) / 10.0;
+      data[ 2 ] = delta;
+      mouseWheelPos += delta;
       Uint32 buttons = SDL_GetMouseState( NULL, NULL );
       if( ( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) || touchClicks[ 0 ] ) && !touchClicks[ 1 ] && !touchClicks[ 2 ] )
         data[ 3 ] = 1;
