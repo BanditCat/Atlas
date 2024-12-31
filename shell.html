@@ -54,7 +54,7 @@ html, body {
 	    FS.writeFile(filename, new Uint8Array(arrayBuffer));
 	    return textContent;
 	} catch (err) {
-	    alert( "Failed to fetch or store " + filename + err );
+	    alert( "Failed to fetch or store " + filename + "\n" + err );
 	}
     }    // Configure the Module object before the Emscripten script runs
 var Module = {
@@ -73,13 +73,9 @@ var Module = {
 	const files = fileList.split(/\r?\n/);
 	const filenames = files.map(line => line.trim()).filter(line => line.length > 0);
 	       // Sequentially load each file
-        for (const filename of filenames) {
-            try {
-                await fetchAndStoreInFS(filename);
-            } catch (error) {
-                alert(`Failed to load "${filename}":` + error);
-            }
-        }
+        for (const filename of filenames) 
+            await fetchAndStoreInFS(filename);
+
         window.addEventListener('resize', function() {
 	    Module.canvas.width = window.innerWidth;
 	    Module.canvas.height = window.innerHeight;
