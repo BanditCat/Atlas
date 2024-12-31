@@ -1,1 +1,1 @@
-Arbitrary dimension and arbitrary precision in a simple language leveraging SDL for acceleration and display.  This code compiles to html and exe under win10/emacs/clang.
+Tensor scripting straight on the GPU! [Demos](https://banditcat.github.io/Atlas/demos.html), [Docs](https://banditcat.github.io/Atlas)
