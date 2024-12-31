@@ -51,7 +51,10 @@ html, body {
 
 	    // Write into Emscripten FS under the same name (or choose any path you like)
 	    FS.writeFile(filename, new Uint8Array(arrayBuffer));
-
+	    FS.createLazyFile('/',       // parent directory in FS
+			      filename, // how Emscripten sees it ("/myfile")
+			      filename, // actual URL to GET
+                   true, false);
 	    console.log("Successfully loaded", filename, "into Emscripten FS!");
 	} catch (err) {
 	    console.error("Failed to fetch or store", filename, err);
