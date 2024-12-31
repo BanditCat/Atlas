@@ -74,6 +74,7 @@ EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *us
       float x2 = touchEvent->touches[1].canvasX;
       float y2 = touchEvent->touches[1].canvasY;
       newPinchZoom = sqrtf((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+      mouseWheelDelta += newPinchZoom;
       if( oldPinchZoom != 0.0 ){
 	mouseWheelDelta = 1;
 	pinchZoom = ( newPinchZoom - oldPinchZoom );
