@@ -8,7 +8,7 @@ LDFLAGS = -ldwmapi -lopengl32 -lSDL2-static -luser32 -lgdi32 -lshell32 -lwinmm -
 LDFLAGS_DEBUG= -g
 EMCCFLAGS = --preload-file main.atl@main.atl --preload-file inc/font.bmp@inc/font.bmp --preload-file inc/mandelbrot.atl@inc/mandelbrot.atl --preload-file inc/fire.atl@inc/fire.atl -O3 -s WASM=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s MAX_WEBGL_VERSION=3 -s MIN_WEBGL_VERSION=2 --shell-file shell.html
 TARGET = Atlas.exe
-HTML = index.html
+HTML = demos.html
 JS = $(HTML:.html=.js)
 WASM = $(HTML:.html=.wasm)
 DATA = $(HTML:.html=.data)
