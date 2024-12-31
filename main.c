@@ -38,7 +38,7 @@ GLuint shaderProgram;
 GLuint vbo;
 
 
-void start( program** prog, tensorStack** ts, const char* fileName ){
+void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
   if( !fileExists( realName ) )
     error( "File %s does not exist.", realName );
@@ -50,8 +50,14 @@ void start( program** prog, tensorStack** ts, const char* fileName ){
 // Here we define the touch interface.
 #ifdef __EMSCRIPTEN__
 #include <emscripten/html5.h>
-// Globals for dealing with touch.
+// Global start for emscripten.
+bool started = false;
 
+EMSCRIPTEN_KEEPALIVE
+void start( void ){
+  dbg( "%s", "asddsfahi" );
+  started = true;
+}
 
 EMSCRIPTEN_KEEPALIVE
 EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
@@ -303,7 +309,7 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  start( &prog, &ts, data );
+  loadProg( &prog, &ts, data );
 
   // Main loop
   while( SDL_AtomicGet( &running ) ){
@@ -570,7 +576,7 @@ int main( int argc, char* argv[] ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  start( &prog, &ts, NULL );
+  loadProg( &prog, &ts, NULL );
 #endif
 
 

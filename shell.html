@@ -68,6 +68,7 @@ var Module = {
     // Adjust the canvas size when the window resizes
     onRuntimeInitialized: async function() {
 	await fetchAndStoreInFS( 'main.atl' );
+	ccall( "start", null, [], [] );
         window.addEventListener('resize', function() {
 	    Module.canvas.width = window.innerWidth;
 	    Module.canvas.height = window.innerHeight;
