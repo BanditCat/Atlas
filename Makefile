@@ -53,12 +53,13 @@ $(TARGET): $(OBJS) $(ATLHS) icon.res
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.res /bin/inc
+	rm -rf $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.res ./bin/$(TARGET) ./docs/inc
 
 backup:
 	$(MAKE) release
 	$(MAKE) $(HTML)
-	cp -rf $(TARGET) $(HTML) $(JS) $(WASM) $(DATA) ./inc ./bin
+	cp -rf $(HTML) $(JS) $(WASM) $(DATA) ./main.atl ./inc ./docs
+	cp -rf $(TARGET) ./bin
 	upx -9 ./bin/$(TARGET)
 	$(MAKE) clean
 	git add -A
