@@ -58,7 +58,7 @@ EMSCRIPTEN_KEEPALIVE
 EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
   static float oldPinchZoom = 0.0;
   static float newPinchZoom = 0.0;
-  if( eventType == EMSCRIPTEN_EVENT_TOUCHEND ){
+  if( eventType == EMSCRIPTEN_EVENT_TOUCHEND || eventType == EMSCRIPTEN_EVENT_TOUCHCANCEL ){
     for( int i = 0; i < 3; ++i ){
       touchClicks[i] = 0;
     }
@@ -76,7 +76,7 @@ EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *us
       float y2 = touchEvent->touches[1].clientY;
       newPinchZoom = sqrtf((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
       if( oldPinchZoom != 0.0 ){
-	pinchZoom = ( newPinchZoom - oldPinchZoom ) / 50.0;
+	pinchZoom += ( newPinchZoom - oldPinchZoom ) / 50.0;
       }
       oldPinchZoom = newPinchZoom;
       touchClicks[ 1 ] = 1;
