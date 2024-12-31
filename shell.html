@@ -46,8 +46,9 @@ html, body {
 	    if (!response.ok) {
 		throw new Error("HTTP error, status = " + response.status);
 	    }
-	    const textContent = await response.text();
 	    const arrayBuffer = await response.arrayBuffer();
+	    const decoder = new TextDecoder( 'utf-8' );
+	    const textContent = decoder.decode( arrayBuffer );
 
 	    // Write into Emscripten FS under the same name (or choose any path you like)
 	    FS.writeFile(filename, new Uint8Array(arrayBuffer));
