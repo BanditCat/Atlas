@@ -491,6 +491,7 @@ void main_loop( void ){
 #ifndef __EMSCRIPTEN__
 int main( int argc, char* argv[] ){
 #else
+EMSCRIPTEN_KEEPALIVE 
 void start( void ){  
 #endif
   
