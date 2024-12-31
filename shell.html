@@ -52,12 +52,9 @@ html, body {
 
 	    // Write into Emscripten FS under the same name (or choose any path you like)
 	    FS.writeFile(filename, new Uint8Array(arrayBuffer));
-
-	    console.log("Successfully loaded", filename, "into Emscripten FS!");
-
 	    return textContent;
 	} catch (err) {
-	    console.error("Failed to fetch or store", filename, err);
+	    alert( "Failed to fetch or store", filename, err );
 	}
     }    // Configure the Module object before the Emscripten script runs
 var Module = {
@@ -79,10 +76,8 @@ var Module = {
         for (const filename of filenames) {
             try {
                 await fetchAndStoreInFS(filename);
-                console.log(`Loaded "${filename}" successfully.`);
             } catch (error) {
-                console.error(`Failed to load "${filename}":`, error);
-                // Optionally, notify the user or handle the error as needed
+                alert(`Failed to load "${filename}":`, error);
             }
         }
         window.addEventListener('resize', function() {
