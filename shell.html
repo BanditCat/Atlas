@@ -46,13 +46,15 @@ html, body {
 	    if (!response.ok) {
 		throw new Error("HTTP error, status = " + response.status);
 	    }
-	    
+	    const textContent = await response.text();
 	    const arrayBuffer = await response.arrayBuffer();
 
 	    // Write into Emscripten FS under the same name (or choose any path you like)
 	    FS.writeFile(filename, new Uint8Array(arrayBuffer));
 
 	    console.log("Successfully loaded", filename, "into Emscripten FS!");
+
+	    return textContent;
 	} catch (err) {
 	    console.error("Failed to fetch or store", filename, err);
 	}
@@ -67,7 +69,10 @@ var Module = {
 
     // Adjust the canvas size when the window resizes
     onRuntimeInitialized: async function() {
-	await fetchAndStoreInFS( 'main.atl' );
+	const fileList = await fetchAndStoreInFS( 'filelist.txt' );
+	if( !fileList )
+	    alert( "Failed to load filelist.txt" );
+	const files = fileList.split(/\r?\n/);
         window.addEventListener('resize', function() {
 	    Module.canvas.width = window.innerWidth;
 	    Module.canvas.height = window.innerHeight;
