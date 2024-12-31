@@ -54,7 +54,7 @@ html, body {
 	    FS.writeFile(filename, new Uint8Array(arrayBuffer));
 	    return textContent;
 	} catch (err) {
-	    alert( "Failed to fetch or store", filename, err );
+	    alert( "Failed to fetch or store " + filename + err );
 	}
     }    // Configure the Module object before the Emscripten script runs
 var Module = {
@@ -77,7 +77,7 @@ var Module = {
             try {
                 await fetchAndStoreInFS(filename);
             } catch (error) {
-                alert(`Failed to load "${filename}":`, error);
+                alert(`Failed to load "${filename}":` + error);
             }
         }
         window.addEventListener('resize', function() {
