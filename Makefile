@@ -53,15 +53,15 @@ $(TARGET): $(OBJS) $(ATLHS) icon.res
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.res ./bin/$(TARGET) ./docs/inc
+	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.res
 
 backup:
 	$(MAKE) release
 	$(MAKE) $(HTML)
 	cp -rf $(HTML) $(JS) $(WASM) $(DATA) ./main.atl ./inc ./docs
 	cp -rf $(TARGET) ./bin
-	upx -9 ./bin/$(TARGET)
 	$(MAKE) clean
+	upx -9 ./bin/$(TARGET)
 	git add -A
 	git commit -m 'Pinch to zoom'
 	git push -u origin main
