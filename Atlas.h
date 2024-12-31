@@ -261,12 +261,18 @@ extern u64 memc;
 
 #endif // DEBUG
 
-#define error( msg, ... ) ( fflush( stdout ),\
-			    fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ),\
-			    fflush( stdout ), exit( 1 ) )
-#define dbg( msg, ... ) ( fflush( stdout ),\
-			  fprintf( stdout, ( msg ), __VA_ARGS__ ), fprintf( stdout, "\n" ),\
-			  fflush( stdout ) )
+#define error( msg, ... ) do { \
+    char formatted_msg[1024]; \
+    snprintf(formatted_msg, sizeof(formatted_msg), (msg), __VA_ARGS__); \
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", formatted_msg, NULL); \
+    exit(1); \
+} while(0)
+
+#define dbg( msg, ... ) do { \
+    char formatted_msg[1024]; \
+    snprintf(formatted_msg, sizeof(formatted_msg), (msg), __VA_ARGS__); \
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Debug", formatted_msg, NULL); \
+} while(0)
 
 // Global for ease.
 extern SDL_Window* window;
