@@ -56,7 +56,7 @@ int main( int argc, char** argv );
 void start( void ){
   dbg( "%s", "asddsfahi" );
   char* name[ 1 ] = { "Atlas.exe" };
-  main( 1, name );
+  //main( 1, name );
 }
 
 EMSCRIPTEN_KEEPALIVE
