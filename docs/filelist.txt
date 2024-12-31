@@ -1,4 +1,4 @@
 main.atl
-inc/font.bmp
-inc/fire.atl
-inc/mandelbrot.atl
+inc\font.bmp
+inc\fire.atl
+inc\mandelbrot.atl
