@@ -223,7 +223,7 @@ compute* makeCompute( const program* prog,
     uniform vec2 _a_adims;\n\
     uniform sampler2D _a_atex;\n\
     float a( vec4 i ){\n\
-      float lindex = dot( floor( i ), _a_astrides ) + _a_atoffset;\n\
+      float lindex = dot( floor( i ), _a_astrides ) + _a_atoffset + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_adims.x ), \n\
@@ -236,7 +236,7 @@ compute* makeCompute( const program* prog,
     uniform vec2 _a_bdims;\n\
     uniform sampler2D _a_btex;\n\
     float b( vec4 i ){\n\
-      float lindex = dot( floor( i ), _a_bstrides ) + _a_btoffset;\n\
+      float lindex = dot( floor( i ), _a_bstrides ) + _a_btoffset + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_bdims.x ), \n\
@@ -249,7 +249,7 @@ compute* makeCompute( const program* prog,
     uniform vec2 _a_cdims;\n\
     uniform sampler2D _a_ctex;\n\
     float c( vec4 i ){\n\
-      float lindex = dot( floor( i ), _a_cstrides ) + _a_ctoffset;\n\
+      float lindex = dot( floor( i ), _a_cstrides ) + _a_ctoffset + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_cdims.x ), \n\
@@ -262,7 +262,7 @@ compute* makeCompute( const program* prog,
     uniform vec2 _a_ddims;\n\
     uniform sampler2D _a_dtex;\n\
     float d( vec4 i ){\n\
-      float lindex = dot( floor( i ), _a_dstrides ) + _a_dtoffset;\n\
+      float lindex = dot( floor( i ), _a_dstrides ) + _a_dtoffset + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.25;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_ddims.x ), \n\

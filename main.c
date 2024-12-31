@@ -198,7 +198,7 @@ const GLchar* fragmentSource =
   "uniform vec2 dims;\n"
   "uniform float toffset;\n"
   "float sampleTensorIndex(vec4 i){\n"
-  "  float lindex = dot( i, strides ) + toffset;\n"
+  "  float lindex = dot( i, strides ) + toffset + 0.25;\n"
   "  float pixel_index = floor( lindex / 4.0 ) + 0.25;\n"
   "  float channel = mod( lindex, 4.0 );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x "
