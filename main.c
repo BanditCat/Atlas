@@ -511,8 +511,6 @@ int main( int argc, char* argv[] ){
 
 #else
   // Wait until started.
-  while( !started )
-    SDL_Delay( 1 );
   running = 1;
   emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
   emscripten_set_touchend_callback( "#canvas", NULL, EM_TRUE, onTouch );
@@ -527,6 +525,12 @@ int main( int argc, char* argv[] ){
   if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
 
+  
+#ifdef __EMSCRIPTEN__
+  while( !started )
+    SDL_Delay( 100 );
+#endif
+  
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 
