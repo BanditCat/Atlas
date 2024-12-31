@@ -510,14 +510,14 @@ int main( int argc, char* argv[] ){
   }
 
 #else
+  // Wait until started.
+  while( !started )
+    SDL_Delay( 1 );
   running = 1;
   emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
   emscripten_set_touchend_callback( "#canvas", NULL, EM_TRUE, onTouch );
   emscripten_set_touchmove_callback( "#canvas", NULL, EM_TRUE, onTouch );
   emscripten_set_touchcancel_callback( "#canvas", NULL, EM_TRUE, onTouch );
-  // Wait until started.
-  while( !started )
-    SDL_Delay( 100 );
 #endif
 
   setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
