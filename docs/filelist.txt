@@ -1,2 +1,3 @@
 main.atl
 inc/font.bmp
+foo.bmp
