@@ -6,7 +6,7 @@ CFLAGS_DEBUG = -g -DDEBUG
 CPPFLAGS = -MMD -MP -DSDL_MAIN_HANDLED
 LDFLAGS = -ldwmapi -lopengl32 -lSDL2-static -luser32 -lgdi32 -lshell32 -lwinmm -lsetupapi -lole32 -ladvapi32 -limm32 -lversion -loleaut32 -Wl,-nodefaultlib:msvcrt -Wl,-subsystem:windows -Wl,-entry:mainCRTStartup
 LDFLAGS_DEBUG= -g
-EMCCFLAGS = --preload-file inc/font.bmp@inc/font.bmp --preload-file inc/mandelbrot.atl@inc/mandelbrot.atl --preload-file inc/fire.atl@inc/fire.atl -s EXPORTED_RUNTIME_METHODS=["ccall"] -O3 -s WASM=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s MAX_WEBGL_VERSION=3 -s MIN_WEBGL_VERSION=2 --shell-file shell.html
+EMCCFLAGS = --no-entry --preload-file inc/font.bmp@inc/font.bmp --preload-file inc/mandelbrot.atl@inc/mandelbrot.atl --preload-file inc/fire.atl@inc/fire.atl -s EXPORTED_RUNTIME_METHODS=["ccall"] -O3 -s WASM=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s MAX_WEBGL_VERSION=3 -s MIN_WEBGL_VERSION=2 --shell-file shell.html
 TARGET = Atlas.exe
 HTML = demos.html
 JS = $(HTML:.html=.js)

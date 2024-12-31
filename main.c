@@ -50,13 +50,13 @@ void loadProg( program** prog, tensorStack** ts, const char* fileName ){
 // Here we define the touch interface.
 #ifdef __EMSCRIPTEN__
 #include <emscripten/html5.h>
-// Global start for emscripten.
-bool started = false;
 
 EMSCRIPTEN_KEEPALIVE
+int main( int argc, char** argv );
 void start( void ){
   dbg( "%s", "asddsfahi" );
-  started = true;
+  char* name[ 1 ] = { "Atlas.exe" };
+  main( 1, name );
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -526,11 +526,7 @@ int main( int argc, char* argv[] ){
     error( "SDL_Init Error: %s\n", SDL_GetError() );
 
   
-#ifdef __EMSCRIPTEN__
-  while( !started )
-    SDL_Delay( 100 );
-#endif
-  
+
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 

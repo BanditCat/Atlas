@@ -68,7 +68,6 @@ var Module = {
     // Adjust the canvas size when the window resizes
     onRuntimeInitialized: async function() {
 	await fetchAndStoreInFS( 'main.atl' );
-	ccall( "start", null, [], [] );
         window.addEventListener('resize', function() {
 	    Module.canvas.width = window.innerWidth;
 	    Module.canvas.height = window.innerHeight;
@@ -80,6 +79,8 @@ var Module = {
         Module.canvas.addEventListener('touchmove',   function(e) { e.preventDefault(); }, { passive: false });
         Module.canvas.addEventListener('touchend',    function(e) { e.preventDefault(); }, { passive: false });
         Module.canvas.addEventListener('touchcancel', function(e) { e.preventDefault(); }, { passive: false });
+
+	ccall( "start", null, [], [] );
     },
 
     // Redirect print and printErr to the console
