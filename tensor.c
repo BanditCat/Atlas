@@ -222,7 +222,7 @@ compute* makeCompute( const program* prog,
     uniform int _a_atoffset;\n\
     uniform ivec2 _a_adims;\n\
     uniform sampler2D _a_atex;\n\
-    float a( vec4 i ){\n\
+    float a( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_adims );\n\
       int lindex = _a_atoffset;\n\
       for( int j = 0; j < 4; ++j )\n\
@@ -237,7 +237,7 @@ compute* makeCompute( const program* prog,
     uniform int _a_btoffset;\n\
     uniform ivec2 _a_bdims;\n\
     uniform sampler2D _a_btex;\n\
-    float b( vec4 i ){\n\
+    float b( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_bdims );\n\
       int lindex = _a_btoffset;\n\
       for( int j = 0; j < 4; ++j )\n\
@@ -252,7 +252,7 @@ compute* makeCompute( const program* prog,
     uniform int _a_ctoffset;\n\
     uniform ivec2 _a_cdims;\n\
     uniform sampler2D _a_ctex;\n\
-    float c( vec4 i ){\n\
+    float c( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_cdims );\n\
       int lindex = _a_ctoffset;\n\
       for( int j = 0; j < 4; ++j )\n\
@@ -267,7 +267,7 @@ compute* makeCompute( const program* prog,
     uniform int _a_dtoffset;\n\
     uniform ivec2 _a_ddims;\n\
     uniform sampler2D _a_dtex;\n\
-    float d( vec4 i ){\n\
+    float d( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_ddims );\n\
       int lindex = _a_dtoffset;\n\
       for( int j = 0; j < 4; ++j )\n\
@@ -279,22 +279,21 @@ compute* makeCompute( const program* prog,
       return texel[ int( channel ) ];\n\
     }\n\
     %s\n\
-    vec4 _a_toTensorIndices( float i ){\n\
-      vec4 ret;\n\
-      vec4 a_strides = vec4( _a_strides );\n\
-      ret.x = floor(i / a_strides.x);\n\
-      i -= ret.x * a_strides.x;\n\
-      ret.y = floor(i / a_strides.y);\n\
-      i -= ret.y * a_strides.y;\n\
-      ret.z = floor(i / a_strides.z);\n\
-      i -= ret.z * a_strides.z;\n\
+    ivec4 _a_toTensorIndices( int i ){\n\
+      ivec4 ret;\n				\
+      ret.x = i / _a_strides.x;\n\
+      i -= ret.x * _a_strides.x;\n\
+      ret.y = i / _a_strides.y;\n\
+      i -= ret.y * _a_strides.y;\n\
+      ret.z = i / _a_strides.z;\n\
+      i -= ret.z * _a_strides.z;\n\
       ret.w = i;\n\
       return ret;\n\
     }\n\
     %s\n\
     void main(){\n\
-      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * float( _a_dims.x ) ) * 4.0 + 0.5;\n\
-      vec4 t = _a_toTensorIndices( i );\n\
+      int i = ( int( gl_FragCoord.x ) + int( gl_FragCoord.y ) * _a_dims.x ) * 4;\n\
+      ivec4 t = _a_toTensorIndices( i );\n\
       float ret[ %u ];\n\
       float _a_r[ %u ];\n\
       float _a_g[ %u ];\n\
