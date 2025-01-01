@@ -215,32 +215,34 @@ compute* makeCompute( const program* prog,
     precision highp int;\n\
     precision highp sampler2D;\n\
     layout(location = 0) out vec4 _a_fragColor[ %u ];\n\
-    uniform vec2 _a_dims; // Texture dimensions\n\
-    uniform vec4 _a_strides; // Tensor shape\n\
+    uniform ivec2 _a_dims; // Texture dimensions\n\
+    uniform ivec4 _a_strides; // Tensor shape\n\
     \n\
     uniform vec4 _a_astrides;\n\
     uniform float _a_atoffset;\n\
-    uniform vec2 _a_adims;\n\
+    uniform ivec2 _a_adims;\n\
     uniform sampler2D _a_atex;\n\
     float a( vec4 i ){\n\
+      vec2 a_adims = vec2( _a_adims );\n\
       float lindex = dot( floor( i ), _a_astrides ) + _a_atoffset + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
       float channel = mod( lindex, 4.0 );\n\
-      vec2 uv = ( vec2( mod( pixel_index, _a_adims.x ), \n\
-                  floor( pixel_index / _a_adims.x ) + 0.5 ) ) / _a_adims;\n\
+      vec2 uv = ( vec2( mod( pixel_index, a_adims.x ), \n\
+                  floor( pixel_index / a_adims.x ) + 0.5 ) ) / a_adims;\n\
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     uniform vec4 _a_bstrides;\n\
     uniform float _a_btoffset;\n\
-    uniform vec2 _a_bdims;\n\
+    uniform ivec2 _a_bdims;\n\
     uniform sampler2D _a_btex;\n\
     float b( vec4 i ){\n\
+      vec2 a_bdims = vec2( _a_bdims );\n\
       float lindex = dot( floor( i ), _a_bstrides ) + _a_btoffset + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
       float channel = mod( lindex, 4.0 );\n\
-      vec2 uv = ( vec2( mod( pixel_index, _a_bdims.x ), \n\
-                  floor( pixel_index / _a_bdims.x ) + 0.5 ) ) / _a_bdims;\n\
+      vec2 uv = ( vec2( mod( pixel_index, a_bdims.x ), \n\
+                  floor( pixel_index / a_bdims.x ) + 0.5 ) ) / a_bdims;\n\
       vec4 texel = texture( _a_btex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -273,18 +275,19 @@ compute* makeCompute( const program* prog,
     %s\n\
     vec4 _a_toTensorIndices( float i ){\n\
       vec4 ret;\n\
-      ret.x = floor(i / _a_strides.x);\n\
-      i -= ret.x * _a_strides.x;\n\
-      ret.y = floor(i / _a_strides.y);\n\
-      i -= ret.y * _a_strides.y;\n\
-      ret.z = floor(i / _a_strides.z);\n\
-      i -= ret.z * _a_strides.z;\n\
+      vec4 a_strides = vec4( _a_strides );\n\
+      ret.x = floor(i / a_strides.x);\n\
+      i -= ret.x * a_strides.x;\n\
+      ret.y = floor(i / a_strides.y);\n\
+      i -= ret.y * a_strides.y;\n\
+      ret.z = floor(i / a_strides.z);\n\
+      i -= ret.z * a_strides.z;\n\
       ret.w = i;\n\
       return ret;\n\
     }\n\
     %s\n\
     void main(){\n\
-      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * _a_dims.x ) * 4.0 + 0.5;\n\
+      float i = ( floor( gl_FragCoord.x ) + floor( gl_FragCoord.y ) * float( _a_dims.x ) ) * 4.0 + 0.5;\n\
       vec4 t = _a_toTensorIndices( i );\n\
       float ret[ %u ];\n\
       float _a_r[ %u ];\n\
@@ -569,8 +572,8 @@ tensor** newTensorsInitialized(
   CHECK_GL_ERROR();
   glViewport( 0, 0, width, height );
 
-  glUniform2f( compute->dimsLocation, width, height );
-  glUniform4f( compute->stridesLocation,
+  glUniform2i( compute->dimsLocation, width, height );
+  glUniform4i( compute->stridesLocation,
                ret->strides[ 0 ],
                ret->strides[ 1 ],
                ret->strides[ 2 ],
@@ -582,7 +585,7 @@ tensor** newTensorsInitialized(
     const tensor* at = ts->stack[ ( ts->size - 1 ) - i ];
     glBindTexture( GL_TEXTURE_2D, at->tex.texture );
     glUniform1i( compute->argTexLocation[ i ], i );
-    glUniform2f( compute->argDimsLocation[ i ], at->tex.width, at->tex.height );
+    glUniform2i( compute->argDimsLocation[ i ], at->tex.width, at->tex.height );
     glUniform4f( compute->argStridesLocation[ i ],
                  at->strides[ 0 ],
                  at->strides[ 1 ],
