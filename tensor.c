@@ -250,27 +250,31 @@ compute* makeCompute( const program* prog,
     }\n\
     uniform ivec4 _a_cstrides;\n\
     uniform int _a_ctoffset;\n\
-    uniform vec2 _a_cdims;\n\
+    uniform ivec2 _a_cdims;\n\
     uniform sampler2D _a_ctex;\n\
     float c( vec4 i ){\n\
-      float lindex = dot( floor( i ), vec4( _a_cstrides ) ) + float( _a_ctoffset ) + 0.25;\n\
-      float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
-      float channel = mod( lindex, 4.0 );\n\
-      vec2 uv = ( vec2( mod( pixel_index, _a_cdims.x ), \n\
-                  floor( pixel_index / _a_cdims.x ) + 0.5 ) ) / _a_cdims;\n\
+      vec2 a_adims = vec2( _a_cdims );\n\
+      int lindex = _a_ctoffset;\n\
+      for( int j = 0; j < 4; ++j )\n\
+        lindex += _a_cstrides[ j ] * int( i[ j ] );\n\
+      int pixel_index = lindex / 4;\n\
+      int channel = lindex %% 4;\n\
+      vec2 uv = ( vec2( pixel_index %% _a_cdims.x, pixel_index / _a_cdims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_ctex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     uniform ivec4 _a_dstrides;\n\
     uniform int _a_dtoffset;\n\
-    uniform vec2 _a_ddims;\n\
+    uniform ivec2 _a_ddims;\n\
     uniform sampler2D _a_dtex;\n\
     float d( vec4 i ){\n\
-      float lindex = dot( floor( i ), vec4( _a_dstrides ) ) + float( _a_dtoffset ) + 0.25;\n\
-      float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
-      float channel = mod( lindex, 4.0 );\n\
-      vec2 uv = ( vec2( mod( pixel_index, _a_ddims.x ), \n\
-                  floor( pixel_index / _a_ddims.x ) + 0.5 ) ) / _a_ddims;\n\
+      vec2 a_adims = vec2( _a_ddims );\n\
+      int lindex = _a_dtoffset;\n\
+      for( int j = 0; j < 4; ++j )\n\
+        lindex += _a_dstrides[ j ] * int( i[ j ] );\n\
+      int pixel_index = lindex / 4;\n\
+      int channel = lindex %% 4;\n\
+      vec2 uv = ( vec2( pixel_index %% _a_ddims.x, pixel_index / _a_ddims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_dtex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
