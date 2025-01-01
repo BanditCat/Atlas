@@ -273,8 +273,8 @@
 
   <section id="data-types">
     <h2>Data Types</h2>
-    <p>All data in Atlas is floating point. This means that indexing only works out to about 16 million
-      (24 bits), and the effective maximum size of a tensor is 16 million elements. All other types of data 
+    <p>All data in Atlas is floating point. This means that linear indexing only works out to about 16 million
+      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelelents) or adressing will fail. All other types of data 
       (e.g. strings) are converted into a tensor of floating point values.</p>
     <ul>
       <li><strong>Number:</strong> Integers and floats, singletons are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
