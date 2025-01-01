@@ -218,13 +218,13 @@ compute* makeCompute( const program* prog,
     uniform ivec2 _a_dims; // Texture dimensions\n\
     uniform ivec4 _a_strides; // Tensor shape\n\
     \n\
-    uniform vec4 _a_astrides;\n\
-    uniform float _a_atoffset;\n\
+    uniform ivec4 _a_astrides;\n\
+    uniform int _a_atoffset;\n\
     uniform ivec2 _a_adims;\n\
     uniform sampler2D _a_atex;\n\
     float a( vec4 i ){\n\
       vec2 a_adims = vec2( _a_adims );\n\
-      float lindex = dot( floor( i ), _a_astrides ) + _a_atoffset + 0.25;\n\
+      float lindex = dot( floor( i ), vec4( _a_astrides ) ) + float( _a_atoffset ) + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, a_adims.x ), \n\
@@ -232,13 +232,13 @@ compute* makeCompute( const program* prog,
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
-    uniform vec4 _a_bstrides;\n\
-    uniform float _a_btoffset;\n\
+    uniform ivec4 _a_bstrides;\n\
+    uniform int _a_btoffset;\n\
     uniform ivec2 _a_bdims;\n\
     uniform sampler2D _a_btex;\n\
     float b( vec4 i ){\n\
       vec2 a_bdims = vec2( _a_bdims );\n\
-      float lindex = dot( floor( i ), _a_bstrides ) + _a_btoffset + 0.25;\n\
+      float lindex = dot( floor( i ), vec4( _a_bstrides ) ) + float( _a_btoffset ) + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, a_bdims.x ), \n\
@@ -246,12 +246,12 @@ compute* makeCompute( const program* prog,
       vec4 texel = texture( _a_btex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
-    uniform vec4 _a_cstrides;\n\
-    uniform float _a_ctoffset;\n\
+    uniform ivec4 _a_cstrides;\n\
+    uniform int _a_ctoffset;\n\
     uniform vec2 _a_cdims;\n\
     uniform sampler2D _a_ctex;\n\
     float c( vec4 i ){\n\
-      float lindex = dot( floor( i ), _a_cstrides ) + _a_ctoffset + 0.25;\n\
+      float lindex = dot( floor( i ), vec4( _a_cstrides ) ) + float( _a_ctoffset ) + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_cdims.x ), \n\
@@ -259,12 +259,12 @@ compute* makeCompute( const program* prog,
       vec4 texel = texture( _a_ctex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
-    uniform vec4 _a_dstrides;\n\
-    uniform float _a_dtoffset;\n\
+    uniform ivec4 _a_dstrides;\n\
+    uniform int _a_dtoffset;\n\
     uniform vec2 _a_ddims;\n\
     uniform sampler2D _a_dtex;\n\
     float d( vec4 i ){\n\
-      float lindex = dot( floor( i ), _a_dstrides ) + _a_dtoffset + 0.25;\n\
+      float lindex = dot( floor( i ), vec4( _a_dstrides ) ) + float( _a_dtoffset ) + 0.25;\n\
       float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
       float channel = mod( lindex, 4.0 );\n\
       vec2 uv = ( vec2( mod( pixel_index, _a_ddims.x ), \n\
@@ -586,12 +586,12 @@ tensor** newTensorsInitialized(
     glBindTexture( GL_TEXTURE_2D, at->tex.texture );
     glUniform1i( compute->argTexLocation[ i ], i );
     glUniform2i( compute->argDimsLocation[ i ], at->tex.width, at->tex.height );
-    glUniform4f( compute->argStridesLocation[ i ],
+    glUniform4i( compute->argStridesLocation[ i ],
                  at->strides[ 0 ],
                  at->strides[ 1 ],
                  at->strides[ 2 ],
                  at->strides[ 3 ] );
-    glUniform1f( compute->argToffsetLocation[ i ], at->offset );
+    glUniform1i( compute->argToffsetLocation[ i ], at->offset );
   }
 
   glBindVertexArray( compute->VAO );
