@@ -229,7 +229,7 @@ compute* makeCompute( const program* prog,
         lindex += _a_astrides[ j ] * int( i[ j ] );\n\
       int pixel_index = lindex / 4;\n\
       int channel = lindex %% 4;\n\
-      vec2 uv = ( vec2( float( pixel_index %% _a_adims.x ), float( pixel_index / _a_adims.x ) ) + 0.5 ) / a_adims;\n\
+      vec2 uv = ( vec2( pixel_index %% _a_adims.x, pixel_index / _a_adims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -238,12 +238,13 @@ compute* makeCompute( const program* prog,
     uniform ivec2 _a_bdims;\n\
     uniform sampler2D _a_btex;\n\
     float b( vec4 i ){\n\
-      vec2 a_bdims = vec2( _a_bdims );\n\
-      float lindex = dot( floor( i ), vec4( _a_bstrides ) ) + float( _a_btoffset ) + 0.25;\n\
-      float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
-      float channel = mod( lindex, 4.0 );\n\
-      vec2 uv = ( vec2( mod( pixel_index, a_bdims.x ), \n\
-                  floor( pixel_index / a_bdims.x ) + 0.5 ) ) / a_bdims;\n\
+      vec2 a_adims = vec2( _a_bdims );\n\
+      int lindex = _a_btoffset;\n\
+      for( int j = 0; j < 4; ++j )\n\
+        lindex += _a_bstrides[ j ] * int( i[ j ] );\n\
+      int pixel_index = lindex / 4;\n\
+      int channel = lindex %% 4;\n\
+      vec2 uv = ( vec2( pixel_index %% _a_bdims.x, pixel_index / _a_bdims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_btex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
