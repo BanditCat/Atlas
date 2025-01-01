@@ -72,10 +72,10 @@ var Module = {
 	    alert( "Failed to load filelist.txt" );
 	const files = fileList.split(/\r?\n/);
 	const filenames = files.map(line => line.trim()).filter(line => line.length > 0);
-	       // Sequentially load each file
-        for (const filename of filenames) 
-            await fetchAndStoreInFS(filename);
-
+	// Sequentially load each file
+	const fetchPromises = filenames.map(fname => fetchAndStoreInFS(fname));
+	await Promise.all(fetchPromises);
+	
         window.addEventListener('resize', function() {
 	    Module.canvas.width = window.innerWidth;
 	    Module.canvas.height = window.innerHeight;

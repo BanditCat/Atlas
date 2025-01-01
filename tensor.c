@@ -361,10 +361,11 @@ compute* makeCompute( const program* prog,
   GLint status;
   glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
-    static char msg[ 2048 ];
-    char log[ 1024 ];
-    glGetShaderInfoLog( vertexShader, sizeof( log ), NULL, log );
-    snprintf( msg, sizeof( msg ), "Vertex shader compilation failed: %s", log );
+    static const u32 bufsize = 65536;
+    char* msg = mem( bufsize, char );
+    char* log = mem( bufsize, char );
+    glGetShaderInfoLog( vertexShader, bufsize, NULL, log );
+    snprintf( msg, bufsize, "Vertex shader compilation failed: %s", log );
     glDeleteShader( vertexShader );
     error( "%s", msg );
   }
