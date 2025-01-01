@@ -224,11 +224,12 @@ compute* makeCompute( const program* prog,
     uniform sampler2D _a_atex;\n\
     float a( vec4 i ){\n\
       vec2 a_adims = vec2( _a_adims );\n\
-      float lindex = dot( floor( i ), vec4( _a_astrides ) ) + float( _a_atoffset ) + 0.25;\n\
-      float pixel_index = floor( lindex / 4.0 ) + 0.5;\n\
-      float channel = mod( lindex, 4.0 );\n\
-      vec2 uv = ( vec2( mod( pixel_index, a_adims.x ), \n\
-                  floor( pixel_index / a_adims.x ) + 0.5 ) ) / a_adims;\n\
+      int lindex = _a_atoffset;\n\
+      for( int j = 0; j < 4; ++j )\n\
+        lindex += _a_astrides[ j ] * int( i[ j ] );\n\
+      int pixel_index = lindex / 4;\n\
+      int channel = lindex %% 4;\n\
+      vec2 uv = ( vec2( float( pixel_index %% _a_adims.x ), float( pixel_index / _a_adims.x ) ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
