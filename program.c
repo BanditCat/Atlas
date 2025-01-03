@@ -685,6 +685,7 @@ program* newProgram( void ){
   ret->returnStackSize = initSize;
   return ret;
 }
+void addProgramFromFile( const char* filename, program* program );
 // Modifies prog, adds all steps in prog to program.
 void addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
@@ -927,12 +928,12 @@ void addProgramFromFile( const char* filename, program* program ){
   buffer[ fileSize ] = '\0';
   fclose( file );
   addProgram( filename, buffer, program );
-  finalize( program );
   unmem( buffer );
 }
 program* newProgramFromFile( const char* filename ){
   program* prog = newProgram();
   addProgramFromFile( filename, prog );
+  finalize( prog );
   return prog;
 }
 

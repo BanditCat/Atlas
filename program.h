@@ -92,9 +92,6 @@ typedef struct{
   f32* varBlock;  
 } program;
 
-program* newProgram( void );
-// Adds the steps in file to program.
-void addProgramFromFile( const char* filename, program* program );
 program* newProgramFromFile( const char* filename );
 // Return false to exit program.
 bool runProgram( tensorStack* ts, program** progp );
