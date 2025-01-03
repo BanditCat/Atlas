@@ -11,7 +11,7 @@
 
 
 // To add a command: add it in runProgram in program.c, here, and in the addStep parser in program.c.
-// Also add it to the documentation, documentation/docs.html.
+// Also add it to the documentation, docs/index.html.
 typedef struct{
   enum{
     COMPUTE, // documented
@@ -40,7 +40,6 @@ typedef struct{
     QUIT, // documented
     CALL, // documented
     POP, // documented
-
     RETURN, // documented
     GETINPUT, // documented, three axes and three buttons
     SET, // documented
@@ -73,6 +72,7 @@ typedef struct{
   u32 commandnum;
 } step;
 
+#define NUM_FILENAMES 256
 typedef struct{
   compute** computes;
   u32 numComputes;
@@ -94,6 +94,8 @@ typedef struct{
   u32 numBigvars;
   char** bigvarNames;
   tensor** bigvarts;
+  char** filenames;
+  u32 numFilenames;
 } program;
 
 program* newProgramFromFile( const char* filename );

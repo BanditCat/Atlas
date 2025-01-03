@@ -20,9 +20,8 @@ l'go4';
 pop; // pop keys
 
 get'input'; // Double click to get next demo
-0;dup;[3 4 0];s;first;2;-;if'nodblclick';
-load'inc\fire.atl';l'nodblclick'; // Load next demo on double click.
-pop; // pop input
+[3 4 0];s;first;2;-;if'nodblclick';
+load'inc\fire.atl';l'nodblclick';
 
 get'input';
 [1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally

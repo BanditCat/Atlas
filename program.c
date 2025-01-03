@@ -685,6 +685,7 @@ program* newProgram( void ){
   ret->numReturns = 0;
   ret->returns = mem( initSize, step );
   ret->returnStackSize = initSize;
+  ret->filenames = mem( NUM_FILENAMES, char* );
   return ret;
 }
 void addProgramFromFile( const char* filename, program* program );
@@ -692,37 +693,67 @@ void addProgramFromFile( const char* filename, program* program );
 void addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
   
-  // Step 2: Initialize parsing pointers
   char* ptr = prog;
   u32 linenum = 1;
   u32 commandnum = 1;
 
   while( *ptr != '\0' ){
-    // Find the next semicolon
+    // Remember the start of this chunk.
+    char* oldPtr = ptr;
+
+    // Find the next semicolon (or end-of-string if none).
     char* semicolon = strchr( ptr, ';' );
     if( !semicolon ){
-      semicolon =
-        ptr + strlen( ptr );  // Point to the end if no semicolon found
+      semicolon = ptr + strlen( ptr );  // If no semicolon, go to end of input
     }
 
-    // Calculate the length of the current command
+    // Calculate length of this “command” chunk
     size_t cmd_length = semicolon - ptr;
+
+    // If the chunk is empty, check if we are on a newline, then skip
     if( cmd_length == 0 ){
-      // Empty command (e.g., consecutive semicolons), skip
-      ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon;
-      if( *semicolon == '\n' )
-        linenum++;
+      // We still want to count any newlines in the region from oldPtr to semicolon
+      for( char* c = oldPtr; c < semicolon; c++ ){
+        if( *c == '\n' ){
+          linenum++;
+          commandnum = 1;
+        }
+      }
+      // Advance ptr beyond the semicolon if it exists
+      if( *semicolon == ';' ){
+        ptr = semicolon + 1;
+        commandnum++;
+      } else {
+        ptr = semicolon;
+      }
       continue;
     }
 
     // Extract the command into a temporary buffer
     char* buf = mem( cmd_length + 1, char );
+    strncpy( buf, ptr, cmd_length );
+    buf[ cmd_length ] = '\0';
+
+    // Count newlines in [oldPtr .. semicolon) BEFORE we move ptr.
+    for( char* c = oldPtr; c < semicolon; c++ ){
+      if( *c == '\n' ){
+        linenum++;
+        commandnum = 1;
+      }
+    }
+
+    // Now we can move ptr to the next chunk
+    if( *semicolon == ';' ){
+      ptr = semicolon + 1;  // Skip past the semicolon
+      commandnum++;
+    } else {
+      ptr = semicolon;      // Or end-of-string
+    }
+
+    // Trim and parse the command, e.g. for “include”, “addStep”, etc.
     char* command = buf;
-    strncpy( command, ptr, cmd_length );
-    command[ cmd_length ] = '\0';
     trimWhitespace( &command );
-    // Recursivley include.
-    if( !strncmp( command, "include'", 8 ) ){  // include
+    if( !strncmp( command, "include'", 8 ) ){
       char* starti = command + 8;
       char* endi = starti;
       while( *endi && *endi != '\'' )
@@ -741,28 +772,96 @@ void addProgram( const char* filename, char* prog, program* program ){
       memcpy( inc, starti, endi - starti );
       inc[ endi - starti ] = '\0';
       addProgramFromFile( inc, program );
-      unmem( inc );
+      program->filenames[ program->numFilenames++ ] = inc;
+      if( program->numFilenames == NUM_FILENAMES )
+	error( "%s", "NUM_FILENAMES exceeded." );
+      // ... handle 'include' ...
+      // addProgramFromFile(...);
       unmem( buf );
-    } else{
-      // Add the command to the program steps
+    } else {
+      // ... handle everything else ...
       addStep( program, filename, linenum, commandnum, command );
       unmem( buf );
     }
-    // Update the parsing pointer
-    ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon;
-
-    // Update line and command numbers
-    for( size_t i = 0; i < cmd_length; ++i ){
-      if( ptr[ i ] == '\n' ){
-        linenum++;
-        commandnum = 1;
-      }
-    }
-    if( *semicolon == ';' ){
-      commandnum++;
-    }
   }
 }
+
+/* void addProgram( const char* filename, char* prog, program* program ){ */
+/*   removeComments( prog ); */
+  
+/*   // Step 2: Initialize parsing pointers */
+/*   char* ptr = prog; */
+/*   u32 linenum = 1; */
+/*   u32 commandnum = 1; */
+
+/*   while( *ptr != '\0' ){ */
+/*     // Find the next semicolon */
+/*     char* semicolon = strchr( ptr, ';' ); */
+/*     if( !semicolon ){ */
+/*       semicolon = */
+/*         ptr + strlen( ptr );  // Point to the end if no semicolon found */
+/*     } */
+
+/*     // Calculate the length of the current command */
+/*     size_t cmd_length = semicolon - ptr; */
+/*     if( cmd_length == 0 ){ */
+/*       // Empty command (e.g., consecutive semicolons), skip */
+/*       ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon; */
+/*       if( *semicolon == '\n' ) */
+/*         linenum++; */
+/*       continue; */
+/*     } */
+
+/*     // Extract the command into a temporary buffer */
+/*     char* buf = mem( cmd_length + 1, char ); */
+/*     char* command = buf; */
+/*     strncpy( command, ptr, cmd_length ); */
+/*     command[ cmd_length ] = '\0'; */
+/*     trimWhitespace( &command ); */
+/*     // Recursivley include. */
+/*     if( !strncmp( command, "include'", 8 ) ){  // include */
+/*       char* starti = command + 8; */
+/*       char* endi = starti; */
+/*       while( *endi && *endi != '\'' ) */
+/* 	endi++; */
+/*       if( endi == starti ) */
+/* 	error( "%s:%u command %u: %s", filename, */
+/* 	       linenum, */
+/* 	       commandnum, */
+/* 	       "Empty include statement." ); */
+/*       if( *endi != '\'' ) */
+/* 	error( "%s:%u command %u: %s", filename, */
+/* 	       linenum, */
+/*              commandnum, */
+/* 	       "Unmatched quote in include statement." ); */
+/*       char* inc = mem( 1 + endi - starti, char ); */
+/*       memcpy( inc, starti, endi - starti ); */
+/*       inc[ endi - starti ] = '\0'; */
+/*       addProgramFromFile( inc, program ); */
+/*       program->filenames[ program->numFilenames++ ] = inc; */
+/*       if( program->numFilenames == NUM_FILENAMES ) */
+/* 	error( "%s", "NUM_FILENAMES exceeded." ); */
+/*       unmem( buf ); */
+/*     } else{ */
+/*       // Add the command to the program steps */
+/*       addStep( program, filename, linenum, commandnum, command ); */
+/*       unmem( buf ); */
+/*     } */
+/*     // Update the parsing pointer */
+/*     ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon; */
+
+/*     // Update line and command numbers */
+/*     for( size_t i = 0; i < cmd_length; ++i ){ */
+/*       if( ptr[ -cmd_length + i ] == '\n' ){ */
+/*         linenum++; */
+/*         commandnum = 1; */
+/*       } */
+/*     } */
+/*     if( *semicolon == ';' ){ */
+/*       commandnum++; */
+/*     } */
+/*   } */
+/* } */
 void finalize( program* program ){
   // First collect variables and craft the uniform block and the program vars.
   char* glslUniformBlock;
@@ -978,6 +1077,9 @@ void deleteProgram( program* p ){
     }
   }
   deleteTrieNode( p->labels );
+  for( u32 i = 0; i < p->numFilenames; ++i )
+    unmem( p->filenames[ i ] );
+  unmem( p->filenames );
   for( u32 i = 0; i < p->numVars; ++i )
     unmem( p->varNames[ i ] );
   for( u32 i = 0; i < p->numBigvars; ++i )
