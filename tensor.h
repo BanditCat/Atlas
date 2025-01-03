@@ -82,5 +82,7 @@ char* formatTensorData( tensor* t );
 void printStack( tensorStack* ts );
 bool tensorIsContiguous( const tensor* t );
 void tensorEnsureContiguous( tensor* t );
+// Returns a string that needs to be deallocated or NULL for nonvectors.
+char* tensorToString( tensor* t );
 
   

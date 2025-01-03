@@ -1139,3 +1139,12 @@ void tensorEnsureContiguous( tensor* t ){
     t->strides[ i ] = std_strides[ i ];
   }
 }
+char* tensorToString( tensor* t ){
+  if( t->rank != 1 )
+    return NULL;
+  char* ret = mem( t->size + 1, char );
+  for( u32 i = 0; i < t->size; ++i )
+    ret[ i ] = t->data[ t->offset + i * t->strides[ 0 ] ];
+  ret[ t->size ] = 0;
+  return ret;
+}

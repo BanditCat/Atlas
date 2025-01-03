@@ -1,27 +1,8 @@
 keys;set'keys';input;set'input'; // Set input variables
 
 'inc\fire.atl';
-include'inc\nav.atl';
+include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 
-// Jump table for demos. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.
-get'keys';
-0;dup;[41 42 0];s;first;ifn'go';
-quit;  // Quit if escape pressed.
-l'go';
-0;dup;[30 31 0];s;first;ifn'go2';
-load'main.atl';
-l'go2';
-0;dup;[31 32 0];s;first;ifn'go3';
-load'inc\fire.atl';
-l'go3';
-0;dup;[32 33 0];s;first;ifn'go4';
-load'inc\mandelbrot.atl';
-l'go4';
-pop; // pop keys
-
-get'input'; // Double click to get next demo
-[3 4 0];s;first;2;-;if'nodblclick';
-load'inc\fire.atl';l'nodblclick';
 
 get'input';
 [1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
@@ -31,7 +12,6 @@ l'nomouse';
 pop; // pop input
 
 size;if'started';
-
 
 // Draw the text just once.
 img'inc\font.bmp';

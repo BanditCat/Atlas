@@ -429,7 +429,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
     // imgName );
 
-  } else if( !strncmp( command, "load'", 5 ) ){  // load
+  }else if( !strcmp( command, "load" ) ){
+    curStep->type = LOAD;
+    curStep->progName = NULL;    
+  }else if( !strncmp( command, "load'", 5 ) ){  // load
     char* starti = command + 5;
     char* endi = starti;
     while( *endi && *endi != '\'' )
@@ -1069,7 +1072,7 @@ void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numComputes; ++i )
     deleteCompute( p->computes[ i ] );
   for( u32 i = 0; i < p->numSteps; ++i ){
-    if( p->steps[ i ].type == LOAD )
+    if( p->steps[ i ].type == LOAD && p->steps[ i ].progName )
       unmem( p->steps[ i ].progName );
     else if( p->steps[ i ].type == TENSOR ){
       deleteTensor( p->steps[ i ].tensor );
@@ -1415,6 +1418,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     }
     case SHAPE: {
+      if( !ts->size )
+	error( "%s",
+	       "Attempt to get the shape of a tensor with nothing on the stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
       f32* newData = mem( cur->rank, f32 );
       for( u32 i = 0; i < cur->rank; ++i )
@@ -1426,7 +1432,19 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     }
     case LOAD: {
-      p = newProgramFromFile( s->progName );
+      if( !s->progName ){
+	if( !ts->size )
+        error( "%s",
+	       "Attempt to load a string filename with no string on the stack." );
+	tensor* cur = ts->stack[ ts->size - 1 ];
+	if( cur->rank != 1 )
+        error( "%s",
+	       "Attempt to load a string filename with a nonvector." );
+	char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
+	p = newProgramFromFile( fn );
+	unmem( fn );
+      }else
+	p = newProgramFromFile( s->progName );
       deleteProgram( *progp );
       *progp = p;
       while( ts->size )
@@ -1436,9 +1454,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case FIRST: {
       if( !ts->size )
-        error(
-	      "%s",
-	      "Attempt to take the first element with no parameter on the stack." );
+        error( "%s",
+	       "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -1446,9 +1463,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LAST: {
       if( !ts->size )
-        error(
-	      "%s",
-	      "Attempt to take the first element with no parameter on the stack." );
+        error( "%s",
+	       "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
       // dbg( "%s", "first" );
