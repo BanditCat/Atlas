@@ -1,6 +1,10 @@
-keys;0;dup;set'keys'; // First we handle the keyboard, leaving the stack alone.
+keys;set'keys';input;set'input'; // Set input variables
+
+'inc\fire.atl';
 include'inc\nav.atl';
-// See https://wiki.libsdl.org/SDL2/SDL_Scancode.
+
+// Jump table for demos. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.
+get'keys';
 0;dup;[41 42 0];s;first;ifn'go';
 quit;  // Quit if escape pressed.
 l'go';
@@ -15,10 +19,12 @@ load'inc\mandelbrot.atl';
 l'go4';
 pop; // pop keys
 
-input; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
+get'input'; // Double click to get next demo
 0;dup;[3 4 0];s;first;2;-;if'nodblclick';
 load'inc\fire.atl';l'nodblclick'; // Load next demo on double click.
+pop; // pop input
 
+get'input';
 [1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;[-1 1];*;get'offs';+;set'offs' 2;
@@ -50,8 +56,6 @@ windowSize;first;get'tsize';first;10;+;/;e;set'zoom' 1;
 windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;set'offs' 2;
 l'started';
 pop;
-
-get'keys';[0 32 0];s;print;pop;
 
 windowSize;set'wsize' 2;
 0;dup;

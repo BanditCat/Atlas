@@ -753,7 +753,7 @@ void addProgram( const char* filename, char* prog, program* program ){
 
     // Update line and command numbers
     for( size_t i = 0; i < cmd_length; ++i ){
-      if( ptr[ -cmd_length + i ] == '\n' ){
+      if( ptr[ i ] == '\n' ){
         linenum++;
         commandnum = 1;
       }
@@ -1363,7 +1363,7 @@ bool runProgram( tensorStack* ts, program** progp ){
                    ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
       if( dup + 1 > ts->size )
-        error( "%s", "Attempt to duplicate past the end of the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to duplicate past the end of the stack." );
       push( ts, copyTensor( ts->stack[ ( ts->size - 1 ) - dup ] ) );
       break;
     case REPEAT: {
