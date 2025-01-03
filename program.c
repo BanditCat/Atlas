@@ -654,15 +654,13 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
   } else {  // Call
     char* starti = command;
     char* endi = starti;
-    while( *endi && *endi != '\'' )
+    while( *endi )
       endi++;
     if( endi == starti )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty call statement." );
-    if( *endi == '\'' )
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Quote error." );
     char* branchName = mem( 1 + endi - starti, char );
     memcpy( branchName, starti, endi - starti );
     branchName[ endi - starti ] = '\0';
@@ -672,9 +670,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     // branchName );
   }
 }
-// Modifies prog.
-program* newProgram( const char* filename, char* prog ){
-  removeComments( prog );
+program* newProgram( void ){
   program* ret = mem( 1, program );
   ret->computes = mem( initSize, compute* );
   ret->numComputes = 0;
@@ -687,8 +683,12 @@ program* newProgram( const char* filename, char* prog ){
   ret->numReturns = 0;
   ret->returns = mem( initSize, step );
   ret->returnStackSize = initSize;
-
-
+  return ret;
+}
+// Modifies prog, adds all steps in prog to program.
+void addProgram( const char* filename, char* prog, program* program ){
+  removeComments( prog );
+  
   // Step 2: Initialize parsing pointers
   char* ptr = prog;
   u32 linenum = 1;
@@ -713,14 +713,38 @@ program* newProgram( const char* filename, char* prog ){
     }
 
     // Extract the command into a temporary buffer
-    char* command = mem( cmd_length + 1, char );
+    char* buf = mem( cmd_length + 1, char );
+    char* command = buf;
     strncpy( command, ptr, cmd_length );
     command[ cmd_length ] = '\0';
-
-    // Add the command to the program steps
-    addStep( ret, filename, linenum, commandnum, command );
-    unmem( command );
-
+    trimWhitespace( &command );
+    // Recursivley include.
+    if( !strncmp( command, "include'", 8 ) ){  // include
+      char* starti = command + 8;
+      char* endi = starti;
+      while( *endi && *endi != '\'' )
+	endi++;
+      if( endi == starti )
+	error( "%s:%u command %u: %s", filename,
+	       linenum,
+	       commandnum,
+	       "Empty include statement." );
+      if( *endi != '\'' )
+	error( "%s:%u command %u: %s", filename,
+	       linenum,
+             commandnum,
+	       "Unmatched quote in include statement." );
+      char* inc = mem( 1 + endi - starti, char );
+      memcpy( inc, starti, endi - starti );
+      inc[ endi - starti ] = '\0';
+      addProgramFromFile( inc, program );
+      unmem( inc );
+      unmem( buf );
+    } else{
+      // Add the command to the program steps
+      addStep( program, filename, linenum, commandnum, command );
+      unmem( buf );
+    }
     // Update the parsing pointer
     ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon;
 
@@ -735,146 +759,137 @@ program* newProgram( const char* filename, char* prog ){
       commandnum++;
     }
   }
-
+}
+void finalize( program* program ){
   // First collect variables and craft the uniform block and the program vars.
   char* glslUniformBlock;
   {
-    ret->numVars = 0;
+    program->numVars = 0;
     u32 nameslen = 0;
     u32 baselen = strlen( "uniform float %s;" ) + 30;
-    for( u32 i = 0; i < ret->numSteps; ++i )
-      if( ret->steps[ i ].type == SET ){
-        nameslen += strlen( ret->steps[ i ].var.name ) + 2;
-        ret->numVars++;
+    for( u32 i = 0; i < program->numSteps; ++i )
+      if( program->steps[ i ].type == SET ){
+        nameslen += strlen( program->steps[ i ].var.name ) + 2;
+        program->numVars++;
       }
-    ret->varOffsets = mem( ret->numVars, u32 );
-    ret->varSizes = mem( ret->numVars, u32 );
-    u32 bufsize = baselen * ret->numVars + nameslen + 200;
+    program->varOffsets = mem( program->numVars, u32 );
+    program->varSizes = mem( program->numVars, u32 );
+    u32 bufsize = baselen * program->numVars + nameslen + 200;
     glslUniformBlock = mem( bufsize, u8 );
     char* p = glslUniformBlock;
     //    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "layout(std140)
     //    uniform vars{\n" );
-    ret->varNames = mem( ret->numVars, char* );
-    ret->numVars = 0;
+    program->varNames = mem( program->numVars, char* );
+    program->numVars = 0;
     u32 offset = 0;
-    for( u32 i = 0; i < ret->numSteps; ++i ){
-      if( ret->steps[ i ].type == SET ){
+    for( u32 i = 0; i < program->numSteps; ++i ){
+      if( program->steps[ i ].type == SET ){
         u32 val;
-        if( trieSearch( ret->vars, ret->steps[ i ].var.name, &val ) ){
-          if( ret->steps[ i ].var.size != ret->varSizes[ val ] )
-            error( "%s:%u command %u: %s", ret->steps[ i ].filename,
-		   ret->steps[ i ].linenum,
-		   ret->steps[ i ].commandnum,
+        if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
+          if( program->steps[ i ].var.size != program->varSizes[ val ] )
+            error( "%s:%u command %u: %s", program->steps[ i ].filename,
+		   program->steps[ i ].linenum,
+		   program->steps[ i ].commandnum,
 		  "Incorrect size setting already set value. Size is static." );
-          unmem( ret->steps[ i ].var.name );
-          ret->steps[ i ].var.index = val;
+          unmem( program->steps[ i ].var.name );
+          program->steps[ i ].var.index = val;
         } else {
-          trieInsert( ret->vars, ret->steps[ i ].var.name, ret->numVars );
-          switch( ret->steps[ i ].var.size ){
+          trieInsert( program->vars, program->steps[ i ].var.name, program->numVars );
+          switch( program->steps[ i ].var.size ){
           case 1:
             p += snprintf( p,
                            bufsize - ( p - glslUniformBlock ),
                            "uniform float %s;\n",
-                           ret->steps[ i ].var.name );
+                           program->steps[ i ].var.name );
             break;
           case 2:
             p += snprintf( p,
                            bufsize - ( p - glslUniformBlock ),
                            "uniform vec2 %s;\n",
-                           ret->steps[ i ].var.name );
+                           program->steps[ i ].var.name );
             break;
           case 3:
             p += snprintf( p,
                            bufsize - ( p - glslUniformBlock ),
                            "uniform vec3 %s;\n",
-                           ret->steps[ i ].var.name );
+                           program->steps[ i ].var.name );
             break;
           case 4:
             p += snprintf( p,
                            bufsize - ( p - glslUniformBlock ),
                            "uniform vec4 %s;\n",
-                           ret->steps[ i ].var.name );
+                           program->steps[ i ].var.name );
             break;
           case 16:
             p += snprintf( p,
                            bufsize - ( p - glslUniformBlock ),
                            "uniform mat4 %s;\n",
-                           ret->steps[ i ].var.name );
+                           program->steps[ i ].var.name );
             break;
           default:
             error( "%s", "Logic error in Atlas! My code is ass!" );
           }
-          ret->varNames[ ret->numVars ] = ret->steps[ i ].var.name;
-          ret->varOffsets[ ret->numVars ] = offset;
-          ret->varSizes[ ret->numVars ] = ret->steps[ i ].var.size;
-          if( ret->steps[ i ].var.size == 1 || ret->steps[ i ].var.size == 2 )
+          program->varNames[ program->numVars ] = program->steps[ i ].var.name;
+          program->varOffsets[ program->numVars ] = offset;
+          program->varSizes[ program->numVars ] = program->steps[ i ].var.size;
+          if( program->steps[ i ].var.size == 1 || program->steps[ i ].var.size == 2 )
             offset += 2;
-          else if( ret->steps[ i ].var.size == 3 ||
-                   ret->steps[ i ].var.size == 4 )
+          else if( program->steps[ i ].var.size == 3 ||
+                   program->steps[ i ].var.size == 4 )
             offset += 4;
           else
             offset += 16;
-          ret->steps[ i ].var.index = ret->numVars;
-          ++ret->numVars;
+          program->steps[ i ].var.index = program->numVars;
+          ++program->numVars;
         }
       }
     }
 
     // p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
-    ret->varBlock = mem( offset, f32 );
-    // glGenBuffers( 1, &ret->ubo );
-    // glBindBuffer( GL_UNIFORM_BUFFER, ret->ubo );
-    // glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, ret->varBlock,
-    // GL_DYNAMIC_DRAW ); glBindBufferBase( GL_UNIFORM_BUFFER, 0, ret->ubo );
+    program->varBlock = mem( offset, f32 );
+    // glGenBuffers( 1, &program->ubo );
+    // glBindBuffer( GL_UNIFORM_BUFFER, program->ubo );
+    // glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, program->varBlock,
+    // GL_DYNAMIC_DRAW ); glBindBufferBase( GL_UNIFORM_BUFFER, 0, program->ubo );
     // glBindBuffer( GL_UNIFORM_BUFFER, 0 );
     // glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
     // dbg( "Block %s, totsize %u", glslUniformBlock, offset );
   }
 
   // Second pass for ifs, ifns, calls, computes, and gets.
-  for( u32 i = 0; i < ret->numSteps; ++i )
-    if( ret->steps[ i ].type == IF || ret->steps[ i ].type == IFN ||
-        ret->steps[ i ].type == CALL ){
+  for( u32 i = 0; i < program->numSteps; ++i )
+    if( program->steps[ i ].type == IF || program->steps[ i ].type == IFN ||
+        program->steps[ i ].type == CALL ){
       u32 jumpTo;
-      if( !trieSearch( ret->labels, ret->steps[ i ].branchName, &jumpTo ) )
-        error( "%s:%u command %u: Statement with unknown label %s", ret->steps[ i ].filename,
-		   ret->steps[ i ].linenum,
-		   ret->steps[ i ].commandnum, ret->steps[ i ].branchName );
-      unmem( ret->steps[ i ].branchName );
-      ret->steps[ i ].branch = jumpTo;
-    } else if( ret->steps[ i ].type == GET ){
+      if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo ) )
+        error( "%s:%u command %u: Statement with unknown label %s", program->steps[ i ].filename,
+		   program->steps[ i ].linenum,
+		   program->steps[ i ].commandnum, program->steps[ i ].branchName );
+      unmem( program->steps[ i ].branchName );
+      program->steps[ i ].branch = jumpTo;
+    } else if( program->steps[ i ].type == GET ){
       u32 vi;
-      if( !trieSearch( ret->vars, ret->steps[ i ].var.name, &vi ) )
-        error( "%s:%u command %u: Attempt to get an an unknown variable %s", ret->steps[ i ].filename,
-	       ret->steps[ i ].linenum,
-	       ret->steps[ i ].commandnum,
-               ret->steps[ i ].var.name );
-      char* varName = ret->steps[ i ].var.name;
-      ret->steps[ i ].var.index = vi;
+      if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) )
+        error( "%s:%u command %u: Attempt to get an an unknown variable %s", program->steps[ i ].filename,
+	       program->steps[ i ].linenum,
+	       program->steps[ i ].commandnum,
+               program->steps[ i ].var.name );
+      char* varName = program->steps[ i ].var.name;
+      program->steps[ i ].var.index = vi;
       unmem( varName );
-    } else if( ret->steps[ i ].type == COMPUTE ){
-      char* glslpre = ret->steps[ i ].toCompute.glslpre;
-      char* glsl = ret->steps[ i ].toCompute.glsl;
-      ret->steps[ i ].compute =
-        addCompute( ret,
+    } else if( program->steps[ i ].type == COMPUTE ){
+      char* glslpre = program->steps[ i ].toCompute.glslpre;
+      char* glsl = program->steps[ i ].toCompute.glsl;
+      program->steps[ i ].compute =
+        addCompute( program,
                     glslUniformBlock,
                     glslpre, glsl,
-                    ret->steps[ i ].toCompute.argCount,
-                    ret->steps[ i ].toCompute.retCount );
+                    program->steps[ i ].toCompute.argCount,
+                    program->steps[ i ].toCompute.retCount );
       unmem( glsl );
       unmem( glslpre );
     }
   unmem( glslUniformBlock );
-  return ret;
-}
-// Doesn't modify prog.
-program* newProgramFromString( const char* filename, const char* prog, u32 len ){
-  char* cp = mem( len + 3, char );
-  strncpy( cp, prog, len );
-  cp[ len ] = '\0';
-  program* ret = newProgram( filename, cp );
-  unmem( cp );
-  return ret;
 }
 bool fileExists( const char *filename ){
   FILE *file = fopen( filename, "rb" );
@@ -884,7 +899,7 @@ bool fileExists( const char *filename ){
   }
   return 0;
 }
-program* newProgramFromFile( const char* filename ){
+void addProgramFromFile( const char* filename, program* program ){
   FILE* file = fopen( filename, "rb" );
 
   if( !file )
@@ -911,10 +926,16 @@ program* newProgramFromFile( const char* filename ){
 
   buffer[ fileSize ] = '\0';
   fclose( file );
-  program* ret = newProgram( filename, buffer );
+  addProgram( filename, buffer, program );
+  finalize( program );
   unmem( buffer );
-  return ret;
 }
+program* newProgramFromFile( const char* filename ){
+  program* prog = newProgram();
+  addProgramFromFile( filename, prog );
+  return prog;
+}
+
 void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numComputes; ++i )
     deleteCompute( p->computes[ i ] );

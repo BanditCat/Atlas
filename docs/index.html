@@ -201,6 +201,7 @@
       <li><a href="#cmd-get">get</a></li>
       <li><a href="#cmd-if">if / ifn</a></li>
       <li><a href="#cmd-img">img (image)</a></li>
+      <li><a href="#cmd-include">include</a></li>
       <li><a href="#cmd-input">input</a></li>
       <li><a href="#cmd-keys">keys</a></li>
       <li><a href="#cmd-load">load</a></li>
@@ -592,6 +593,11 @@ Strides:
     <p>Loads a 4-channel bitmap from a file. For example:
       <pre><code>img'font.bmp'</code></pre>
       loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.</p>
+  </section>
+
+  <section id="cmd-include">
+    <h2>include</h2>
+    <p>This includes another file textually, placing all the commands in that file at the location of the include command. For example <code>include'head.atl'</code> would include all the commands of <code>head.atl</code>.</p>
   </section>
 
   <section id="cmd-input">

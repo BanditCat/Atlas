@@ -44,7 +44,8 @@ void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
   if( !fileExists( realName ) )
     error( "File %s does not exist. Either provide a filename argument, or provide a main.atl", realName );
-  *prog = newProgramFromFile( realName );
+  *prog = newProgram();
+  addProgramFromFile( realName, *prog );
   *ts = newStack();
 }
 
