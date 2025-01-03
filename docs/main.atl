@@ -1,4 +1,4 @@
-keys; // First we handle the keyboard, leaving the stack alone.
+keys;0;dup;set'keys'; // First we handle the keyboard, leaving the stack alone.
 include'inc\nav.atl';
 // See https://wiki.libsdl.org/SDL2/SDL_Scancode.
 0;dup;[41 42 0];s;first;ifn'go';
@@ -27,6 +27,7 @@ pop; // pop input
 
 size;if'started';
 
+
 // Draw the text just once.
 img'inc\font.bmp';
 'Hello world! Esc to exit. Double click/tap or   ';e;
@@ -50,6 +51,7 @@ windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;set'offs' 2;
 l'started';
 pop;
 
+get'keys';[0 32 0];s;print;pop;
 
 windowSize;set'wsize' 2;
 0;dup;

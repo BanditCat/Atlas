@@ -5,21 +5,32 @@
 #include "Atlas.h"
 
 void takeOwnership( tensor* t ){
-  if( t == NULL || t->gpu )
-    error( "%s", "Tensor is NULL or GPU in takeOwnership." );
+  if( t == NULL )
+    error( "%s", "Tensor is GPU or NULL in takeOwnership." );
+
   if( t->ownsData )
     return;  // Already owns data, nothing to do
 
-  // Allocate new memory for the data
-  f32* newData = mem( t->size, f32 );
-  // Copy the data from the original tensor, considering the offset
-  memcpy( newData, t->data + t->offset, t->size * sizeof( f32 ) );
-  // Reset the offset since data is now at the beginning
-  t->offset = 0;
-  // Update the data pointer to the new data
-  t->data = newData;
-  // Mark that the tensor now owns the data
-  t->ownsData = true;
+  if( t->gpu ){
+    tensorToHostMemory( t );
+    tensorToGPUMemory( t );		    
+  }else{
+    tensorEnsureContiguous( t );
+    
+    if( t->ownsData )
+      return;  // Already owns data, nothing to do
+    
+    // Allocate new memory for the data
+    f32* newData = mem( t->size, f32 );
+    // Copy the data from the original tensor, considering the offset
+    memcpy( newData, t->data + t->offset, t->size * sizeof( f32 ) );
+    // Reset the offset since data is now at the beginning
+    t->offset = 0;
+    // Update the data pointer to the new data
+    t->data = newData;
+    // Mark that the tensor now owns the data
+    t->ownsData = true;
+  }
 };
 // DANGER this sets owns data to false, therefore the undelyinng data MUST NOT
 // be destroyed BEFORE the copy while the programming is running. At exit

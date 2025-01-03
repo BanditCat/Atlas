@@ -89,7 +89,11 @@ typedef struct{
   char** varNames;
   u32* varOffsets;
   u32* varSizes;
-  f32* varBlock;  
+  f32* varBlock;
+  trieNode* bigvars;
+  u32 numBigvars;
+  char** bigvarNames;
+  tensor** bigvarts;
 } program;
 
 program* newProgramFromFile( const char* filename );

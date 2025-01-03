@@ -8,8 +8,7 @@ void skipWhitespace( const char** str ){
   while( isspace( **str ) )
     ( *str )++;
 }
-void parseTensorRecursive(
-			  const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
+void parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
   skipWhitespace( str );
   if( **str != '[' )
     error( "%s", "Expected '[' to start tensor definition." );
@@ -300,10 +299,12 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     char* sizep = endi + 1;
     u32 varSize;
     int charsread;
-    if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
-        !sizep[ charsread ] ){
-      curStep->type = SET;
-      curStep->var.name = varName;
+    curStep->type = SET;
+    curStep->var.name = varName;
+    if( !*sizep ){
+      curStep->var.size = 0;
+    }else if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
+	      !sizep[ charsread ] ){
       curStep->var.size = varSize;
       if( !varSize || ( varSize > 4 && varSize != 16 ) )
         error( "%s", "Invalid var size in set statement." );
@@ -680,6 +681,7 @@ program* newProgram( void ){
   ret->stepStackSize = initSize;
   ret->labels = newTrieNode( NULL, 0 );
   ret->vars = newTrieNode( NULL, 0 );
+  ret->bigvars = newTrieNode( NULL, 0 );
   ret->numReturns = 0;
   ret->returns = mem( initSize, step );
   ret->returnStackSize = initSize;
@@ -770,8 +772,11 @@ void finalize( program* program ){
     u32 baselen = strlen( "uniform float %s;" ) + 30;
     for( u32 i = 0; i < program->numSteps; ++i )
       if( program->steps[ i ].type == SET ){
-        nameslen += strlen( program->steps[ i ].var.name ) + 2;
-        program->numVars++;
+	if( program->steps[ i ].var.size ){
+	  nameslen += strlen( program->steps[ i ].var.name ) + 2;
+	  program->numVars++;
+	}else
+	  program->numBigvars++;
       }
     program->varOffsets = mem( program->numVars, u32 );
     program->varSizes = mem( program->numVars, u32 );
@@ -781,73 +786,89 @@ void finalize( program* program ){
     //    p += snprintf( p, bufsize - ( p - glslUniformBlock ), "layout(std140)
     //    uniform vars{\n" );
     program->varNames = mem( program->numVars, char* );
+    program->bigvarNames = mem( program->numBigvars, char* );
     program->numVars = 0;
+    program->numBigvars = 0;
     u32 offset = 0;
     for( u32 i = 0; i < program->numSteps; ++i ){
       if( program->steps[ i ].type == SET ){
-        u32 val;
-        if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
-          if( program->steps[ i ].var.size != program->varSizes[ val ] )
-            error( "%s:%u command %u: %s", program->steps[ i ].filename,
-		   program->steps[ i ].linenum,
-		   program->steps[ i ].commandnum,
-		  "Incorrect size setting already set value. Size is static." );
-          unmem( program->steps[ i ].var.name );
-          program->steps[ i ].var.index = val;
-        } else {
-          trieInsert( program->vars, program->steps[ i ].var.name, program->numVars );
-          switch( program->steps[ i ].var.size ){
-          case 1:
-            p += snprintf( p,
-                           bufsize - ( p - glslUniformBlock ),
-                           "uniform float %s;\n",
-                           program->steps[ i ].var.name );
-            break;
-          case 2:
-            p += snprintf( p,
-                           bufsize - ( p - glslUniformBlock ),
-                           "uniform vec2 %s;\n",
-                           program->steps[ i ].var.name );
-            break;
-          case 3:
-            p += snprintf( p,
-                           bufsize - ( p - glslUniformBlock ),
-                           "uniform vec3 %s;\n",
-                           program->steps[ i ].var.name );
-            break;
-          case 4:
-            p += snprintf( p,
-                           bufsize - ( p - glslUniformBlock ),
-                           "uniform vec4 %s;\n",
-                           program->steps[ i ].var.name );
-            break;
-          case 16:
-            p += snprintf( p,
-                           bufsize - ( p - glslUniformBlock ),
-                           "uniform mat4 %s;\n",
-                           program->steps[ i ].var.name );
-            break;
-          default:
-            error( "%s", "Logic error in Atlas! My code is ass!" );
-          }
-          program->varNames[ program->numVars ] = program->steps[ i ].var.name;
-          program->varOffsets[ program->numVars ] = offset;
-          program->varSizes[ program->numVars ] = program->steps[ i ].var.size;
-          if( program->steps[ i ].var.size == 1 || program->steps[ i ].var.size == 2 )
-            offset += 2;
-          else if( program->steps[ i ].var.size == 3 ||
-                   program->steps[ i ].var.size == 4 )
-            offset += 4;
-          else
-            offset += 16;
-          program->steps[ i ].var.index = program->numVars;
-          ++program->numVars;
-        }
+	if( !program->steps[ i ].var.size ){
+	  u32 val;
+	  if( trieSearch( program->bigvars, program->steps[ i ].var.name, &val ) ){
+	    unmem( program->steps[ i ].var.name );
+	    program->steps[ i ].var.index = val;
+	  }else{
+	    trieInsert( program->bigvars, program->steps[ i ].var.name, program->numBigvars );
+	    program->bigvarNames[ program->numBigvars ] = program->steps[ i ].var.name;
+	    program->steps[ i ].var.index = program->numBigvars;
+	    ++program->numBigvars;
+	  }
+	}else{
+	  u32 val;
+	  if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
+	    if( program->steps[ i ].var.size != program->varSizes[ val ] )
+	      error( "%s:%u command %u: %s", program->steps[ i ].filename,
+		     program->steps[ i ].linenum,
+		     program->steps[ i ].commandnum,
+		     "Incorrect size setting already set value. Size is static." );
+	    unmem( program->steps[ i ].var.name );
+	    program->steps[ i ].var.index = val;
+	  } else {
+	    trieInsert( program->vars, program->steps[ i ].var.name, program->numVars );
+	    switch( program->steps[ i ].var.size ){
+	    case 1:
+	      p += snprintf( p,
+			     bufsize - ( p - glslUniformBlock ),
+			     "uniform float %s;\n",
+			     program->steps[ i ].var.name );
+	      break;
+	    case 2:
+	      p += snprintf( p,
+			     bufsize - ( p - glslUniformBlock ),
+			     "uniform vec2 %s;\n",
+			     program->steps[ i ].var.name );
+	      break;
+	    case 3:
+	      p += snprintf( p,
+			     bufsize - ( p - glslUniformBlock ),
+			     "uniform vec3 %s;\n",
+			     program->steps[ i ].var.name );
+	      break;
+	    case 4:
+	      p += snprintf( p,
+			     bufsize - ( p - glslUniformBlock ),
+			     "uniform vec4 %s;\n",
+			     program->steps[ i ].var.name );
+	      break;
+	    case 16:
+	      p += snprintf( p,
+			     bufsize - ( p - glslUniformBlock ),
+			     "uniform mat4 %s;\n",
+			     program->steps[ i ].var.name );
+	      break;
+	    default:
+	      error( "%s", "Logic error in Atlas! My code is ass!" );
+	    }
+	    program->varNames[ program->numVars ] = program->steps[ i ].var.name;
+	    program->varOffsets[ program->numVars ] = offset;
+	    program->varSizes[ program->numVars ] = program->steps[ i ].var.size;
+	    if( program->steps[ i ].var.size == 1 || program->steps[ i ].var.size == 2 )
+	      offset += 2;
+	    else if( program->steps[ i ].var.size == 3 ||
+		     program->steps[ i ].var.size == 4 )
+	      offset += 4;
+	    else
+	      offset += 16;
+	    program->steps[ i ].var.index = program->numVars;
+	    ++program->numVars;
+	  }
+	}
       }
     }
 
     // p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
     program->varBlock = mem( offset, f32 );
+    program->bigvarts = mem( program->numBigvars, tensor* ); 
     // glGenBuffers( 1, &program->ubo );
     // glBindBuffer( GL_UNIFORM_BUFFER, program->ubo );
     // glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, program->varBlock,
@@ -870,14 +891,22 @@ void finalize( program* program ){
       program->steps[ i ].branch = jumpTo;
     } else if( program->steps[ i ].type == GET ){
       u32 vi;
-      if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) )
-        error( "%s:%u command %u: Attempt to get an an unknown variable %s", program->steps[ i ].filename,
-	       program->steps[ i ].linenum,
-	       program->steps[ i ].commandnum,
-               program->steps[ i ].var.name );
-      char* varName = program->steps[ i ].var.name;
-      program->steps[ i ].var.index = vi;
-      unmem( varName );
+      if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) ){
+	if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) )
+	  error( "%s:%u command %u: Attempt to get an an unknown variable %s", program->steps[ i ].filename,
+		 program->steps[ i ].linenum,
+		 program->steps[ i ].commandnum,
+		 program->steps[ i ].var.name );
+	char* varName = program->steps[ i ].var.name;
+	program->steps[ i ].var.index = vi;
+	unmem( varName );
+	program->steps[ i ].var.size = 0;
+      } else{
+	char* varName = program->steps[ i ].var.name;
+	program->steps[ i ].var.index = vi;
+	unmem( varName );
+	program->steps[ i ].var.size = program->varSizes[ vi ];
+      }
     } else if( program->steps[ i ].type == COMPUTE ){
       char* glslpre = program->steps[ i ].toCompute.glslpre;
       char* glsl = program->steps[ i ].toCompute.glsl;
@@ -951,8 +980,16 @@ void deleteProgram( program* p ){
   deleteTrieNode( p->labels );
   for( u32 i = 0; i < p->numVars; ++i )
     unmem( p->varNames[ i ] );
+  for( u32 i = 0; i < p->numBigvars; ++i )
+    unmem( p->bigvarNames[ i ] );
+  for( u32 i = 0; i < p->numBigvars; ++i )
+    if( p->bigvarts[ i ] )
+      deleteTensor( p->bigvarts[ i ] );
+  unmem( p->bigvarts );
   unmem( p->varNames );
+  unmem( p->bigvarNames );
   deleteTrieNode( p->vars );
+  deleteTrieNode( p->bigvars );
   unmem( p->varBlock );
   unmem( p->varSizes );
   unmem( p->varOffsets );
@@ -1406,8 +1443,8 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     }
     case SLICE:
-      if( !ts->size )
-        error( "%s", "Attempt to slice with an empty stack." );
+      if( ts->size < 2 )
+        error( "%s", "Attempt to slice without enough elements on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         error( "%s", "Attempt to slice with a parameter not of rank 1." );
 
@@ -1443,103 +1480,115 @@ bool runProgram( tensorStack* ts, program** progp ){
     case SET:
 #ifdef DBG
       check_memory_leaks();
-#endif      
-      if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
-          ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
-        error( "%s", "Incorrect rank during set statement." );
-      if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
-        // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
-        error( "Incorrect size %u during set statement. Expecting %u.",
-	       s->var.size, ts->stack[ ts->size - 1 ]->size );
+#endif
+      if( !s->var.size ){
+	if( p->bigvarts[ s->var.index ] )
+	  deleteTensor( p->bigvarts[ s->var.index ] );
+	p->bigvarts[ s->var.index ] = ts->stack[ ts->size - 1 ];
+	ts->stack[ --ts->size ] = NULL;
+      }else{
+	if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
+	    ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
+	  error( "%s", "Incorrect rank during set statement." );
+	if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
+	  // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
+	  error( "Incorrect size %u during set statement. Expecting %u.",
+		 s->var.size, ts->stack[ ts->size - 1 ]->size );
+	}
+	
+	tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+	f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
+	if( s->var.size <= 4 )
+	  for( s32 i = 0; i < s->var.size; ++i )
+	    uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data +
+			      ts->stack[ ts->size - 1 ]->offset +
+			      ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );
+	else
+	  for( u32 i = 0; i < 4; ++i )
+	    for( u32 j = 0; j < 4; ++j )
+	      uniform[ i * 4 + j ] =
+		*( ts->stack[ ts->size - 1 ]->data +
+		   ts->stack[ ts->size - 1 ]->offset +
+		   ts->stack[ ts->size - 1 ]->strides[ 0 ] * i +
+		   ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
+	for( u32 i = 0; i < p->numComputes; ++i ){
+	  glUseProgram( p->computes[ i ]->program );
+	  switch( p->varSizes[ s->var.index ] ){
+	  case 1:
+	    glUniform1fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+			  1,
+			  p->varBlock + p->varOffsets[ s->var.index ] );
+	    break;
+	  case 2:
+	    glUniform2fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+			  1,
+			  p->varBlock + p->varOffsets[ s->var.index ] );
+	    break;
+	  case 3:
+	    glUniform3fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+			  1,
+			  p->varBlock + p->varOffsets[ s->var.index ] );
+	    break;
+	  case 4:
+	    glUniform4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+			  1,
+			  p->varBlock + p->varOffsets[ s->var.index ] );
+	    break;
+	  case 16:
+	    glUniformMatrix4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+				1,
+				0,
+				p->varBlock + p->varOffsets[ s->var.index ] );
+	    break;
+	  default:
+	    error( "%s", "Logic error in Atlas! Bad variable size." );
+	  }
+	}
+	
+	pop( ts );
+	// dbg( "%s", "set" );
       }
-      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
-      f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
-      if( s->var.size <= 4 )
-        for( s32 i = 0; i < s->var.size; ++i )
-          uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data +
-                            ts->stack[ ts->size - 1 ]->offset +
-                            ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );
-      else
-        for( u32 i = 0; i < 4; ++i )
-          for( u32 j = 0; j < 4; ++j )
-            uniform[ i * 4 + j ] =
-              *( ts->stack[ ts->size - 1 ]->data +
-                 ts->stack[ ts->size - 1 ]->offset +
-                 ts->stack[ ts->size - 1 ]->strides[ 0 ] * i +
-                 ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
-      for( u32 i = 0; i < p->numComputes; ++i ){
-        glUseProgram( p->computes[ i ]->program );
-        switch( p->varSizes[ s->var.index ] ){
-        case 1:
-          glUniform1fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-                        1,
-                        p->varBlock + p->varOffsets[ s->var.index ] );
-          break;
-        case 2:
-          glUniform2fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-                        1,
-                        p->varBlock + p->varOffsets[ s->var.index ] );
-          break;
-        case 3:
-          glUniform3fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-                        1,
-                        p->varBlock + p->varOffsets[ s->var.index ] );
-          break;
-        case 4:
-          glUniform4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-                        1,
-                        p->varBlock + p->varOffsets[ s->var.index ] );
-          break;
-        case 16:
-          glUniformMatrix4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-                              1,
-                              0,
-                              p->varBlock + p->varOffsets[ s->var.index ] );
-          break;
-        default:
-          error( "%s", "Logic error in Atlas! Bad variable size." );
-        }
-      }
-
-      pop( ts );
-      // dbg( "%s", "set" );
       break;
     case GET: {
-      // dbg( "foo" );
-      static const u32 shape1[ 4 ] = { 1 };
-      static const u32 shape2[ 4 ] = { 2 };
-      static const u32 shape3[ 4 ] = { 3 };
-      static const u32 shape4[ 4 ] = { 4 };
-      static const u32 shape16[ 2 ] = { 4, 4 };
-      const u32* shape;
-      u32 rank = 1;
-      switch( p->varSizes[ s->var.index ] ){
-      case 1:
-        shape = shape1;
-        break;
-      case 2:
-        shape = shape2;
-        break;
-      case 3:
-        shape = shape3;
-        break;
-      case 4:
-        shape = shape4;
-        break;
-      case 16:
-        shape = shape16;
-        rank = 2;
-        break;
-      default:
-        error( "%s %u.",
-               "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
-               p->varSizes[ s->var.index ] );
+      if( !s->var.size ){
+	tensor* t = copyTensor( p->bigvarts[ s->var.index ] );
+	push( ts, t );
+      }else{
+	static const u32 shape1[ 4 ] = { 1 };
+	static const u32 shape2[ 4 ] = { 2 };
+	static const u32 shape3[ 4 ] = { 3 };
+	static const u32 shape4[ 4 ] = { 4 };
+	static const u32 shape16[ 2 ] = { 4, 4 };
+	const u32* shape;
+	u32 rank = 1;
+	switch( p->varSizes[ s->var.index ] ){
+	case 1:
+	  shape = shape1;
+	  break;
+	case 2:
+	  shape = shape2;
+	  break;
+	case 3:
+	  shape = shape3;
+	  break;
+	case 4:
+	  shape = shape4;
+	  break;
+	case 16:
+	  shape = shape16;
+	  rank = 2;
+	  break;
+	default:
+	  error( "%s %u.",
+		 "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
+		 p->varSizes[ s->var.index ] );
+	}
+	tensor* t =
+	  newTensor( rank, shape, p->varBlock + p->varOffsets[ s->var.index ] );
+	t->ownsData = false;  // Ensure the tensor does not own the data
+	push( ts, t );
       }
-      tensor* t =
-        newTensor( rank, shape, p->varBlock + p->varOffsets[ s->var.index ] );
-      t->ownsData = false;  // Ensure the tensor does not own the data
-      push( ts, t );
-      // dbg( "%s", "get" );
+	// dbg( "%s", "get" );
       break;
     }
     case QUIT:
