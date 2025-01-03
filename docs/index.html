@@ -761,12 +761,12 @@ Strides: 2 1
 
   <section id="cmd-set">
     <h2>set</h2>
-    <p>Sets a named variable to a certain value. The size must be explicitly set, as the variables 
-      are also set up as uniforms for the shaders. For example 
+    <p>Sets a named variable to a certain value. The size may be explicitly set, as the variables 
+      can be used as uniforms for the shaders. For example 
       <pre><code>[1 2 3];set'vec' 3;</code></pre> 
       would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and 
       make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 
-      for a 4x4 matrix.</p>
+      for a 4x4 matrix. If set is called without a size, the named variable will not be set as a uniform.</p>
   </section>
 
   <section id="cmd-shape">
