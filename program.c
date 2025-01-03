@@ -9,7 +9,7 @@ void skipWhitespace( const char** str ){
     ( *str )++;
 }
 void parseTensorRecursive(
-  const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
+			  const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
   skipWhitespace( str );
   if( **str != '[' )
     error( "%s", "Expected '[' to start tensor definition." );
@@ -229,7 +229,7 @@ void trimWhitespace( char** str ){
 
   *str = start;
 }
-void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
+void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, char* command ){
   if( !command )
     return;
   trimWhitespace( &command );
@@ -243,6 +243,9 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     p->steps = tp;
   }
   step* curStep = &( p->steps[ p->numSteps ] );
+  curStep->filename = filename;
+  curStep->linenum = linenum;
+  curStep->commandnum = commandnum;
   ++p->numSteps;
 
   if( !strncmp( command, "l'", 2 ) ){  // Label
@@ -251,9 +254,9 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s", linenum, commandnum, "Empty label." );
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty label." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in label." );
@@ -262,12 +265,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     label[ endi - starti ] = '\0';
     --p->numSteps;
     if( *( endi + 1 ) )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Extra characters after label." );
     if( trieSearch( p->labels, label, NULL ) )
-      error( "Line %u, command %u: duplicate label '%s'",
+      error( "%s:%u command %u: duplicate label '%s'", filename,
              linenum,
              commandnum,
              label );
@@ -282,12 +285,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty name in set statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in set statement." );
@@ -307,7 +310,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       // dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n",
       // linenum, commandnum, varName, varSize );
     } else
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Malformed set statement." );
@@ -320,12 +323,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty name in get statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in get statement." );
@@ -333,7 +336,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     memcpy( varName, starti, endi - starti );
     varName[ endi - starti ] = '\0';
     if( *( endi + 1 ) )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Extra characters after get statement." );
@@ -349,9 +352,9 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       endi++;
     if( endi == starti )
       error(
-        "Line %u, command %u: %s", linenum, commandnum, "Empty if statement." );
+	    "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in if statement." );
@@ -361,7 +364,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = IF;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Extra characters after if statement." );
@@ -374,12 +377,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty ifn statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in ifn statement." );
@@ -389,7 +392,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = IFN;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Extra characters after ifn statement." );
@@ -402,12 +405,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty img statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in img statement." );
@@ -418,7 +421,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->tensor = tensorFromImageFile( imgName );
     unmem( imgName );
     if( *( endi + 1 ) )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Extra characters after img statement." );
@@ -431,12 +434,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty load statement." );
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in load statement." );
@@ -446,7 +449,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     curStep->type = LOAD;
     curStep->progName = progName;
     if( *( endi + 1 ) )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Extra characters after load statement." );
@@ -459,7 +462,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in compute statement pre block." );
@@ -475,7 +478,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( *endi != '\'' )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Unmatched quote in compute statement." );
@@ -499,12 +502,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       curStep->toCompute.argCount = argCount;
       if( argCount > 4 )
         error(
-          "%s",
-          "Compute created with more than 4 arguments. The maximum is 4." );
+	      "%s",
+	      "Compute created with more than 4 arguments. The maximum is 4." );
       // dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
       // linenum, commandnum, comp, argCount );
     } else
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Malformed compute statement." );
@@ -602,12 +605,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       while( *endi && *endi != '\'' )
 	endi++;
       if( endi == starti )
-	error( "Line %u, command %u: %s",
+	error( "%s:%u command %u: %s", filename,
 	       linenum,
 	       commandnum,
 	       "Empty string statement." );
       if( *endi != '\'' )
-	error( "Line %u, command %u: %s",
+	error( "%s:%u command %u: %s", filename,
 	       linenum,
 	       commandnum,
 	       "Unmatched quote in string statement." );
@@ -617,7 +620,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
       curStep->tensor = tensorFromString( str );
       unmem( str );
       if( *( endi + 1 ) )
-	error( "Line %u, command %u: %s",
+	error( "%s:%u command %u: %s", filename,
 	       linenum,
 	       commandnum,
 	       "Extra characters after string statement." );
@@ -654,12 +657,12 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "Line %u, command %u: %s",
+      error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
              "Empty call statement." );
     if( *endi == '\'' )
-      error( "Line %u, command %u: %s", linenum, commandnum, "Quote error." );
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Quote error." );
     char* branchName = mem( 1 + endi - starti, char );
     memcpy( branchName, starti, endi - starti );
     branchName[ endi - starti ] = '\0';
@@ -670,7 +673,7 @@ void addStep( program* p, u32 linenum, u32 commandnum, char* command ){
   }
 }
 // Modifies prog.
-program* newProgram( char* prog ){
+program* newProgram( const char* filename, char* prog ){
   removeComments( prog );
   program* ret = mem( 1, program );
   ret->computes = mem( initSize, compute* );
@@ -685,8 +688,6 @@ program* newProgram( char* prog ){
   ret->returns = mem( initSize, step );
   ret->returnStackSize = initSize;
 
-  // Step 1: Remove all comments from the program
-  removeComments( prog );
 
   // Step 2: Initialize parsing pointers
   char* ptr = prog;
@@ -717,7 +718,7 @@ program* newProgram( char* prog ){
     command[ cmd_length ] = '\0';
 
     // Add the command to the program steps
-    addStep( ret, linenum, commandnum, command );
+    addStep( ret, filename, linenum, commandnum, command );
     unmem( command );
 
     // Update the parsing pointer
@@ -761,9 +762,10 @@ program* newProgram( char* prog ){
         u32 val;
         if( trieSearch( ret->vars, ret->steps[ i ].var.name, &val ) ){
           if( ret->steps[ i ].var.size != ret->varSizes[ val ] )
-            error(
-              "%s",
-              "Incorrect size setting already set value. Size is static." );
+            error( "%s:%u command %u: %s", ret->steps[ i ].filename,
+		   ret->steps[ i ].linenum,
+		   ret->steps[ i ].commandnum,
+		  "Incorrect size setting already set value. Size is static." );
           unmem( ret->steps[ i ].var.name );
           ret->steps[ i ].var.index = val;
         } else {
@@ -835,14 +837,17 @@ program* newProgram( char* prog ){
         ret->steps[ i ].type == CALL ){
       u32 jumpTo;
       if( !trieSearch( ret->labels, ret->steps[ i ].branchName, &jumpTo ) )
-        error( "Statement with unknown label %s.", ret->steps[ i ].branchName );
+        error( "%s:%u command %u: Statement with unknown label %s", ret->steps[ i ].filename,
+		   ret->steps[ i ].linenum,
+		   ret->steps[ i ].commandnum, ret->steps[ i ].branchName );
       unmem( ret->steps[ i ].branchName );
       ret->steps[ i ].branch = jumpTo;
     } else if( ret->steps[ i ].type == GET ){
       u32 vi;
       if( !trieSearch( ret->vars, ret->steps[ i ].var.name, &vi ) )
-        error( "%s %s.",
-               "Attempt to get an an unknown variable",
+        error( "%s:%u command %u: Attempt to get an an unknown variable %s", ret->steps[ i ].filename,
+	       ret->steps[ i ].linenum,
+	       ret->steps[ i ].commandnum,
                ret->steps[ i ].var.name );
       char* varName = ret->steps[ i ].var.name;
       ret->steps[ i ].var.index = vi;
@@ -863,11 +868,11 @@ program* newProgram( char* prog ){
   return ret;
 }
 // Doesn't modify prog.
-program* newProgramFromString( const char* prog, u32 len ){
+program* newProgramFromString( const char* filename, const char* prog, u32 len ){
   char* cp = mem( len + 3, char );
   strncpy( cp, prog, len );
   cp[ len ] = '\0';
-  program* ret = newProgram( cp );
+  program* ret = newProgram( filename, cp );
   unmem( cp );
   return ret;
 }
@@ -906,7 +911,7 @@ program* newProgramFromFile( const char* filename ){
 
   buffer[ fileSize ] = '\0';
   fclose( file );
-  program* ret = newProgram( buffer );
+  program* ret = newProgram( filename, buffer );
   unmem( buffer );
   return ret;
 }
@@ -1012,20 +1017,22 @@ bool runProgram( tensorStack* ts, program** progp ){
       takeOwnership( ts->stack[ ts->size - 2 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
-      if( t1->rank != t2->rank || t1->shape[ 0 ] != t2->shape[ 0 ] ||
-          t1->shape[ 1 ] != t2->shape[ 1 ] ||
-          t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
+      if( t1->rank != t2->rank )
+        error( "%s", "Attempt to pow tensors with incompatible ranks." );
+      if( t1->rank &&
+	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
+	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
         error( "%s", "Attempt to pow tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-                             i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-                             i3 * t1->strides[ 3 ];
+		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+		i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-                             i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-                             i3 * t2->strides[ 3 ];
+		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+		i3 * t2->strides[ 3 ];
               *offset2 = powf( *offset2, *offset1 );
             }
 
@@ -1042,20 +1049,22 @@ bool runProgram( tensorStack* ts, program** progp ){
       takeOwnership( ts->stack[ ts->size - 2 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
-      if( t1->rank != t2->rank || t1->shape[ 0 ] != t2->shape[ 0 ] ||
-          t1->shape[ 1 ] != t2->shape[ 1 ] ||
-          t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
+      if( t1->rank != t2->rank )
+        error( "%s", "Attempt to add tensors with incompatible ranks." );
+      if( t1->rank &&
+	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
+	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
         error( "%s", "Attempt to add tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-                             i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-                             i3 * t1->strides[ 3 ];
+		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+		i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-                             i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-                             i3 * t2->strides[ 3 ];
+		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+		i3 * t2->strides[ 3 ];
               *offset2 = *offset2 + *offset1;
             }
 
@@ -1072,20 +1081,22 @@ bool runProgram( tensorStack* ts, program** progp ){
       takeOwnership( ts->stack[ ts->size - 2 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
-      if( t1->rank != t2->rank || t1->shape[ 0 ] != t2->shape[ 0 ] ||
-          t1->shape[ 1 ] != t2->shape[ 1 ] ||
-          t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
+      if( t1->rank != t2->rank )
+        error( "%s", "Attempt to sub tensors with incompatible ranks." );
+      if( t1->rank &&
+	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
+	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
         error( "%s", "Attempt to sub tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-                             i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-                             i3 * t1->strides[ 3 ];
+		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+		i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-                             i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-                             i3 * t2->strides[ 3 ];
+		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+		i3 * t2->strides[ 3 ];
               *offset2 = *offset2 - *offset1;
             }
 
@@ -1102,20 +1113,22 @@ bool runProgram( tensorStack* ts, program** progp ){
       takeOwnership( ts->stack[ ts->size - 2 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
-      if( t1->rank != t2->rank || t1->shape[ 0 ] != t2->shape[ 0 ] ||
-          t1->shape[ 1 ] != t2->shape[ 1 ] ||
-          t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
+      if( t1->rank != t2->rank )
+        error( "%s", "Attempt to mul tensors with incompatible ranks." );
+      if( t1->rank &&
+	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
+	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
         error( "%s", "Attempt to mul tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-                             i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-                             i3 * t1->strides[ 3 ];
+		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+		i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-                             i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-                             i3 * t2->strides[ 3 ];
+		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+		i3 * t2->strides[ 3 ];
               *offset2 = *offset2 * *offset1;
             }
 
@@ -1132,20 +1145,22 @@ bool runProgram( tensorStack* ts, program** progp ){
       takeOwnership( ts->stack[ ts->size - 2 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
-      if( t1->rank != t2->rank || t1->shape[ 0 ] != t2->shape[ 0 ] ||
-          t1->shape[ 1 ] != t2->shape[ 1 ] ||
-          t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] )
+      if( t1->rank != t2->rank )
+        error( "%s", "Attempt to div tensors with incompatible ranks." );
+      if( t1->rank &&
+	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
+	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
         error( "%s", "Attempt to div tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-                             i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-                             i3 * t1->strides[ 3 ];
+		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+		i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-                             i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-                             i3 * t2->strides[ 3 ];
+		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+		i3 * t2->strides[ 3 ];
               *offset2 = *offset2 / *offset1;
             }
 
@@ -1208,8 +1223,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     case CAT: {
       if( ts->size < 3 )
         error(
-          "%s",
-          "Attempt to concatenate without enough arguments on the stack." );
+	      "%s",
+	      "Attempt to concatenate without enough arguments on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
         error( "%s",
                "Attempt to concatenate with a nonscalar axis parameter." );
@@ -1261,8 +1276,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     case FIRST: {
       if( !ts->size )
         error(
-          "%s",
-          "Attempt to take the first element with no parameter on the stack." );
+	      "%s",
+	      "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -1271,8 +1286,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     case LAST: {
       if( !ts->size )
         error(
-          "%s",
-          "Attempt to take the first element with no parameter on the stack." );
+	      "%s",
+	      "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
       // dbg( "%s", "first" );

@@ -68,6 +68,9 @@ typedef struct{
     char* varName;
     char* progName;
   };
+  const char* filename;
+  u32 linenum;
+  u32 commandnum;
 } step;
 
 typedef struct{
@@ -89,7 +92,7 @@ typedef struct{
   f32* varBlock;  
 } program;
 
-program* newProgramFromString( const char* prog, u32 strlen );
+program* newProgramFromString( const char* filename, const char* prog, u32 strlen );
 program* newProgramFromFile( const char* file );
 // Return false to exit program.
 bool runProgram( tensorStack* ts, program** progp );
