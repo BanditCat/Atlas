@@ -16,4 +16,7 @@ l'go3';
 0;dup;[32 33 0];s;first;ifn'go4';
 load'inc\mandelbrot.atl';
 l'go4';
+0;dup;[33 34 0];s;first;ifn'go5';
+load'inc\terrain.atl';
+l'go5';
 pop; // pop keys
