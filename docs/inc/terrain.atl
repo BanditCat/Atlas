@@ -4,22 +4,67 @@ keys;set'keys';input;set'input'; // Set input variables
 include'inc\nav.atl';
 
 size;if'started'; // init code goes here
-[2 2 2];
+4096;4;fractalNoise;
+1;
+l'started'; // init code complete
+pop;
+
+0;dup;
+get'texsize';[3];0;cat;
+c''ret[0]=a( t )\' 1 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1;if'end'; // Function defintions here, we skip them.
+
+l'fractalNoise'; // Takes 2 arguments, initial grid size, and texture size.
+set'fngradsize';
+set'fntexsize';
+[0.5];set'fnamp';
+[1];set'fnseed';
+
+get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
+
+l'fnloop';
+get'fngradsize';2;*;set'fngradsize';
+get'fnamp';[0.5];*;set'fnamp';
+get'fnseed';[1.2];+;set'fnseed';
+get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
+get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1;
+get'fntexsize';get'fngradsize';/;2;-;if'fnloop';
+return;
+
+
+
+
+l'perlin';   // Takes 4 arguments, gradient grid size, texture size, amplitude, and random seed.
+set'time' 1;
+set'amp' 1;
+2;rep;set'texsize' 2;
+
+2;rep;0;dup;set'gradsize' 2;[2];0;cat;
 c'  // Push the gradients.
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
     return fract( sin( h ) * 43758.5453123 )\
 }
 '
-ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), 0.1 ) * 2.0 * 3.1415928 ) :
-                  cos( hash( vec2( t.xy ), 0.1 ) * 2.0 * 3.1415928 )\
+ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), time ) * 2.0 * 3.1415928 ) :
+                  cos( hash( vec2( t.xy ), time ) * 2.0 * 3.1415928 )\
 ' 0 1;
-1;
-l'started'; // init code complete
-pop;
 
-
-0;dup;windowSize;set'texsize' 2;get'texsize';[3];0;cat;
+get'texsize';
 ;c'
 float fade( float x ){
     return x*x*x*(x*(x*6.0 - 15.0)+10.0)\
@@ -28,7 +73,7 @@ float lerp( float a, float b, float t ){
     return a + t*(b - a)\
 }
 '
-vec2 c1 = vec2( t.xy ) * 2.0 / texsize\
+vec2 c1 = vec2( t.xy ) * gradsize / texsize\
 vec2 fract = fract( c1 )\
 ivec2 ic1 = ivec2( c1 )\
 ivec2 ic2 = ic1 + ivec2( 1, 0 )\
@@ -47,6 +92,9 @@ float v  = fade( fract.y )\
 float v1 = lerp( fc1, fc2, u )\
 float v2 = lerp( fc3, fc4, u )\
 float v3 = lerp( v1, v2, v )\
-ret[0]=v3\
+ret[0]=amp*(v3 * 0.5 + 0.5)\
 ' 1 1;
+return;
+
+l'end';
 

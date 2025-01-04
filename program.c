@@ -1174,7 +1174,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case POW: {
       if( ts->size < 2 )
-        error( "%s", "Attempt to pow without enough arguments on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow without enough arguments on the stack." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensorToHostMemory( ts->stack[ ts->size - 2 ] );
@@ -1182,11 +1182,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
-        error( "%s", "Attempt to pow tensors with incompatible ranks." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible ranks." );
       if( t1->rank &&
 	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
 	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s", "Attempt to pow tensors with incompatible shapes." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1206,7 +1206,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case ADD: {
       if( ts->size < 2 )
-        error( "%s", "Attempt to add without enough arguments on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add without enough arguments on the stack." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensorToHostMemory( ts->stack[ ts->size - 2 ] );
@@ -1214,11 +1214,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
-        error( "%s", "Attempt to add tensors with incompatible ranks." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible ranks." );
       if( t1->rank &&
 	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
 	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s", "Attempt to add tensors with incompatible shapes." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1238,7 +1238,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case SUB: {
       if( ts->size < 2 )
-        error( "%s", "Attempt to sub without enough arguments on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub without enough arguments on the stack." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensorToHostMemory( ts->stack[ ts->size - 2 ] );
@@ -1246,11 +1246,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
-        error( "%s", "Attempt to sub tensors with incompatible ranks." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible ranks." );
       if( t1->rank &&
 	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
 	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s", "Attempt to sub tensors with incompatible shapes." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1270,7 +1270,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case MUL: {
       if( ts->size < 2 )
-        error( "%s", "Attempt to mul without enough arguments on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul without enough arguments on the stack." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensorToHostMemory( ts->stack[ ts->size - 2 ] );
@@ -1278,11 +1278,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
-        error( "%s", "Attempt to mul tensors with incompatible ranks." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible ranks." );
       if( t1->rank &&
 	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
 	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s", "Attempt to mul tensors with incompatible shapes." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1302,7 +1302,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case DIV: {
       if( ts->size < 2 )
-        error( "%s", "Attempt to div without enough arguments on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div without enough arguments on the stack." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensorToHostMemory( ts->stack[ ts->size - 2 ] );
@@ -1310,11 +1310,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
-        error( "%s", "Attempt to div tensors with incompatible ranks." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible ranks." );
       if( t1->rank &&
 	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
 	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s", "Attempt to div tensors with incompatible shapes." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1357,7 +1357,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case RETURN:
       if( !p->numReturns )
-        error( "%s", "Attempt to return with an empty return stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to return with an empty return stack." );
       i = p->returns[ --p->numReturns ];
       // dbg( "%s", "return" );
       break;
@@ -1367,9 +1367,9 @@ bool runProgram( tensorStack* ts, program** progp ){
                "Attempt to run a compute statement with no shape parameter on "
                "the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
-        error( "%s", "The shape for a compute was not a rank 1 tensor." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for a compute was not a rank 1 tensor." );
       if( ts->stack[ ts->size - 1 ]->size > 4 )
-        error( "%s", "The shape for an initilizer was more than 4 component." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for an initilizer was more than 4 component." );
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 shape[ 4 ];
       u32 size = ts->stack[ ts->size - 1 ]->size;
@@ -1407,7 +1407,7 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s",
                "Attempt to reverse with no axis parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-        error( "%s", "Attempt to reverse a nonscalar axis parameter." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to reverse a nonscalar axis parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 axis = *( ts->stack[ ts->size - 1 ]->data +
@@ -1472,9 +1472,9 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case DUP:
       if( !ts->size )
-        error( "%s", "Attempt to duplicate with no parameter on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to duplicate with no parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-        error( "%s", "Attempt to duplicate with a nonscalar parameter." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to duplicate with a nonscalar parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 dup = *( ts->stack[ ts->size - 1 ]->data +
@@ -1486,9 +1486,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case REPEAT: {
       if( ts->size < 2 )
-        error( "%s", "Attempt to repeate without enough parameters on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to repeate without enough parameters on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-        error( "%s", "Attempt to repeat with a nonscalar count." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to repeat with a nonscalar count." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 count = *( ts->stack[ ts->size - 1 ]->data +
@@ -1500,9 +1500,9 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case IF: {
       if( !ts->size )
-        error( "%s", "Attempt to if with no parameter on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to if with no parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-        error( "%s", "Attempt to if with a non-scalar parameter." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to if with a non-scalar parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       f32 cond = *( ts->stack[ ts->size - 1 ]->data +
@@ -1515,9 +1515,9 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case IFN: {
       if( !ts->size )
-        error( "%s", "Attempt to ifn with no parameter on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to ifn with no parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-        error( "%s", "Attempt to ifn with a non-scalar parameter." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to ifn with a non-scalar parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       f32 cond = *( ts->stack[ ts->size - 1 ]->data +
@@ -1548,9 +1548,9 @@ bool runProgram( tensorStack* ts, program** progp ){
     case ENCLOSE: {
       tensor* t = ts->stack[ ts->size - 1 ];
       if( !ts->size )
-        error( "%s", "Attempt to enclose with an empty stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to enclose with an empty stack." );
       if( t->rank == 4 )
-        error( "%s", "Attempt to enclose a parameter of rank 4 (rank too high)." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to enclose a parameter of rank 4 (rank too high)." );
       for( int i = t->rank; i >= 1; --i ){
 	t->shape[ i ] = t->shape[ i - 1 ];
 	t->strides[ i ] = t->strides[ i - 1 ];
@@ -1562,9 +1562,9 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case SLICE:
       if( ts->size < 2 )
-        error( "%s", "Attempt to slice without enough elements on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice without enough elements on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
-        error( "%s", "Attempt to slice with a parameter not of rank 1." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice with a parameter not of rank 1." );
 
       u32 start = *( ts->stack[ ts->size - 1 ]->data +
                      ts->stack[ ts->size - 1 ]->offset );
@@ -1607,7 +1607,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       }else{
 	if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
 	    ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
-	  error( "%s", "Incorrect rank during set statement." );
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Incorrect rank during set statement." );
 	if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
 	  // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
 	  error( "Incorrect size %u during set statement. Expecting %u.",
