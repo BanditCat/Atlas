@@ -4,26 +4,49 @@ keys;set'keys';input;set'input'; // Set input variables
 include'inc\nav.atl';
 
 size;if'started'; // init code goes here
-[4 4 2];
+[2 2 2];
 c'  // Push the gradients.
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
     return fract( sin( h ) * 43758.5453123 )\
 }
 '
-ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), 0.0 ) * 2.0 * 3.1415928 ) :
-                  cos( hash( vec2( t.xy ), 0.0 ) * 2.0 * 3.1415928 )\
+ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), 0.1 ) * 2.0 * 3.1415928 ) :
+                  cos( hash( vec2( t.xy ), 0.1 ) * 2.0 * 3.1415928 )\
 ' 0 1;
 1;
 l'started'; // init code complete
 pop;
 
 
-0;dup;[256 256 3];c''
-ivec2 c1 = t.xy / 64\
-ivec2 c2 = c1 + ivec2( 0, 1 )\
-ivec2 c3 = c1 + ivec2( 1, 0 )\
-ivec2 c4 = c1 + ivec2( 1, 1 )\
-ret[0]=t.z < 2 ? a( t ) * 0.5 + 0.5 : 0.0\
+0;dup;windowSize;set'texsize' 2;get'texsize';[3];0;cat;
+;c'
+float fade( float x ){
+    return x*x*x*(x*(x*6.0 - 15.0)+10.0)\
+}
+float lerp( float a, float b, float t ){
+    return a + t*(b - a)\
+}
+'
+vec2 c1 = vec2( t.xy ) * 2.0 / texsize\
+vec2 fract = fract( c1 )\
+ivec2 ic1 = ivec2( c1 )\
+ivec2 ic2 = ic1 + ivec2( 1, 0 )\
+ivec2 ic3 = ic1 + ivec2( 0, 1 )\
+ivec2 ic4 = ic1 + ivec2( 1, 1 )\
+c1 = vec2( a( ivec4( ic1, 0, 0 ) ), a( ivec4( ic1, 1, 0 ) ) )\
+vec2 c2 = vec2( a( ivec4( ic2, 0, 0 ) ), a( ivec4( ic2, 1, 0 ) ) )\
+vec2 c3 = vec2( a( ivec4( ic3, 0, 0 ) ), a( ivec4( ic3, 1, 0 ) ) )\
+vec2 c4 = vec2( a( ivec4( ic4, 0, 0 ) ), a( ivec4( ic4, 1, 0 ) ) )\
+float fc1 = dot( c1, fract - vec2( 0, 0 ) )\
+float fc2 = dot( c2, fract - vec2( 1, 0 ) )\
+float fc3 = dot( c3, fract - vec2( 0, 1 ) )\
+float fc4 = dot( c4, fract - vec2( 1, 1 ) )\
+float u  = fade( fract.x )\
+float v  = fade( fract.y )\
+float v1 = lerp( fc1, fc2, u )\
+float v2 = lerp( fc3, fc4, u )\
+float v3 = lerp( v1, v2, v )\
+ret[0]=v3\
 ' 1 1;
 
