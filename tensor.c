@@ -871,7 +871,7 @@ tensor*  tensorMultiplyHelper( tensor* t1, tensor* t2 ){
   ret->shape[ 1 ] = t1->shape[ 1 ];
   ret->size = ret->shape[ 0 ] * ret->shape[ 1 ];
   for( u32 i = 0; i < 4; ++i )
-    ret->strides[ i ] = i == ret->rank - 1 ? 1 : t2->shape[ 1 ];
+    ret->strides[ i ] = i == ret->rank - 1 ? 1 : t1->shape[ 1 ];
   ret->ownsData = true;
   ret->gpu = false;
   ret->data = mem( ret->size, f32 );

@@ -652,7 +652,46 @@ Strides:
 
   <section id="cmd-m">
     <h2>m (matrix multiply)</h2>
-    <p>This mulitplies the top two tensors (which must be rank 1 or 2) and pushes the result on the stack, BUGBUG TODO examples.</p>
+    <p>This mulitplies the top two tensors (which must be rank 2 or less) and pushes the result on the stack. The result is always of rank 2. For example <code>[[1 0 1][2 1 1][0 1 1][1 1 2]];[[1 2 1][2 3 1][4 2 2]];m;print;quit;</code> prints <pre><code>Tensor 0
+Shape: 4 3
+Strides: 3 1
++-----------------------+
+| +-------------------+ |
+| | 5.00  4.00  3.00  | |
+| +-------------------+ |
+| +-------------------+ |
+| | 8.00  9.00  5.00  | |
+| +-------------------+ |
+| +-------------------+ |
+| | 6.00  5.00  3.00  | |
+| +-------------------+ |
+| +-------------------+ |
+| | 11.00 9.00  6.00  | |
+| +-------------------+ |
++-----------------------+</code></pre> and <code>[[5 4 3][8 9 5][6 5 3][11 9 6]];[100 80 60];m;print;quit;</code> will print <pre><code>Tensor 0
+Shape: 4 1
+Strides: 1 1
++-------------+
+| +---------+ |
+| | 1000.00 | |
+| +---------+ |
+| +---------+ |
+| | 1820.00 | |
+| +---------+ |
+| +---------+ |
+| | 1180.00 | |
+| +---------+ |
+| +---------+ |
+| | 2180.00 | |
+| +---------+ |
++-------------+</code></pre> The m command can also be used as a dot product; <code>[1 2];[3 4];m;print;quit;</code> will print <pre><code>Tensor 0
+Shape: 1 1
+Strides: 1 1
++-----------+
+| +-------+ |
+| | 11.00 | |
+| +-------+ |
++-----------+</code></pre> </p>
   </section>
 
   <section id="cmd-pop">
