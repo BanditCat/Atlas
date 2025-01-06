@@ -304,7 +304,9 @@ compute* makeCompute( const program* prog,
     %s\n\
     void main(){\n\
       int i = ( int( gl_FragCoord.x ) + int( gl_FragCoord.y ) * _a_dims.x ) * 4;\n\
+      float ifloat = float( i );\n\
       ivec4 t = _a_toTensorIndices( i );\n\
+      vec4 tf = vec4( t );\n\
       float ret[ %u ];\n\
       float _a_r[ %u ];\n\
       float _a_g[ %u ];\n\
@@ -312,13 +314,13 @@ compute* makeCompute( const program* prog,
       float _a_a[ %u ];\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_r[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i );\n\
+      ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_g[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i );\n\
+      ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_b[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i );\n\
+      ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n";
 
@@ -854,9 +856,37 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
 
   t->size = total_elements;
 }
-
 void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
   tensorCatHelper( ts->stack[ index1 ], ts->stack[ index2 ], axis );
+}
+// Returns a fresh tensor which must later be deallocated.
+tensor*  tensorMultiplyHelper( tensor* t1, tensor* t2 ){
+  tensorToHostMemory( t1 );
+  tensorToHostMemory( t2 );
+  while( t1->rank < 2 )
+    tensorEnclose( t1 );
+  while( t2->rank < 2 )
+    tensorEnclose( t2 );
+  
+  tensor* ret = mem( 1, tensor );
+  ret->rank = 2;
+  ret->shape[ 2 ] = ret->shape[ 3 ] = 1;
+  ret->shape[ 0 ] = t1->shape[ 0 ];
+  ret->shape[ 1 ] = t2->shape[ 1 ];
+  ret->size = ret->shape[ 0 ] * ret->shape[ 1 ];
+  for( u32 i = 0; i < 4; ++i )
+    ret->strides[ i ] = i == ret->rank - 1 ? 1 : t2->shape[ 1 ];
+  ret->ownsData = true;
+  ret->gpu = false;
+  ret->data = mem( ret->size, f32 );
+  
+  return ret;
+}
+void tensorMultiply( tensorStack* ts ){
+  tensor* ret = tensorMultiplyHelper( ts->stack[ ts->size - 1 ], ts->stack[ ts->size - 2 ] );
+  pop( ts );
+  pop( ts );
+  push( ts, ret );
 }
 void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
   if( t == NULL )
@@ -1070,6 +1100,20 @@ void tensorRepeatHelper( tensor* t, u32 count ){
 }
 void tensorRepeat( tensorStack* ts, u32 index, u32 count ){
   tensorRepeatHelper( ts->stack[ index ], count );
+}
+void tensorEnclose( tensor* t ){
+  for( int i = t->rank; i >= 1; --i ){
+    t->shape[ i ] = t->shape[ i - 1 ];
+    t->strides[ i ] = t->strides[ i - 1 ];
+  }
+  t->shape[ 0 ] = 1;
+  t->strides[ 0 ] = t->strides[ 1 ];
+  t->rank++;
+}
+void tensorExtrude( tensor* t ){
+  t->shape[ t->rank ] = 1;
+  t->strides[ t->rank ] = t->rank ? t->strides[ t->rank - 1 ] : 1;
+  t->rank++;
 }
 bool tensorIsContiguous( const tensor* t ){
   if( t == NULL )

@@ -76,6 +76,10 @@ void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end );
 void tensorTakeFirst( tensorStack* ts, u32 index );
 void tensorTakeLast( tensorStack* ts, u32 index );
 void tensorRepeat( tensorStack* ts, u32 index, u32 count );
+void tensorEnclose( tensor* t );
+void tensorExtrude( tensor* t );
+// Multiplies matrices in host memory.
+void tensorMultiply( tensorStack* ts );
 void pop( tensorStack* ts );
 // Functions for printing tensors. These put the tensor in cpu memory if not already there.
 char* formatTensorData( tensor* t );
@@ -84,5 +88,4 @@ bool tensorIsContiguous( const tensor* t );
 void tensorEnsureContiguous( tensor* t );
 // Returns a string that needs to be deallocated or NULL for nonvectors.
 char* tensorToString( tensor* t );
-
   

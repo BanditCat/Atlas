@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'terrian'
+	git commit -m 'tensor product and extrusion'
 	git push -u origin main
 
 # Include dependency files

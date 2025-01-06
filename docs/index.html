@@ -197,6 +197,7 @@
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
       <li><a href="#cmd-dup">dup (duplicate)</a></li>
       <li><a href="#cmd-enclose">e (enclose)</a></li>
+      <li><a href="#cmd-extrude">ext (extrude)</a></li>
       <li><a href="#cmd-first">first / last</a></li>
       <li><a href="#cmd-get">get</a></li>
       <li><a href="#cmd-if">if / ifn</a></li>
@@ -205,6 +206,7 @@
       <li><a href="#cmd-input">input</a></li>
       <li><a href="#cmd-keys">keys</a></li>
       <li><a href="#cmd-load">load</a></li>
+      <li><a href="#cmd-m">m (matrix multiply)</li>
       <li><a href="#cmd-pop">pop</a></li>
       <li><a href="#cmd-print">print</a></li>
       <li><a href="#cmd-quit">quit</a></li>
@@ -275,7 +277,7 @@
   <section id="data-types">
     <h2>Data Types</h2>
     <p>All data in Atlas is floating point. This means that linear indexing only works out to about 16 million
-      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelelents) or adressing will fail. All other types of data 
+      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or adressing will fail. All other types of data 
       (e.g. strings) are converted into a tensor of floating point values.</p>
     <ul>
       <li><strong>Number:</strong> Integers and floats, singletons are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
@@ -421,15 +423,15 @@ Strides: 1
       <code>c'glslFuncs'glslExpression' argCount retCount</code>. Up to four input tensors (argCount ≤ 4) will be 
       available as <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code>, allowing you to sample the tensors at the 
       top of the stack after the shape argument. Each of <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code> is a function 
-      of a single <code>vec4</code> argument corresponding to a tensor index for that element on the stack.</p>
+      of a single <code>ivec4</code> argument corresponding to a tensor index for that element on the stack.</p>
 
     <p>In the <code>glslFuncs</code> and <code>glslExpression</code> strings, semicolons are banned. Instead, use a 
       backslash (<code>\</code>) to indicate the end of a statement in that shader. The <code>glslFuncs</code> string is 
       a place to declare shader functions and constants only; other use is undefined. The 
       <code>glslExpression</code> string must assign values to the <code>ret[0]</code> ... <code>ret[retCount-1]</code> variables, 
       which will be the return values placed in the tensors on the stack. The shader defined by 
-      <code>glslExpression</code> will be given two indices: <code>i</code> (a floating-point linear index) and 
-      <code>t</code> (a <code>vec4</code> tensor index).</p>
+      <code>glslExpression</code> will be given four indices: <code>i</code> (a integer linear index) and 
+      <code>t</code> (a <code>ivec4</code> tensor index). As well as ifloat and tf, the floating point versions.</p>
 
     <p>For example:</p>
     <pre><code>[[1 2][3 4]];[[2 1][5 3]]; // Push two tensors on the stack.
@@ -552,6 +554,36 @@ Strides: 1
     </p>
   </section>
 
+  <section id="cmd-extrude">
+    <h2>ext (extrude)</h2>
+    <p>This takes the tensor on top of the stack and raises its rank by 1 prepending [1] onto its shape. For example:
+      <pre><code>.5;ext;[[0 1][2 3]];ext;print;quit;</code></pre> 
+      prints 
+      <pre><code>Tensor 1
+Shape: 2 2 1
+Strides: 2 1 1
++-----------------------+
+| +-------------------+ |
+| | +------+ +------+ | |
+| | | 0.00 | | 1.00 | | |
+| | +------+ +------+ | |
+| +-------------------+ |
+| +-------------------+ |
+| | +------+ +------+ | |
+| | | 2.00 | | 3.00 | | |
+| | +------+ +------+ | |
+| +-------------------+ |
++-----------------------+
+
+Tensor 0
+Shape: 1
+Strides: 1
++------+
+| 0.50 |
++------+</code></pre>
+    </p>
+  </section>
+
   <section id="cmd-first">
     <h2>first / last</h2>
     <p>These commands return the first or last element along the first axis, reducing rank by 1. For example:
@@ -616,6 +648,11 @@ Strides:
   <section id="cmd-load">
     <h2>load</h2>
     <p>Loads another Atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>.  If called without quotes, it treats the top of the stack (which must be a vector) as the filename.</p>
+  </section>
+
+  <section id="cmd-m">
+    <h2>m (matrix multiply)</h2>
+    <p>This mulitplies the top two tensors (which must be rank 1 or 2) and pushes the result on the stack, BUGBUG TODO examples.</p>
   </section>
 
   <section id="cmd-pop">

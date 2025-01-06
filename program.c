@@ -524,6 +524,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "m" ) ){  // Multiply matrix
+    curStep->type = MULTM;
+    // dbg( "Linenum %u commandnum %u: multm\n", linenum, commandnum );
+
   } else if( !strcmp( command, "keys" ) ){  // Last
     curStep->type = KEYS;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
@@ -555,6 +559,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
   } else if( !strcmp( command, "e" ) ){  // Enclose
     curStep->type = ENCLOSE;
     // dbg( "Linenum %u commandnum %u: enclose\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "ext" ) ){  // Extrude
+    curStep->type = EXTRUDE;
+    // dbg( "Linenum %u commandnum %u: extrude\n", linenum, commandnum );
 
   } else if( !strcmp( command, "cat" ) ){  // Concatenate
     curStep->type = CAT;
@@ -1402,6 +1410,21 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%s %u", "cat", axis );
       break;
     }
+    case MULTM: {
+      if( ts->size < 2 )
+        error( "%s",
+               "Attempt to multiply matrices with not enough parameters on the stack." );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      tensor* t2 = ts->stack[ ts->size - 2 ];
+      if( !t1 || t1->rank > 2 || !t2 || t2->rank > 2 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Bad tensor or tensor rank in matrix multiplication." );
+      if( t1->shape[ 1 ] != t2->shape[ 0 ] )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Incompatible shapes in matrix multiplication." );
+      tensorMultiply( ts );
+      break;
+    }
     case REVERSE: {
       if( !ts->size )
         error( "%s",
@@ -1442,7 +1465,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 	       "Attempt to load a string filename with a nonvector." );
 	char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
 	p = newProgramFromFile( fn );
-	unmem( fn );
+	p->filenames[ p->numFilenames++ ] = fn;
       }else
 	p = newProgramFromFile( s->progName );
       deleteProgram( *progp );
@@ -1551,13 +1574,16 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to enclose with an empty stack." );
       if( t->rank == 4 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to enclose a parameter of rank 4 (rank too high)." );
-      for( int i = t->rank; i >= 1; --i ){
-	t->shape[ i ] = t->shape[ i - 1 ];
-	t->strides[ i ] = t->strides[ i - 1 ];
-      }
-      t->shape[ 0 ] = 1;
-      t->strides[ 0 ] = t->strides[ 1 ];
-      t->rank++;
+      tensorEnclose( t );
+      break;
+    }
+    case EXTRUDE: {
+      tensor* t = ts->stack[ ts->size - 1 ];
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to extrude with an empty stack." );
+      if( t->rank == 4 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to extrude a parameter of rank 4 (rank too high)." );
+      tensorExtrude( t );
       break;
     }
     case SLICE:
@@ -1565,6 +1591,8 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice without enough elements on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice with a parameter not of rank 1." );
+      if( ts->stack[ ts->size - 1 ]->size != 3 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice with a parameter not a vector of length 3." );
 
       u32 start = *( ts->stack[ ts->size - 1 ]->data +
                      ts->stack[ ts->size - 1 ]->offset );

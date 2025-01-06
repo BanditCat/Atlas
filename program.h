@@ -25,11 +25,13 @@ typedef struct{
     TRANSPOSE, // documented
     SLICE, // documented
     LOAD, // documented
+    MULTM, // documented
     REVERSE, // documented
     CAT, // documented
     FIRST, // documented
     LAST, // documented
     ENCLOSE, // documented
+    EXTRUDE, // documented
     KEYS, // documented
     PRINT, // documented
     TENSOR, // documented

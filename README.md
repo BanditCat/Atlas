@@ -1,1 +1,1 @@
-Tensor scripting straight on the GPU! [Demos](https://banditcat.github.io/Atlas/demos.html), [Docs](https://banditcat.github.io/Atlas)
+Tensor scripting straight on the GPU! [Demos](https://banditcat.github.io/Atlas/Atlas.html), [Docs](https://banditcat.github.io/Atlas)

@@ -4,14 +4,20 @@ keys;set'keys';input;set'input'; // Set input variables
 include'inc\nav.atl';
 
 size;if'started'; // init code goes here
-4096;4;fractalNoise;
+4096;8;fractalNoise;
 1;
 l'started'; // init code complete
 pop;
 
 0;dup;
 get'texsize';[3];0;cat;
-c''ret[0]=a( t )\' 1 1;
+
+
+get'input';[0 2 0];s;get'offs';+;set'offs' 2;
+
+c''
+
+ret[0]=a( ivec4( tf.xy + offs.xy, 0, 0 ) )\' 1 1;
 
 
 
