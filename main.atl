@@ -1,6 +1,6 @@
-.5;ext;[[0 1][2 3]];ext;print;quit;
+//.5;ext;[[0 1][2 3]];ext;print;quit;
 
-[1 2];[[1 2][3 4]];print;m;print;quit;
+//[1 2];[[1 2][3 4]];print;m;print;quit;
 
 keys;set'keys';input;set'input'; // Set input variables
 
