@@ -1419,7 +1419,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       if( !t1 || t1->rank > 2 || !t2 || t2->rank > 2 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Bad tensor or tensor rank in matrix multiplication." );
-      if( t1->shape[ 1 ] != t2->shape[ 0 ] )
+      while( t1->rank < 2 )
+	tensorExtrude( t1 );
+      while( t2->rank < 2 )
+	tensorEnclose( t2 );
+      if( t1->shape[ 0 ] != t2->shape[ 1 ] )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Incompatible shapes in matrix multiplication." );
       tensorMultiply( ts );

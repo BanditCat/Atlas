@@ -863,22 +863,27 @@ void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
 tensor*  tensorMultiplyHelper( tensor* t1, tensor* t2 ){
   tensorToHostMemory( t1 );
   tensorToHostMemory( t2 );
-  while( t1->rank < 2 )
-    tensorEnclose( t1 );
-  while( t2->rank < 2 )
-    tensorEnclose( t2 );
   
   tensor* ret = mem( 1, tensor );
   ret->rank = 2;
   ret->shape[ 2 ] = ret->shape[ 3 ] = 1;
-  ret->shape[ 0 ] = t1->shape[ 0 ];
-  ret->shape[ 1 ] = t2->shape[ 1 ];
+  ret->shape[ 0 ] = t2->shape[ 0 ];
+  ret->shape[ 1 ] = t1->shape[ 1 ];
   ret->size = ret->shape[ 0 ] * ret->shape[ 1 ];
   for( u32 i = 0; i < 4; ++i )
     ret->strides[ i ] = i == ret->rank - 1 ? 1 : t2->shape[ 1 ];
   ret->ownsData = true;
   ret->gpu = false;
   ret->data = mem( ret->size, f32 );
+
+  for( u32 i = 0; i < ret->shape[ 0 ]; ++i )
+    for( u32 j = 0; j < ret->shape[ 1 ]; ++j ){
+      f32 val = 0;
+      for( u32 k = 0; k < t2->shape[ 1 ]; ++k )
+	val += t1->data[ t1->offset + j * t1->strides[ 1 ] + k * t1->strides[ 0 ] ] *
+	  t2->data[ t2->offset + k * t2->strides[ 1 ] + i * t2->strides[ 0 ] ];
+      ret->data[ i * ret->strides[ 0 ] + j * ret->strides[ 1 ] ] = val;
+    }
   
   return ret;
 }
