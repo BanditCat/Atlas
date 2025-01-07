@@ -7,7 +7,7 @@ include'inc\nav.atl';
 
 
 size;if'started'; // init code goes here
-4096;0;dup;set'texsize';8;fractalNoise;
+1024;0;dup;set'texsize';8;fractalNoise;
 [0.5 -0.5 -1.5];set'origin' 3;
 1; // dummy value to pop off in place of display tensor.
 
