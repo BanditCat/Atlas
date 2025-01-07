@@ -46,7 +46,7 @@ l'dkeyskip';
 
 
 0;dup;
-windowSize;0;dup;set'wdims' 2;[3];0;cat;
+windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 c'
 float sampleHeight( vec2 uv ){
@@ -104,12 +104,12 @@ for (int i = 0\ i < 32\ ++i){
 }
 
 if (converged) {
-  ret[0] = uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0 && t.z == 2 ? sampleHeight(uv) : 0.0\
+  ret[0] = uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0 ? sampleHeight(uv) : 0.0\
 } else {
   ret[0] = 0.0\ // Or some default value if convergence failed
 }
 ' 1 1;
-
+windowSize;[3];0;cat;c''ret[0]=a(ivec4(t.xy,0,0))\' 1 1;
 
 
 
