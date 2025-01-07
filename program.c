@@ -596,6 +596,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = RETURN;
     // dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "rot" ) ){  // Return
+    curStep->type = ROT;
+    // dbg( "Linenum %u commandnum %u: rotate\n", linenum, commandnum );
+
   } else if( !strcmp( command, "input" ) ){  // Input; 3 axes and three buttons
     curStep->type = GETINPUT;
     // dbg( "Linenum %u commandnum %u: input\n", linenum, commandnum );
@@ -1191,10 +1195,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible ranks." );
-      if( t1->rank &&
-	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
-	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible shapes." );
+      for( u32 i = 0; i < t1->rank; ++i )
+	if( t1->shape[ i ] != t2->shape[ i ] )
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1223,10 +1226,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible ranks." );
-      if( t1->rank &&
-	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
-	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible shapes." );
+      for( u32 i = 0; i < t1->rank; ++i )
+	if( t1->shape[ i ] != t2->shape[ i ] )
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1255,10 +1257,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible ranks." );
-      if( t1->rank &&
-	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
-	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible shapes." );
+      for( u32 i = 0; i < t1->rank; ++i )
+	if( t1->shape[ i ] != t2->shape[ i ] )
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1287,10 +1288,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible ranks." );
-      if( t1->rank &&
-	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
-	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible shapes." );
+      for( u32 i = 0; i < t1->rank; ++i )
+	if( t1->shape[ i ] != t2->shape[ i ] )
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1319,10 +1319,9 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible ranks." );
-      if( t1->rank &&
-	  ( t1->shape[ 0 ] != t2->shape[ 0 ] || t1->shape[ 1 ] != t2->shape[ 1 ] ||
-	    t1->shape[ 2 ] != t2->shape[ 2 ] || t1->shape[ 3 ] != t2->shape[ 3 ] ) )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible shapes." );
+      for( u32 i = 0; i < t1->rank; ++i )
+	if( t1->shape[ i ] != t2->shape[ i ] )
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
@@ -1371,7 +1370,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case COMPUTE:
       if( !ts->size )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement with no shape parameter on "
                "the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
@@ -1394,11 +1393,10 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case CAT: {
       if( ts->size < 3 )
-        error(
-	      "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	      "Attempt to concatenate without enough arguments on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to concatenate with a nonscalar axis parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
@@ -1412,7 +1410,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case MULTM: {
       if( ts->size < 2 )
-        error( "%s",
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to multiply matrices with not enough parameters on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
@@ -1429,9 +1427,25 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensorMultiply( ts );
       break;
     }
+    case ROT: {
+      if( ts->size < 2 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to create a rotation matrix without enough parameters on the stack." );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      tensor* t2 = ts->stack[ ts->size - 2 ];
+      if( t1->rank != 1 || t1->shape[ 0 ] != 3 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Expected a rank 1 length 3 vector for rotation." );
+	
+      if( t2->rank )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Expected a scalar angle for rotation." );
+      tensorRotate( ts, ts->size - 1, ts->size - 2 );
+      break;
+    }
     case REVERSE: {
       if( !ts->size )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to reverse with no axis parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to reverse a nonscalar axis parameter." );
@@ -1446,7 +1460,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case SHAPE: {
       if( !ts->size )
-	error( "%s",
+	 error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to get the shape of a tensor with nothing on the stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
       f32* newData = mem( cur->rank, f32 );
@@ -1461,11 +1475,11 @@ bool runProgram( tensorStack* ts, program** progp ){
     case LOAD: {
       if( !s->progName ){
 	if( !ts->size )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to load a string filename with no string on the stack." );
 	tensor* cur = ts->stack[ ts->size - 1 ];
 	if( cur->rank != 1 )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to load a string filename with a nonvector." );
 	char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
 	p = newProgramFromFile( fn );
@@ -1481,7 +1495,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case FIRST: {
       if( !ts->size )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
@@ -1490,7 +1504,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LAST: {
       if( !ts->size )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
@@ -1557,10 +1571,10 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case TRANSPOSE:
       if( !ts->size )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to transpose with no axes parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
-        error( "%s",
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to transpose with a axes parameter not of rank 1." );
 
       u32 axis1 = *( ts->stack[ ts->size - 1 ]->data +

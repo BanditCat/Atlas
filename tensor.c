@@ -1197,3 +1197,27 @@ char* tensorToString( tensor* t ){
   ret[ t->size ] = 0;
   return ret;
 }
+void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex ){
+  tensor* top = ts->stack[ ts->size - 1 ];
+  tensor* anglet = ts->stack[ ts->size - 2 ];
+  tensorToHostMemory( top );
+  tensorToHostMemory( anglet );
+  float angle = anglet->data[ anglet->offset ];
+  float x = top->data[ top->offset + top->strides[ 0 ] * 0 ];
+  float y = top->data[ top->offset + top->strides[ 0 ] * 1 ];
+  float z = top->data[ top->offset + top->strides[ 0 ] * 2 ];
+  float d = sqrtf( x * x + y * y + z * z );
+  x /= d; y /= d; z /= d;
+  
+  float c = cosf( angle );
+  float c1 = 1 - c;
+  float s = sinf( angle );
+  pop( ts ); pop( ts );
+  f32* ret = mem( 16, f32 );
+  ret[ 0  ] = c + x * x * c1;      ret[ 1  ] = x * y * c1 - z * s;    ret[ 2  ] = x * z * c1 + y * s;  ret[ 3  ] = 0;
+  ret[ 4  ] = y * x * c1 + z * s;  ret[ 5  ] = c + y * y * c1;        ret[ 6  ] = y * z * c1 - x * s;  ret[ 7  ] = 0;
+  ret[ 8  ] = z * x * c1 - y * s;  ret[ 9  ] = z * y * c1 + x * s;    ret[ 10 ] = c + z * z * c1;      ret[ 11 ] = 0;
+  ret[ 12 ] = 0;                   ret[ 13 ] = 0;                     ret[ 14 ] = 0;                   ret[ 15 ] = 1;
+  u32 shape[ 2 ] = { 4, 4 };
+  push( ts, newTensor( 2, shape, ret ) );
+}

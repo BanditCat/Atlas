@@ -37,6 +37,7 @@ typedef struct{
     TENSOR, // documented
     TOP, // documented
     DUP, // documented
+    ROT, // documented
     REPEAT, // documented
     SHAPE, // documented
     QUIT, // documented

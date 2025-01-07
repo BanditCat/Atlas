@@ -213,6 +213,7 @@
       <li><a href="#cmd-r">r (reverse)</a></li>
       <li><a href="#cmd-repeat">rep (repeat)</a></li>
       <li><a href="#cmd-return">return</a></li>
+      <li><a href="#cmd-rotate">rot (rotate)</a></li>
       <li><a href="#cmd-s">s (slice)</a></li>
       <li><a href="#cmd-set">set</a></li>
       <li><a href="#cmd-shape">shape</a></li>
@@ -280,7 +281,7 @@
       (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or adressing will fail. All other types of data 
       (e.g. strings) are converted into a tensor of floating point values.</p>
     <ul>
-      <li><strong>Number:</strong> Integers and floats, singletons are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
+      <li><strong>Number:</strong> Integers and floats, scalars are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
       <li><strong>String:</strong> Text codepoints in single quotes (e.g., <code>'Hello'</code>).</li>
       <li><strong>Image:</strong> Bitmaps may be loaded with the <code>load'image.bmp'</code> command.</li>
       <li><strong>Tensor:</strong> A multi-dimensional array used for advanced data manipulation (e.g. <code>[[1 2] [3 4]]</code> 
@@ -786,7 +787,7 @@ Strides: 3 1
     <h2>return</h2>
     <p>Returns from a function to the place that called that label:
       <pre><code>1;if'past';
-l'square'; // Square a singleton on the top of the stack
+l'square'; // Square a scalar on the top of the stack
 0;dup;*;
 return;
 
@@ -799,12 +800,33 @@ Strides:
 16.00</code></pre></p>
   </section>
 
+    <section id="cmd-rotate">
+    <h2>rot (rotate)</h2>
+    <p>This function returns a 4x4 rotation matrix. The rotation is performed around a 3D vector (taken from the top of the stack) by an angle (stored as the scalar immediately below the vector on the stack). For example: <code>3.141592653589793;6.0;/;[1 1 0];rot;print;quit;</code> will print <pre><code>Tensor 0
+Shape: 4 4
+Strides: 4 1
++-----------------------------+
+| +-------------------------+ |
+| | 0.93  0.07  0.35  0.00  | |
+| +-------------------------+ |
+| +-------------------------+ |
+| | 0.07  0.93  -0.35 0.00  | |
+| +-------------------------+ |
+| +-------------------------+ |
+| | -0.35 0.35  0.87  0.00  | |
+| +-------------------------+ |
+| +-------------------------+ |
+| | 0.00  0.00  0.00  1.00  | |
+| +-------------------------+ |
++-----------------------------+</code></pre></p>
+  </section>
+
   <section id="cmd-s">
     <h2>s (slice)</h2>
     <p>Extracts a slice from a tensor along a given axis. The arguments are given as a rank 1 tensor (array) 
       in the form <code>[start end axis]</code>, and will slice the tensor below it from <code>start</code> (inclusive) 
       to <code>end</code> (exclusive) along dimension <code>axis</code>. For example:
-      <pre><code>[[0 1][2 3][4 5]];[1 2 1];s;print;quit;</code></pre>
+      <code>[[0 1][2 3][4 5]];[1 2 1];s;print;quit;</code>
       prints 
       <pre><code>Tensor 0
 Shape: 3 1

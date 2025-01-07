@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'tensor product and extrusion'
+	git commit -m 'terrain and 3d'
 	git push -u origin main
 
 # Include dependency files
