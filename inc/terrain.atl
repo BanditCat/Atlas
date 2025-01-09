@@ -8,7 +8,7 @@ include'inc\nav.atl';
 
 size;if'started'; // init code goes here
 2048;0;dup;set'texsize';8;fractalNoise;
-[0.5 -0.5 -1.5];set'origin' 3;
+[0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 1; // dummy value to pop off in place of display tensor.
 
@@ -59,14 +59,8 @@ windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 
-
-// ...
-// The first 'c' block: define helper functions (sampleHeight + binarySearchForSurface).
-// We'll do it in the "glslFuncs" string.  NO semicolons, end lines with backslashes!
-
 c'
 float sampleHeight( vec2 uv ){
-  // Sample from your fractal/perlin texture "a" using `texsize`.
   if( uv.x > 1.0 || uv.y > 1.0 || uv.x < 0.0 || uv.y < 0.0 )
     return 0.0\
   return a( ivec4( uv * texsize, 0, 0 ) )\
@@ -88,12 +82,6 @@ vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale
   return mid\
 }
 '
-//////////////////////////////////////////////////////////////////
-// MAIN PARALLAX LOOP:
-//////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-// TBN setup
-///////////////////////////////////////////////////////////
 vec3 nrml = vec3(0.0, 1.0, 0.0)\
 vec3 uvec = vec3(1.0, 0.0, 0.0)\
 vec3 vvec = vec3(0.0, 0.0, 1.0)\
@@ -122,7 +110,7 @@ vec3 originTS = tbn * localOrigin\
 vec3 viewDirTS = normalize(tbn * viewDirWS)\
 
 float scale = 0.5\  // heightScale
-int maxIters = 32\
+int maxIters = 64\
 int binSearchSteps = 8\
 float damping = 0.25\
 
@@ -161,7 +149,7 @@ for(int i = 0\ i < maxIters\ i++){
     }
 
     // Compute step in terms of travel
-    float stepSize = delta / -0.5\// / viewDirTS.z\
+    float stepSize = delta / -0.7\// / viewDirTS.z\
     // damp it
     stepSize *= damping\
 //    stepSize = clamp( stepSize, -0.04, 0.04 )\
