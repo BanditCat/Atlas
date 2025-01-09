@@ -7,7 +7,7 @@ include'inc\nav.atl';
 
 
 size;if'started'; // init code goes here
-2048;0;dup;set'texsize';8;fractalNoise;
+2048;0;dup;set'texsize';4;fractalNoise;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 1; // dummy value to pop off in place of display tensor.
@@ -90,7 +90,7 @@ vec3 pntpln = vec3(0.0, -1.0, 0.0)\
 // Compute the initial ray in view space
 vec3 ray = normalize(
     vec3(
-      tf.xy * vec2(aspect, 1.0/aspect) / wdims * 2.0 - 1.0, 
+      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
       1.0
     )
 )\
@@ -110,7 +110,7 @@ vec3 originTS = tbn * localOrigin\
 vec3 viewDirTS = normalize(tbn * viewDirWS)\
 
 float scale = 0.5\  // heightScale
-int maxIters = 64\
+int maxIters = 256\
 int binSearchSteps = 8\
 float damping = 0.25\
 
@@ -176,7 +176,7 @@ ret[0] = travel * finalPos.z > 0.0 ? finalHeight : 0.0\
 
 windowSize;[3];0;cat;c''ret[0]=a(ivec4(t.xy,0,0))\' 1 1;
 
-
+print;
 
 
 
