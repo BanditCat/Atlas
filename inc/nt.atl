@@ -61,6 +61,8 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 c'
 float sampleHeight( vec2 uv ){
+  if( uv.x >= 1.0 || uv.y >= 1.0 || uv.x < 0.0 || uv.y < 0.0 )
+    return 0.0\
   return a( ivec4( uv * texsize, 0, 0 ) )\
 }
 
