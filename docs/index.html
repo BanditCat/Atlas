@@ -219,7 +219,9 @@
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
+      <li><a href="#cmd-timeDelta">timeDelta</a></li>
       <li><a href="#cmd-while">while / for</a></li>
+      <li><a href="#cmd-windowSize">windowSize</a></li>
     </ul>
   </details>
 </nav>
@@ -946,6 +948,11 @@ Strides: 1 2
 </code></pre></p>
   </section>
 
+  <section id="cmd-timeDelta">
+    <h2>timeDelta</h2>
+    <p>This command pushes the frame time, in seconds, onto the stack as a scalar.</p>
+  </section>
+
   <section id="cmd-while">
     <h2>while / for</h2>
     <p>To do a while loop until <code>i</code> is 5, for example, you can do the following:</p>
@@ -956,6 +963,11 @@ get'i';print;[1];+; // Get i onto the stack and increment it
 [6];-;first;if'start'; // Loop if i != 6
 quit;
 </code></pre>
+  </section>
+
+  <section id="cmd-windowSize">
+    <h2>windowSize</h2>
+    <p>This command pushes a 2-vector on to the stack with the width and height of the display window.</p>
   </section>
 
 </main>

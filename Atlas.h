@@ -282,6 +282,7 @@ extern f32 mouseWheelPos;
 extern bool doubleClicks[ 3 ];
 extern bool touchClicks[ 3 ];
 extern float pinchZoom;
+extern f64 timeDelta;
 #ifndef __EMSCRIPTEN__
 extern SDL_mutex* data_mutex;
 #endif

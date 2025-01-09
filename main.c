@@ -1,4 +1,4 @@
-/////////////////www/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al. //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -38,7 +38,9 @@ tensorStack* ts;
 // Global variables
 GLuint shaderProgram;
 GLuint vbo;
-
+u64 curTime = 0;
+u64 prevTime = 0;
+f64 timeDelta = 0.001;
 
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
@@ -311,6 +313,9 @@ int renderThreadFunction( void* data ){
     SDL_PumpEvents();
     // Run the program
     CHECK_GL_ERROR();
+    prevTime = curTime;
+    curTime = SDL_GetPerformanceCounter();
+    timeDelta = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
     if( !runProgram( ts, &prog ) ){
 #ifdef DBG
       check_memory_leaks();
@@ -410,6 +415,9 @@ void main_loop( void ){
   
   // Run the program
   CHECK_GL_ERROR();
+  prevTime = curTime;
+  curTime = SDL_GetPerformanceCounter();
+  timeDelta = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
   if( !runProgram( ts, &prog ) ){
     running = 0;
     emscripten_cancel_main_loop();
@@ -496,7 +504,8 @@ int main( int argc, char* argv[] ){
 EMSCRIPTEN_KEEPALIVE 
 void start( void ){  
 #endif
-  
+  curTime = SDL_GetPerformanceCounter();
+  prevTime = curTime;
 #ifndef __EMSCRIPTEN__
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );

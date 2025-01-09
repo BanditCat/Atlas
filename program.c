@@ -556,6 +556,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = REVERSE;
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "timeDelta" ) ){  // Reverse
+    curStep->type = TIME;
+    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+
   } else if( !strcmp( command, "e" ) ){  // Enclose
     curStep->type = ENCLOSE;
     // dbg( "Linenum %u commandnum %u: enclose\n", linenum, commandnum );
@@ -1470,6 +1474,13 @@ bool runProgram( tensorStack* ts, program** progp ){
       pop( ts );
       push( ts, newTensor( 1, newShape, newData ) );
       // dbg( "%s %u", "shape", axis );
+      break;
+    }
+    case TIME: {
+      f32* time = mem( 1, f32 );
+      *time = timeDelta;
+      push( ts, newTensor( 0, NULL, time ) );
+      // dbg( "%s", "time" );
       break;
     }
     case LOAD: {

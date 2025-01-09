@@ -38,6 +38,7 @@ typedef struct{
     TOP, // documented
     DUP, // documented
     ROT, // documented
+    TIME, // documented
     REPEAT, // documented
     SHAPE, // documented
     QUIT, // documented
@@ -47,7 +48,7 @@ typedef struct{
     GETINPUT, // documented, three axes and three buttons
     SET, // documented
     GET, // documented
-    WINDOWSIZE
+    WINDOWSIZE // documented
   } type;
   union{
     tensor* tensor;

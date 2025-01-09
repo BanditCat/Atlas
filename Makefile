@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'timing'
+	git commit -m 'Pretty terrain'
 	git push -u origin main
 
 # Include dependency files
