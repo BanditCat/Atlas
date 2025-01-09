@@ -176,8 +176,6 @@ ret[0] = travel * finalPos.z > 0.0 ? finalHeight : 0.0\
 
 windowSize;[3];0;cat;c''ret[0]=a(ivec4(t.xy,0,0))\' 1 1;
 
-print;
-
 
 
 
