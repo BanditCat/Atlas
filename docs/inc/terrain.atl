@@ -29,27 +29,27 @@ get'origin';+;set'origin' 3;
 l'mouse2skip';
 
 get'keys';[26 27 0];s;first;ifn'wkeyskip';
-[0 0 1 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+[0 0 1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'wkeyskip';
 get'keys';[22 23 0];s;first;ifn'skeyskip';
-[0 0 -1 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+[0 0 -1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'skeyskip';
 get'keys';[4 5 0];s;first;ifn'akeyskip';
-[-1 0 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+[-1 0 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'akeyskip';
 get'keys';[7 8 0];s;first;ifn'dkeyskip';
-[1 0 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+[1 0 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'dkeyskip';
 get'keys';[44 45 0];s;get'keys';[225 226 0];s;+;first;ifn'spkeyskip';
-[0 1 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+[0 1 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'spkeyskip';
 get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
-[0 -1 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+[0 -1 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'ctkeyskip';
 
@@ -165,7 +165,7 @@ if(!foundIntersection){
 }
 
 // Return the final height (or do whatever shading you want)
-ret[0] = travel > 0.0 && finalPos.x > 0.0 && finalPos.x < 1.0 && finalPos.y > 0.01 && finalPos.y < 0.99 ? finalHeight : 0.0\
+ret[0] = travel > 0.0  ? finalHeight : 0.0\
 '
 1 1;
 
