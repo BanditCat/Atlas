@@ -7,7 +7,7 @@ include'inc\nav.atl';
 
 
 size;if'started'; // init code goes here
-1024;0;dup;set'texsize';4;fractalNoise;
+2048;0;dup;set'texsize';4;fractalNoise;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 1; // dummy value to pop off in place of display tensor.
@@ -18,8 +18,8 @@ pop; // Pop the last display tensor off the stack.
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;get'rot';+;set'rot' 2;
-get'rot';last;100;/;[1 0 0];rot; // rot about y
-get'rot';first;100;/;[0 1 0];rot;m; // rot about x
+get'rot';last;-300;/;[1 0 0];rot; // rot about y
+get'rot';first;-300;/;[0 1 0];rot;m; // rot about x
 set'worldRotation' 16;
 l'mouse1skip';
 
@@ -61,8 +61,6 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 c'
 float sampleHeight( vec2 uv ){
-  if( uv.x > 1.0 || uv.y > 1.0 || uv.x < 0.0 || uv.y < 0.0 )
-    return 0.0\
   return a( ivec4( uv * texsize, 0, 0 ) )\
 }
 
