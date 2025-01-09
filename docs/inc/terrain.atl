@@ -110,8 +110,8 @@ vec3 originTS = tbn * localOrigin\
 vec3 viewDirTS = normalize(tbn * viewDirWS)\
 
 float scale = 0.5\  // heightScale
-int maxIters = 128\
-int binSearchSteps = 6\
+int maxIters = 64\
+int binSearchSteps = 4\
 float damping = 0.5\
 
 float travel = 0.0\
