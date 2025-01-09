@@ -7,8 +7,9 @@ include'inc\nav.atl';
 
 
 size;if'started'; // init code goes here
-1024;0;dup;set'texsize';8;fractalNoise;
-[0.5 -0.5 -1.5];set'origin' 3;
+2048;0;dup;set'texsize';4;fractalNoise;
+[0.5 -0.5 -0.5];set'origin' 3;
+0;[0 1 0];rot;set'worldRotation' 16;
 1; // dummy value to pop off in place of display tensor.
 
 
@@ -17,8 +18,8 @@ pop; // Pop the last display tensor off the stack.
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;get'rot';+;set'rot' 2;
-get'rot';last;100;/;[1 0 0];rot; // rot about y
-get'rot';first;100;/;[0 1 0];rot;m; // rot about x
+get'rot';last;-300;/;[1 0 0];rot; // rot about y
+get'rot';first;-300;/;[0 1 0];rot;m; // rot about x
 set'worldRotation' 16;
 l'mouse1skip';
 
@@ -27,90 +28,151 @@ get'input';[4 5 0];s;first;ifn'mouse2skip'; // forward if mouse 2
 get'origin';+;set'origin' 3;
 l'mouse2skip';
 
-get'keys'; [26 27 0];s;first;ifn'wkeyskip';
-[0 1 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+get'keys';[26 27 0];s;first;ifn'wkeyskip';
+[0 0 1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'wkeyskip';
-get'keys'; [22 23 0];s;first;ifn'skeyskip';
-[0 -1 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+get'keys';[22 23 0];s;first;ifn'skeyskip';
+[0 0 -1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'skeyskip';
-get'keys'; [4 5 0];s;first;ifn'akeyskip';
-[-1 0 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+get'keys';[4 5 0];s;first;ifn'akeyskip';
+[-1 0 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'akeyskip';
-get'keys'; [7 8 0];s;first;ifn'dkeyskip';
-[1 0 0 1];get'worldRotation';m;first;[0 3 0];s;[1000 1000 1000];/;
+get'keys';[7 8 0];s;first;ifn'dkeyskip';
+[1 0 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
 get'origin';+;set'origin' 3;
 l'dkeyskip';
+get'keys';[44 45 0];s;get'keys';[225 226 0];s;+;first;ifn'spkeyskip';
+[0 1 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
+get'origin';+;set'origin' 3;
+l'spkeyskip';
+get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
+[0 -1 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
+get'origin';+;set'origin' 3;
+l'ctkeyskip';
 
 
 0;dup;
 windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
+
+
 c'
 float sampleHeight( vec2 uv ){
-  return a( ivec4( uv * texsize, 0, 0 ) ) \
+  return a( ivec4( uv * texsize, 0, 0 ) )\
+}
+
+vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){
+  vec3 mid = vec3(0.0)\
+  for(int i=0\ i<steps\ i++){
+    mid = 0.5 * (startPos + endPos)\
+    float hm = sampleHeight( mid.xy ) * hscale\
+    if(mid.z < hm){
+      // mid is "under" the surface, so pull endPos up
+      endPos = mid\
+    } else {
+      // mid is above the surface
+      startPos = mid\
+    }
+  }
+  return mid\
 }
 '
-
 vec3 nrml = vec3(0.0, 1.0, 0.0)\
 vec3 uvec = vec3(1.0, 0.0, 0.0)\
 vec3 vvec = vec3(0.0, 0.0, 1.0)\
 vec3 pntpln = vec3(0.0, -1.0, 0.0)\
-    
-vec3 ray = normalize(vec3(tf.xy * vec2( aspect, 1.0 / aspect) / wdims * 2.0 - 1.0, 1.0))\
-vec4 ray4 = vec4(ray, 1.0)\
+
+// Compute the initial ray in view space
+vec3 ray = normalize(
+    vec3(
+      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+      1.0
+    )
+)\
+vec4 ray4 = vec4(ray, 0.0)\
+
+// Rotate it by worldRotation
 ray4 = worldRotation * ray4\
-    
-float denominator = dot(nrml, ray4.xyz)\
-float tp = dot(nrml, (pntpln - origin)) / denominator\
-if (tp < 0.0) { // Intersection behind the origin
-  ret[0] = 0.0\
-  return\
-}
-    
-vec3 intersect = origin + tp * ray4.xyz\
-vec2 uvo = vec2(dot(intersect - pntpln, uvec), dot(intersect - pntpln, vvec))\
-vec2 uv = uvo\
+vec3 viewDirWS = normalize(ray4.xyz)\
 
+// Transform camera origin into plane coords so plane is z=0
+vec3 localOrigin = origin - pntpln\
+
+// Build tangent matrix
 mat3 tbn = mat3(uvec, vvec, nrml)\
-vec3 vdworld = normalize(origin - intersect)\
-vec3 viewDir = normalize(tbn * vdworld)\
-    
-// Parallax mapping parameters
-int maxIterations = 16\
-float heightScale = 0.25\ // Adjust based on the desired depth effect
-float currentHeight\
-float previousHeight = 0.0\
-float delta = 0.0\
-bool converged = false\
-for (int i = 0\ i < maxIterations\ ++i){
-// Sample the height map at the current UV
-   currentHeight = viewDir.z > 0.0 ? sampleHeight(uv) * heightScale : heightScale - sampleHeight(uv) * heightScale\
 
-   delta = ( currentHeight - abs( viewDir.z ) * tp ) * 0.5\
-        
-   if (abs(delta) < 0.005) {
-     converged = true\
-     break\
-   }
-   uv += viewDir.xy * delta\
-    // Update 'tp' based on the delta
-    tp += delta\
-      // Optional: Clamp UV to valid range to avoid sampling outside the texture
-        // uv = clamp(uv, 0.0, 1.0)\
+vec3 originTS = tbn * localOrigin\
+vec3 viewDirTS = normalize(tbn * viewDirWS)\
+
+float scale = 0.5\  // heightScale
+int maxIters = 128\
+int binSearchSteps = 6\
+float damping = 0.5\
+
+float travel = 0.0\
+vec3 prevPos = originTS\
+float prevDelta = sampleHeight(prevPos.xy) * scale - prevPos.z\
+
+bool foundIntersection = false\
+vec3 finalPos = originTS\
+float finalHeight = 0.0\
+
+for(int i = 0\ i < maxIters\ i++){
+    vec3 rayPos = originTS + travel * viewDirTS\
+    vec2 uv = rayPos.xy\
+    float h = sampleHeight(uv) * scale\
+
+    float delta = h - rayPos.z\
+
+    // Check for sign change (we crossed from above->below or below->above)
+    // If sign(prevDelta) != sign(delta), we've bracketed the surface
+    if( (prevDelta > 0.0 && delta < 0.0) || (prevDelta < 0.0 && delta > 0.0) ){
+        // bracket is [prevPos, rayPos]
+        finalPos = binarySearchForSurface(prevPos, rayPos, binSearchSteps, scale)\
+        finalHeight = sampleHeight(finalPos.xy) * scale\
+        foundIntersection = true\
+        break\
+    }
+
+    // Otherwise, do the parallax "height error" approach to refine travel
+    if(abs(delta) < 0.001){
+        // close enough
+        finalPos = rayPos\
+        finalHeight = h\
+        foundIntersection = true\
+        break\
+    }
+
+    // Compute step in terms of travel
+    float stepSize = delta / -0.7\// / viewDirTS.z\
+    // damp it
+    stepSize *= damping\
+//    stepSize = clamp( stepSize, -0.04, 0.04 )\
+    travel += stepSize\
+
+    // update for next loop
+    prevPos = rayPos\
+    prevDelta = delta\
 }
 
-if (converged && tp > 0.0) {
-  ret[0] = uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0 ? sampleHeight(uv) : 0.0\
-} else {
-  ret[0] = 0.0\ // Or some default value if convergence failed
+// If no intersection found, fallback or keep finalPos as last
+if(!foundIntersection){
+    finalPos = originTS + travel * viewDirTS\
+    finalHeight = sampleHeight(finalPos.xy) * scale\
 }
-' 1 1;
+
+// Return the final height (or do whatever shading you want)
+ret[0] = travel > 0.0 && finalPos.x > 0.0 && finalPos.x < 1.0 && finalPos.y > 0.01 && finalPos.y < 0.99 ? finalHeight : 0.0\
+'
+1 1;
+
+
+
+
 windowSize;[3];0;cat;c''ret[0]=a(ivec4(t.xy,0,0))\' 1 1;
-
-
 
 
 
