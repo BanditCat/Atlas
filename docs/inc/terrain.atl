@@ -112,7 +112,7 @@ vec3 viewDirTS = normalize(tbn * viewDirWS)\
 float scale = 0.5\  // heightScale
 int maxIters = 64\
 int binSearchSteps = 4\
-float damping = 0.25\
+float damping = 0.5\
 
 float travel = 0.0\
 vec3 prevPos = originTS\
