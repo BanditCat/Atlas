@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'terrain and 3d'
+	git commit -m 'timing'
 	git push -u origin main
 
 # Include dependency files
