@@ -1,5 +1,3 @@
 intruduce qouting so strings can include quotes.
 runs on desktop.
-includes.
-better error reporting.
 include chain in error

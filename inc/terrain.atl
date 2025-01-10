@@ -59,10 +59,13 @@ windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 
+
+
+//////////////////////////////////////////////////////////////////////////
 c'
 float sampleHeight( vec2 uv ){
   if( uv.x >= 1.0 || uv.y >= 1.0 || uv.x < 0.0 || uv.y < 0.0 )
-    return 0.0\
+    return 0.3\
   return a( ivec4( uv * texsize, 0, 0 ) )\
 }
 
@@ -167,7 +170,7 @@ if(!foundIntersection){
 }
 
 // Return the final height (or do whatever shading you want)
-ret[0] = travel > 0.0 && finalPos.x > 0.0 && finalPos.x < 1.0 && finalPos.y > 0.01 && finalPos.y < 0.99 ? finalHeight : 0.0\
+ret[0] = travel > 0.0 && finalPos.x > 0.01 && finalPos.x < 0.99 && finalPos.y > 0.01 && finalPos.y < 0.99 ? finalHeight : 0.0\
 '
 1 1;
 

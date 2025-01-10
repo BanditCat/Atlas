@@ -478,6 +478,7 @@ void main_loop( void ){
                ts->stack[ ts->size - 1 ]->shape[ 3 ] );
 
   GLint toffsetLoc = glGetUniformLocation( shaderProgram, "toffset" );
+  
   glUniform1f( toffsetLoc, ts->stack[ ts->size - 1 ]->offset );
 
   // Bind VBO and set vertex attributes
