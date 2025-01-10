@@ -78,7 +78,7 @@ const vec3 pntpln = vec3(0.0, -1.0, 0.0)\
 float sampleHeight( vec2 uv ){
 //  if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
 //    return 0.0\
-uv = clamp( uv, 0.01, 0.99 )\
+uv = clamp( uv, 0.1, 0.9 )\
   return a( ivec4( uv * texsize, 0, 0 ) )\
 }
 
