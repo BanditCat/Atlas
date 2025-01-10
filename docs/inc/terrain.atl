@@ -64,34 +64,21 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 // GLSL Functions
 ////////////////////////////////////////////////////////////////////////////////
 c'
+const float scale = 0.35\  // heightScale
+const int maxIters = 64\
+const int binSearchSteps = 6\
+const float damping = 1.0\
+
+const vec3 nrml = vec3(0.0, 1.0, 0.0)\
+const vec3 uvec = vec3(1.0, 0.0, 0.0)\
+const vec3 vvec = vec3(0.0, 0.0, 1.0)\
+const mat3 tbn = mat3(uvec, vvec, nrml)\
+const vec3 pntpln = vec3(0.0, -1.0, 0.0)\
+
 float sampleHeight( vec2 uv ){
-  // Clamp uv so we don't sample out of bounds
-  uv = clamp( uv, 0.0, 0.999999 )\
-
-  // Multiply by the texture size so we can do integer/fraction
-  vec2 texCoord = uv * texsize\
-  ivec2 base = ivec2( floor( texCoord ) )\  // integer part
-  vec2 frac  = fract( texCoord )\           // fractional part
-  
-  // Clamp base so we don’t run off the edge when adding +1
-  base = clamp(base, ivec2(0), ivec2(texsize - 2.0))\
-
-  // Sample the four corners around (base.x, base.y)
-  float c00 = a( ivec4( base, 0, 0 ) )\
-  float c10 = a( ivec4( base + ivec2(1, 0), 0, 0 ) )\
-  float c01 = a( ivec4( base + ivec2(0, 1), 0, 0 ) )\
-  float c11 = a( ivec4( base + ivec2(1, 1), 0, 0 ) )\
-
-  // First lerp in the X direction
-  float cx0 = mix( c00, c10, frac.x )\
-  float cx1 = mix( c01, c11, frac.x )\
-  // Then lerp in the Y direction
-  return mix( cx0, cx1, frac.y )\
+  uv = clamp( uv, 0.01, 0.99 )\
+  return a( ivec4( uv * texsize, 0, 0 ) )\
 }
-//float sampleHeight( vec2 uv ){
-//  uv = clamp( uv, 0.01, 0.99 )\
-//  return a( ivec4( uv * texsize, 0, 0 ) )\
-//}
 
 vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){
   vec3 mid = vec3(0.0)\
@@ -110,18 +97,8 @@ vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale
 }
 
 bool rayTrace( inout vec3 ray, vec3 origin ){
-  const float scale = 0.35\  // heightScale
-  const int maxIters = 64\
-  const int binSearchSteps = 4\
-  const float damping = 0.5\
   vec3 viewDirWS = normalize(ray)\
 
-  const vec3 nrml = vec3(0.0, 1.0, 0.0)\
-  const vec3 uvec = vec3(1.0, 0.0, 0.0)\
-  const vec3 vvec = vec3(0.0, 0.0, 1.0)\
-  mat3 tbn = mat3(uvec, vvec, nrml)\
-
-  const vec3 pntpln = vec3(0.0, -1.0, 0.0)\
   vec3 localOrigin = origin - pntpln\
   vec3 originTS = tbn * localOrigin\
   vec3 viewDirTS = normalize(tbn * viewDirWS)\
@@ -155,7 +132,7 @@ bool rayTrace( inout vec3 ray, vec3 origin ){
       break\
     }
 
-    float stepSize = delta / -0.7\// / viewDirTS.z\
+    float stepSize = -delta\// / -0.7\// / viewDirTS.z\
     stepSize *= damping\
     //    stepSize = clamp( stepSize, -0.04, 0.04 )\
     travel += stepSize\
