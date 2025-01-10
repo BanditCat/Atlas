@@ -76,10 +76,10 @@ const mat3 tbn = mat3(uvec, vvec, nrml)\
 const vec3 pntpln = vec3(0.0, -1.0, 0.0)\
 
 float sampleHeight( vec2 uv ){
-//  if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
-//    return 0.0\
-uv = clamp( uv, 0.1, 0.9 )\
-  return a( ivec4( uv * texsize, 0, 0 ) )\
+  if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
+    return 0.0\
+  vec2 nuv = clamp( uv, 0.0, 0.9999 )\
+  return a( ivec4( nuv * texsize, 0, 0 ) )\
 }
 
 vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){
@@ -150,7 +150,6 @@ bool rayTrace( inout vec3 ray, vec3 origin ){
   
   ray = finalPos\
   return travel > 0.0 && finalPos.x > 0.01 && finalPos.x < 0.99 && finalPos.y > 0.01 && finalPos.y < 0.99\
-  return true\
 }
 
 
