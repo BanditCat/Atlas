@@ -60,14 +60,38 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 
 
-
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// GLSL Functions
+////////////////////////////////////////////////////////////////////////////////
 c'
 float sampleHeight( vec2 uv ){
-  if( uv.x >= 1.0 || uv.y >= 1.0 || uv.x < 0.0 || uv.y < 0.0 )
-    return 0.3\
-  return a( ivec4( uv * texsize, 0, 0 ) )\
+  // Clamp uv so we don't sample out of bounds
+  uv = clamp( uv, 0.0, 0.999999 )\
+
+  // Multiply by the texture size so we can do integer/fraction
+  vec2 texCoord = uv * texsize\
+  ivec2 base = ivec2( floor( texCoord ) )\  // integer part
+  vec2 frac  = fract( texCoord )\           // fractional part
+  
+  // Clamp base so we don’t run off the edge when adding +1
+  base = clamp(base, ivec2(0), ivec2(texsize - 2.0))\
+
+  // Sample the four corners around (base.x, base.y)
+  float c00 = a( ivec4( base, 0, 0 ) )\
+  float c10 = a( ivec4( base + ivec2(1, 0), 0, 0 ) )\
+  float c01 = a( ivec4( base + ivec2(0, 1), 0, 0 ) )\
+  float c11 = a( ivec4( base + ivec2(1, 1), 0, 0 ) )\
+
+  // First lerp in the X direction
+  float cx0 = mix( c00, c10, frac.x )\
+  float cx1 = mix( c01, c11, frac.x )\
+  // Then lerp in the Y direction
+  return mix( cx0, cx1, frac.y )\
 }
+//float sampleHeight( vec2 uv ){
+//  uv = clamp( uv, 0.01, 0.99 )\
+//  return a( ivec4( uv * texsize, 0, 0 ) )\
+//}
 
 vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){
   vec3 mid = vec3(0.0)\
@@ -84,12 +108,79 @@ vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale
   }
   return mid\
 }
-'
-vec3 nrml = vec3(0.0, 1.0, 0.0)\
-vec3 uvec = vec3(1.0, 0.0, 0.0)\
-vec3 vvec = vec3(0.0, 0.0, 1.0)\
-vec3 pntpln = vec3(0.0, -1.0, 0.0)\
 
+bool rayTrace( inout vec3 ray, vec3 origin ){
+  const float scale = 0.35\  // heightScale
+  const int maxIters = 64\
+  const int binSearchSteps = 4\
+  const float damping = 0.5\
+  vec3 viewDirWS = normalize(ray)\
+
+  const vec3 nrml = vec3(0.0, 1.0, 0.0)\
+  const vec3 uvec = vec3(1.0, 0.0, 0.0)\
+  const vec3 vvec = vec3(0.0, 0.0, 1.0)\
+  mat3 tbn = mat3(uvec, vvec, nrml)\
+
+  const vec3 pntpln = vec3(0.0, -1.0, 0.0)\
+  vec3 localOrigin = origin - pntpln\
+  vec3 originTS = tbn * localOrigin\
+  vec3 viewDirTS = normalize(tbn * viewDirWS)\
+
+  float travel = 0.0\
+  vec3 prevPos = originTS\
+  float prevDelta = sampleHeight(prevPos.xy) * scale - prevPos.z\
+
+  bool foundIntersection = false\
+  vec3 finalPos = originTS\
+  float finalHeight = 0.0\
+
+  for(int i = 0\ i < maxIters\ i++){
+    vec3 rayPos = originTS + travel * viewDirTS\
+    vec2 uv = rayPos.xy\
+    float h = sampleHeight(uv) * scale\
+
+    float delta = h - rayPos.z\
+
+    if( (prevDelta > 0.0 && delta < 0.0) || (prevDelta < 0.0 && delta > 0.0) ){
+      finalPos = binarySearchForSurface(prevPos, rayPos, binSearchSteps, scale)\
+      finalHeight = sampleHeight(finalPos.xy) * scale\
+      foundIntersection = true\
+      break\
+    }
+
+    if(abs(delta) < 0.001){
+      finalPos = rayPos\
+      finalHeight = h\
+      foundIntersection = true\
+      break\
+    }
+
+    float stepSize = delta / -0.7\// / viewDirTS.z\
+    stepSize *= damping\
+    //    stepSize = clamp( stepSize, -0.04, 0.04 )\
+    travel += stepSize\
+
+    // update for next loop
+    prevPos = rayPos\
+    prevDelta = delta\
+  }
+
+  if(!foundIntersection)
+    finalPos = originTS + travel * viewDirTS\
+  
+  
+  ray = finalPos\
+  return travel > 0.0 && finalPos.x > 0.01 && finalPos.x < 0.99 && finalPos.y > 0.01 && finalPos.y < 0.99\
+  return true\
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// The shader
+////////////////////////////////////////////////////////////////////////////////
+
+'
 // Compute the initial ray in view space
 vec3 ray = normalize(
     vec3(
@@ -97,80 +188,11 @@ vec3 ray = normalize(
       1.0
     )
 )\
-vec4 ray4 = vec4(ray, 0.0)\
 
 // Rotate it by worldRotation
-ray4 = worldRotation * ray4\
-vec3 viewDirWS = normalize(ray4.xyz)\
-
-// Transform camera origin into plane coords so plane is z=0
-vec3 localOrigin = origin - pntpln\
-
-// Build tangent matrix
-mat3 tbn = mat3(uvec, vvec, nrml)\
-
-vec3 originTS = tbn * localOrigin\
-vec3 viewDirTS = normalize(tbn * viewDirWS)\
-
-float scale = 0.5\  // heightScale
-int maxIters = 64\
-int binSearchSteps = 4\
-float damping = 0.5\
-
-float travel = 0.0\
-vec3 prevPos = originTS\
-float prevDelta = sampleHeight(prevPos.xy) * scale - prevPos.z\
-
-bool foundIntersection = false\
-vec3 finalPos = originTS\
-float finalHeight = 0.0\
-
-for(int i = 0\ i < maxIters\ i++){
-    vec3 rayPos = originTS + travel * viewDirTS\
-    vec2 uv = rayPos.xy\
-    float h = sampleHeight(uv) * scale\
-
-    float delta = h - rayPos.z\
-
-    // Check for sign change (we crossed from above->below or below->above)
-    // If sign(prevDelta) != sign(delta), we've bracketed the surface
-    if( (prevDelta > 0.0 && delta < 0.0) || (prevDelta < 0.0 && delta > 0.0) ){
-        // bracket is [prevPos, rayPos]
-        finalPos = binarySearchForSurface(prevPos, rayPos, binSearchSteps, scale)\
-        finalHeight = sampleHeight(finalPos.xy) * scale\
-        foundIntersection = true\
-        break\
-    }
-
-    // Otherwise, do the parallax "height error" approach to refine travel
-    if(abs(delta) < 0.001){
-        // close enough
-        finalPos = rayPos\
-        finalHeight = h\
-        foundIntersection = true\
-        break\
-    }
-
-    // Compute step in terms of travel
-    float stepSize = delta / -0.7\// / viewDirTS.z\
-    // damp it
-    stepSize *= damping\
-//    stepSize = clamp( stepSize, -0.04, 0.04 )\
-    travel += stepSize\
-
-    // update for next loop
-    prevPos = rayPos\
-    prevDelta = delta\
-}
-
-// If no intersection found, fallback or keep finalPos as last
-if(!foundIntersection){
-    finalPos = originTS + travel * viewDirTS\
-    finalHeight = sampleHeight(finalPos.xy) * scale\
-}
-
-// Return the final height (or do whatever shading you want)
-ret[0] = travel > 0.0 && finalPos.x > 0.01 && finalPos.x < 0.99 && finalPos.y > 0.01 && finalPos.y < 0.99 ? finalHeight : 0.0\
+vec3 rcray = ( worldRotation * vec4(ray, 1.0) ).xyz\
+bool rcd = rayTrace( rcray, origin )\
+ret[0] = rcd ? sampleHeight( rcray.xy ) : 0.0\
 '
 1 1;
 
@@ -205,7 +227,7 @@ get'fnamp';[0.5];*;set'fnamp';
 get'fnseed';[1.2];+;set'fnseed';
 get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
 get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1;
-get'fntexsize';get'fngradsize';/;2;-;if'fnloop';
+get'fntexsize';get'fngradsize';/;8;-;if'fnloop';
 return;
 
 
