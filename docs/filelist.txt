@@ -4,3 +4,4 @@ inc\fire.atl
 inc\mandelbrot.atl
 inc\nav.atl
 inc\terrain.atl
+inc\terrain.bmp
