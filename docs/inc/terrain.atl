@@ -208,6 +208,9 @@ vec3 sunrayo = normalize( intersect - rotsun )\
 vec3 sunray = sunrayo\
 bool sunrcd = rayTrace( sunray, rotsun )\
 vec3 sintersect = sunray.z * sunrayo + rotsun\
+bool underwater = intersect.y < -0.85\
+float watert = -( dot( nrml, origin ) + dot( -nrml, vec3( 0, -0.85, 0 ) ) ) / dot( nrml, rcrayo )\
+vec3 wintersect = rcrayo * watert + origin\
 
 float csc = dot( -sunrayo, sampleNormal( rcray.xy ) )\
 
@@ -220,8 +223,11 @@ vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
 if( length( sintersect - intersect ) > 0.01 )
   color *= 0.2\
 
-
 color = rcd ? color * clamp( csc, 0.1, 1.0 ) : clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 )\
+
+color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),
+                          clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color\
+
 
 ret[0] = color.b\
 ret[1] = color.g\
@@ -232,7 +238,7 @@ ret[2] = color.r\
 
 
 
-windowSize;[3];0;cat;c''ret[0]=t.z == 0 ? a(ivec4(t.xy,0,0)) : ( t.z == 1 ? b(ivec4(t.xy,0,0)) : c(ivec4(t.xy,0,0)))\' 3 1;
+get'wdims';[3];0;cat;c''ret[0]=t.z == 0 ? a(ivec4(t.xy,0,0)) : ( t.z == 1 ? b(ivec4(t.xy,0,0)) : c(ivec4(t.xy,0,0)))\' 3 1;
 
 
 
