@@ -40,7 +40,7 @@ GLuint shaderProgram;
 GLuint vbo;
 u64 curTime = 0;
 u64 prevTime = 0;
-f64 timeDelta = 0.001;
+f64 timeDelta = 0.01;
 
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
@@ -417,7 +417,8 @@ void main_loop( void ){
   CHECK_GL_ERROR();
   prevTime = curTime;
   curTime = SDL_GetPerformanceCounter();
-  timeDelta = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+  timeDelta *= 0.9;
+  timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
   if( !runProgram( ts, &prog ) ){
     running = 0;
     emscripten_cancel_main_loop();
