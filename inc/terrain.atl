@@ -81,8 +81,8 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 ////////////////////////////////////////////////////////////////////////////////
 c'
 const float scale = 0.35\  // heightScale
-const int maxIters = 64\
-const int binSearchSteps = 16\
+const int maxIters = 48\
+const int binSearchSteps = 8\
 const float damping = 0.7\
 
 const vec3 nrml = vec3(0.0, 1.0, 0.0)\
@@ -101,6 +101,14 @@ float sampleHeight( vec2 uv ){
   if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
     return 0.6\
   return a( ivec4( uv * texsize, 0, 0 ) )\
+}
+
+vec3 sampleNormal( vec2 uv ){
+  ivec4 coord = ivec4( uv * texsize, 0, 0 )\
+  float centers = a( coord )\
+  float dHx = a( coord + ivec4( 1, 0, 0, 0 ) ) - centers\
+  float dHy = a( coord + ivec4( 0, 1, 0, 0 ) ) - centers\
+  return normalize(vec3(-dHx, 1.0 / texsize.x, -dHy))\
 }
 
 vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){
@@ -201,7 +209,7 @@ vec3 sunray = sunrayo\
 bool sunrcd = rayTrace( sunray, rotsun )\
 vec3 sintersect = sunray.z * sunrayo + rotsun\
 
-
+float csc = dot( -sunrayo, sampleNormal( rcray.xy ) )\
 
 
 float sunDist = dot( rcrayo, rotsun - origin ) > 0.0 ? 2.0 - 5.0 * length( cross( rcrayo, origin - rotsun ) ) : 0.0\
@@ -210,8 +218,10 @@ vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
                    b( ivec4( 0.0, (height) * ttexsize, 1.0, 0.0 ) ),
 		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) )\
 if( length( sintersect - intersect ) > 0.01 )
-  color *= 0.8\
-color = rcd ? color : clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 )\
+  color *= 0.2\
+
+
+color = rcd ? color * csc : clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 )\
 
 ret[0] = color.b\
 ret[1] = color.g\
@@ -250,7 +260,7 @@ get'fnamp';[0.5];*;set'fnamp';
 get'fnseed';[1.2];+;set'fnseed';
 get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
 get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1;
-get'fntexsize';get'fngradsize';/;8;-;if'fnloop';
+get'fntexsize';get'fngradsize';/;2;-;if'fnloop';
 return;
 
 
