@@ -78,9 +78,9 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 ////////////////////////////////////////////////////////////////////////////////
 c'
 const float scale = 0.35\  // heightScale
-const int maxIters = 50\
-const int binSearchSteps = 6\
-const float damping = 1.0\
+const int maxIters = 64\
+const int binSearchSteps = 16\
+const float damping = 0.7\
 
 const vec3 nrml = vec3(0.0, 1.0, 0.0)\
 const vec3 uvec = vec3(1.0, 0.0, 0.0)\
@@ -206,10 +206,9 @@ float height = (sampleHeight( rcray.xy )-0.32) / 0.37\
 vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
                    b( ivec4( 0.0, (height) * ttexsize, 1.0, 0.0 ) ),
 		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) )\
+if( length( sintersect - intersect ) > 0.01 )
+  color *= 0.8\
 color = rcd ? color : sunDist.xxx\
-if( sunrcd && length( intersect - sintersect ) > 0.02 )
-  color -= vec3( 0.5, 0.5, 0.5 )\
-
 
 ret[0] = color.b\
 ret[1] = color.g\
