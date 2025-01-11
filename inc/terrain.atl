@@ -7,6 +7,7 @@ include'inc\nav.atl';
 
 
 size;if'started'; // init code goes here
+img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 2048;0;dup;set'texsize';4;fractalNoise;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
@@ -66,9 +67,9 @@ get'origin';+;set'origin' 3;
 l'ctkeyskip';
 
 
-0;dup;
+1;dup;1;dup; // duplicate terrain and heightmap
 windowSize;0;dup;set'wdims' 2;
-get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
+get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
 
@@ -192,17 +193,34 @@ vec3 rcrayo = ( worldRotation * vec4(ray, 1.0) ).xyz\
 vec3 rcray = rcrayo\
 bool rcd = rayTrace( rcray, origin )\
 vec3 intersect = rcray.z * rcrayo + origin\
+vec3 sunrayo = normalize( intersect - rotsun )\
+vec3 sunray = sunrayo\
+bool sunrcd = rayTrace( sunray, rotsun )\
+vec3 sintersect = sunray.z * sunrayo + rotsun\
+
+
+
+
 float sunDist = dot( rcrayo, rotsun - origin ) > 0.0 ? 2.0 - 5.0 * length( cross( rcrayo, origin - rotsun ) ) : 0.0\
-float height = sampleHeight( rcray.xy )\
+float height = (sampleHeight( rcray.xy )-0.32) / 0.37\
+vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
+                   b( ivec4( 0.0, (height) * ttexsize, 1.0, 0.0 ) ),
+		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) )\
+color = rcd ? color : sunDist.xxx\
+if( sunrcd && length( intersect - sintersect ) > 0.02 )
+  color -= vec3( 0.5, 0.5, 0.5 )\
 
-ret[0] = rcd ? height : sunDist\
+
+ret[0] = color.b\
+ret[1] = color.g\
+ret[2] = color.r\
 '
-1 1;
+2 3;
 
 
 
 
-windowSize;[3];0;cat;c''ret[0]=a(ivec4(t.xy,0,0))\' 1 1;
+windowSize;[3];0;cat;c''ret[0]=t.z == 0 ? a(ivec4(t.xy,0,0)) : ( t.z == 1 ? b(ivec4(t.xy,0,0)) : c(ivec4(t.xy,0,0)))\' 3 1;
 
 
 
