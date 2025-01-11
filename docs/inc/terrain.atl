@@ -11,7 +11,10 @@ img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 2048;0;dup;set'texsize';4;fractalNoise;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
-0;[0 1 0];rot;set'lightRotation' 16;
+[150 400];set'lrot' 2;
+get'lrot';last;-300;/;[1 0 0];rot; // rot about x
+get'lrot';first;-300;/;[0 1 0];rot;m; // rot about y
+set'lightRotation' 16;
 
 1; // dummy value to pop off in place of display tensor.
 
@@ -208,7 +211,7 @@ vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
 		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) )\
 if( length( sintersect - intersect ) > 0.01 )
   color *= 0.8\
-color = rcd ? color : sunDist.xxx\
+color = rcd ? color : clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 )\
 
 ret[0] = color.b\
 ret[1] = color.g\
