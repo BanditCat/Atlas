@@ -215,7 +215,7 @@ const GLchar* fragmentSource =
   "  float gcolor = sampleTensorIndex( tindex );\n"
   "  tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 2.0, 0 );\n"
   "  float bcolor = sampleTensorIndex( tindex );\n"
-  "  fragColor = vec4( rcolor, gcolor, bcolor, 1.0 );\n"
+  "  fragColor = texture( tex, gl_FragCoord.xy / dims );\n"
   "}\n";
 
 // Function to compile shaders
@@ -339,6 +339,8 @@ int renderThreadFunction( void* data ){
       error( "%s", "Display tensor not of rank 3" );
     if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 3 )
       error( "%s", "Display tensor not a 3 component tensor of rank 3." );
+    if( ts->stack[ ts->size - 1 ]->tex.channels != 3 )
+      error( "%s", "Display tensor not a 3 channel tensor of rank 3." );
 
     glClear( GL_COLOR_BUFFER_BIT );
 

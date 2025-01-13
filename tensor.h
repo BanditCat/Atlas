@@ -12,8 +12,8 @@
 typedef struct{
   u32 rank;              // Rank of the tensor (0 to 4)
   u32 size;              // Total number of elements
-  u32 shape[4];          // Dimensions of the tensor
-  s32 strides[4];        // Strides for indexing
+  u32 shape[ 4 ];          // Dimensions of the tensor
+  s32 strides[ 4 ];        // Strides for indexing
   s32 offset;
   bool gpu;              // True if in gpu memory, false if in cpu memory.
   union{
@@ -21,7 +21,7 @@ typedef struct{
     struct{
       GLuint texture;        // OpenGL texture for reading/writing operations
       GLuint framebuffer;    // Framebuffer for rendering into the texture
-      u32 width, height;
+      u32 width, height, channels; // If channels is non-zero, its a texture.
     } tex;
   };
   bool ownsData;
@@ -40,6 +40,7 @@ typedef struct{
   GLuint VBO;
   GLuint VAO;
   GLuint* uniformLocs;
+  u32 channels;
 } compute;
 
 typedef struct{
@@ -59,10 +60,10 @@ tensorStack* newStack( void );
 // Warning! this takes ownership of data and will deallocate it.
 tensor* newTensor( u32 rank, const u32* shape, f32* data );
 compute* makeCompute( const program* prog, const char* uniforms, const char* glslpre,
-		      const char* glsl, u32 argCount, u32 retCount );
+		      const char* glsl, u32 argCount, u32 retCount, u32 channels );
 void deleteCompute( compute* i );
 tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
-			      const compute* initializer );
+				const compute* initializer );
 tensor* tensorFromImageFile( const char* fileName );
 tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );

@@ -100,7 +100,8 @@ void tensorToGPUMemory( tensor* t ){
 
   t->tex.width = twidth;
   t->tex.height = theight;
-
+  t->tex.channels = 4;
+  
   glGenTextures( 1, &t->tex.texture );
   glBindTexture( GL_TEXTURE_2D, t->tex.texture );
   glTexImage2D( GL_TEXTURE_2D,
@@ -203,11 +204,21 @@ compute* makeCompute( const program* prog,
                       const char* glslpre,
                       const char* glsl,
                       u32 argCount,
-                      u32 retCount ){
+                      u32 retCount,
+		      u32 channels ){
+  const char* channelsString;
+  switch( channels ){
+  case 0:
+  case 4: channelsString = "vec4"; break;
+  case 1: channelsString = "float"; break;
+  case 2: channelsString = "vec2"; break;
+  case 3: channelsString = "vec3"; break;
+  }
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
   ret->argCount = argCount;
   ret->retCount = retCount;
+  ret->channels = channels;
   const char* vertexShaderSource = "\
     #version 300 es\n\
     precision highp float;\n\
@@ -220,12 +231,12 @@ compute* makeCompute( const program* prog,
   ";
 
   // Fragment shader template
-  const char* fragmentShaderTemplate = "\
+  const char* fragmentShaderTemplate = "\n\
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
     precision highp sampler2D;\n\
-    layout(location = 0) out vec4 _a_fragColor[ %u ];\n\
+    layout(location = 0) out %s _a_fragColor[ %u ];\n\
     uniform ivec2 _a_dims; // Texture dimensions\n\
     uniform ivec4 _a_strides; // Tensor shape\n\
     \n\
@@ -244,6 +255,9 @@ compute* makeCompute( const program* prog,
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
+    vec4 af( vec2 uv ){\n\
+      return texture( _a_atex, uv / vec2( _a_adims )  );\n\
+    }\n\
     uniform ivec4 _a_bstrides;\n\
     uniform int _a_btoffset;\n\
     uniform ivec2 _a_bdims;\n\
@@ -258,6 +272,9 @@ compute* makeCompute( const program* prog,
       vec2 uv = ( vec2( pixel_index %% _a_bdims.x, pixel_index / _a_bdims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_btex, uv );\n\
       return texel[ int( channel ) ];\n\
+    }\n\
+    vec4 bf( vec2 uv ){\n\
+      return texture( _a_btex, uv / vec2( _a_bdims )  );\n\
     }\n\
     uniform ivec4 _a_cstrides;\n\
     uniform int _a_ctoffset;\n\
@@ -274,6 +291,9 @@ compute* makeCompute( const program* prog,
       vec4 texel = texture( _a_ctex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
+    vec4 cf( vec2 uv ){\n\
+      return texture( _a_ctex, uv / vec2( _a_cdims )  );\n\
+    }\n\
     uniform ivec4 _a_dstrides;\n\
     uniform int _a_dtoffset;\n\
     uniform ivec2 _a_ddims;\n\
@@ -289,9 +309,12 @@ compute* makeCompute( const program* prog,
       vec4 texel = texture( _a_dtex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
+    vec4 df( vec2 uv ){\n\
+      return texture( _a_dtex, uv / vec2( _a_ddims ) );\n\
+    }\n\
     %s\n\
     ivec4 _a_toTensorIndices( int i ){\n\
-      ivec4 ret;\n				\
+      ivec4 ret;\n\
       ret.x = i / _a_strides.x;\n\
       i -= ret.x * _a_strides.x;\n\
       ret.y = i / _a_strides.y;\n\
@@ -302,7 +325,9 @@ compute* makeCompute( const program* prog,
       return ret;\n\
     }\n\
     %s\n\
-    void main(){\n\
+    %s\n";
+   char* tensorFooterTemplate = 
+      "void main(){\n\
       int i = ( int( gl_FragCoord.x ) + int( gl_FragCoord.y ) * _a_dims.x ) * 4;\n\
       float ifloat = float( i );\n\
       ivec4 t = _a_toTensorIndices( i );\n\
@@ -323,48 +348,52 @@ compute* makeCompute( const program* prog,
       ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n";
-
+   char* textureFooterTemplate =
+     "void main(){\n\
+     %s ret[ %u ];\n\
+     vec2 tf = gl_FragCoord.xy;\n\
+     {%s}\n";
+   
   // Buffer to hold the final fragment shader source
   u32 bufsize = 1048576;
-  char* fragmentShaderSource = mem( bufsize, char );  // Adjust size as needed
-  int len = snprintf( fragmentShaderSource,
-                      bufsize,
-                      fragmentShaderTemplate,
-                      retCount,
-                      uniforms,
-                      glslpre,
-                      retCount,
-                      retCount,
-                      retCount,
-                      retCount,
-                      retCount,
-                      glsl,
-                      retCount,
-                      glsl,
-                      retCount,
-                      glsl,
-                      retCount,
-                      glsl,
-                      retCount,
-                      retCount );
-  u32 smallbufsize = 65536;
-  if( len < 0 || len >= bufsize - smallbufsize )
-    error( "%s", "Shader source exceeds buffer size." );
-  for( u32 i = 0; i < retCount; ++i ){
-    char* smallbuf = mem( smallbufsize, char );
-    snprintf( smallbuf,
-              smallbufsize,
-              "    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u "
-              "], _a_a[ %u ] );\n",
-              i,
-              i,
-              i,
-              i,
-              i );
-    strncat( fragmentShaderSource, smallbuf, 1000 );
-    unmem( smallbuf );
+  char* fragmentShaderSource = mem( bufsize, char );
+  char* footerSource = mem( bufsize, char );
+  int flen;
+  if( channels == 0 ){
+    flen = snprintf( footerSource, bufsize, tensorFooterTemplate, retCount,
+		     retCount, retCount, retCount, retCount, glsl, retCount,
+		     glsl, retCount, glsl, retCount, glsl, retCount, retCount );
+  } else{
+    flen = snprintf( footerSource, bufsize, textureFooterTemplate, channelsString, retCount, glsl );
   }
-  strncat( fragmentShaderSource, "}", 1000 );
+  int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, channelsString,
+		      retCount, uniforms, glslpre, footerSource );
+  u32 smallbufsize = 65536;
+  if( len < 0 || len >= bufsize - smallbufsize || flen < 0 || flen >= bufsize )
+    error( "%s", "Shader source exceeds buffer size." );
+  if( channels == 0 ){
+    for( u32 i = 0; i < retCount; ++i ){
+      char* smallbuf = mem( smallbufsize, char );
+      snprintf( smallbuf,
+		smallbufsize,
+		"    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u "
+		"], _a_a[ %u ] );\n", i, i, i, i, i );
+      strncat( fragmentShaderSource, smallbuf, 1000 );
+      unmem( smallbuf );
+    }
+    strncat( fragmentShaderSource, "}", 1000 );
+  } else{
+    for( u32 i = 0; i < retCount; ++i ){
+      char* smallbuf = mem( smallbufsize, char );
+      snprintf( smallbuf,
+		smallbufsize,
+		"    _a_fragColor[ %u ] = ret[ %u ];\n", i, i );
+      strncat( fragmentShaderSource, smallbuf, 1000 );
+      unmem( smallbuf );
+    }
+    strncat( fragmentShaderSource, "}", 1000 );
+    //dbg( "%s", fragmentShaderSource );
+  }
   //  Compile the vertex shader
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
   glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
@@ -389,6 +418,8 @@ compute* makeCompute( const program* prog,
   glShaderSource( fragmentShader, 1, &p, NULL );
   glCompileShader( fragmentShader );
   unmem( fragmentShaderSource );
+  unmem( footerSource );
+  
 
   // Check for fragment shader compilation errors
   glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &status );
@@ -486,8 +517,7 @@ void deleteCompute( compute* i ){
   unmem( i->uniformLocs );
   unmem( i );
 }
-tensor** newTensorsInitialized(
-  program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
+tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
   CHECK_GL_ERROR();
   glUseProgram( compute->program );
   if( compute->argCount > ts->size )
@@ -507,15 +537,21 @@ tensor** newTensorsInitialized(
   u32 pixels = ( size + 3 ) / 4;
   u32 width = (u32)ceilf( sqrtf( (f32)pixels ) );
   u32 height = ( pixels + width - 1 ) / width;
+  if( compute->channels != 0 ){
+    width = shape[ 0 ];
+    height = shape[ 1 ];
+    size = width * height;
+  }
   for( u32 reti = 0; reti < compute->retCount; ++reti ){
     u32 found = TENSOR_CACHE;
     for( u32 i = 0; i < TENSOR_CACHE; ++i )
-      if( ts->cache[ i ] && size == ts->cache[ i ]->size ){
+      if( ts->cache[ i ] && size == ts->cache[ i ]->size && ts->cache[ i ]->tex.channels == compute->channels ){
         found = i;
         break;
       }
     if( found != TENSOR_CACHE ){
       ret = ts->cache[ found ];
+      ret->tex.channels = compute->channels;
       ts->cache[ found ] = NULL;
       ret->rank = rank;
       ret->size = 1;
@@ -533,6 +569,7 @@ tensor** newTensorsInitialized(
       }
     } else {
       ret = mem( 1, tensor );
+      ret->tex.channels = compute->channels;
       if( rank > 4 )
         error( "%s", "Rank exceeds maximum of 4." );
 
@@ -558,15 +595,21 @@ tensor** newTensorsInitialized(
       // Create OpenGL texture
       glGenTextures( 1, &ret->tex.texture );
       glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
-      glTexImage2D( GL_TEXTURE_2D,
-                    0,
-                    GL_RGBA32F,
-                    width,
-                    height,
-                    0,
-                    GL_RGBA,
-                    GL_FLOAT,
-                    NULL );
+      switch( compute->channels ){
+      case 0:
+      case 4:
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
+	break;
+      case 1:
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_R, GL_FLOAT, NULL );
+	break;
+      case 2:
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
+	break;
+      case 3:
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL );
+	break;
+      }       
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );

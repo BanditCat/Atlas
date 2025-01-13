@@ -179,7 +179,8 @@ u32 addCompute( program* p,
                 const char* glslpre,
                 const char* glsl,
                 u32 argCount,
-                u32 retCount ){
+                u32 retCount,
+		u32 channels ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
@@ -188,7 +189,7 @@ u32 addCompute( program* p,
     p->computes = tp;
   }
   p->computes[ p->numComputes ] =
-    makeCompute( p, uniforms, glslpre, glsl, argCount, retCount );
+    makeCompute( p, uniforms, glslpre, glsl, argCount, retCount, channels );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -495,15 +496,16 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     comp[ endi - starti ] = '\0';
     
     char* sizep = endi + 1;
-    u32 argCount, retCount;
+    u32 argCount, retCount, channels;
     int charsread;
-    if( sscanf( sizep, "%u%u%n", &argCount, &retCount, &charsread ) == 2 &&
+    if( sscanf( sizep, "%u%u%u%n", &argCount, &retCount, &channels, &charsread ) == 3 &&
         !sizep[ charsread ] ){
       curStep->type = COMPUTE;
       curStep->toCompute.glslpre = pre;
       curStep->toCompute.glsl = comp;
       curStep->toCompute.retCount = retCount;
       curStep->toCompute.argCount = argCount;
+      curStep->toCompute.channels = channels;
       if( argCount > 4 )
         error(
 	      "%s",
@@ -1033,7 +1035,8 @@ void finalize( program* program ){
                     glslUniformBlock,
                     glslpre, glsl,
                     program->steps[ i ].toCompute.argCount,
-                    program->steps[ i ].toCompute.retCount );
+                    program->steps[ i ].toCompute.retCount,
+		    program->steps[ i ].toCompute.channels );
       unmem( glsl );
       unmem( glslpre );
     }

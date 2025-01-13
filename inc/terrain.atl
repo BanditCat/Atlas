@@ -73,7 +73,7 @@ l'ctkeyskip';
 1;dup;1;dup; // duplicate terrain and heightmap
 windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
-
+[3];0;cat;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,16 +229,10 @@ color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),
                           clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color\
 
 
-ret[0] = color.b\
-ret[1] = color.g\
-ret[2] = color.r\
+ret[0] = color.zyx\
 '
-2 3;
+2 1 3;
 
-
-
-
-get'wdims';[3];0;cat;c''ret[0]=t.z == 0 ? a(ivec4(t.xy,0,0)) : ( t.z == 1 ? b(ivec4(t.xy,0,0)) : c(ivec4(t.xy,0,0)))\' 3 1;
 
 
 
@@ -265,7 +259,7 @@ get'fngradsize';2;*;set'fngradsize';
 get'fnamp';[0.5];*;set'fnamp';
 get'fnseed';[1.2];+;set'fnseed';
 get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
-get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1;
+get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1 0;
 get'fntexsize';get'fngradsize';/;2;-;if'fnloop';
 return;
 
@@ -286,7 +280,7 @@ float hash( vec2 p, float time ){
 '
 ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), time ) * 2.0 * 3.1415928 ) :
                   cos( hash( vec2( t.xy ), time ) * 2.0 * 3.1415928 )\
-' 0 1;
+' 0 1 0;
 
 get'texsize';
 ;c'
@@ -317,7 +311,7 @@ float v1 = lerp( fc1, fc2, u )\
 float v2 = lerp( fc3, fc4, u )\
 float v3 = lerp( v1, v2, v )\
 ret[0]=amp*(v3 * 0.5 + 0.5)\
-' 1 1;
+' 1 1 0;
 return;
 
 l'end';

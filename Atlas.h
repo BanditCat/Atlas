@@ -262,17 +262,21 @@ extern u64 memc;
 #endif // DEBUG
 
 #define error( msg, ... ) do { \
-    char formatted_msg[1024]; \
-    snprintf(formatted_msg, sizeof(formatted_msg), (msg), __VA_ARGS__); \
+    char* formatted_msg = mem( 1048576, char );				\
+    snprintf(formatted_msg, 1048576, (msg), __VA_ARGS__); \
+    printf((msg), __VA_ARGS__); \
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", formatted_msg, NULL); \
-    exit(1); \
-} while(0)
+    unmem( formatted_msg ); \
+    exit( 1 ); \
+} while( 0 )
 
 #define dbg( msg, ... ) do { \
-    char formatted_msg[1024]; \
-    snprintf(formatted_msg, sizeof(formatted_msg), (msg), __VA_ARGS__); \
+    char* formatted_msg = mem( 1048576, char );			    \
+    snprintf(formatted_msg, 1048576, (msg), __VA_ARGS__); \
+    printf((msg), __VA_ARGS__); \
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Debug", formatted_msg, NULL); \
-} while(0)
+    unmem( formatted_msg ); \
+} while( 0 )
 
 // Global for ease.
 extern SDL_Window* window;

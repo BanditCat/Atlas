@@ -30,7 +30,7 @@ ret[0] = ( ( mod( floor( x ), 6.0 ) != 5.0 ?
           b( ivec4( mod( floor( x ), 6.0 ),
           mod( y, 8.0 ) + 1328.0 - 8.0 * a( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
 	  ,1.0, 0.0 ) ) : 1.0 ) )\
-' 2 1;0;dup;
+' 2 1 0;0;dup;
 // set zoom and offs
 windowSize;first;get'tsize';first;10;+;/;e;set'zoom' 1;
 windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;set'offs' 2;
@@ -41,9 +41,8 @@ windowSize;set'wsize' 2;
 0;dup;
 get'wsize';[3];0;cat;
 c''
-vec4 tf = vec4( t )\
-ret[0] = ( tf.x + offs.x >= 0.0 && tf.y + offs.y >= 0.0 &&
+ret[0] = vec3( 0.0, ( tf.x + offs.x >= 0.0 && tf.y + offs.y >= 0.0 &&
            tf.x + offs.x < tsize.x * zoom && tf.y + offs.y < tsize.y * zoom ) ?
-           1.0 - a( ivec4( ( tf.xy + offs ) / zoom, 0, 0 ) ) : 0.0\
-' 1 1;
+           1.0 - a( ivec4( ( tf.xy + offs ) / zoom, 0, 0 ) ) : 0.0, 1.0 )\
+' 1 1 3;
 

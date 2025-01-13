@@ -422,8 +422,8 @@ Strides: 1
   <section id="cmd-c">
     <h2>c (compute)</h2>
     <p><em>This is the main command of Atlas. The rest of the language is in support of this.</em> The <code>c</code> command takes one shape argument (the shape of the output tensor) and 0-4 argument tensors to feed 
-      into the shader. The <code>c</code> command is given with three quotes and two numbers afterward as 
-      <code>c'glslFuncs'glslExpression' argCount retCount</code>. Up to four input tensors (argCount ≤ 4) will be 
+      into the shader. The <code>c</code> command is given with three quotes and three numbers afterward as 
+      <code>c'glslFuncs'glslExpression' argCount retCount channels</code>. The main (tensor) mode of operation is when channels is 0. Up to four input tensors (argCount ≤ 4) will be 
       available as <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code>, allowing you to sample the tensors at the 
       top of the stack after the shape argument. Each of <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code> is a function 
       of a single <code>ivec4</code> argument corresponding to a tensor index for that element on the stack.</p>
@@ -434,9 +434,12 @@ Strides: 1
       <code>glslExpression</code> string must assign values to the <code>ret[0]</code> ... <code>ret[retCount-1]</code> variables, 
       which will be the return values placed in the tensors on the stack. The shader defined by 
       <code>glslExpression</code> will be given four indices: <code>i</code> (a integer linear index) and 
-      <code>t</code> (a <code>ivec4</code> tensor index). As well as ifloat and tf, the floating point versions.</p>
+							      <code>t</code> (a <code>ivec4</code> tensor index). As well as ifloat and tf, the floating point versions.
 
-    <p>For example:</p>
+																There is a second mode of operation when channels is non-zero.  In this mode, a texture is created rather than a tensor.  Textures may only be used in other c compute commands using the glsl texture functions. Using them in other ways is undefined, and in particular commands that affect shape or strides like reverse and transpose will not work on them. The type of the ret array will reflect the number of channels, float, vec2, vec3, or vec4.
+
+	<p>For example:</p>
+											
     <pre><code>[[1 2][3 4]];[[2 1][5 3]]; // Push two tensors on the stack.
 [2 2]; // Push the desired output shape on the stack
 c'' // Call compute with no functions or constants: a blank glslFuncs

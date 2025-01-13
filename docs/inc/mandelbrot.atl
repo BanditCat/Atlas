@@ -36,8 +36,8 @@ c''
 vec4 tf = vec4( t )\
 ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\
 ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\
-'0 2;
-get'wsize';c''ret[0]=perturb.x\ret[1]=perturb.y\' 0 2;
+'0 2 0;
+get'wsize';c''ret[0]=perturb.x\ret[1]=perturb.y\' 0 2 0;
 1;if'skip'; 
 
 l'mand';
@@ -64,12 +64,12 @@ float mand2( vec2 x, vec2 c ){
 vec2 x = vec2( c( ivec4( t.xy, 0, 0 ) ), d( ivec4( t.xy, 0, 0 ) ) )\
 vec2 c = vec2( a( ivec4( t.xy, 0, 0 ) ), b( ivec4( t.xy, 0, 0 ) ) )\
 float r = mand2( x, c )\
-ret[ 0 ] = r\' 4 1;
+ret[ 0 ] = r\' 4 1 0;
 return;
 
 
 l'skip';
 mand;
 get'wsize';[3];0;cat;c''
-ret[0]= a( ivec4( t.xy, 0.0, 0.0 ) ) / 31.0\
-' 1 1;
+ret[0] = vec3( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
+' 1 1 3;

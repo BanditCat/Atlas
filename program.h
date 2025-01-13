@@ -57,6 +57,7 @@ typedef struct{
       u32 argCount;
       char* glsl;
       char* glslpre;
+      u32 channels;
     } toCompute;
     struct{
       union{
