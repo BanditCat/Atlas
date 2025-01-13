@@ -278,20 +278,8 @@ extern u64 memc;
     unmem( formatted_msg ); \
 } while( 0 )
 
-inline float getMaxAnisotropy() {
-    // Check if the anisotropic filtering extension is supported
-    const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-    if (extensions && strstr(extensions, "EXT_texture_filter_anisotropic")) {
-        // Retrieve the extension
-        GLfloat maxAnisotropy = 1.0f;
-        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
-        printf("Maximum supported anisotropy level: %f\n", maxAnisotropy);
-        return maxAnisotropy;
-    } else {
-        printf("Anisotropic filtering not supported.\n");
-        return 1.0f; // Default value (no anisotropic filtering)
-    }
-}
+float getMaxAnisotropy();
+
 // Global for ease.
 extern SDL_Window* window;
 extern SDL_GLContext glContext;
