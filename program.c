@@ -1472,8 +1472,14 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* cur = ts->stack[ ts->size - 1 ];
       if( !cur->gpu || cur->tex.channels != 4 )
 	error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be 4 channel." );
+      glBindTexture( GL_TEXTURE_2D, cur->tex.texture );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+      glGenerateMipmap( GL_TEXTURE_2D );
       break;
-      
+     
     }
     case REVERSE: {
       if( !ts->size )
