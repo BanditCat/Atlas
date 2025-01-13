@@ -231,7 +231,7 @@ compute* makeCompute( const program* prog,
   ";
 
   // Fragment shader template
-  const char* fragmentShaderTemplate = "\n\
+  const char* fragmentShaderTemplate = "\
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
