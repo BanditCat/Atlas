@@ -1468,6 +1468,13 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensorRotate( ts, ts->size - 1, ts->size - 2 );
       break;
     }
+    case TEXTURE: {
+      tensor* cur = ts->stack[ ts->size - 1 ];
+      if( !cur->gpu || cur->tex.channels != 4 )
+	error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be 4 channel." );
+      break;
+      
+    }
     case REVERSE: {
       if( !ts->size )
          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,

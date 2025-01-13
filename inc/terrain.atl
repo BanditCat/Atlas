@@ -8,8 +8,8 @@ include'inc\nav.atl';
 
 size;if'started'; // init code goes here
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
-4096;0;dup;set'texsize';4;fractalNoise;
-get'texsize';[4];0;cat;c''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) )\' 1 1 4;
+2048;0;dup;set'texsize';4;fractalNoise;
+get'texsize';[4];0;cat;c''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) )\' 1 1 4;texture;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 [150 400];set'lrot' 2;
@@ -82,8 +82,8 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 ////////////////////////////////////////////////////////////////////////////////
 c'
 const float scale = 0.35\  // heightScale
-const int maxIters = 64\
-const int binSearchSteps = 4\
+const int maxIters = 128\
+const int binSearchSteps = 8\
 const float damping = 0.7\
 
 const vec3 nrml = vec3(0.0, 1.0, 0.0)\
