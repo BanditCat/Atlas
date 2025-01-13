@@ -106,7 +106,7 @@ float sampleHeight( vec2 uv ){
 
 vec3 sampleNormal( vec2 uv ){
   vec2 coord = uv * texsize\
-  float centers = af( coord )\
+  float centers = af( coord ).x\
   float dHx = af( coord + vec2( 1, 0 ) ).x - centers\
   float dHy = af( coord + vec2( 0, 1 ) ).x - centers\
   return normalize( vec3(-dHx, 1.0 / texsize.x, -dHy) )\
