@@ -73,7 +73,7 @@ l'ctkeyskip';
 1;dup;1;dup; // duplicate terrain and heightmap
 windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
-[3];0;cat;
+[4];0;cat;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,9 +229,9 @@ color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),
                           clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color\
 
 
-ret[0] = color.zyx\
+ret[0] = color.zyxx\
 '
-2 1 3;
+2 1 4;
 
 
 

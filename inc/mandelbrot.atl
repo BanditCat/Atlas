@@ -70,6 +70,6 @@ return;
 
 l'skip';
 mand;
-get'wsize';[3];0;cat;c''
-ret[0] = vec3( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
-' 1 1 3;
+get'wsize';[4];0;cat;c''
+ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
+' 1 1 4;

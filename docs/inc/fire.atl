@@ -18,7 +18,7 @@ input;
 [3 4 0];s;first;if'still';
 get'time';[1];+;set'time' 1;
 l'still';
-get'wsize';[3];0;cat;
+get'wsize';[4];0;cat;
 c'
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
@@ -29,6 +29,6 @@ vec2 uv = vec2( floor( hash( tf, time * 10.32213 ) * 3.0 ) - 1.0,
                 -1.0 - floor( hash( tf, time ) * 3.0 ) )\
 float val = af( tf + uv ).r\
 
-ret[0] = vec3( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, time * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0 )\
-' 1 1 3;
+ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, time * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0, 0.0 )\
+' 1 1 4;
 
