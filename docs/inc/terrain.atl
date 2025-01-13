@@ -8,7 +8,8 @@ include'inc\nav.atl';
 
 size;if'started'; // init code goes here
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
-1024;0;dup;set'texsize';4;fractalNoise;
+4096;0;dup;set'texsize';4;fractalNoise;
+get'texsize';[4];0;cat;c''ret[0]=a( ivec4( tf.xy, 0, 0 ) ).xxxx\' 1 1 4;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 [150 400];set'lrot' 2;
@@ -81,8 +82,8 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 ////////////////////////////////////////////////////////////////////////////////
 c'
 const float scale = 0.35\  // heightScale
-const int maxIters = 64\
-const int binSearchSteps = 4\
+const int maxIters = 128\
+const int binSearchSteps = 6\
 const float damping = 0.7\
 
 const vec3 nrml = vec3(0.0, 1.0, 0.0)\
@@ -100,15 +101,15 @@ float hash( vec2 p, float time ){
 float sampleHeight( vec2 uv ){
   if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
     return 0.6\
-  return a( ivec4( uv * texsize, 0, 0 ) )\
+  return af( uv * texsize )\
 }
 
 vec3 sampleNormal( vec2 uv ){
-  ivec4 coord = ivec4( uv * texsize, 0, 0 )\
-  float centers = a( coord )\
-  float dHx = a( coord + ivec4( 1, 0, 0, 0 ) ) - centers\
-  float dHy = a( coord + ivec4( 0, 1, 0, 0 ) ) - centers\
-  return normalize(vec3(-dHx, 1.0 / texsize.x, -dHy))\
+  vec2 coord = uv * texsize\
+  float centers = af( coord )\
+  float dHx = af( coord + vec2( 1, 0 ) ) - centers\
+  float dHy = af( coord + vec2( 0, 1 ) ) - centers\
+  return normalize( vec3(-dHx, 1.0 / texsize.x, -dHy) )\
 }
 
 vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){

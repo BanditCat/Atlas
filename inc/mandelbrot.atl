@@ -1,5 +1,4 @@
 keys;set'keys';input;set'input'; // Set input variables
-
 'inc\terrain.atl';
 include'inc\nav.atl';
 

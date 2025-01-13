@@ -48,6 +48,7 @@ typedef struct{
     GETINPUT, // documented, three axes and three buttons
     SET, // documented
     GET, // documented
+    TEXTURE, // documented
     WINDOWSIZE // documented
   } type;
   union{

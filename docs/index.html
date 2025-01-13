@@ -219,6 +219,7 @@
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
+      <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
       <li><a href="#cmd-while">while / for</a></li>
       <li><a href="#cmd-windowSize">windowSize</a></li>
@@ -327,7 +328,8 @@ return;
     <h2>Looping</h2>
     <p>Atlas programs are run in a loop, once per each frame of animation. Consequently, your program 
       should be designed to pass through rather than block. To quit the program, you can manually call 
-      <code>quit</code>.</p>
+      <code>quit</code>. At the end of each loop, a 4 channel rank 3  tensor must be on top of the stack, this
+      is used as the image to display.</p>
   </section>
 
   <hr>
@@ -436,7 +438,7 @@ Strides: 1
       <code>glslExpression</code> will be given four indices: <code>i</code> (a integer linear index) and 
 							      <code>t</code> (a <code>ivec4</code> tensor index). As well as ifloat and tf, the floating point versions.
 
-																There is a second mode of operation when channels is non-zero.  In this mode, a texture is created rather than a tensor.  Textures may only be used in other c compute commands using the glsl texture functions. Using them in other ways is undefined, and in particular commands that affect shape or strides like reverse and transpose will not work on them. The type of the ret array will reflect the number of channels, float, vec2, vec3, or vec4.
+																There is a second mode of operation when channels is non-zero ( It must be 4 ).  In this mode, a texture is created rather than a tensor.  Textures may only be used in other c compute commands using the glsl texture functions. Using them in other ways is undefined, and in particular commands that affect shape or strides like reverse and transpose will not work on them. The type of the ret array will reflect the number of channels, float, vec2, vec3, or vec4.
 
 	<p>For example:</p>
 											
@@ -949,6 +951,11 @@ Strides: 1 2
 | +-----------+ |
 +---------------+
 </code></pre></p>
+  </section>
+
+  <section id="cmd-texture">
+    <h2>texture</h2>
+    <p>This command takes the tensor on top of the stack, which must be rank 3, 4 component like [512 512 4], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
   </section>
 
   <section id="cmd-timeDelta">

@@ -526,6 +526,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "texture" ) ){  // First
+    curStep->type = TEXTURE;
+    // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
+
   } else if( !strcmp( command, "m" ) ){  // Multiply matrix
     curStep->type = MULTM;
     // dbg( "Linenum %u commandnum %u: multm\n", linenum, commandnum );
@@ -716,7 +720,7 @@ void addProgram( const char* filename, char* prog, program* program ){
   
   char* ptr = prog;
   u32 linenum = 1;
-  u32 commandnum = 1;
+  u32 commandnum = 0;
 
   while( *ptr != '\0' ){
     // Remember the start of this chunk.
@@ -737,7 +741,7 @@ void addProgram( const char* filename, char* prog, program* program ){
       for( char* c = oldPtr; c < semicolon; c++ ){
         if( *c == '\n' ){
           linenum++;
-          commandnum = 1;
+          commandnum = 0;
         }
       }
       // Advance ptr beyond the semicolon if it exists
@@ -759,7 +763,7 @@ void addProgram( const char* filename, char* prog, program* program ){
     for( char* c = oldPtr; c < semicolon; c++ ){
       if( *c == '\n' ){
         linenum++;
-        commandnum = 1;
+        commandnum = 0;
       }
     }
 
@@ -1375,7 +1379,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       i = p->returns[ --p->numReturns ];
       // dbg( "%s", "return" );
       break;
-    case COMPUTE:
+    case COMPUTE:{
       if( !ts->size )
          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement with no shape parameter on "
@@ -1386,18 +1390,32 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for an initilizer was more than 4 component." );
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 shape[ 4 ];
-      u32 size = ts->stack[ ts->size - 1 ]->size;
-      for( u32 i = 0; i < ts->stack[ ts->size - 1 ]->size; ++i )
+      u32 rank = ts->stack[ ts->size - 1 ]->size;
+      for( u32 i = 0; i < rank; ++i )
         shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
-      pop( ts );
+      for( u32 i = rank; i < 4; ++ i )
+	shape[ i ] = 1;
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );
+      u32 channels = p->computes[ s->compute ]->channels;
+      if( channels && channels != 4 )
+         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to run a compute statement with a bad channel count." );
+      if( channels && rank != 3 )
+         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
+		"Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
+      if( channels && ( rank != 3 || shape[ 2 ] != 4 ) )
+         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
+		"Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
+      
+      pop( ts );
       tensor** rets =
-        newTensorsInitialized( p, ts, size, shape, p->computes[ s->compute ] );
+        newTensorsInitialized( p, ts, rank, shape, p->computes[ s->compute ] );
       for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
         push( ts, rets[ p->computes[ s->compute ]->retCount - i - 1 ] );
       unmem( rets );
       // dbg( "%s", "compute" );
       break;
+    }
     case CAT: {
       if( ts->size < 3 )
          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
