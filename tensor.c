@@ -429,6 +429,7 @@ compute* makeCompute( const program* prog,
     glGetShaderInfoLog( fragmentShader, sizeof( log ), NULL, log );
     snprintf(
       msg, sizeof( msg ), "Fragment shader compilation failed: %s", log );
+    dbg( "%s", fragmentShaderSource );
     glDeleteShader( fragmentShader );
     glDeleteShader( vertexShader );
     error( "%s", msg );
