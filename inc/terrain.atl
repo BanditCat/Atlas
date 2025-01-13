@@ -101,14 +101,14 @@ float hash( vec2 p, float time ){
 float sampleHeight( vec2 uv ){
   if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
     return 0.6\
-  return af( uv * texsize )\
+  return af( uv * texsize ).x\
 }
 
 vec3 sampleNormal( vec2 uv ){
   vec2 coord = uv * texsize\
   float centers = af( coord )\
-  float dHx = af( coord + vec2( 1, 0 ) ) - centers\
-  float dHy = af( coord + vec2( 0, 1 ) ) - centers\
+  float dHx = af( coord + vec2( 1, 0 ) ).x - centers\
+  float dHy = af( coord + vec2( 0, 1 ) ).x - centers\
   return normalize( vec3(-dHx, 1.0 / texsize.x, -dHy) )\
 }
 
