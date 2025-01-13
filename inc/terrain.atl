@@ -82,8 +82,8 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 ////////////////////////////////////////////////////////////////////////////////
 c'
 const float scale = 0.35\  // heightScale
-const int maxIters = 80\
-const int binSearchSteps = 6\
+const int maxIters = 64\
+const int binSearchSteps = 4\
 const float damping = 0.7\
 
 const vec3 nrml = vec3(0.0, 1.0, 0.0)\
