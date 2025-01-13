@@ -99,6 +99,8 @@ float hash( vec2 p, float time ){
 }
 
 float sampleHeight( vec2 uv ){
+  if( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 )
+    return 0.6\
   return af( uv * texsize ).x\
 }
 
