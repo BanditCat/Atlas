@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Water'
+	git commit -m 'Textures'
 	git push -u origin main
 
 # Include dependency files
