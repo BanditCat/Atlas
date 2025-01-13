@@ -417,8 +417,6 @@ compute* makeCompute( const program* prog,
   const char* p = fragmentShaderSource;
   glShaderSource( fragmentShader, 1, &p, NULL );
   glCompileShader( fragmentShader );
-  unmem( fragmentShaderSource );
-  unmem( footerSource );
   
 
   // Check for fragment shader compilation errors
@@ -434,6 +432,9 @@ compute* makeCompute( const program* prog,
     glDeleteShader( vertexShader );
     error( "%s", msg );
   }
+
+  unmem( fragmentShaderSource );
+  unmem( footerSource );
 
   // Create the program and attach both shaders
   ret->program = glCreateProgram();
