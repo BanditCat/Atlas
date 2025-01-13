@@ -99,6 +99,8 @@ float hash( vec2 p, float time ){
 }
 
 float sampleHeight( vec2 uv ){
+  if( uv.x < 0.0 || uv.x > 0.99999 || uv.y < 0.0 || uv.y > 0.99999 )
+    return 0.6\
   return af( uv * texsize ).x\
 }
 
@@ -224,8 +226,8 @@ if( length( sintersect - intersect ) > 0.01 )
 
 color = rcd ? color * clamp( csc, 0.1, 1.0 ) : clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 )\
 
-color = underwater && rcd ? mix( color, vec3( 0.3, 0.1, 0.1 ),
-                            clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color\
+color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),
+                          clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color\
 
 
 ret[0] = color.zyxx\
