@@ -1479,7 +1479,6 @@ bool runProgram( tensorStack* ts, program** progp ){
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
       if( getMaxAnisotropy() > 1.0 ){
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
-	dbg("%s","boop");
       }
       glGenerateMipmap( GL_TEXTURE_2D );
       break;
