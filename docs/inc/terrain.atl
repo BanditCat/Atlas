@@ -101,7 +101,7 @@ float hash( vec2 p, float time ){
 float sampleHeight( vec2 uv ){
   if( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 )
     return 0.6\
-  return af( uv * texsize ).x\
+  return textureGrad( _a_atex, uv, vec2( 0.000001 ), vec2( 0.000001 ) )\
 }
 
 vec3 sampleNormal( vec2 uv ){
