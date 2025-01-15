@@ -261,7 +261,7 @@ get'fnamp';[0.5];*;set'fnamp';
 get'fnseed';[1.2];+;set'fnseed';
 get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
 get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1 0;
-get'fntexsize';get'fngradsize';/;2;-;if'fnloop';
+get'fntexsize';get'fngradsize';/;4;-;if'fnloop';
 return;
 
 

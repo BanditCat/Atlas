@@ -2,6 +2,7 @@ get'input'; // Double click to get next demo
 [3 4 0];s;first;2;-;if'nodblclick';
 ;load;l'nodblclick';pop;
 
+
 // Jump table for demos. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.
 get'keys';
 0;dup;[41 42 0];s;first;ifn'go';
@@ -19,4 +20,5 @@ l'go4';
 0;dup;[33 34 0];s;first;ifn'go5';
 load'inc\terrain.atl';
 l'go5';
+l'go6';keys;[34 35 0];s;first;if'go6';
 pop; // pop keys
