@@ -161,6 +161,9 @@ void mainPoll( void ){
       SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
       if( event.button.clicks == 2 ){
 	if( event.button.button & SDL_BUTTON( SDL_BUTTON_LEFT ) )
 	  doubleClicks[ 0 ] = 1;
@@ -169,6 +172,9 @@ void mainPoll( void ){
 	if( event.button.button & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
 	  doubleClicks[ 2 ] = 1;
       }
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
     }
   }
 }
@@ -310,7 +316,8 @@ int renderThreadFunction( void* data ){
 
   // Main loop
   while( SDL_AtomicGet( &running ) ){
-    SDL_PumpEvents();
+    //SDL_PumpEvents();
+    mainPoll();
     // Run the program
     CHECK_GL_ERROR();
     prevTime = curTime;
@@ -609,6 +616,7 @@ void start( void ){
   while( SDL_AtomicGet( &running ) ){
     // Process events
     mainPoll();
+    SDL_Delay( 5 );
   }
 
   // Wait for rendering thread to finish

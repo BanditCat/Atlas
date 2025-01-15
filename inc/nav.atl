@@ -20,5 +20,4 @@ l'go4';
 0;dup;[33 34 0];s;first;ifn'go5';
 load'inc\terrain.atl';
 l'go5';
-l'go6';keys;[34 35 0];s;first;if'go6';
 pop; // pop keys
