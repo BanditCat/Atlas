@@ -317,7 +317,7 @@ int renderThreadFunction( void* data ){
   // Main loop
   while( SDL_AtomicGet( &running ) ){
     //SDL_PumpEvents();
-    mainPoll();
+    // mainPoll();
     // Run the program
     CHECK_GL_ERROR();
     prevTime = curTime;
@@ -614,9 +614,10 @@ void start( void ){
 
   // Main thread handles SDL event loop
   while( SDL_AtomicGet( &running ) ){
-    // Process events
+    SDL_Event ev;
+    if( SDL_WaitEvent( &ev ) )
+      SDL_PushEvent( &ev );
     mainPoll();
-    SDL_Delay( 5 );
   }
 
   // Wait for rendering thread to finish
