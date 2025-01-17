@@ -698,21 +698,50 @@ void push( tensorStack* ts, tensor* t ){
   ts->stack[ ts->size++ ] = t;
 }
 
-void pop( tensorStack* ts ){
-  if( !ts->size )
-    error( "%s", "Attempt to pop an empty stack!" );
-  --ts->size;
-  if( !ts->stack[ ts->size ]->gpu || !ts->stack[ ts->size ]->ownsData )
-    deleteTensor( ts->stack[ ts->size ] );
-  else {
-    if( ts->cache[ TENSOR_CACHE - 1 ] )
-      deleteTensor( ts->cache[ TENSOR_CACHE - 1 ] );
-    for( int i = TENSOR_CACHE - 1; i > 0; --i )
-      ts->cache[ i ] = ts->cache[ i - 1 ];
-    ts->cache[ 0 ] = ts->stack[ ts->size ];
+void pop( tensorStack* ts ) {
+    if( ts->size == 0 )
+      error("%s","Pop from empty stack!");
+
+    tensor* popped = ts->stack[ --ts->size ];
     ts->stack[ ts->size ] = NULL;
-  }
+
+    // DEBUG CHECK: Is 'popped' (or at least the same texture ID) already in cache?
+    for( int i = 0; i < TENSOR_CACHE; i++ ) {
+        if( ts->cache[i] == popped ) {
+            dbg("DEBUG: This tensor pointer is already in the cache at index %d!", i);
+        }
+        // Or if you only care about GPU resource conflicts:
+        // if( ts->cache[i] && ts->cache[i]->tex.texture == popped->tex.texture )
+        //     dbg("DEBUG: This GPU texture is already in the cache at index %d!", i);
+    }
+
+    // ... then do your existing logic ...
+    if( !popped->gpu || !popped->ownsData )
+        deleteTensor( popped );
+    else {
+        // shift the cache
+        if( ts->cache[TENSOR_CACHE - 1] )
+            deleteTensor( ts->cache[TENSOR_CACHE - 1] );
+        for( int i = TENSOR_CACHE - 1; i > 0; --i )
+            ts->cache[i] = ts->cache[i - 1];
+        ts->cache[0] = popped;
+    }
 }
+/* void pop( tensorStack* ts ){ */
+/*   if( !ts->size ) */
+/*     error( "%s", "Attempt to pop an empty stack!" ); */
+/*   --ts->size; */
+/*   if( !ts->stack[ ts->size ]->gpu || !ts->stack[ ts->size ]->ownsData ) */
+/*     deleteTensor( ts->stack[ ts->size ] ); */
+/*   else { */
+/*     if( ts->cache[ TENSOR_CACHE - 1 ] ) */
+/*       deleteTensor( ts->cache[ TENSOR_CACHE - 1 ] ); */
+/*     for( int i = TENSOR_CACHE - 1; i > 0; --i ) */
+/*       ts->cache[ i ] = ts->cache[ i - 1 ]; */
+/*     ts->cache[ 0 ] = ts->stack[ ts->size ]; */
+/*     ts->stack[ ts->size ] = NULL; */
+/*   } */
+/* } */
 
 tensorStack* newStack( void ){
   tensorStack* ret = mem( 1, tensorStack );
