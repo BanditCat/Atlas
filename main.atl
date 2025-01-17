@@ -22,15 +22,16 @@ img'inc\font.bmp';
 '3. A mandelbrot set with peturbations.          ';e;0;cat;
 '4. A raytraced terrain flythrough.              ';e;0;cat;
 [0 1];t;1;r;
-0;dup;shape;[6 8];*;0;dup;set'tsize' 2;
+0;dup;shape;[6 8];*;0;dup;set'tsize' 2;[4];0;cat;
 c''
-float x = float( t.x )\
-float y = float( t.y )\
-ret[0] = ( ( mod( floor( x ), 6.0 ) != 5.0 ?
+float x = tf.x\
+float y = tf.y\
+ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
           b( ivec4( mod( floor( x ), 6.0 ),
           mod( y, 8.0 ) + 1328.0 - 8.0 * a( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
 	  ,1.0, 0.0 ) ) : 1.0 ) )\
-' 2 1 0;0;dup;
+' 2 1 4;texture;0;dup;
+
 // set zoom and offs
 windowSize;first;get'tsize';first;10;+;/;e;set'zoom' 1;
 windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;set'offs' 2;
@@ -43,6 +44,6 @@ get'wsize';[4];0;cat;
 c''
 ret[0] = vec4( 0.0, ( tf.x + offs.x >= 0.0 && tf.y + offs.y >= 0.0 &&
            tf.x + offs.x < tsize.x * zoom && tf.y + offs.y < tsize.y * zoom ) ?
-           1.0 - a( ivec4( ( tf.xy + offs ) / zoom, 0, 0 ) ) : 0.0, 1.0, 0.0 )\
+           1.0 - af( ( tf.xy + offs ) / zoom ).x : 0.0, 1.0, 0.0 )\
 ' 1 1 4;
 
