@@ -1483,6 +1483,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
       }
       glGenerateMipmap( GL_TEXTURE_2D );
+      glBindTexture( GL_TEXTURE_2D, 0 );
       break;
      
     }
