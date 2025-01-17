@@ -395,8 +395,6 @@ int renderThreadFunction( void* data ){
 
     // Draw
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    GLenum drawBuffers[ 1 ] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers( 1, drawBuffers );
     glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 
     // Cleanup
