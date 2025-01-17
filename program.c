@@ -177,6 +177,7 @@ void removeComments( char* prog ){
 u32 addCompute( program* p,
                 const char* uniforms,
                 const char* glslpre,
+                const char* vglsl,
                 const char* glsl,
                 u32 argCount,
                 u32 retCount,
@@ -189,7 +190,7 @@ u32 addCompute( program* p,
     p->computes = tp;
   }
   p->computes[ p->numComputes ] =
-    makeCompute( p, uniforms, glslpre, glsl, argCount, retCount, channels );
+    makeCompute( p, uniforms, glslpre, vglsl, glsl, argCount, retCount, channels );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -1034,10 +1035,11 @@ void finalize( program* program ){
     } else if( program->steps[ i ].type == COMPUTE ){
       char* glslpre = program->steps[ i ].toCompute.glslpre;
       char* glsl = program->steps[ i ].toCompute.glsl;
+      char* vglsl = program->steps[ i ].toCompute.vglsl;
       program->steps[ i ].compute =
         addCompute( program,
                     glslUniformBlock,
-                    glslpre, glsl,
+                    glslpre, vglsl, glsl,
                     program->steps[ i ].toCompute.argCount,
                     program->steps[ i ].toCompute.retCount,
 		    program->steps[ i ].toCompute.channels );

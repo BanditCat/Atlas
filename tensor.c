@@ -202,6 +202,7 @@ void deleteTensor( tensor* t ){
 compute* makeCompute( const program* prog,
                       const char* uniforms,
                       const char* glslpre,
+                      const char* vglsl,
                       const char* glsl,
                       u32 argCount,
                       u32 retCount,
@@ -219,27 +220,28 @@ compute* makeCompute( const program* prog,
   ret->argCount = argCount;
   ret->retCount = retCount;
   ret->channels = channels;
-  const char* vertexShaderSource = "\
+  const char* vertexShaderTemplate = "\
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
     precision highp sampler2D;\n\
     in vec2 _a_position;\n\
+    out vec4 ret;\n\
+    %s\n\
+    const vec4 _a_corners[ 4 ] = vec4[](\n\
+      vec4( -1.0, -1.0, 0.0, 1.0),\n\
+      vec4(  1.0, -1.0, 0.0, 1.0),\n\
+      vec4( -1.0,  1.0, 0.0, 1.0),\n\
+      vec4(  1.0,  1.0, 0.0, 1.0)\n\
+    );\n\
     void main(){\n\
-      gl_Position = vec4( _a_position, 0.0, 1.0);\n\
+      vec4 ret;\n\
+      ret = _a_corners[ gl_VertexID ];\n\
+      gl_Position = ret;\n\
     }\n\
   ";
 
-  // Fragment shader template
-  const char* fragmentShaderTemplate = "\
-    #version 300 es\n\
-    precision highp float;\n\
-    precision highp int;\n\
-    precision highp sampler2D;\n\
-    layout(location = 0) out %s _a_fragColor[ %u ];\n\
-    uniform ivec2 _a_dims; // Texture dimensions\n\
-    uniform ivec4 _a_strides; // Tensor shape\n\
-    \n\
+  const char* texFunctions = "\
     uniform ivec4 _a_astrides;\n\
     uniform int _a_atoffset;\n\
     uniform ivec2 _a_adims;\n\
@@ -250,8 +252,8 @@ compute* makeCompute( const program* prog,
       for( int j = 0; j < 4; ++j )\n\
         lindex += _a_astrides[ j ] * int( i[ j ] );\n\
       int pixel_index = lindex / 4;\n\
-      int channel = lindex %% 4;\n\
-      vec2 uv = ( vec2( pixel_index %% _a_adims.x, pixel_index / _a_adims.x ) + 0.5 ) / a_adims;\n\
+      int channel = lindex % 4;\n\
+      vec2 uv = ( vec2( pixel_index % _a_adims.x, pixel_index / _a_adims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_atex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -268,8 +270,8 @@ compute* makeCompute( const program* prog,
       for( int j = 0; j < 4; ++j )\n\
         lindex += _a_bstrides[ j ] * int( i[ j ] );\n\
       int pixel_index = lindex / 4;\n\
-      int channel = lindex %% 4;\n\
-      vec2 uv = ( vec2( pixel_index %% _a_bdims.x, pixel_index / _a_bdims.x ) + 0.5 ) / a_adims;\n\
+      int channel = lindex % 4;\n\
+      vec2 uv = ( vec2( pixel_index % _a_bdims.x, pixel_index / _a_bdims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_btex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -286,8 +288,8 @@ compute* makeCompute( const program* prog,
       for( int j = 0; j < 4; ++j )\n\
         lindex += _a_cstrides[ j ] * int( i[ j ] );\n\
       int pixel_index = lindex / 4;\n\
-      int channel = lindex %% 4;\n\
-      vec2 uv = ( vec2( pixel_index %% _a_cdims.x, pixel_index / _a_cdims.x ) + 0.5 ) / a_adims;\n\
+      int channel = lindex % 4;\n\
+      vec2 uv = ( vec2( pixel_index % _a_cdims.x, pixel_index / _a_cdims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_ctex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
@@ -304,14 +306,26 @@ compute* makeCompute( const program* prog,
       for( int j = 0; j < 4; ++j )\n\
         lindex += _a_dstrides[ j ] * int( i[ j ] );\n\
       int pixel_index = lindex / 4;\n\
-      int channel = lindex %% 4;\n\
-      vec2 uv = ( vec2( pixel_index %% _a_ddims.x, pixel_index / _a_ddims.x ) + 0.5 ) / a_adims;\n\
+      int channel = lindex % 4;\n\
+      vec2 uv = ( vec2( pixel_index % _a_ddims.x, pixel_index / _a_ddims.x ) + 0.5 ) / a_adims;\n\
       vec4 texel = texture( _a_dtex, uv );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 df( vec2 uv ){\n\
       return texture( _a_dtex, uv / vec2( _a_ddims ) );\n\
-    }\n\
+    }\n";
+  
+  // Fragment shader template
+  const char* fragmentShaderTemplate = "\
+    #version 300 es\n\
+    precision highp float;\n\
+    precision highp int;\n\
+    precision highp sampler2D;\n\
+    layout(location = 0) out %s _a_fragColor[ %u ];\n\
+    uniform ivec2 _a_dims; // Texture dimensions\n\
+    uniform ivec4 _a_strides; // Tensor shape\n\
+    \n\
+    %s\n\
     %s\n\
     ivec4 _a_toTensorIndices( int i ){\n\
       ivec4 ret;\n\
@@ -367,7 +381,7 @@ compute* makeCompute( const program* prog,
     flen = snprintf( footerSource, bufsize, textureFooterTemplate, channelsString, retCount, glsl );
   }
   int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, channelsString,
-		      retCount, uniforms, glslpre, footerSource );
+		      retCount, texFunctions, uniforms, glslpre, footerSource );
   u32 smallbufsize = 65536;
   if( len < 0 || len >= bufsize - smallbufsize || flen < 0 || flen >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
@@ -395,8 +409,14 @@ compute* makeCompute( const program* prog,
     //dbg( "%s", fragmentShaderSource );
   }
   //  Compile the vertex shader
+  char* vertexShaderSource = mem( bufsize, char );
+  len = snprintf( vertexShaderSource, bufsize, vertexShaderTemplate, texFunctions );
+  if( len < 0 || len >= bufsize - smallbufsize || flen < 0 || flen >= bufsize )
+    error( "%s", "Shader source exceeds buffer size." );
+  
   GLuint vertexShader = glCreateShader( GL_VERTEX_SHADER );
-  glShaderSource( vertexShader, 1, &vertexShaderSource, NULL );
+  const char* p = vertexShaderSource;
+  glShaderSource( vertexShader, 1, &p, NULL );
   glCompileShader( vertexShader );
 
   // Check for vertex shader compilation errors
@@ -414,7 +434,7 @@ compute* makeCompute( const program* prog,
 
   // Compile the fragment shader
   GLuint fragmentShader = glCreateShader( GL_FRAGMENT_SHADER );
-  const char* p = fragmentShaderSource;
+  p = fragmentShaderSource;
   glShaderSource( fragmentShader, 1, &p, NULL );
   glCompileShader( fragmentShader );
   
@@ -433,6 +453,7 @@ compute* makeCompute( const program* prog,
     error( "%s", msg );
   }
 
+  unmem( vertexShaderSource );
   unmem( fragmentShaderSource );
   unmem( footerSource );
 
@@ -485,27 +506,6 @@ compute* makeCompute( const program* prog,
     ret->uniformLocs[ i ] =
       glGetUniformLocation( ret->program, prog->varNames[ i ] );
 
-  glGenVertexArrays( 1, &ret->VAO );
-  glBindVertexArray( ret->VAO );
-
-  f32 vertices[] = { -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f };
-
-  glGenBuffers( 1, &ret->VBO );
-  glBindBuffer( GL_ARRAY_BUFFER, ret->VBO );
-  glEnableVertexAttribArray( 0 );
-  glVertexAttribPointer(
-    0,         // Attribute location (must match the shader)
-    2,         // Number of components per vertex attribute (e.g., vec2)
-    GL_FLOAT,  // Data type
-    GL_FALSE,  // Normalized
-    0,         // Stride (0 if tightly packed)
-    (void*)0   // Offset to the first component
-  );
-
-  glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
-  glBindBuffer( GL_ARRAY_BUFFER, 0 );
-  glBindVertexArray( 0 );
-
   // Cleanup shaders (they're no longer needed once the program is linked)
   glDeleteShader( vertexShader );
   glDeleteShader( fragmentShader );
@@ -514,8 +514,6 @@ compute* makeCompute( const program* prog,
 }
 void deleteCompute( compute* i ){
   glDeleteProgram( i->program );
-  glDeleteVertexArrays( 1, &i->VAO );
-  glDeleteBuffers( 1, &i->VBO );
   unmem( i->uniformLocs );
   unmem( i );
 }
@@ -658,10 +656,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     glUniform1i( compute->argToffsetLocation[ i ], at->offset );
   }
 
-  glBindVertexArray( compute->VAO );
-
   CHECK_GL_ERROR();
-  glBindBuffer( GL_ARRAY_BUFFER, compute->VBO );
   // glBindBuffer( GL_UNIFORM_BUFFER, p->ubo );
   // glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   // glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );

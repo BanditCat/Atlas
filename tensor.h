@@ -6,7 +6,7 @@
 // This is the number of popped gpu tensors to keep cached.
 // THIS LIST IS CRAWLED THROUGH LINEARLY, DONT make it huge
 
-#define TENSOR_CACHE 4
+#define TENSOR_CACHE 6
 
 
 typedef struct{
@@ -37,8 +37,6 @@ typedef struct{
   GLuint argStridesLocation[ 4 ];
   GLuint argToffsetLocation[ 4 ];
   GLuint argTexLocation[ 4 ];
-  GLuint VBO;
-  GLuint VAO;
   GLuint* uniformLocs;
   u32 channels;
 } compute;
@@ -60,7 +58,7 @@ tensorStack* newStack( void );
 // Warning! this takes ownership of data and will deallocate it.
 tensor* newTensor( u32 rank, const u32* shape, f32* data );
 compute* makeCompute( const program* prog, const char* uniforms, const char* glslpre,
-		      const char* glsl, u32 argCount, u32 retCount, u32 channels );
+		      const char* vglsl, const char* glsl, u32 argCount, u32 retCount, u32 channels );
 void deleteCompute( compute* i );
 tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 				const compute* initializer );

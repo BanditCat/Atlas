@@ -425,7 +425,7 @@ Strides: 1
     <h2>c (compute)</h2>
     <p><em>This is the main command of Atlas. The rest of the language is in support of this.</em> The <code>c</code> command takes one shape argument (the shape of the output tensor) and 0-4 argument tensors to feed 
       into the shader. The <code>c</code> command is given with three quotes and three numbers afterward as 
-      <code>c'glslFuncs'glslExpression' argCount retCount channels</code>. The main (tensor) mode of operation is when channels is 0. Up to four input tensors (argCount ≤ 4) will be 
+      <code>c'optionalVertexShader'glslFuncs'glslExpression' argCount retCount channels</code>. The main (tensor) mode of operation is when channels is 0. If channels is 4, a 4 channel texture is created instead, allowing for the possibility of a vertex shader. The vertex shader has access to only a simple index i and ifloat, but also has access to textures and functions declared in glslfuncs. Up to four input tensors (argCount ≤ 4) will be 
       available as <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code>, allowing you to sample the tensors at the 
       top of the stack after the shape argument. Each of <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code> is a function 
       of a single <code>ivec4</code> argument corresponding to a tensor index for that element on the stack.</p>
@@ -438,7 +438,7 @@ Strides: 1
       <code>glslExpression</code> will be given four indices: <code>i</code> (a integer linear index) and 
 							      <code>t</code> (a <code>ivec4</code> tensor index). As well as ifloat and tf, the floating point versions.
 
-																There is a second mode of operation when channels is non-zero ( It must be 4 ).  In this mode, a texture is created rather than a tensor.  Textures may only be used in other c compute commands using the glsl texture functions. Using them in other ways is undefined, and in particular commands that affect shape or strides like reverse and transpose will not work on them. The type of the ret array will reflect the number of channels, float, vec2, vec3, or vec4.
+																There is a second mode of operation when channels is non-zero ( It must be 4 ).  In this mode, a texture is created rather than a tensor.  Textures may only be used in other c compute commands using the glsl texture functions af, bf, cf, and df, which take vec2 uv coords for arguments. Using them in other ways is undefined, and in particular commands that affect shape or strides like reverse and transpose will not work on them. The type of the ret array will reflect the number of channels, float, vec2, vec3, or vec4.
 
 	<p>For example:</p>
 											

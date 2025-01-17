@@ -56,6 +56,7 @@ typedef struct{
     struct{
       u32 retCount; 
       u32 argCount;
+      char* vglsl;
       char* glsl;
       char* glslpre;
       u32 channels;
