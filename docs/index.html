@@ -208,6 +208,7 @@
       <li><a href="#cmd-load">load</a></li>
       <li><a href="#cmd-m">m (matrix multiply)</li>
       <li><a href="#cmd-pop">pop</a></li>
+      <li><a href="#cmd-projection">proj (projection)</a></li>
       <li><a href="#cmd-print">print</a></li>
       <li><a href="#cmd-quit">quit</a></li>
       <li><a href="#cmd-r">r (reverse)</a></li>
@@ -706,6 +707,11 @@ Strides: 1 1
   <section id="cmd-pop">
     <h2>pop</h2>
     <p>Pops the stack, resulting in a fatal error if it was empty.</p>
+  </section>
+
+  <section id="cmd-projection">
+    <h2>proj (projection)</h2>
+    <p>This takes a 5-vector argument in the form <code>[fov width height near far]</code> and pushes a corresponding projection matrix onto the stack.</p>
   </section>
 
   <section id="cmd-print">

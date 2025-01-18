@@ -23,7 +23,7 @@ img'inc\font.bmp';
 '4. A mandelbrot set with peturbations.          ';e;0;cat;
 '5. A raytraced terrain flythrough.              ';e;0;cat;
 [0 1];t;1;r;
-4;1;dup;shape;[6 8];*;0;dup;set'tsize' 2;[4];0;cat;
+6;1;dup;shape;[6 8];*;0;dup;set'tsize' 2;[4];0;cat;
 c''''
 float x = tf.x\
 float y = tf.y\
@@ -41,7 +41,7 @@ pop;
 
 windowSize;set'wsize' 2;
 0;dup;
-4;get'wsize';[4];0;cat;
+6;get'wsize';[4];0;cat;
 c''''
 ret[0] = vec4( 0.0, ( tf.x + offs.x >= 0.0 && tf.y + offs.y >= 0.0 &&
            tf.x + offs.x < tsize.x * zoom && tf.y + offs.y < tsize.y * zoom ) ?

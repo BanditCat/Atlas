@@ -230,11 +230,13 @@ compute* makeCompute( const program* prog,
     %s\n\
     %s\n\
     %s\n\
-    const vec4 _a_corners[ 4 ] = vec4[](\n\
+    const vec4 _a_corners[ 6 ] = vec4[](\n\
       vec4( -1.0, -1.0, 0.0, 1.0),\n\
       vec4(  1.0, -1.0, 0.0, 1.0),\n\
       vec4( -1.0,  1.0, 0.0, 1.0),\n\
-      vec4(  1.0,  1.0, 0.0, 1.0)\n\
+      vec4(  1.0, -1.0, 0.0, 1.0),\n\
+      vec4( -1.0,  1.0, 0.0, 1.0),\n\
+      vec4(  1.0,  1.0, 0.0, 1.0)\n						\
     );\n\
     void main(){\n\
       vec4 ret;\n\
@@ -676,7 +678,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
 
   CHECK_GL_ERROR();
   // Draw the quad
-  glDrawArrays( GL_TRIANGLE_STRIP, 0, vertCount );
+  glDrawArrays( GL_TRIANGLES, 0, vertCount );
   CHECK_GL_ERROR();
   for( u32 i = 0; i < compute->retCount; ++i )
     glFramebufferTexture2D( GL_FRAMEBUFFER,
