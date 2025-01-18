@@ -241,7 +241,7 @@ compute* makeCompute( const program* prog,
     void main(){\n\
       vec4 ret;\n\
       int i = gl_VertexID;\n\
-      float ifloat = float( i );\n\
+      float ifloat = float( i ) + 0.5;\n\
       %s\n\
       gl_Position = ret;\n\
     }\n\
@@ -351,9 +351,9 @@ compute* makeCompute( const program* prog,
    char* tensorFooterTemplate = 
       "void main(){\n\
       int i = ( int( gl_FragCoord.x ) + int( gl_FragCoord.y ) * _a_dims.x ) * 4;\n\
-      float ifloat = float( i );\n\
+      float ifloat = float( i ) + 0.5;\n\
       ivec4 t = _a_toTensorIndices( i );\n\
-      vec4 tf = vec4( t );\n\
+      vec4 tf = vec4( t ) + 0.5;\n\
       float ret[ %u ];\n\
       float _a_r[ %u ];\n\
       float _a_g[ %u ];\n\
