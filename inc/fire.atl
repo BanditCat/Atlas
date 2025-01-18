@@ -8,7 +8,7 @@ windowSize;set'wsize' 2;
 
 size;if'started';
 [0];set'time' 1;
-4;get'wsize';[3];0;cat;
+6;get'wsize';[3];0;cat;
 c''''
 ret[0] = t.y < 20 ? ( t.z == 0 ? 1.0 : 0.0 ) : 0.0\
 ' 0 1 0;
@@ -18,7 +18,7 @@ input;
 [3 4 0];s;first;if'still';
 get'time';[1];+;set'time' 1;
 l'still';
-4;get'wsize';[4];0;cat;
+6;get'wsize';[4];0;cat;
 c'''
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\

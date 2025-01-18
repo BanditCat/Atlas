@@ -7,11 +7,8 @@ size;if'started';
 0;set'time';
 [[[-0.5 -0.28868 0 1] [1 0 0 1]]
  [[ 0   0.57735  0 1] [0 1 0 1]] 
- [[ 0.5 -0.28868 0 1] [0 0 1 1]]
- [[ 0.5 -0.28868 0 1] [0 0 1 1]]
- [[ 0   0.57735  0 1] [0 1 0 1]]
- [[-0.5 -0.28868 0 1] [1 0 0 1]]];
- 6;[6 2 4];c''''
+ [[ 0.5 -0.28868 0 1] [0 0 1 1]]];
+ 6;[3 2 4];c''''
 vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
                a( ivec4( tf, 1, 0 ) ),
                a( ivec4( tf, 2, 0 ) ),
@@ -27,12 +24,12 @@ get'time';[0 1 0];rot;set'rot' 16;
 pop;
 
 0;dup;
-6;windowSize;[4];0;cat;
+3;windowSize;[4];0;cat;
 c'
 out vec4 color\
 '
-ret = (proj*trns*rot)*af( vec2( ifloat, 0.0 ) )\
-color = af( vec2( ifloat, 1.0 ) )\
+ret = (proj*trns*rot)*af( vec2( ifloat + 0.5, 0 ) )\
+color = af( vec2( ifloat + 0.5, 1 ) )\
 '
 in vec4 color\
 '
