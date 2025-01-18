@@ -58,8 +58,10 @@ typedef struct{
       u32 argCount;
       char* vglsl;
       char* glsl;
+      char* vglslpre;
       char* glslpre;
       u32 channels;
+      u32 vertCount;
     } toCompute;
     struct{
       union{

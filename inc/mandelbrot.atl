@@ -30,19 +30,19 @@ pop;pop;pop;
 
 
 windowSize;set'wsize' 2;
-get'wsize';
-c''
+4;get'wsize';
+c''''
 vec4 tf = vec4( t )\
 ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\
 ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\
 '0 2 0;
-get'wsize';c''ret[0]=perturb.x\ret[1]=perturb.y\' 0 2 0;
+4;get'wsize';c''''ret[0]=perturb.x\ret[1]=perturb.y\' 0 2 0;
 1;if'skip'; 
 
 l'mand';
 3;dup;3;dup;
-get'wsize';
-c'
+4;get'wsize';
+c'''
 vec2 mand( vec2 x, vec2 c, float e ){
   float angle = atan( x.y, x.x ) * e\
   float mag = pow( length( x ), e )\
@@ -69,6 +69,6 @@ return;
 
 l'skip';
 mand;
-get'wsize';[4];0;cat;c''
+4;get'wsize';[4];0;cat;c''''
 ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
 ' 1 1 4;

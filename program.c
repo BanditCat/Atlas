@@ -176,6 +176,7 @@ void removeComments( char* prog ){
 // This adds a compute statement to p and returns its index.
 u32 addCompute( program* p,
                 const char* uniforms,
+                const char* vglslpre,
                 const char* glslpre,
                 const char* vglsl,
                 const char* glsl,
@@ -190,7 +191,7 @@ u32 addCompute( program* p,
     p->computes = tp;
   }
   p->computes[ p->numComputes ] =
-    makeCompute( p, uniforms, glslpre, vglsl, glsl, argCount, retCount, channels );
+    makeCompute( p, uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount, channels );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -471,6 +472,38 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
+             "Unmatched quote in compute statement vertex pre block." );
+    char* vpre = mem( 1 + endi - starti, char );
+    memcpy( vpre, starti, endi - starti );
+    // Replace \ with ;
+    for( u32 i = 0; i < endi - starti; ++i )
+      if( vpre[ i ] == '\\' )
+        vpre[ i ] = ';';
+    vpre[ endi - starti ] = '\0';
+    starti = endi + 1;
+    ++endi; // now get compute statements
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( *endi != '\'' )
+      error( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Unmatched quote in compute statement vertex block." );
+    char* vcomp = mem( 1 + endi - starti, char );
+    memcpy( vcomp, starti, endi - starti );
+    // Replace \ with ;
+    for( u32 i = 0; i < endi - starti; ++i )
+      if( vcomp[ i ] == '\\' )
+        vcomp[ i ] = ';';
+    vcomp[ endi - starti ] = '\0';
+    starti = endi + 1;
+    ++endi; // now get compute statements
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( *endi != '\'' )
+      error( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
              "Unmatched quote in compute statement pre block." );
     char* pre = mem( 1 + endi - starti, char );
     memcpy( pre, starti, endi - starti );
@@ -504,6 +537,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->type = COMPUTE;
       curStep->toCompute.glslpre = pre;
       curStep->toCompute.glsl = comp;
+      curStep->toCompute.vglslpre = vpre;
+      curStep->toCompute.vglsl = vcomp;
       curStep->toCompute.retCount = retCount;
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
@@ -812,82 +847,7 @@ void addProgram( const char* filename, char* prog, program* program ){
   }
 }
 
-/* void addProgram( const char* filename, char* prog, program* program ){ */
-/*   removeComments( prog ); */
-  
-/*   // Step 2: Initialize parsing pointers */
-/*   char* ptr = prog; */
-/*   u32 linenum = 1; */
-/*   u32 commandnum = 1; */
 
-/*   while( *ptr != '\0' ){ */
-/*     // Find the next semicolon */
-/*     char* semicolon = strchr( ptr, ';' ); */
-/*     if( !semicolon ){ */
-/*       semicolon = */
-/*         ptr + strlen( ptr );  // Point to the end if no semicolon found */
-/*     } */
-
-/*     // Calculate the length of the current command */
-/*     size_t cmd_length = semicolon - ptr; */
-/*     if( cmd_length == 0 ){ */
-/*       // Empty command (e.g., consecutive semicolons), skip */
-/*       ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon; */
-/*       if( *semicolon == '\n' ) */
-/*         linenum++; */
-/*       continue; */
-/*     } */
-
-/*     // Extract the command into a temporary buffer */
-/*     char* buf = mem( cmd_length + 1, char ); */
-/*     char* command = buf; */
-/*     strncpy( command, ptr, cmd_length ); */
-/*     command[ cmd_length ] = '\0'; */
-/*     trimWhitespace( &command ); */
-/*     // Recursivley include. */
-/*     if( !strncmp( command, "include'", 8 ) ){  // include */
-/*       char* starti = command + 8; */
-/*       char* endi = starti; */
-/*       while( *endi && *endi != '\'' ) */
-/* 	endi++; */
-/*       if( endi == starti ) */
-/* 	error( "%s:%u command %u: %s", filename, */
-/* 	       linenum, */
-/* 	       commandnum, */
-/* 	       "Empty include statement." ); */
-/*       if( *endi != '\'' ) */
-/* 	error( "%s:%u command %u: %s", filename, */
-/* 	       linenum, */
-/*              commandnum, */
-/* 	       "Unmatched quote in include statement." ); */
-/*       char* inc = mem( 1 + endi - starti, char ); */
-/*       memcpy( inc, starti, endi - starti ); */
-/*       inc[ endi - starti ] = '\0'; */
-/*       addProgramFromFile( inc, program ); */
-/*       program->filenames[ program->numFilenames++ ] = inc; */
-/*       if( program->numFilenames == NUM_FILENAMES ) */
-/* 	error( "%s", "NUM_FILENAMES exceeded." ); */
-/*       unmem( buf ); */
-/*     } else{ */
-/*       // Add the command to the program steps */
-/*       addStep( program, filename, linenum, commandnum, command ); */
-/*       unmem( buf ); */
-/*     } */
-/*     // Update the parsing pointer */
-/*     ptr = ( *semicolon == ';' ) ? semicolon + 1 : semicolon; */
-
-/*     // Update line and command numbers */
-/*     for( size_t i = 0; i < cmd_length; ++i ){ */
-/*       if( ptr[ -cmd_length + i ] == '\n' ){ */
-/*         linenum++; */
-/*         commandnum = 1; */
-/*       } */
-/*     } */
-/*     if( *semicolon == ';' ){ */
-/*       commandnum++; */
-/*     } */
-/*   } */
-/* } */
 void finalize( program* program ){
   // First collect variables and craft the uniform block and the program vars.
   char* glslUniformBlock;
@@ -1033,18 +993,21 @@ void finalize( program* program ){
 	program->steps[ i ].var.size = program->varSizes[ vi ];
       }
     } else if( program->steps[ i ].type == COMPUTE ){
+      char* vglslpre = program->steps[ i ].toCompute.vglslpre;
       char* glslpre = program->steps[ i ].toCompute.glslpre;
       char* glsl = program->steps[ i ].toCompute.glsl;
       char* vglsl = program->steps[ i ].toCompute.vglsl;
       program->steps[ i ].compute =
         addCompute( program,
                     glslUniformBlock,
-                    glslpre, vglsl, glsl,
+                    vglslpre, glslpre, vglsl, glsl,
                     program->steps[ i ].toCompute.argCount,
                     program->steps[ i ].toCompute.retCount,
 		    program->steps[ i ].toCompute.channels );
       unmem( glsl );
       unmem( glslpre );
+      unmem( vglsl );
+      unmem( vglslpre );
     }
   unmem( glslUniformBlock );
 }
@@ -1382,15 +1345,19 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%s", "return" );
       break;
     case COMPUTE:{
-      if( !ts->size )
+      if( ts->size < 2 )
          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to run a compute statement with no shape parameter on "
+               "Attempt to run a compute statement without both a shape parameter and a vertex count on "
                "the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for a compute was not a rank 1 tensor." );
       if( ts->stack[ ts->size - 1 ]->size > 4 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for an initilizer was more than 4 component." );
+      if( ts->stack[ ts->size - 2 ]->rank != 0 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "A compute was run with a non-scalar vertex count." );
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensorToHostMemory( ts->stack[ ts->size - 2 ] );
+      f32 vertCount = ts->stack[ ts->size - 2 ]->data[ ts->stack[ ts->size - 2 ]->offset ];
       u32 shape[ 4 ];
       u32 rank = ts->stack[ ts->size - 1 ]->size;
       for( u32 i = 0; i < rank; ++i )
@@ -1410,8 +1377,9 @@ bool runProgram( tensorStack* ts, program** progp ){
 		"Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
       
       pop( ts );
+      pop( ts );
       tensor** rets =
-        newTensorsInitialized( p, ts, rank, shape, p->computes[ s->compute ] );
+        newTensorsInitialized( p, ts, rank, shape, p->computes[ s->compute ], vertCount );
       for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
         push( ts, rets[ p->computes[ s->compute ]->retCount - i - 1 ] );
       unmem( rets );
@@ -1430,6 +1398,12 @@ bool runProgram( tensorStack* ts, program** progp ){
       u32 axis = *( ts->stack[ ts->size - 1 ]->data +
                     ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
+      if( ts->stack[ ts->size - 2 ]->rank != ts->stack[ ts->size - 1 ]->rank )
+	error( "%s:%u command %u: %s: %u vs %u.", s->filename, s->linenum, s->commandnum,
+	       "Attempt to concatenate tensors of different rank",
+	       ts->stack[ ts->size - 1 ]->rank,
+	       ts->stack[ ts->size - 2 ]->rank );
+      
       tensorCat( ts, ts->size - 2, ts->size - 1, axis );
       pop( ts );
       // dbg( "%s %u", "cat", axis );

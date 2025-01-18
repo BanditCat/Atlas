@@ -215,13 +215,7 @@ const GLchar* fragmentSource =
   "  return texel[ int( channel ) ];\n"
   "}\n"
   "void main(){\n"
-  "  vec4 tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 0, 0 );\n"
-  "  float rcolor = sampleTensorIndex( tindex );\n"
-  "  tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 1.0, 0 );\n"
-  "  float gcolor = sampleTensorIndex( tindex );\n"
-  "  tindex = vec4( floor( ( fragCoord.xy * 0.5 + 0.5 ) * shape.xy ), 2.0, 0 );\n"
-  "  float bcolor = sampleTensorIndex( tindex );\n"
-  "  fragColor = texture( tex, gl_FragCoord.xy / dims );\n"
+  "  fragColor = texture( tex, gl_FragCoord.xy / resolution );\n"
   "}\n";
 
 // Function to compile shaders

@@ -9,7 +9,7 @@ include'inc\nav.atl';
 size;if'started'; // init code goes here
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 2048;0;dup;set'texsize';4;fractalNoise;
-get'texsize';[4];0;cat;c''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) )\' 1 1 4;texture;
+4;get'texsize';[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) )\' 1 1 4;texture;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 [150 400];set'lrot' 2;
@@ -72,7 +72,7 @@ l'ctkeyskip';
 
 
 1;dup;1;dup; // duplicate terrain and heightmap
-windowSize;0;dup;set'wdims' 2;
+4;windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 [4];0;cat;
 
@@ -80,7 +80,7 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 ////////////////////////////////////////////////////////////////////////////////
 // GLSL Functions
 ////////////////////////////////////////////////////////////////////////////////
-c'
+c'''
 const float scale = 0.35\  // heightScale
 const int maxIters = 128\
 const int binSearchSteps = 32\
@@ -262,7 +262,7 @@ get'fngradsize';2;*;set'fngradsize';
 get'fnamp';[0.5];*;set'fnamp';
 get'fnseed';[1.2];+;set'fnseed';
 get'fngradsize';get'fntexsize';get'fnamp';get'fnseed';perlin;
-get'fntexsize';2;rep;c''ret[0]=a(t)+b(t)\' 2 1 0;
+4;get'fntexsize';2;rep;c''''ret[0]=a(t)+b(t)\' 2 1 0;
 get'fntexsize';get'fngradsize';/;4;-;if'fnloop';
 return;
 
@@ -274,8 +274,8 @@ set'time' 1;
 set'amp' 1;
 2;rep;set'texsize' 2;
 
-2;rep;0;dup;set'gradsize' 2;[2];0;cat;
-c'  // Push the gradients.
+2;rep;0;dup;set'gradsize' 2;pop;4;get'gradsize';[2];0;cat;
+c'''  // Push the gradients.
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
     return fract( sin( h ) * 43758.5453123 )\
@@ -285,8 +285,8 @@ ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), time ) * 2.0 * 3.1415928 ) :
                   cos( hash( vec2( t.xy ), time ) * 2.0 * 3.1415928 )\
 ' 0 1 0;
 
-get'texsize';
-;c'
+4;get'texsize';
+c'''
 float fade( float x ){
     return x*x*x*(x*(x*6.0 - 15.0)+10.0)\
 }

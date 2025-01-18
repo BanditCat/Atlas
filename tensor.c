@@ -201,6 +201,7 @@ void deleteTensor( tensor* t ){
 }
 compute* makeCompute( const program* prog,
                       const char* uniforms,
+		      const char* vglslpre,
                       const char* glslpre,
                       const char* vglsl,
                       const char* glsl,
@@ -226,7 +227,8 @@ compute* makeCompute( const program* prog,
     precision highp int;\n\
     precision highp sampler2D;\n\
     in vec2 _a_position;\n\
-    out vec4 ret;\n\
+    %s\n\
+    %s\n\
     %s\n\
     const vec4 _a_corners[ 4 ] = vec4[](\n\
       vec4( -1.0, -1.0, 0.0, 1.0),\n\
@@ -236,11 +238,15 @@ compute* makeCompute( const program* prog,
     );\n\
     void main(){\n\
       vec4 ret;\n\
-      ret = _a_corners[ gl_VertexID ];\n\
+      int i = gl_VertexID;\n\
+      float ifloat = float( i );\n\
+      %s\n\
       gl_Position = ret;\n\
     }\n\
   ";
 
+  const char* defvshader = "ret = _a_corners[ gl_VertexID ];";
+  
   const char* texFunctions = "\
     uniform ivec4 _a_astrides;\n\
     uniform int _a_atoffset;\n\
@@ -410,7 +416,8 @@ compute* makeCompute( const program* prog,
   }
   //  Compile the vertex shader
   char* vertexShaderSource = mem( bufsize, char );
-  len = snprintf( vertexShaderSource, bufsize, vertexShaderTemplate, texFunctions );
+  len = snprintf( vertexShaderSource, bufsize, vertexShaderTemplate, uniforms, texFunctions, vglslpre,
+		  strlen( vglsl ) ? vglsl : defvshader );
   if( len < 0 || len >= bufsize - smallbufsize || flen < 0 || flen >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
   
@@ -517,7 +524,7 @@ void deleteCompute( compute* i ){
   unmem( i->uniformLocs );
   unmem( i );
 }
-tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute ){
+tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute, u32 vertCount ){
   CHECK_GL_ERROR();
   glUseProgram( compute->program );
   if( compute->argCount > ts->size )
@@ -669,7 +676,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
 
   CHECK_GL_ERROR();
   // Draw the quad
-  glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
+  glDrawArrays( GL_TRIANGLE_STRIP, 0, vertCount );
   CHECK_GL_ERROR();
   for( u32 i = 0; i < compute->retCount; ++i )
     glFramebufferTexture2D( GL_FRAMEBUFFER,
@@ -809,11 +816,6 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
   // Ensure both tensors own their data
   takeOwnership( t );
   takeOwnership( t2 );
-
-  if( t->rank != t2->rank )
-    error( "Attempt to concatenate tensors of different rank: %u vs %u",
-           t->rank,
-           t2->rank );
 
   // Check that shapes are compatible except along the concatenation axis
   u32 new_shape[ 4 ];
