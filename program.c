@@ -562,6 +562,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "proj" ) ){  // Last
+    curStep->type = PROJ;
+    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "translate" ) ){  // Translate
+    curStep->type = TRANS;
+    // dbg( "Linenum %u commandnum %u: translate\n", linenum, commandnum );
+
   } else if( !strcmp( command, "texture" ) ){  // First
     curStep->type = TEXTURE;
     // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
@@ -1442,6 +1450,28 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Expected a scalar angle for rotation." );
       tensorRotate( ts, ts->size - 1, ts->size - 2 );
+      break;
+    }
+    case PROJ: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to create a projection matrix without a parameter on the stack." );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      if( t1->rank != 1 || t1->shape[ 0 ] != 5 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Expected a rank 1 length 5 vector (fov, width, height, near, far) for projection." );
+      tensorProject( ts, ts->size - 1 );
+      break;
+    }
+    case TRANS: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to create a translation matrix without a parameter on the stack." );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      if( t1->rank != 1 || t1->shape[ 0 ] != 3 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Expected a rank 1 length 3 vector for translation." );
+      tensorTranslate( ts, ts->size - 1 );
       break;
     }
     case TEXTURE: {

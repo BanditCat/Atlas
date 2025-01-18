@@ -1246,8 +1246,8 @@ char* tensorToString( tensor* t ){
   return ret;
 }
 void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex ){
-  tensor* top = ts->stack[ ts->size - 1 ];
-  tensor* anglet = ts->stack[ ts->size - 2 ];
+  tensor* top = ts->stack[ index ];
+  tensor* anglet = ts->stack[ angleIndex ];
   tensorToHostMemory( top );
   tensorToHostMemory( anglet );
   float angle = anglet->data[ anglet->offset ];
@@ -1262,10 +1262,45 @@ void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex ){
   float s = sinf( angle );
   pop( ts ); pop( ts );
   f32* ret = mem( 16, f32 );
-  ret[ 0  ] = c + x * x * c1;      ret[ 1  ] = x * y * c1 - z * s;    ret[ 2  ] = x * z * c1 + y * s;  ret[ 3  ] = 0;
-  ret[ 4  ] = y * x * c1 + z * s;  ret[ 5  ] = c + y * y * c1;        ret[ 6  ] = y * z * c1 - x * s;  ret[ 7  ] = 0;
-  ret[ 8  ] = z * x * c1 - y * s;  ret[ 9  ] = z * y * c1 + x * s;    ret[ 10 ] = c + z * z * c1;      ret[ 11 ] = 0;
-  ret[ 12 ] = 0;                   ret[ 13 ] = 0;                     ret[ 14 ] = 0;                   ret[ 15 ] = 1;
+  ret[ 0  ] = c + x * x * c1;      ret[ 4  ] = x * y * c1 - z * s;    ret[ 8  ] = x * z * c1 + y * s;  ret[ 12 ] = 0;
+  ret[ 1  ] = y * x * c1 + z * s;  ret[ 5  ] = c + y * y * c1;        ret[ 9  ] = y * z * c1 - x * s;  ret[ 13 ] = 0;
+  ret[ 2  ] = z * x * c1 - y * s;  ret[ 6  ] = z * y * c1 + x * s;    ret[ 10 ] = c + z * z * c1;      ret[ 14 ] = 0;
+  ret[ 3  ] = 0;                   ret[ 7  ] = 0;                     ret[ 11 ] = 0;                   ret[ 15 ] = 1;
+  u32 shape[ 2 ] = { 4, 4 };
+  push( ts, newTensor( 2, shape, ret ) );
+}
+void tensorTranslate( tensorStack* ts, u32 index ){
+  tensor* top = ts->stack[ index ];
+  tensorToHostMemory( top );
+  float x = top->data[ top->offset + top->strides[ 0 ] * 0 ];
+  float y = top->data[ top->offset + top->strides[ 0 ] * 1 ];
+  float z = top->data[ top->offset + top->strides[ 0 ] * 2 ];
+
+  pop( ts );
+  f32* ret = mem( 16, f32 );
+  ret[ 0  ] = 1;      ret[ 4  ] = 0;    ret[ 8  ] = 0;  ret[ 12 ] = x;
+  ret[ 1  ] = 0;      ret[ 5  ] = 1;    ret[ 9  ] = 0;  ret[ 13 ] = y;
+  ret[ 2  ] = 0;      ret[ 6  ] = 0;    ret[ 10 ] = 1;  ret[ 14 ] = z;
+  ret[ 3  ] = 0;      ret[ 7  ] = 0;    ret[ 11 ] = 0;  ret[ 15 ] = 1;
+  u32 shape[ 2 ] = { 4, 4 };
+  push( ts, newTensor( 2, shape, ret ) );
+}
+void tensorProject( tensorStack* ts, u32 index ){
+  tensor* top = ts->stack[ index ];
+  tensorToHostMemory( top );
+  float fov = tanf( top->data[ top->offset + top->strides[ 0 ] * 0 ] / 2 );
+  float width = top->data[ top->offset + top->strides[ 0 ] * 1 ];
+  float height = top->data[ top->offset + top->strides[ 0 ] * 2 ];
+  float near = top->data[ top->offset + top->strides[ 0 ] * 3 ];
+  float far = top->data[ top->offset + top->strides[ 0 ] * 4 ];
+  float aspect = sqrtf( width / height );
+  
+  pop( ts );
+  f32* ret = mem( 16, f32 );
+  ret[ 0  ] = fov/aspect; ret[ 4  ] = 0;          ret[ 8  ] = 0;                      ret[ 12 ] = 0;
+  ret[ 1  ] = 0;          ret[ 5  ] = fov*aspect; ret[ 9  ] = 0;                      ret[ 13 ] = 0;
+  ret[ 2  ] = 0;          ret[ 6  ] = 0;          ret[ 10 ] = -(far+near)/(far-near); ret[ 14 ] = -2*far*near/(far-near);
+  ret[ 3  ] = 0;          ret[ 7  ] = 0;          ret[ 11 ] = -1;                     ret[ 15 ] = 0;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }

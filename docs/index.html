@@ -219,6 +219,7 @@
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
+      <li><a href="#cmd-translate">translate</a></li>
       <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
       <li><a href="#cmd-while">while / for</a></li>
@@ -963,6 +964,11 @@ Strides: 1 2
     <p>This command pushes the frame time, in seconds, onto the stack as a scalar.</p>
   </section>
 
+  <section id="cmd-translate">
+    <h2>translate</h2>
+    <p>This command pushes a translation matrix onto the stack, corresponding to a translation by the 3-vector argument on the stack.</p>
+  </section>
+  
   <section id="cmd-while">
     <h2>while / for</h2>
     <p>To do a while loop until <code>i</code> is 5, for example, you can do the following:</p>

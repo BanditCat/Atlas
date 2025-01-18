@@ -38,6 +38,8 @@ typedef struct{
     TOP, // documented
     DUP, // documented
     ROT, // documented
+    TRANS, // documented
+    PROJ, // documented
     TIME, // documented
     REPEAT, // documented
     SHAPE, // documented

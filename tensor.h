@@ -88,3 +88,6 @@ void tensorEnsureContiguous( tensor* t );
 // Returns a string that needs to be deallocated or NULL for nonvectors.
 char* tensorToString( tensor* t );
 void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex );
+void tensorTranslate( tensorStack* ts, u32 index );
+void tensorProject( tensorStack* ts, u32 index );
+

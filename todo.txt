@@ -1,3 +1,5 @@
 intruduce qouting so strings can include quotes.
 runs on desktop.
 include chain in error
+
+calling print or tensorToHostMemory on a texture is undefined.

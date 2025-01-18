@@ -25,8 +25,8 @@ pop; // Pop the last display tensor off the stack.
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;get'rot';+;set'rot' 2;
-get'rot';last;-300;/;[1 0 0];rot; // rot about x
-get'rot';first;-300;/;[0 1 0];rot;m; // rot about y
+get'rot';last;300;/;[1 0 0];rot; // rot about x
+get'rot';first;300;/;[0 1 0];rot;m; // rot about y
 set'worldRotation' 16;
 l'mouse1skip';
 
