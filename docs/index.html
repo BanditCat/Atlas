@@ -400,7 +400,7 @@ Strides:
     <h2>Simple Gradient</h2>
     <p>
       <pre><code>size;if'skip'; // Skip if we've already created the gradient.
-[16 16 3];c''''ret[0]=i / 767.0\' 0 1 0; // The linear index goes to 16*16*3 - 1 = 767.0.
+6;[16 16 3];c''''ret[0]=i / 767.0\' 0 1 0; // The linear index goes to 16*16*3 - 1 = 767.0.
 l'skip';
 </code></pre>
       will display
@@ -445,7 +445,7 @@ Strides: 1
 	<p>For example:</p>
 											
     <pre><code>[[1 2][3 4]];[[2 1][5 3]]; // Push two tensors on the stack.
-[2 2]; // Push the desired output shape on the stack
+6;[2 2]; // Push the desired output shape on the stack. Vertex count is 6 for two triangles when no vertex shader is supplied.
 c'''' // Call compute with no functions or constants: a blank glslFuncs
 ret[0] = a( t ) < b( t ) ? a( t ) : b( t )\  // The top of the stack will have minimum
 ret[1] = a( t ) < b( t ) ? b( t ) : a( t )\  // Below that is maximum

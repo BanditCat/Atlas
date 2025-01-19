@@ -17,9 +17,9 @@ ret[0] = r\' 1 1 4;   // first we take our vertices and colors and put them in a
 1;
 l'started';
 get'time';timeDelta;+;set'time';
-get'time';[0 1 0];rot;set'rot' 16;
-[0 0 -1.8];translate;set'trns' 16;
-[90];windowSize;0;cat;[0.1 1000];0;cat;proj;set'proj' 16;
+get'time';[0 1 0];rot;
+[0 0 -1.8];translate;m;
+[90];windowSize;0;cat;[0.1 1000];0;cat;proj;m;set'proj' 16;
 
 pop;
 
@@ -28,7 +28,7 @@ pop;
 c'
 out vec4 color\
 '
-ret = (proj*trns*rot)*af( vec2( ifloat, 0 ) )\
+ret = proj*af( vec2( ifloat, 0 ) )\
 color = af( vec2( ifloat, 1 ) )\
 '
 in vec4 color\

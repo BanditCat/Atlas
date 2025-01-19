@@ -2,4 +2,9 @@ intruduce qouting so strings can include quotes.
 runs on desktop.
 include chain in error
 
+
 calling print or tensorToHostMemory on a texture is undefined.
+investigate string ownership in error messages on string loaded programs.
+
+
+Write standard library in Atlas.
