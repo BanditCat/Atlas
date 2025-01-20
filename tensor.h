@@ -77,6 +77,7 @@ void tensorTakeLast( tensorStack* ts, u32 index );
 void tensorRepeat( tensorStack* ts, u32 index, u32 count );
 void tensorEnclose( tensor* t );
 void tensorExtrude( tensor* t );
+void tensorUnextrude( tensor* t );
 // Multiplies matrices in host memory.
 void tensorMultiply( tensorStack* ts );
 void pop( tensorStack* ts );

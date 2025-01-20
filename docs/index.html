@@ -224,6 +224,7 @@
       <li><a href="#cmd-translate">translate</a></li>
       <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
+      <li><a href="#cmd-unext">unext (unextrude)</a></li>
       <li><a href="#cmd-while">while / for</a></li>
       <li><a href="#cmd-windowSize">windowSize</a></li>
     </ul>
@@ -978,9 +979,14 @@ Strides: 1 2
 
   <section id="cmd-translate">
     <h2>translate</h2>
-    <p>This command pushes a translation matrix onto the stack, corresponding to a translation by the 3-vector argument on the stack.</p>
+    <p>This command pushes a 4x4 translation matrix onto the stack, corresponding to a translation by the 3-vector argument on the stack.</p>
   </section>
-  
+
+    <section id="cmd-unext">
+    <h2>unext (unextrude)</h2>
+    <p>This command performs the reverse of extrusion on the tensor on top of the stack. That is, if the last dimension is of length 1, this command reduces the rank by 1.  If the last dimension isn't of length 1, an error is generated.</p>
+  </section>
+
   <section id="cmd-while">
     <h2>while / for</h2>
     <p>To do a while loop until <code>i</code> is 5, for example, you can do the following:</p>

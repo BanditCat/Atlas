@@ -1170,6 +1170,9 @@ void tensorExtrude( tensor* t ){
   t->strides[ t->rank ] = t->rank ? t->strides[ t->rank - 1 ] : 1;
   t->rank++;
 }
+void tensorUnextrude( tensor* t ){
+  t->rank--;
+}
 bool tensorIsContiguous( const tensor* t ){
   if( t == NULL )
     return false;
@@ -1280,10 +1283,10 @@ void tensorTranslate( tensorStack* ts, u32 index ){
 
   pop( ts );
   f32* ret = mem( 16, f32 );
-  ret[ 0  ] = 1;      ret[ 4  ] = 0;    ret[ 8  ] = 0;  ret[ 12 ] = x;
-  ret[ 1  ] = 0;      ret[ 5  ] = 1;    ret[ 9  ] = 0;  ret[ 13 ] = y;
-  ret[ 2  ] = 0;      ret[ 6  ] = 0;    ret[ 10 ] = 1;  ret[ 14 ] = z;
-  ret[ 3  ] = 0;      ret[ 7  ] = 0;    ret[ 11 ] = 0;  ret[ 15 ] = 1;
+  ret[ 0  ] = 1;      ret[ 1  ] = 0;    ret[ 2  ] = 0;  ret[ 3  ] = x;
+  ret[ 4  ] = 0;      ret[ 5  ] = 1;    ret[ 6  ] = 0;  ret[ 7  ] = y;
+  ret[ 8  ] = 0;      ret[ 9  ] = 0;    ret[ 10 ] = 1;  ret[ 11 ] = z;
+  ret[ 12 ] = 0;      ret[ 13 ] = 0;    ret[ 14 ] = 0;  ret[ 15 ] = 1;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }
@@ -1299,10 +1302,10 @@ void tensorProject( tensorStack* ts, u32 index ){
   
   pop( ts );
   f32* ret = mem( 16, f32 );
-  ret[ 0  ] = fov/aspect; ret[ 4  ] = 0;          ret[ 8  ] = 0;                      ret[ 12 ] = 0;
-  ret[ 1  ] = 0;          ret[ 5  ] = fov*aspect; ret[ 9  ] = 0;                      ret[ 13 ] = 0;
-  ret[ 2  ] = 0;          ret[ 6  ] = 0;          ret[ 10 ] = -(far+near)/(far-near); ret[ 14 ] = -2*far*near/(far-near);
-  ret[ 3  ] = 0;          ret[ 7  ] = 0;          ret[ 11 ] = -1;                     ret[ 15 ] = 0;
+  ret[ 0  ] = fov/aspect; ret[ 1  ] = 0;          ret[ 2  ] = 0;                      ret[ 3  ] = 0;
+  ret[ 4  ] = 0;          ret[ 5  ] = fov*aspect; ret[ 6  ] = 0;                      ret[ 7  ] = 0;
+  ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = -(far+near)/(far-near); ret[ 11 ] = -2*far*near/(far-near);
+  ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = -1;                     ret[ 15 ] = 0;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }

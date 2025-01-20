@@ -27,15 +27,15 @@ pop; // Pop the last display tensor off the stack.
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;get'rot';+;set'rot' 2;
-get'rot';last;300;/;[1 0 0];rot; // rot about x
-get'rot';first;300;/;[0 1 0];rot;m; // rot about y
+get'rot';first;-300;/;[0 1 0];rot; // rot about x
+get'rot';last;-300;/;[1 0 0];rot;m; // rot about y
 set'worldRotation' 16;
 l'mouse1skip';
 
 get'keys';[15 16 0];s;first;ifn'lkeyskip'; // rotate light if l held
 get'input';[0 2 0];s;get'lrot';+;set'lrot' 2;
-get'lrot';last;-300;/;[1 0 0];rot; // rot about x
-get'lrot';first;-300;/;[0 1 0];rot;m; // rot about y
+get'lrot';first;-300;/;[0 1 0];rot; // rot about y
+get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 l'lkeyskip';
 
@@ -73,7 +73,7 @@ get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
 get'accel';+;set'accel';
 l'ctkeyskip';
 
-get'worldRotation';get'accel';[1];0;cat;m;[0 3 0];s;set'accel';
+get'worldRotation';get'accel';[1];0;cat;m;unext;[0 3 0];s;set'accel';
 
 get'velocity';get'accel';+;[0.95 0.95 0.95];*;set'velocity';
 

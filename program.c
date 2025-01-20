@@ -562,13 +562,17 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "l" ) ){  // Last
-    curStep->type = LENGTH;
-    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+  } else if( !strcmp( command, "unext" ) ){  // Unextrude
+    curStep->type = UNEXTRUDE;
+    // dbg( "Linenum %u commandnum %u: unext\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "proj" ) ){  // Last
+  } else if( !strcmp( command, "l" ) ){  // Length
+    curStep->type = LENGTH;
+    // dbg( "Linenum %u commandnum %u: length\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "proj" ) ){  // Projection
     curStep->type = PROJ;
-    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: proj\n", linenum, commandnum );
 
   } else if( !strcmp( command, "translate" ) ){  // Translate
     curStep->type = TRANS;
@@ -1562,8 +1566,13 @@ bool runProgram( tensorStack* ts, program** progp ){
 	char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
 	p = newProgramFromFile( fn );
 	p->filenames[ p->numFilenames++ ] = fn;
-      }else
-	p = newProgramFromFile( s->progName );
+      }else{
+	u32 len = strlen( s->progName );
+	char* nn = mem( len + 2, char );
+	strncpy( nn, s->progName, len + 2 );
+	p = newProgramFromFile( nn );
+	p->filenames[ p->numFilenames++ ] = nn;
+      }
       deleteProgram( *progp );
       *progp = p;
       while( ts->size )
@@ -1682,6 +1691,17 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensorExtrude( t );
       break;
     }
+    case UNEXTRUDE: {
+      tensor* t = ts->stack[ ts->size - 1 ];
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to unextrude with an empty stack." );
+      if( t->rank == 0 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to unextrude a scalar." );
+      if( t->shape[ t->rank - 1 ] != 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to unextrude a tensor with the last dimension not equal 1." );
+      tensorUnextrude( t );
+      break;
+    }
     case SLICE:
       if( ts->size < 2 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice without enough elements on the stack." );
@@ -1779,7 +1799,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 	  case 16:
 	    glUniformMatrix4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
 				1,
-				0,
+				GL_TRUE,
 				p->varBlock + p->varOffsets[ s->var.index ] );
 	    break;
 	  default:

@@ -32,6 +32,7 @@ typedef struct{
     LAST, // documented
     ENCLOSE, // documented
     EXTRUDE, // documented
+    UNEXTRUDE, // documented
     KEYS, // documented
     PRINT, // documented
     TENSOR, // documented
