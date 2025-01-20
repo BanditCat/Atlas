@@ -40,6 +40,7 @@ typedef struct{
     ROT, // documented
     TRANS, // documented
     PROJ, // documented
+    LENGTH, // documented
     TIME, // documented
     REPEAT, // documented
     SHAPE, // documented

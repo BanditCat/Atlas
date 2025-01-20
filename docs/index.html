@@ -205,6 +205,7 @@
       <li><a href="#cmd-include">include</a></li>
       <li><a href="#cmd-input">input</a></li>
       <li><a href="#cmd-keys">keys</a></li>
+      <li><a href="#cmd-l">l (length)</a></li>
       <li><a href="#cmd-load">load</a></li>
       <li><a href="#cmd-m">m (matrix multiply)</li>
       <li><a href="#cmd-pop">pop</a></li>
@@ -623,10 +624,10 @@ Strides:
   <section id="cmd-if">
     <h2>if / ifn</h2>
     <p>The two if and ifn commands implement conditional branching:
-      <pre><code>get'bool';first;if'jump'; // This branches to the label l'jump' if 'bool' is nonzero.
+      <pre><code>get'bool';first;if'jump'; // This branches to the label l'jump' if 'bool' is positive.
 0;ifn'jump'; // This unconditionally jumps to l'jump' because a 0 was pushed on the stack and ifn branches on zero.
 </code></pre>
-      Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't non-zero. The top of 
+      Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't positive. The top of 
       the stack must be a scalar and is consumed by the <code>if</code>/<code>ifn</code> command.</p>
   </section>
 
@@ -653,6 +654,11 @@ Strides:
       <pre><code>keys;[41 42 0];s;first;ifn'go';quit;l'go';</code></pre> 
       will exit if esc (SDL_Scancode 41) is pressed.  
       <a href="https://wiki.libsdl.org/SDL2/SDL_Scancode" style="color:#4da6ff;">See SDL_Scancode docs</a>.</p>
+  </section>
+
+  <section id="cmd-l">
+    <h2>l (length)</h2>
+    <p>This command takes a tensor of rank 1, a vector, and pushes the Euclidean distance of it onto the stack.</p>
   </section>
 
   <section id="cmd-load">

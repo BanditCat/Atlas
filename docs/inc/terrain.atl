@@ -1,6 +1,6 @@
 keys;set'keys';input;set'input'; // Set input variables
 
-'main.atl';
+'inc/nbodies.atl';
 include'inc\nav.atl';
 
 
@@ -16,6 +16,8 @@ img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 get'lrot';last;-300;/;[1 0 0];rot; // rot about x
 get'lrot';first;-300;/;[0 1 0];rot;m; // rot about y
 set'lightRotation' 16;
+[0 0 0];set'velocity';
+
 
 1; // dummy value to pop off in place of display tensor.
 
@@ -45,31 +47,38 @@ get'input';[4 5 0];s;first;ifn'mouse2skip'; // forward if mouse 2
 get'origin';+;set'origin' 3;
 l'mouse2skip';
 
+[0 0 0];set'accel';
 get'keys';[26 27 0];s;first;ifn'wkeyskip';
-[0 0 1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
+[0 0 1];
+get'accel';+;set'accel';
 l'wkeyskip';
 get'keys';[22 23 0];s;first;ifn'skeyskip';
-[0 0 -1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
+[0 0 -1];
+get'accel';+;set'accel';
 l'skeyskip';
 get'keys';[4 5 0];s;first;ifn'akeyskip';
-[-1 0 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
+[-1 0 0];
+get'accel';+;set'accel';
 l'akeyskip';
 get'keys';[7 8 0];s;first;ifn'dkeyskip';
-[1 0 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
+[1 0 0];
+get'accel';+;set'accel';
 l'dkeyskip';
 get'keys';[44 45 0];s;get'keys';[225 226 0];s;+;first;ifn'spkeyskip';
-[0 1 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
+[0 1 0];
+get'accel';+;set'accel';
 l'spkeyskip';
 get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
-[0 -1 0 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
+[0 -1 0];
+get'accel';+;set'accel';
 l'ctkeyskip';
 
+get'worldRotation';get'accel';[1];0;cat;m;[0 3 0];s;set'accel';
+
+get'velocity';get'accel';+;[0.95 0.95 0.95];*;set'velocity';
+
+
+get'origin';get'velocity';timeDelta;40;/;3;rep;*;+;set'origin' 3;
 
 1;dup;1;dup; // duplicate terrain and heightmap
 6;windowSize;0;dup;set'wdims' 2;

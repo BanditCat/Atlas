@@ -562,6 +562,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "l" ) ){  // Last
+    curStep->type = LENGTH;
+    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+
   } else if( !strcmp( command, "proj" ) ){  // Last
     curStep->type = PROJ;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
@@ -1520,6 +1524,25 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%s %u", "shape", axis );
       break;
     }
+    case LENGTH: {
+      if( !ts->size )
+	 error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to get the length of a tensor with nothing on the stack." );
+      const tensor* top = ts->stack[ ts->size - 1 ];
+      if( top->rank != 1 )
+	 error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to get the length of a tensor with rank not equal 1." );
+      f32 sumsquares = 0;
+      for( u32 i = 0; i < top->shape[ 0 ]; ++i )
+	sumsquares += top->data[ top->offset + top->strides[ 0 ] * i ] *
+	  top->data[ top->offset + top->strides[ 0 ] * i ];
+      f32* newData = mem( 1, f32 );
+      *newData = sqrtf( sumsquares );
+      pop( ts );
+      push( ts, newTensor( 0, NULL, newData ) );
+      // dbg( "%s %f", "length", *newData );
+      break;
+    }
     case TIME: {
       f32* time = mem( 1, f32 );
       *time = timeDelta;
@@ -1604,7 +1627,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       f32 cond = *( ts->stack[ ts->size - 1 ]->data +
                     ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      if( cond != 0.0 )
+      if( cond > 0.0 )
         i = s->branch - 1;
       // dbg( "%s %f", "if", cond );
       break;
@@ -1619,7 +1642,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       f32 cond = *( ts->stack[ ts->size - 1 ]->data +
                     ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      if( cond == 0.0 )
+      if( cond <= 0.0 )
         i = s->branch - 1;
       // dbg( "%s %f", "ifn", cond );
       break;

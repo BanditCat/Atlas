@@ -6,3 +6,4 @@ inc\nav.atl
 inc\terrain.atl
 inc\terrain.bmp
 inc\triangle.atl
+inc\nbodies.atl

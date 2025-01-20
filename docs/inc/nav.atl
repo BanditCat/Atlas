@@ -1,5 +1,5 @@
-get'input'; // Double click to get next demo
-[3 4 0];s;first;2;-;if'nodblclick';
+2;get'input'; // Double click to get next demo
+[3 4 0];s;first;-;if'nodblclick';
 ;load;l'nodblclick';pop;
 
 
@@ -23,4 +23,7 @@ l'go4';
 0;dup;[34 35 0];s;first;ifn'go5';
 load'inc\terrain.atl';
 l'go5';
+0;dup;[35 36 0];s;first;ifn'go6';
+load'inc\nbodies.atl';
+l'go6';
 pop; // pop keys
