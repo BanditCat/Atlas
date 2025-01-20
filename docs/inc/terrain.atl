@@ -44,14 +44,8 @@ l'lkeyskip';
 
 
 
-
-get'input';[4 5 0];s;first;ifn'mouse2skip'; // forward if mouse 2
-[0 0 1 1];get'worldRotation';m;first;[0 3 0];s;timeDelta;4;/;3;rep;*;
-get'origin';+;set'origin' 3;
-l'mouse2skip';
-
 [0 0 0];set'accel';
-get'keys';[26 27 0];s;first;ifn'wkeyskip';
+get'keys';[26 27 0];s;first;get'input';[4 5 0];s;first;+;ifn'wkeyskip';
 [0 0 1];
 get'accel';+;set'accel';
 l'wkeyskip';
