@@ -13,8 +13,8 @@ img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 [0.5 -0.5 -0.5];set'origin' 3;
 0;[0 1 0];rot;set'worldRotation' 16;
 [150 400];set'lrot' 2;
-get'lrot';last;-300;/;[1 0 0];rot; // rot about x
-get'lrot';first;-300;/;[0 1 0];rot;m; // rot about y
+get'lrot';first;-300;/;[0 1 0];rot; // rot about y
+get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 [0 0 0];set'velocity';
 
@@ -73,9 +73,9 @@ get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
 get'accel';+;set'accel';
 l'ctkeyskip';
 
-get'worldRotation';get'accel';[1];0;cat;m;unext;[0 3 0];s;set'accel';
-
-get'velocity';get'accel';+;[0.95 0.95 0.95];*;set'velocity';
+get'worldRotation';get'accel';timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;set'accel';
+get'velocity';get'accel';+;set'velocity';
+get'velocity';[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;set'velocity';
 
 
 get'origin';get'velocity';timeDelta;40;/;3;rep;*;+;set'origin' 3;
