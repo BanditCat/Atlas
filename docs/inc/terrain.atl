@@ -17,13 +17,15 @@ get'lrot';first;-300;/;[0 1 0];rot; // rot about y
 get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 [0 0 0];set'velocity';
-
+1;set'speed';
 
 1; // dummy value to pop off in place of display tensor.
-
-
 l'started'; // init code complete
 pop; // Pop the last display tensor off the stack.
+
+0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
+
+
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;get'rot';+;set'rot' 2;
@@ -38,6 +40,7 @@ get'lrot';first;-300;/;[0 1 0];rot; // rot about y
 get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 l'lkeyskip';
+
 
 
 
@@ -74,7 +77,7 @@ get'accel';+;set'accel';
 l'ctkeyskip';
 
 get'worldRotation';get'accel';timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;set'accel';
-get'velocity';get'accel';+;set'velocity';
+get'velocity';get'accel';get'speed';3;rep;*;+;set'velocity';
 get'velocity';[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;set'velocity';
 
 
