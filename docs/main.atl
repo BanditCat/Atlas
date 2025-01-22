@@ -8,7 +8,7 @@ size;if'started';
 nav2d;
 [4];set'tzoom' 1;
 // Draw the text just once.
-img'inc\font.bmp';a
+img'inc\font.bmp';
 'Hello world! Esc to exit. Double click/tap or   ';e;
 'press the 1 - 6 keys to see the different demos.';e;0;cat;
 '1. This text.                                   ';e;0;cat;
