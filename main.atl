@@ -8,7 +8,7 @@ size;if'started';
 nav2d;
 [4];set'tzoom' 1;
 // Draw the text just once.
-img'inc\font.bmp';
+img'inc\font.bmp';a
 'Hello world! Esc to exit. Double click/tap or   ';e;
 'press the 1 - 6 keys to see the different demos.';e;0;cat;
 '1. This text.                                   ';e;0;cat;
@@ -31,7 +31,7 @@ ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
 // set zoom and offs initial values so as centered.
 windowSize;set'wsize' 2;
 windowSize;first;get'tsize';first;1.1;*;/;e;set'zoom' 1;
-windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;get'wsize';/;[-1 1];*;set'offs' 2;
+windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;get'wsize';/;[-1 1];*;[1];get'zoom';0;cat;/;set'offs' 2;
 l'started';
 
 nav2d;
