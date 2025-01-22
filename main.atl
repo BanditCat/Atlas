@@ -1,18 +1,12 @@
-keys;set'keys';input;set'input'; // Set input variables
+keys;set'keys';input;set'input'; // Set input variables, it's important to do this just once per frame for smoothest performance
 
 'inc\triangle.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
-
-
-get'input';
-[1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
-0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
-0;dup;[0 2 0];s;[-1 1];*;get'offs';+;set'offs' 2;
-l'nomouse';
-pop; // pop input
+include'inc\stdlib.atl';
 
 size;if'started';
-
+nav2d;
+[4];set'tzoom' 1;
 // Draw the text just once.
 img'inc\font.bmp';
 'Hello world! Esc to exit. Double click/tap or   ';e;
@@ -24,28 +18,33 @@ img'inc\font.bmp';
 '5. A raytraced terrain flythrough.              ';e;0;cat;
 '6. A gravitational nbodies demo.                ';e;0;cat;
 [0 1];t;1;r;
-6;1;dup;shape;[6 8];*;0;dup;set'tsize' 2;[4];0;cat;
+6;1;dup;shape;[6 8];*;get'tzoom';0;dup;0;cat;*;0;dup;set'tsize' 2;[4];0;cat;
 c''''
-float x = tf.x\
-float y = tf.y\
+float x = tf.x / tzoom\
+float y = tf.y / tzoom\
 ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
           b( ivec4( mod( floor( x ), 6.0 ),
           mod( y, 8.0 ) + 1328.0 - 8.0 * a( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
 	  ,1.0, 0.0 ) ) : 1.0 ) )\
 ' 2 1 4;texture;0;dup;
 
-// set zoom and offs
-windowSize;first;get'tsize';first;10;+;/;e;set'zoom' 1;
-windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;set'offs' 2;
+// set zoom and offs initial values so as centered.
+windowSize;set'wsize' 2;
+windowSize;first;get'tsize';first;1.1;*;/;e;set'zoom' 1;
+windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;get'wsize';/;[-1 1];*;set'offs' 2;
 l'started';
-pop;
+
+nav2d;
+
 
 windowSize;set'wsize' 2;
+pop;
+
 0;dup;
 6;get'wsize';[4];0;cat;
 c''''
-ret[0] = vec4( 0.0, ( tf.x + offs.x >= 0.0 && tf.y + offs.y >= 0.0 &&
-           tf.x + offs.x < tsize.x * zoom && tf.y + offs.y < tsize.y * zoom ) ?
-           1.0 - af( ( tf.xy + offs ) / zoom ).x : 0.0, 1.0, 0.0 )\
+ret[0] = vec4( 0.0, ( tf.x - offs.x * wsize.y >= 0.0 && tf.y + offs.y * wsize.y >= 0.0 &&
+           tf.x - offs.x * wsize.y < tsize.x * zoom && tf.y + offs.y * wsize.y < tsize.y * zoom ) ?
+           1.0 - af( ( tf.xy + offs * vec2( -1.0, 1.0 ) * wsize.yy ) / zoom ).x : 0.0, 1.0, 0.0 )\
 ' 1 1 4;
 

@@ -1,0 +1,33 @@
+1;if'__stdlibend';
+
+
+////////////////////////////////////////////////////////////////////////////////
+// This function takes 0 arguments but sets offs (a 2 vec), zoom (a 1 vec),
+// rightClickParam (a 2 vec) and middleClickParam( a 2 vec) according to mouse
+// state.
+l'nav2d';
+get'__nav2dInited';if'__nav2dInitDone';
+[1];set'zoom' 1;
+[0 0];set'rightClickParam' 2;
+[0 0];set'offs' 2;
+[0 0];set'middleClickParam' 2;
+1;set'__nav2dInited';
+l'__nav2dInitDone';
+
+get'input'; // deal with input, a 6 value rank 1 tensor; three axes (x y wheel) then three buttons (left right middle).
+[1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
+0;dup;[3 4 0];s;first;ifn'__nomouse'; // if mouse button 1 not held jump to nomouse
+0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';0;dup;0;cat;/;get'offs';+;set'offs' 2;
+l'__nomouse';
+0;dup;[4 5 0];s;first;ifn'__nomouse2'; // if mouse button 2 not held jump to nomouse2
+0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';0;dup;0;cat;/;
+get'rightClickParam';+;set'rightClickParam' 2;
+l'__nomouse2';
+0;dup;[5 6 0];s;first;ifn'__nomouse3'; // if mouse button 3 not held jump to nomouse3
+0;dup;[0 2 0];s;[400 400];/;get'middleClickParam';+;set'middleClickParam' 2;
+l'__nomouse3';
+pop;
+return;
+
+
+l'__stdlibend';

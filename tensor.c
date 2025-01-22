@@ -100,7 +100,7 @@ void tensorToGPUMemory( tensor* t ){
 
   t->tex.width = twidth;
   t->tex.height = theight;
-  t->tex.channels = 4;
+  t->tex.channels = 0;
   
   glGenTextures( 1, &t->tex.texture );
   glBindTexture( GL_TEXTURE_2D, t->tex.texture );
@@ -361,13 +361,13 @@ compute* makeCompute( const program* prog,
       float _a_a[ %u ];\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_r[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
+      ++i; t = _a_toTensorIndices( i ); ++ifloat; tf = vec4( t ) + 0.5;\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_g[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
+      ++i; t = _a_toTensorIndices( i ); ++ifloat; tf = vec4( t ) + 0.5;\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_b[ j ] = ret[ j ];\n\
-      ++i; t = _a_toTensorIndices( i ); ifloat = float( i ); tf = vec4( t );\n\
+      ++i; t = _a_toTensorIndices( i ); ++ifloat; tf = vec4( t ) + 0.5;\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n";
    char* textureFooterTemplate =
@@ -1205,8 +1205,6 @@ void tensorEnsureContiguous( tensor* t ){
     }
   }
 
-  // Iterate over all elements and copy them to newData in standard order.
-  // This can be optimized, but here's a straightforward implementation.
   u32 indices[ 4 ] = { 0, 0, 0, 0 };
   for( u32 i = 0; i < t->size; ++i ){
     // Compute multi-dimensional index based on standard strides.

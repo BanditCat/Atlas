@@ -1,6 +1,6 @@
 keys;set'keys';input;set'input'; // Set input variables
 
-'inc/nbodies.atl';
+'inc\nbodies.atl';
 include'inc\nav.atl';
 
 
@@ -23,8 +23,8 @@ set'lightRotation' 16;
 l'started'; // init code complete
 pop; // Pop the last display tensor off the stack.
 
-0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
 
+0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
 
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
@@ -73,7 +73,6 @@ l'ctkeyskip';
 get'worldRotation';get'accel';timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;set'accel';
 get'velocity';get'accel';get'speed';3;rep;*;+;set'velocity';
 get'velocity';[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;set'velocity';
-
 
 get'origin';get'velocity';timeDelta;40;/;3;rep;*;+;set'origin' 3;
 

@@ -1,29 +1,17 @@
 keys;set'keys';input;set'input'; // Set input variables
 'inc\terrain.atl';
 include'inc\nav.atl';
+include'inc\stdlib.atl';
 
 
-get'input'; // deal with input, a 6 value rank 1 tensor; three axes then three buttons.
-[1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
-0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
-0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;get'offs';+;set'offs' 2;
-l'nomouse';
-0;dup;[4 5 0];s;first;ifn'nomouse2'; // if mouse button 2 not held jump to nomouse2
-0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';[4];/;0;dup;0;cat;/;
-get'perturb';+;set'perturb' 2;
-l'nomouse2';
-0;dup;[5 6 0];s;first;ifn'nomouse3'; // if mouse button 3 not held jump to nomouse3
-0;dup;[1 2 0];s;[400];/;get'exp';+;set'exp' 1;
-l'nomouse3';
-pop;
-
+nav2d;
+get'rightClickParam';set'perturb' 2;
+get'middleClickParam';last;e;set'exp' 1;
 
 size;if'started';
-1;1;1;
-[1];set'zoom' 1;
-[0.5 0];set'offs' 2;
-[0 0];set'perturb' 2;
-[2];set'exp' 1;
+1;1;1;nav2d;
+[0.125 0];set'offs' 2;
+[0 2];set'middleClickParam' 2;
 l'started';
 pop;pop;pop;
 
@@ -33,8 +21,8 @@ windowSize;set'wsize' 2;
 6;get'wsize';
 c''''
 vec4 tf = vec4( t )\
-ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x\
-ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y\
+ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x * 4.0\
+ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y * 4.0\
 '0 2 0;
 6;get'wsize';c''''ret[0]=perturb.x\ret[1]=perturb.y\' 0 2 0;
 1;if'skip'; 

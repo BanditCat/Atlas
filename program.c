@@ -969,7 +969,13 @@ void finalize( program* program ){
 
     // p += snprintf( p, bufsize - ( p - glslUniformBlock ), "};\n" );
     program->varBlock = mem( offset, f32 );
-    program->bigvarts = mem( program->numBigvars, tensor* ); 
+    program->bigvarts = mem( program->numBigvars, tensor* );
+    // populate bigvarts with scalar 0s.
+    for( u32 i = 0; i < program->numBigvars; ++i ){
+      f32* nt = mem( 1, f32 );
+      program->bigvarts[ i ] = newTensor( 0, NULL, nt );;
+    }
+      
     // glGenBuffers( 1, &program->ubo );
     // glBindBuffer( GL_UNIFORM_BUFFER, program->ubo );
     // glBufferData( GL_UNIFORM_BUFFER, sizeof( f32 ) * offset, program->varBlock,

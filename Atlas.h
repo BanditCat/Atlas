@@ -223,7 +223,7 @@ inline void unmem_track(void* ptr, const char* file, int line) {
 
 inline void check_memory_leaks(void) {
     if (mem_list_mutex) {
-        SDL_LockMutex(mem_list_mutex);
+      SDL_LockMutex(mem_list_mutex);
     }
     MemAlloc* current = mem_list;
     int leaks_found = 0;
