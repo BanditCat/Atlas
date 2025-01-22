@@ -1302,8 +1302,8 @@ void tensorProject( tensorStack* ts, u32 index ){
   f32* ret = mem( 16, f32 );
   ret[ 0  ] = fov/aspect; ret[ 1  ] = 0;          ret[ 2  ] = 0;                      ret[ 3  ] = 0;
   ret[ 4  ] = 0;          ret[ 5  ] = fov*aspect; ret[ 6  ] = 0;                      ret[ 7  ] = 0;
-  ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = -(far+near)/(far-near); ret[ 11 ] = -2*far*near/(far-near);
-  ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = -1;                     ret[ 15 ] = 0;
+  ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = (far+near)/(far-near); ret[ 11 ] = 2*far*near/(far-near);
+  ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = 1;                     ret[ 15 ] = 0;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }

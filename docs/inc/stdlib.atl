@@ -37,6 +37,72 @@ return;
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// nav3d
+// This function takes 0 arguments but sets origin (a 3 vec) and worldRotation
+// (a 4x4 matrix) according to inputs.
+
+l'nav3d';
+get'__nav3dInited';if'__nav3dInitDone';
+[0 0 0];set'__velocity';
+[0 0];set'__rot';
+1;set'speed';
+[0 0 0];set'origin' 3;
+0;[0 1 0];rot;set'worldRotation' 16;
+0;[0 1 0];rot;set'worldUnrotation' 16;
+1;set'__nav3dInited';
+l'__nav3dInitDone';
+
+0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
+
+
+get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
+get'input';[0 2 0];s;get'__rot';+;set'__rot';
+get'__rot';first;-300;/;[0 1 0];rot; // rot about x
+get'__rot';last;-300;/;[1 0 0];rot;m; // rot about y
+set'worldRotation' 16;
+get'__rot';last;300;/;[1 0 0];rot; // rot about y
+get'__rot';first;300;/;[0 1 0];rot;m; // rot about x
+set'worldUnrotation' 16;
+l'mouse1skip';
+
+
+[0 0 0];set'__accel';
+get'keys';[26 27 0];s;first;get'input';[4 5 0];s;first;+;ifn'wkeyskip';
+[0 0 1];
+get'__accel';+;set'__accel';
+l'wkeyskip';
+get'keys';[22 23 0];s;first;ifn'skeyskip';
+[0 0 -1];
+get'__accel';+;set'__accel';
+l'skeyskip';
+get'keys';[4 5 0];s;first;ifn'akeyskip';
+[-1 0 0];
+get'__accel';+;set'__accel';
+l'akeyskip';
+get'keys';[7 8 0];s;first;ifn'dkeyskip';
+[1 0 0];
+get'__accel';+;set'__accel';
+l'dkeyskip';
+get'keys';[44 45 0];s;get'keys';[225 226 0];s;+;first;ifn'spkeyskip';
+[0 1 0];
+get'__accel';+;set'__accel';
+l'spkeyskip';
+get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
+[0 -1 0];
+get'__accel';+;set'__accel';
+l'ctkeyskip';
+
+get'worldRotation';get'__accel';timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;set'__accel';
+get'__velocity';get'__accel';get'speed';3;rep;*;+;set'__velocity';
+get'__velocity';[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;set'__velocity';
+
+get'origin';get'__velocity';timeDelta;40;/;3;rep;*;+;set'origin' 3;
+return;
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 // textToTexure
 // This function takes 1 argument, a string character matrix formed like so:
 // 'Hello';e;
@@ -59,5 +125,90 @@ ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
 	  ,1.0, 0.0 ) ) : 1.0 ) )\
 ' 2 1 4;texture;
 return;
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// perlin
+// This function takes 4 arguments, gradient grid size, texture size, amplitude,
+// and random seed.  The return value is 1 tensor: a perlin noise tensor.
+
+
+l'perlin';  
+set'_time' 1;
+set'_amp' 1;
+2;rep;set'_texsize' 2;
+
+2;rep;0;dup;set'_gradsize' 2;pop;6;get'_gradsize';[2];0;cat;
+c'''  // Push the gradients.
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
+    return fract( sin( h ) * 43758.5453123 )\
+}
+'
+ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), _time ) * 2.0 * 3.1415928 ) :
+                  cos( hash( vec2( t.xy ), _time ) * 2.0 * 3.1415928 )\
+' 0 1 0;
+
+6;get'_texsize';
+c'''
+float fade( float x ){
+    return x*x*x*(x*(x*6.0 - 15.0)+10.0)\
+}
+float lerp( float a, float b, float t ){
+    return a + t*(b - a)\
+}
+'
+vec2 c1 = vec2( t.xy ) * _gradsize / _texsize\
+vec2 fract = fract( c1 )\
+ivec2 ic1 = ivec2( c1 )\
+ivec2 ic2 = ic1 + ivec2( 1, 0 )\
+ivec2 ic3 = ic1 + ivec2( 0, 1 )\
+ivec2 ic4 = ic1 + ivec2( 1, 1 )\
+c1 = vec2( a( ivec4( ic1, 0, 0 ) ), a( ivec4( ic1, 1, 0 ) ) )\
+vec2 c2 = vec2( a( ivec4( ic2, 0, 0 ) ), a( ivec4( ic2, 1, 0 ) ) )\
+vec2 c3 = vec2( a( ivec4( ic3, 0, 0 ) ), a( ivec4( ic3, 1, 0 ) ) )\
+vec2 c4 = vec2( a( ivec4( ic4, 0, 0 ) ), a( ivec4( ic4, 1, 0 ) ) )\
+float fc1 = dot( c1, fract - vec2( 0, 0 ) )\
+float fc2 = dot( c2, fract - vec2( 1, 0 ) )\
+float fc3 = dot( c3, fract - vec2( 0, 1 ) )\
+float fc4 = dot( c4, fract - vec2( 1, 1 ) )\
+float u  = fade( fract.x )\
+float v  = fade( fract.y )\
+float v1 = lerp( fc1, fc2, u )\
+float v2 = lerp( fc3, fc4, u )\
+float v3 = lerp( v1, v2, v )\
+ret[0]=_amp*(v3 * 0.5 + 0.5)\
+' 1 1 0;
+return;
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// fractalNoise
+// This function takes 2 arguments, initial grid size, and texture size and
+// returns a tensor with multiple combined octaves of perlin noise.
+
+l'fractalNoise';
+set'__fngradsize';
+set'__fntexsize';
+[0.5];set'__fnamp';
+[1];set'__fnseed';
+
+get'__fngradsize';get'__fntexsize';get'__fnamp';get'__fnseed';perlin;
+
+l'__fnloop';
+get'__fngradsize';2;*;set'__fngradsize';
+get'__fnamp';[0.5];*;set'__fnamp';
+get'__fnseed';[1.2];+;set'__fnseed';
+get'__fngradsize';get'__fntexsize';get'__fnamp';get'__fnseed';perlin;
+6;get'__fntexsize';2;rep;c''''ret[0]=a(t)+b(t)\' 2 1 0;
+get'__fntexsize';get'__fngradsize';/;4;-;if'__fnloop';
+return;
+
+
 
 l'__stdlibend';

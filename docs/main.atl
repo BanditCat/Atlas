@@ -4,7 +4,7 @@ keys;set'keys';input;set'input'; // Set input variables, it's important to do th
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 include'inc\stdlib.atl';
 
-print;size;if'started';
+size;if'started';
 nav2d;
 [4];set'tzoom' 1;
 // Draw the text just once.
@@ -20,13 +20,12 @@ textToTexture;
 0;dup;shape;[0 2 0];s;set'tsize' 2;
 1; // A dummy value to pop off instead of the frame since we are in init.
 
-// set zoom and offs initial values so as centered.
+// set zoom and offs initial values so it's centered.
 windowSize;set'wsize' 2;
 windowSize;first;get'tsize';first;1.1;*;/;e;set'zoom' 1;
 windowSize;get'tsize';get'zoom';first;2;rep;*;-;[-2 -2];/;get'wsize';/;[-1 1];*;[1];get'zoom';0;cat;/;set'offs' 2;
 
 l'started';
-print;
 
 nav2d;
 windowSize;set'wsize' 2;
