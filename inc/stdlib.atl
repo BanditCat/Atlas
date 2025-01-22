@@ -2,6 +2,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// nav2d
 // This function takes 0 arguments but sets offs (a 2 vec), zoom (a 1 vec),
 // rightClickParam (a 2 vec) and middleClickParam(a 2 vec) according to mouse
 // state.
@@ -32,5 +33,31 @@ l'__nomouse3';
 pop;
 return;
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// textToTexure
+// This function takes 1 argument, a string character matrix formed like so:
+// 'Hello';e;
+// 'world';e;0;cat;
+// 'more ';e;0;cat;
+// 'text ';e;0;cat;
+// The function returns 1 tensor: the text texture itself.
+
+l'textToTexture';
+[4];set'_tzoom' 1;
+[0 1];t;1;r; // Adjust char matrix
+img'inc\font.bmp'; // load font
+6;2;dup;shape;[6 8];*;get'_tzoom';0;dup;0;cat;*;[4];0;cat;
+c''''
+float x = tf.x / _tzoom\
+float y = tf.y / _tzoom\
+ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
+          a( ivec4( mod( floor( x ), 6.0 ),
+          mod( y, 8.0 ) + 1328.0 - 8.0 * b( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
+	  ,1.0, 0.0 ) ) : 1.0 ) )\
+' 2 1 4;texture;
+return;
 
 l'__stdlibend';
