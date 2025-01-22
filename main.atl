@@ -43,8 +43,8 @@ pop;
 0;dup;
 6;get'wsize';[4];0;cat;
 c''''
-ret[0] = vec4( 0.0, ( tf.x - offs.x * wsize.y >= 0.0 && tf.y + offs.y * wsize.y >= 0.0 &&
-           tf.x - offs.x * wsize.y < tsize.x * zoom && tf.y + offs.y * wsize.y < tsize.y * zoom ) ?
-           1.0 - af( ( tf.xy + offs * vec2( -1.0, 1.0 ) * wsize.yy ) / zoom ).x : 0.0, 1.0, 0.0 )\
+ret[0] = vec4( 0.0, ( tf.x - offs.x * wsize.y * zoom >= 0.0 && tf.y + offs.y * wsize.y * zoom >= 0.0 &&
+           tf.x - offs.x * wsize.y * zoom < tsize.x * zoom && tf.y + offs.y * wsize.y * zoom < tsize.y * zoom ) ?
+           1.0 - af( ( tf.xy + offs * vec2( -1.0, 1.0 ) * wsize.yy * zoom ) / zoom ).x : 0.0, 1.0, 0.0 )\
 ' 1 1 4;
 
