@@ -292,6 +292,9 @@ int renderThreadFunction( void* data ){
   glViewport( 0, 0, windowWidth, windowHeight );
   glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
   SDL_GL_SetSwapInterval( 1 );
+  SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
+  /* SDL_GL_SetSwapInterval( 0 ); */
+  /* SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0"); */
 
   shaderProgram = createProgram( vertexSource, fragmentSource );
 
@@ -402,7 +405,7 @@ int renderThreadFunction( void* data ){
     glDisableVertexAttribArray( posAttrib );
 
     SDL_GL_SwapWindow( window );
-    DwmFlush();
+    //DwmFlush();
   }
 
   // Cleanup
