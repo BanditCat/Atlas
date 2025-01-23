@@ -689,11 +689,16 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     glBindRenderbuffer(GL_RENDERBUFFER, ret->tex.depthbuffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer);
+#ifdef __EMSCRIPTEN__   // I dont know why it only works this way, but it only works this way.
     glDepthFunc(GL_LEQUAL);
-      // Clear the depth buffer
+    glClearDepth(1.0f); 
+    glDepthRange(0.0, 1.0);
+#else
+    glDepthFunc(GL_GEQUAL);
+    glClearDepth(0.0f); 
+    glDepthRange(1.0, 0.0);
+#endif
     glViewport( 0, 0, width, height );
-    glClearDepth(1.0f);  // Reset to max depth value
-    glDepthRange(0.0, 1.0); // Default depth range
     glDepthMask(GL_TRUE);
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
