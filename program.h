@@ -21,6 +21,7 @@ typedef struct{
     DIV, // documented
     POW, // documented
     DEPTH, // documented
+    ADDITIVE, // documented
     IF, // documented
     IFN, // documented
     TRANSPOSE, // documented

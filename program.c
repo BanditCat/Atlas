@@ -562,6 +562,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "additive" ) ){  // Unextrude
+    curStep->type = ADDITIVE;
+    // dbg( "Linenum %u commandnum %u: additive\n", linenum, commandnum );
+
   } else if( !strcmp( command, "depth" ) ){  // Unextrude
     curStep->type = DEPTH;
     // dbg( "Linenum %u commandnum %u: depth\n", linenum, commandnum );
@@ -1741,6 +1745,10 @@ bool runProgram( tensorStack* ts, program** progp ){
       *ssize = ts->size;
       push( ts, newTensor( 0, NULL, ssize ) );
       // dbg( "%s %u %u", "size", axis1, axis2 );
+      break;
+    }
+    case ADDITIVE: {
+      additive = !additive;
       break;
     }
     case KEYS: {

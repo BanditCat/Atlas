@@ -137,7 +137,7 @@ void mainPoll( void );
 // Global state
 
 extern bool depthTest;
-
+extern bool additive;
 
 
 ////////////////////////////////////////////////////////////////////

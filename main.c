@@ -15,7 +15,7 @@
 // Global state
 
 bool depthTest = false;
-
+bool additive = false;
 
 
 

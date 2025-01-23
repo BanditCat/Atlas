@@ -705,6 +705,12 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   } else
     glDisable( GL_DEPTH_TEST );
 
+  if( additive ){
+    glEnable( GL_BLEND );
+    glBlendFunc( 1.0, 1.0 );
+  } else
+    glDisable( GL_BLEND );
+  
   CHECK_GL_ERROR();
   // Draw the quad
   glDrawArrays( GL_TRIANGLES, 0, vertCount );
