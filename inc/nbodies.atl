@@ -6,42 +6,67 @@ include'inc\nav.atl';
 
 
 // init code
+[4];set'sqrtParticles' 1;
+get'sqrtParticles';[2];^;[3];*;first;set'vertexCount';
+
 size;if'started';
-nav3d;[0 0 -1.8];set'origin' 3; // set origin
+nav3d;[0 0 1.8];set'origin' 3; // set origin
 0;set'time';
+
+6;get'sqrtParticles';0;dup;0;cat;[4];0;cat;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
+    return fract( sin( h ) * 43758.5453123 )\
+}
+'
+ret[0] = vec4( hash( tf, 0.0 ) * 2.0 - 1.0, hash( tf, 1.0 ) * 2.0 - 1.0, hash( tf, 2.0 ) * 2.0 - 1.0, 0.0 )\
+' 0 1 4; // Randomly place particles
+
+
+
 [[[-0.5 -0.28868 0 1] [1 0 0 1]]
  [[ 0   0.57735  0 1] [0 1 0 1]] 
  [[ 0.5 -0.28868 0 1] [0 1 1 1]]];
- 6;[3 2 4];c''''
+6;[3 2 4];c''''
 vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
                a( ivec4( tf, 1, 0 ) ),
                a( ivec4( tf, 2, 0 ) ),
                a( ivec4( tf, 3, 0 ) ) )\
-ret[0] = r\' 1 1 4;   // first we take our vertices and colors and put them in a texture.
+ret[0] = r\' 1 1 4;   // take our vertices and colors and put them in a texture.
+
+
+
+
 1;
 l'started';
 
 
 get'time';timeDelta;+;set'time';
-[90];windowSize;0;cat;[-0.1 -1000];0;cat;proj;set'proj' 16;
+[90];windowSize;0;cat;[0.1 10];0;cat;proj;set'proj' 16;
 get'time';[0 1 0];rot;set'rot' 16;
 
 pop;
 
 nav3d;
 
-0;dup;
-3;windowSize;[4];0;cat;
+1;dup;1;dup;
+depth;
+get'vertexCount';windowSize;[4];0;cat;
 c'
 out vec4 color\
 '
-ret = proj*worldUnrotation*( -vec4( origin, 0.0 ) + rot * af( vec2( ifloat, 0 ) ) )\
-color = af( vec2( ifloat, 1 ) )\
+ret = proj*worldUnrotation*( bf( vec2( ivec2( (i/3) % 4, (i/3) / 4 ) ) ) + -vec4( origin, 0.0 ) + //rot *
+                             af( vec2( float(i%3) + 0.5, 0 ) ) )\
+		     
+color = af( vec2( float(i%3) + 0.5, 1 ) )\
 '
 in vec4 color\
 '
 ret[0] = color\
-' 1 1 4;
+' 2 1 4;
+depth;
 
+l'end';
 
 

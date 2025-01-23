@@ -189,6 +189,10 @@ void deleteTensor( tensor* t ){
         glDeleteTextures( 1, &t->tex.texture );
         t->tex.texture = 0;
       }
+      if( t->tex.depthbuffer ){
+	glDeleteRenderbuffers( 1, &t->tex.depthbuffer );
+	t->tex.depthbuffer = 0;
+      }
       if( t->tex.framebuffer ){
         glDeleteFramebuffers( 1, &t->tex.framebuffer );
         t->tex.framebuffer = 0;
@@ -640,6 +644,9 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
                             rets[ i ]->tex.texture,
                             0 );
 
+  
+
+
   CHECK_GL_ERROR();
   glViewport( 0, 0, width, height );
 
@@ -676,10 +683,28 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
                               GL_COLOR_ATTACHMENT3 };
   glDrawBuffers( compute->retCount, drawBuffers );
 
+  if( depthTest ){
+    if( !ret->tex.depthbuffer )
+      glGenRenderbuffers(1, &ret->tex.depthbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, ret->tex.depthbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer);
+    glDepthFunc(GL_GEQUAL);
+      // Clear the depth buffer
+    glViewport( 0, 0, width, height );
+    glClearDepth(0.0f);  // Reset to max depth value
+    glDepthRange(1.0, 0.0); // Default depth range
+    glDepthMask(GL_TRUE);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+  } else
+    glDisable( GL_DEPTH_TEST );
+
   CHECK_GL_ERROR();
   // Draw the quad
   glDrawArrays( GL_TRIANGLES, 0, vertCount );
   CHECK_GL_ERROR();
+  
   for( u32 i = 0; i < compute->retCount; ++i )
     glFramebufferTexture2D( GL_FRAMEBUFFER,
                             GL_COLOR_ATTACHMENT0 + i,
@@ -690,7 +715,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   // glBindBuffer( GL_UNIFORM_BUFFER, 0 );
   // glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-  glBindVertexArray( 0 );
+  //glBindVertexArray( 0 );
   // glUseProgram( 0 );
 
   CHECK_GL_ERROR();
@@ -1068,7 +1093,7 @@ tensor* tensorFromImageFile( const char* filename ){
   tensor* ret = mem( 1, tensor );
   SDL_Surface* image = SDL_LoadBMP( filename );
   if( !image )
-    error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
+  error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
   ret->size = image->w * image->h * 4;
   for( u32 i = 0; i < 4; ++i )
     ret->shape[ i ] = ret->strides[ i ] = 1;
@@ -1265,10 +1290,10 @@ void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex ){
   float s = sinf( angle );
   pop( ts ); pop( ts );
   f32* ret = mem( 16, f32 );
-  ret[ 0  ] = c + x * x * c1;      ret[ 4  ] = x * y * c1 - z * s;    ret[ 8  ] = x * z * c1 + y * s;  ret[ 12 ] = 0;
-  ret[ 1  ] = y * x * c1 + z * s;  ret[ 5  ] = c + y * y * c1;        ret[ 9  ] = y * z * c1 - x * s;  ret[ 13 ] = 0;
-  ret[ 2  ] = z * x * c1 - y * s;  ret[ 6  ] = z * y * c1 + x * s;    ret[ 10 ] = c + z * z * c1;      ret[ 14 ] = 0;
-  ret[ 3  ] = 0;                   ret[ 7  ] = 0;                     ret[ 11 ] = 0;                   ret[ 15 ] = 1;
+  ret[ 0  ] = c + x * x * c1;      ret[ 1  ] = x * y * c1 - z * s;    ret[ 2  ] = x * z * c1 + y * s;  ret[ 3  ] = 0;
+  ret[ 4  ] = y * x * c1 + z * s;  ret[ 5  ] = c + y * y * c1;        ret[ 6  ] = y * z * c1 - x * s;  ret[ 7  ] = 0;
+  ret[ 8  ] = z * x * c1 - y * s;  ret[ 9  ] = z * y * c1 + x * s;    ret[ 10 ] = c + z * z * c1;      ret[ 11 ] = 0;
+  ret[ 12 ] = 0;                   ret[ 13 ] = 0;                     ret[ 14 ] = 0;                   ret[ 15 ] = 1;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }
@@ -1302,8 +1327,8 @@ void tensorProject( tensorStack* ts, u32 index ){
   f32* ret = mem( 16, f32 );
   ret[ 0  ] = fov/aspect; ret[ 1  ] = 0;          ret[ 2  ] = 0;                      ret[ 3  ] = 0;
   ret[ 4  ] = 0;          ret[ 5  ] = fov*aspect; ret[ 6  ] = 0;                      ret[ 7  ] = 0;
-  ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = (far+near)/(far-near); ret[ 11 ] = 2*far*near/(far-near);
-  ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = 1;                     ret[ 15 ] = 0;
+  ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = -(far+near)/(far-near); ret[ 11 ] = -2*far*near/(far-near);
+  ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = -1;                     ret[ 15 ] = 0;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }

@@ -18,7 +18,7 @@ get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 
 nav3d;
-[0.5 -0.5 -0.5];set'origin' 3;
+[0.5 -0.5 1.5];set'origin' 3;
 
 
 1; // dummy value to pop off in place of display tensor.
@@ -161,7 +161,7 @@ bool rayTrace( inout vec3 ray, vec3 origin ){
 vec3 ray = normalize(
     vec3(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
-      1.0
+      -1.0
     )
 )\
 

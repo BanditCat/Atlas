@@ -63,7 +63,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'stdlib.atl and nbodies'
+	git commit -m 'depth and blending'
 	git push -u origin main
 
 # Include dependency files

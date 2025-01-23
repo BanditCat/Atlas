@@ -20,6 +20,7 @@ typedef struct{
     MUL, // documented
     DIV, // documented
     POW, // documented
+    DEPTH, // documented
     IF, // documented
     IFN, // documented
     TRANSPOSE, // documented

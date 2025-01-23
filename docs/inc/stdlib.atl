@@ -68,11 +68,11 @@ l'mouse1skip';
 
 [0 0 0];set'__accel';
 get'keys';[26 27 0];s;first;get'input';[4 5 0];s;first;+;ifn'wkeyskip';
-[0 0 1];
+[0 0 -1];
 get'__accel';+;set'__accel';
 l'wkeyskip';
 get'keys';[22 23 0];s;first;ifn'skeyskip';
-[0 0 -1];
+[0 0 1];
 get'__accel';+;set'__accel';
 l'skeyskip';
 get'keys';[4 5 0];s;first;ifn'akeyskip';

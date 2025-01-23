@@ -562,6 +562,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "depth" ) ){  // Unextrude
+    curStep->type = DEPTH;
+    // dbg( "Linenum %u commandnum %u: depth\n", linenum, commandnum );
+
   } else if( !strcmp( command, "unext" ) ){  // Unextrude
     curStep->type = UNEXTRUDE;
     // dbg( "Linenum %u commandnum %u: unext\n", linenum, commandnum );
@@ -1679,6 +1683,10 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensorTranspose( ts, ts->size - 1, axis1, axis2 );
       // dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
+    case DEPTH: {
+      depthTest = !depthTest;
+      break;
+    }
     case ENCLOSE: {
       tensor* t = ts->stack[ ts->size - 1 ];
       if( !ts->size )

@@ -11,6 +11,13 @@
 #endif
 
 
+////////////////////////////////////////////////////////////////////
+// Global state
+
+bool depthTest = false;
+
+
+
 
 // Main must define these.
 

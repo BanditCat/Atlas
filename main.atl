@@ -1,3 +1,4 @@
+
 keys;set'keys';input;set'input'; // Set input variables, it's important to do this just once per frame for smoothest performance
 
 'inc\triangle.atl';

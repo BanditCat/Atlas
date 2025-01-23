@@ -133,6 +133,10 @@ typedef double f64;
 void mainPoll( void );
 
 
+////////////////////////////////////////////////////////////////////
+// Global state
+
+extern bool depthTest;
 
 
 
