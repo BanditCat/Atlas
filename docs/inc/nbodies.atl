@@ -15,16 +15,16 @@ nav3d;
 3;set'speed';
 [100];set'sqrtParticles' 1;
 [0.002];set'timeScale' 1;
-[30];set'gravScale' 1;
+[1];set'gravScale' 1;
 [250];set'velScale' 1;
-[0.001];set'gravityEpsilon' 1;
-[0.05];set'radiusScale' 1;
-[1.1];set'eatAmount' 1;
-[0.125];set'lengthScale' 1;
-[0.25];set'bhSize' 1;
+[0.007];set'gravityEpsilon' 1;
+[0.0005];set'radiusScale' 1;
+[0.1];set'eatAmount' 1;
+[0.0125];set'lengthScale' 1;
+[2.5];set'bhSize' 1;
 [10000];set'biggestMass' 1;
 [10];set'smallestMass' 1;
-[0.00000001];set'colorTransfer' 1;
+[0.0000001];set'colorTransfer' 1;
 1;set'running';
 
 [[[-0.5 -0.28868 0 1] [-1.7321 -1 0 1]]
@@ -78,7 +78,7 @@ float x = (orad + irad * cos(iangle)) * cos(oangle)\
 float z = (orad + irad * cos(iangle)) * sin(oangle)\
 float y = irad * sin(iangle)\
 ret[ 0 ] = vec4( -z * velScale, x * velScale, 0, hash( tf, 7.0 ) )\
-ret[ 0 ] = i == 5 ? vec4( 0.0, 0.0, 0.0, hash( tf, 7.0 ) ) : ret[ 0 ]\
+ret[ 0 ] = i == 5 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ]\
 ' 0 1 4; // Randomly set velocity and colors
 
 
@@ -138,7 +138,7 @@ for( int x1 = 0\ x1 < iter\ ++x1 )
       float force = imass * mass / ( distance * distance )\
       vec3 forcevec = normalize( ipos - pos ) * force\
       grav += forcevec\
-      if( distance < (iradius + radius) * radiusScale ){
+      if( distance < (iradius + radius) * radiusScale / lengthScale ){
         if( mass > imass ){
 	  mass += eatAmount * delta * imass\
 	}else{
