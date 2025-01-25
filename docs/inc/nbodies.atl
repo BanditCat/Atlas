@@ -5,8 +5,19 @@ include'inc\stdlib.atl';
 include'inc\nav.atl'; 
 
 
-// init code
+
 size;if'started';
+// init code
+/////////////////////////////////////////////////////////////////////////
+// Constants
+[0.002];set'timescale' 1;
+[10];set'gravscale' 1;
+[0.001];set'gravityEpsilon' 1;
+[0.25];set'lengthScale' 1;
+[2.2];set'bhSize' 1;
+[10000];set'biggestMass' 1;
+[10000];set'smallestMass' 1;
+0;set'running';
 
 [[[-0.5 -0.28868 0 1] [-1.7321 -1 0 1]]
  [[ 0   0.57735  0 1] [0 2 0 1]] 
@@ -19,7 +30,7 @@ vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
 ret[0] = r\' 1 1 4;   // take our vertices and colors and put them in a texture.
 
 
-[200];set'sqrtParticles' 1;
+[100];set'sqrtParticles' 1;
 get'sqrtParticles';[2];^;[3];*;first;set'vertexCount';
 
 nav3d;[0 0 1.8];set'origin' 3; // set origin
@@ -32,8 +43,16 @@ float hash( vec2 p, float time ){
     return fract( sin( h ) * 43758.5453123 )\
 }
 '
-ret[0] = vec4( hash( tf, 0.0 ) * 2.0 - 1.0, hash( tf, 1.0 ) * 2.0 - 1.0, hash( tf, 2.0 ) * 2.0 - 1.0,
-               pow( ( hash( tf, 3.0 ) * 100.0 + 1.0 ) * 0.000001, 1.0 / 3.0 ) )\
+float twopi = 6.2831853071795864769\
+float iangle = hash( tf, 0.0 ) * twopi\
+float oangle = hash( tf, 1.0 ) * twopi\ 
+float orad = 1.0\
+float irad = hash( tf, 2.0 ) * 0.2\
+float x = (orad + irad * cos(iangle)) * cos(oangle)\
+float z = (orad + irad * cos(iangle)) * sin(oangle)\
+float y = irad * sin(iangle)\
+ret[ 0 ] = vec4( x, y, z, pow( ( hash( tf, 3.0 ) * biggestMass + smallestMass ) * 0.000001, 1.0 / 3.0 ) )\
+ret[ 0 ] = i == 5 ? vec4( 0.0, 0.0, 0.0, bhSize ) : ret[ 0 ]\
 ' 0 1 4; // Randomly place particles and set mass
 
 
@@ -44,10 +63,17 @@ float hash( vec2 p, float time ){
     return fract( sin( h ) * 43758.5453123 )\
 }
 '
-ret[0] = vec4( hash( tf, 4.0 ) * 2.0 - 1.0, hash( tf, 5.0 ) * 2.0 - 1.0, hash( tf, 6.0 ) * 2.0 - 1.0,
-               hash( tf, 7.0 ) )\
+float twopi = 6.2831853071795864769\
+float iangle = hash( tf, 0.0 ) * twopi\
+float oangle = hash( tf, 1.0 ) * twopi\ 
+float orad = 1.0\
+float irad = hash( tf, 2.0 ) * 0.2\
+float x = (orad + irad * cos(iangle)) * cos(oangle)\
+float z = (orad + irad * cos(iangle)) * sin(oangle)\
+float y = irad * sin(iangle)\
+ret[ 0 ] = vec4( -z * 100.0, 0, x * 100.0, hash( tf, 7.0 ) )\
+ret[ 0 ] = i == 5 ? vec4( 0.0, 0.0, 0.0, hash( tf, 7.0 ) ) : ret[ 0 ]\
 ' 0 1 4; // Randomly set velocity and colors
-
 
 
 
@@ -58,10 +84,22 @@ ret[0] = vec4( hash( tf, 4.0 ) * 2.0 - 1.0, hash( tf, 5.0 ) * 2.0 - 1.0, hash( t
 
 1;
 l'started';
+
+get'keyPresses';[40 41 0];s;first;ifn'toggleRunning';
+1;get'running';-;set'running';
+l'toggleRunning';
+
+get'running';ifn'notRunning';
 timeDelta;e;set'td' 1;
+1;if'pastRunTest';
+l'notRunning';
+[0];set'td' 1;
+l'pastRunTest'; // Test for running and run or not.
+
+
 // stack: last frame, velocity, position, verts
 get'time';timeDelta;+;set'time';
-[90];windowSize;0;cat;[0.1 10];0;cat;proj;set'proj' 16;
+[90];windowSize;0;cat;[0.1 1000];0;cat;proj;set'proj' 16;
 
 pop;
 
@@ -69,9 +107,7 @@ nav3d;
 
 // stack: velocity, position, verts
 6;1;dup;shape;
-c'''
-const float timescale = 0.01\
-'
+c''''
 vec4 position = bf( tf )\
 vec3 pos = position.xyz\
 float radius = position.w\
@@ -89,19 +125,19 @@ for( int x1 = 0\ x1 < iter\ ++x1 )
     vec4 iposition = bf( i1 )\
     vec3 ipos = iposition.xyz\
     float imass = iposition.w * iposition.w * iposition.w\
-    float distance = length( ipos - pos )\
-    if( distance > 0.0 ){
+    float distance = length( ipos - pos ) * lengthScale + gravityEpsilon\
+    if( distance > gravityEpsilon ){
       float force = imass * mass / ( distance * distance )\
       vec3 forcevec = normalize( ipos - pos ) * force\
       grav += forcevec\
     }
   }
    
+grav *= gravscale\
+vec3 accel = grav / mass\
 
-
-grav *= 1000000.0\
-ret[ 0 ] = vec4( vel + grav * delta, color )\
-ret[ 1 ] = vec4( pos + vel * delta + 0.5 * grav * delta * delta, radius )\
+ret[ 0 ] = vec4( vel + delta * accel, color )\
+ret[ 1 ] = vec4( pos + vel * delta + 0.5 * accel * delta * delta, radius )\
 ' 2 2 4;
 
 2;dup;2;dup;2;dup;

@@ -1,4 +1,22 @@
-1;if'__stdlibend';
+get'__stdlibInited';if'__stdlibInitDone';
+1;set'__stdlibInited';
+0;512;rep;set'__oldKeys';
+l'__stdlibInitDone'; // Init code
+
+
+1;512;rep;
+get'__oldKeys';-;
+get'keys';*;set'keyPresses';
+1;512;rep;
+get'keys';-;
+get'__oldKeys';*;set'keyReleases';
+get'keys';set'__oldKeys';  // Calculate releases and presses
+
+
+
+
+
+1;if'__stdlibend'; // Jump past functions
 
 
 ////////////////////////////////////////////////////////////////////////////////

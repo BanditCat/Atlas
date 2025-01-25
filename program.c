@@ -1770,6 +1770,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 	  deleteTensor( p->bigvarts[ s->var.index ] );
 	p->bigvarts[ s->var.index ] = ts->stack[ ts->size - 1 ];
 	ts->stack[ --ts->size ] = NULL;
+	takeOwnership( p->bigvarts[ s->var.index ] );
       }else{
 	if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
 	    ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )

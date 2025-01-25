@@ -378,6 +378,8 @@ compute* makeCompute( const program* prog,
      "void main(){\n\
      %s ret[ %u ];\n\
      vec2 tf = gl_FragCoord.xy;\n\
+     float ifloat = floor( tf.y ) * float( _a_dims.x ) + floor( tf.x ) + 0.5;\n\
+     int i = int( ifloat );\n\
      {%s}\n";
    
   // Buffer to hold the final fragment shader source
