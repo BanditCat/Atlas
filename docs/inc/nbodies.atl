@@ -58,7 +58,7 @@ float x = (orad + irad * cos(iangle)) * cos(oangle)\
 float z = (orad + irad * cos(iangle)) * sin(oangle)\
 float y = irad * sin(iangle)\
 ret[ 0 ] = vec4( x, z, y, pow( ( hash( tf, 3.0 ) * biggestMass + smallestMass ) * 0.000001, 1.0 / 3.0 ) )\
-ret[ 0 ] = i == 5 ? vec4( 0.0, 0.0, 0.0, bhSize ) : ret[ 0 ]\
+ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, bhSize ) : ret[ 0 ]\
 ' 0 1 4; // Randomly place particles and set mass
 
 
@@ -78,7 +78,7 @@ float x = (orad + irad * cos(iangle)) * cos(oangle)\
 float z = (orad + irad * cos(iangle)) * sin(oangle)\
 float y = irad * sin(iangle)\
 ret[ 0 ] = vec4( -z * velScale, x * velScale, 0, hash( tf, 7.0 ) )\
-ret[ 0 ] = i == 5 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ]\
+ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ]\
 ' 0 1 4; // Randomly set velocity and colors
 
 
@@ -138,15 +138,15 @@ for( int x1 = 0\ x1 < iter\ ++x1 )
       float force = imass * mass / ( distance * distance )\
       vec3 forcevec = normalize( ipos - pos ) * force\
       grav += forcevec\
-//    if( distance < (iradius + radius) * radiusScale / lengthScale ){
-//      if( mass > imass ){
-//	  mass += eatAmount * delta * imass\
-//	}else{
-//	  mass -= eatAmount * delta * mass\
-//	}
-//	color = color + ( icolor - color ) * colorTransfer\
-//	radius = pow( mass, 0.333333333333333333 )\
-//    }
+      if( distance < (iradius + radius) * radiusScale / lengthScale ){
+        if( mass > imass ){
+	  mass += eatAmount * delta * imass\
+	}else{
+	  mass -= eatAmount * delta * mass\
+	}
+	color = color + ( icolor - color ) * colorTransfer\
+	radius = pow( mass, 0.333333333333333333 )\
+      }
     }
   }
    
