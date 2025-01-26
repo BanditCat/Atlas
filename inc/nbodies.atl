@@ -13,7 +13,7 @@ size;if'started';
 nav3d;
 [0 0 3.8];set'origin' 3; // set origin
 3;set'speed';
-[100];set'sqrtParticles' 1;
+[250];set'sqrtParticles' 1;
 [0.002];set'timeScale' 1;
 [1];set'gravScale' 1;
 [250];set'velScale' 1;
