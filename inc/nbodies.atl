@@ -13,18 +13,18 @@ size;if'started';
 nav3d;
 [0 0 3.8];set'origin' 3; // set origin
 3;set'speed';
-[250];set'sqrtParticles' 1;
+[100];set'sqrtParticles' 1;
 [0.002];set'timeScale' 1;
 [1];set'gravScale' 1;
 [250];set'velScale' 1;
 [0.007];set'gravityEpsilon' 1;
 [0.0005];set'radiusScale' 1;
-[0.1];set'eatAmount' 1;
+[0.01];set'eatAmount' 1;
 [0.0125];set'lengthScale' 1;
 [2.5];set'bhSize' 1;
 [10000];set'biggestMass' 1;
 [10];set'smallestMass' 1;
-[0.0000001];set'colorTransfer' 1;
+[0.00000001];set'colorTransfer' 1;
 1;set'running';
 
 [[[-0.5 -0.28868 0 1] [-1.7321 -1 0 1]]
