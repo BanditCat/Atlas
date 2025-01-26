@@ -562,6 +562,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "toString" ) ){  // Unextrude
+    curStep->type = TOSTRING;
+    // dbg( "Linenum %u commandnum %u: toString\n", linenum, commandnum );
+
   } else if( !strcmp( command, "additive" ) ){  // Unextrude
     curStep->type = ADDITIVE;
     // dbg( "Linenum %u commandnum %u: additive\n", linenum, commandnum );
@@ -1456,6 +1460,21 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Incompatible shapes in matrix multiplication." );
       tensorMultiply( ts );
+      break;
+    }
+    case TOSTRING: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to create a string without a parameter on the stack." );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      if( t1->rank != 0 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Expected a scalar for toString." );
+      char* fd = formatTensorData( t1 );
+      pop( ts );
+      tensor* nt = tensorFromString( fd );
+      unmem( fd );
+      push( ts, nt );
       break;
     }
     case ROT: {

@@ -2,6 +2,7 @@ keys;set'keys';input;set'input'; // Set input variables
 
 'inc\fire.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
+include'inc\stdlib.atl';
 
 size;if'started';
 0;set'time';
@@ -38,3 +39,15 @@ ret[0] = color\
 
 
 
+//////////////////////////////////////////////////////////////////
+// Help and framerate
+
+keys;[58 59 0];s;first;ifn'skipf1';
+'Nothing to see here!   ';e;
+'No interactive controls';e;0;cat;
+textToTexture;blitText;
+l'skipf1';
+keys;[59 60 0];s;first;ifn'skipf2';
+1;timeDelta;/;toString;e;
+textToTexture;blitText;
+l'skipf2';

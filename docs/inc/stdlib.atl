@@ -133,9 +133,9 @@ l'textToTexture';
 [4];set'_tzoom' 1;
 [0 1];t;1;r; // Adjust char matrix
 img'inc\font.bmp'; // load font
-6;2;dup;shape;[6 8];*;get'_tzoom';0;dup;0;cat;*;[4];0;cat;
+6;2;dup;shape;[6 8];*;[1 1];+;get'_tzoom';0;dup;0;cat;*;[4];0;cat;
 c''''
-float x = tf.x / _tzoom\
+float x = ( tf.x - _tzoom ) / _tzoom\
 float y = tf.y / _tzoom\
 ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
           a( ivec4( mod( floor( x ), 6.0 ),
@@ -144,6 +144,23 @@ ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
 ' 2 1 4;texture;
 return;
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// blitText
+// This function takes two tensors, a text texture to blit, and a display tensor
+// to blit it onto.
+
+l'blitText';
+[10 10];set'_toffset' 2;
+6;1;dup;shape;set'_tsize' 3;2;dup;shape;
+c''''
+if( tf.x > _toffset.x && tf.y > _toffset.y && tf.x < _tsize.x / 2. + _toffset.x && tf.y < _tsize.y / 2. + _toffset.y )
+  ret[0] = af( ( tf - _toffset ) * 2. )\
+else
+  ret[0] = bf( tf )\
+' 2 1 4;
+return;
 
 
 

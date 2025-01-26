@@ -223,9 +223,10 @@
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
-      <li><a href="#cmd-translate">translate</a></li>
       <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
+      <li><a href="#cmd-toString">toString</a></li>
+      <li><a href="#cmd-translate">translate</a></li>
       <li><a href="#cmd-unext">unext (unextrude)</a></li>
       <li><a href="#cmd-while">while / for</a></li>
       <li><a href="#cmd-windowSize">windowSize</a></li>
@@ -988,6 +989,11 @@ Strides: 1 2
   <section id="cmd-timeDelta">
     <h2>timeDelta</h2>
     <p>This command pushes the frame time, in seconds, onto the stack as a scalar.</p>
+  </section>
+
+  <section id="cmd-toString">
+    <h2>toString</h2>
+    <p>This command takes the top of the stack, which must be a scalar, and returns it as a string for display.</p>
   </section>
 
   <section id="cmd-translate">
