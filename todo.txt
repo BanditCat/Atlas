@@ -5,7 +5,7 @@ runs on desktop.
 include chain in error
 
 
-Write standard library in Atlas.
-f1 for instructions.
+//Write standard library in Atlas.
+//f1 for instructions.
 
 a way to make glsl libraries.

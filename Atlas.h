@@ -284,7 +284,7 @@ extern u64 memc;
 
 float getMaxAnisotropy();
 
-// Global for ease.
+// Globals
 extern SDL_Window* window;
 extern SDL_GLContext glContext;
 extern f32 mouseWheel;
@@ -293,6 +293,7 @@ extern bool doubleClicks[ 3 ];
 extern bool touchClicks[ 3 ];
 extern float pinchZoom;
 extern f64 timeDelta;
+extern GLuint vao;
 #ifndef __EMSCRIPTEN__
 extern SDL_mutex* data_mutex;
 #endif

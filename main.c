@@ -16,6 +16,7 @@
 
 bool depthTest = false;
 bool additive = false;
+GLuint vao = 0;
 
 
 
@@ -284,6 +285,8 @@ int renderThreadFunction( void* data ){
     SDL_AtomicSet( &running, 0 );
     return 1;
   }
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
 
   //enableDebugCallback();
   // Initialize OpenGL
@@ -415,6 +418,8 @@ int renderThreadFunction( void* data ){
   deleteProgram( prog );
   deleteStack( ts );
 
+  glDeleteVertexArrays( 1, &vao );
+  vao = 0;
   SDL_GL_DeleteContext( glContext );
 
   return 0;
@@ -529,7 +534,6 @@ void start( void ){
   SetConsoleOutputCP( CP_UTF8 );
   
   SDL_AtomicSet( &running, 1 );
-
   // Initialize mutex
   data_mutex = SDL_CreateMutex();
   if( data_mutex == NULL ){
@@ -551,8 +555,10 @@ void start( void ){
   if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
 
-  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
-  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 6 );
+  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+  SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
   // Add SDL_WINDOW_RESIZABLE flag
   window = SDL_CreateWindow( "Atlas",

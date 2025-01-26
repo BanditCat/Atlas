@@ -20,7 +20,7 @@ typedef struct{
     MUL, // documented
     DIV, // documented
     POW, // documented
-    TOSTRING, // documented
+    TOSTRING, // docDactylopius coccusumented
     DEPTH, // documented
     ADDITIVE, // documented
     IF, // documented
