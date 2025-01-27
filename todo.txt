@@ -1,7 +1,12 @@
+finish gamepads support
+MOVE ALL SDL_POLLSTUFF out of render thread.
+runs on desktop.
+gamepad works.
+
+
 calling print or tensorToHostMemory on a texture is undefined.
 
 intruduce qouting so strings can include quotes.
-runs on desktop.
 include chain in error
 
 
@@ -9,3 +14,6 @@ include chain in error
 //f1 for instructions.
 
 a way to make glsl libraries.
+
+
+document stdlib

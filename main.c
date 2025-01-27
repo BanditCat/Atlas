@@ -17,7 +17,9 @@
 bool depthTest = false;
 bool additive = false;
 GLuint vao = 0;
-
+SDL_GameController* controllers[ MAX_CONTROLLERS ] = { NULL };
+SDL_JoystickID joystickIDs[ MAX_CONTROLLERS ] = { -1 };
+f32 joysticks[ MAX_CONTROLLERS * 21 ] = { 0 };
 
 
 // Main must define these.
@@ -183,6 +185,105 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif      
+    } else if( event.type == SDL_CONTROLLERDEVICEADDED ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      // First checj if already attached.
+      bool found = false;
+      for( int i = 0; i < MAX_CONTROLLERS; ++i ){
+	if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
+	  found = true;
+	}
+      }
+      // Find the first available slot
+      if( !found ){
+	for( int i = 0; i < MAX_CONTROLLERS; ++i ){
+	  if( controllers[ i ] == NULL ){
+	    if( SDL_IsGameController(event.cdevice.which ) ){
+	      controllers[ i ] = SDL_GameControllerOpen( event.cdevice.which );
+	      if( controllers[ i ] ){
+		joystickIDs[ i ] = SDL_JoystickInstanceID( SDL_GameControllerGetJoystick( controllers[ i ] ) );
+	      }
+	    }
+	    break; // Stop after adding to one slot
+	  }
+	}
+      }
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+
+    } else if( event.type == SDL_CONTROLLERDEVICEREMOVED ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      
+      // Identify which controller was removed
+      for( int i = 0; i < MAX_CONTROLLERS; ++i ){
+	if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
+	  SDL_GameControllerClose( controllers[ i ] );
+	  controllers[ i ] = NULL;
+	  joystickIDs[ i ] = -1;
+	}
+      }
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+    } else if( event.type == SDL_CONTROLLERAXISMOTION ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      // Handle axis motion
+      for( u32 i = 0; i < MAX_CONTROLLERS; ++i ){
+	if( controllers[ i ] && joystickIDs[ i ] == event.caxis.which ){
+	  f32 axisValue = ( (f32)( event.caxis.value ) / 32767.0 );
+	  switch( event.caxis.axis ){
+	  case SDL_CONTROLLER_AXIS_TRIGGERLEFT: joysticks[ i * 21 + 0 ] = axisValue; break;
+	  case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: joysticks[ i * 21 + 1 ] = axisValue; break;
+	  case SDL_CONTROLLER_AXIS_LEFTX: joysticks[ i * 21 + 2 ] = axisValue; break;
+	  case SDL_CONTROLLER_AXIS_LEFTY: joysticks[ i * 21 + 3 ] = axisValue; break;
+	  case SDL_CONTROLLER_AXIS_RIGHTX: joysticks[ i * 21 + 4 ] = axisValue; break;
+	  case SDL_CONTROLLER_AXIS_RIGHTY: joysticks[ i * 21 + 5 ] = axisValue; break;
+	  }
+	}
+      }
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+    } else if( event.type == SDL_CONTROLLERBUTTONDOWN ||
+	       event.type == SDL_CONTROLLERBUTTONUP ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      f32 upordown = 0.0;
+      if( event.type == SDL_CONTROLLERBUTTONDOWN )
+	upordown = 1.0;
+      // Handle axis motion
+      for( u32 i = 0; i < MAX_CONTROLLERS; ++i ){
+	if( controllers[ i ] && joystickIDs[ i ] == event.cbutton.which ){
+	  switch( event.cbutton.button ){
+	  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: joysticks[ i * 21 + 6 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: joysticks[ i * 21 + 7 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_GUIDE: joysticks[ i * 21 + 8 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_DPAD_UP: joysticks[ i * 21 + 9 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joysticks[ i * 21 + 10 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_DPAD_DOWN: joysticks[ i * 21 + 11 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_DPAD_LEFT: joysticks[ i * 21 + 12 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_BACK: joysticks[ i * 21 + 13 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_START: joysticks[ i * 21 + 14 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_A: joysticks[ i * 21 + 15 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_B: joysticks[ i * 21 + 16 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_X: joysticks[ i * 21 + 17 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_Y: joysticks[ i * 21 + 18 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_LEFTSTICK: joysticks[ i * 21 + 19 ] = upordown; break;
+	  case SDL_CONTROLLER_BUTTON_RIGHTSTICK: joysticks[ i * 21 + 20 ] = upordown; break;
+	  }
+	}
+      }
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
     }
   }
 }
@@ -324,7 +425,7 @@ int renderThreadFunction( void* data ){
   // Main loop
   while( SDL_AtomicGet( &running ) ){
     //SDL_PumpEvents();
-    // mainPoll();
+    //mainPoll();
     // Run the program
     CHECK_GL_ERROR();
     prevTime = curTime;
@@ -552,7 +653,7 @@ void start( void ){
   setvbuf( stderr, NULL, _IONBF, 0 ); // Unbuffer stderr
 
   // Initialize SDL and create window in the main thread
-  if( SDL_Init( SDL_INIT_VIDEO ) != 0 )
+  if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
 
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
@@ -629,7 +730,15 @@ void start( void ){
       SDL_PushEvent( &ev );
     mainPoll();
   }
-
+  // Cleanup controllers
+  for( int i = 0; i < MAX_CONTROLLERS; ++i ){
+    if( controllers[ i ] ){
+      SDL_GameControllerClose( controllers[ i ] );
+      controllers[ i ] = NULL;
+      joystickIDs[ i ] = -1;
+    }
+  }
+  
   // Wait for rendering thread to finish
   SDL_WaitThread( renderThread, NULL );
 

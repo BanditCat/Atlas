@@ -1,8 +1,7 @@
-keys;set'keys';input;set'input'; // Set input variables
+include'inc\stdlib.atl';
 
 'inc\mandelbrot.atl';
 include'inc\nav.atl';
-include'inc\stdlib.atl';
 
 windowSize;set'wsize' 2;
 

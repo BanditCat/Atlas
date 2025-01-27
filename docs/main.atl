@@ -1,9 +1,9 @@
 
-keys;set'keys';input;set'input'; // Set input variables, it's important to do this just once per frame for smoothest performance
+include'inc\stdlib.atl'; // It's advisable to include this first.
 
 'inc\triangle.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
-include'inc\stdlib.atl';
+
 
 size;if'started';
 nav2d;
@@ -45,12 +45,12 @@ ret[0] = vec4( 0.0, ( tf.x - offs.x * wsize.y * zoom >= 0.0 && tf.y + offs.y * w
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keys;[58 59 0];s;first;ifn'skipf1';
+get'keys';[58 59 0];s;first;ifn'skipf1';
 'Mouse click and drag: move text';e;
 'Mouse wheel: zoom text         ';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-keys;[59 60 0];s;first;ifn'skipf2';
+get'keys';[59 60 0];s;first;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

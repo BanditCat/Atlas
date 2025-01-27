@@ -1,8 +1,20 @@
 get'__stdlibInited';if'__stdlibInitDone';
 1;set'__stdlibInited';
 0;512;rep;set'__oldKeys';
+0;21;rep;set'__oldGamepad';
+0;21;rep;set'gamepad';
+0;21;rep;set'gamepadPresses';
+0;21;rep;set'gamepadReleases';
 l'__stdlibInitDone'; // Init code
 
+keys;set'keys';input;set'input';
+gamepad;0;dup;shape;first;ifn'__nogamepad';
+first;
+1;if'__gamepadDone';
+l'__nogamepad';
+pop;0;21;rep;
+l'__gamepadDone';
+set'gamepad'; // Set input variables, it's important to do this just once per frame for smoothest performance
 
 1;512;rep;
 get'__oldKeys';-;
@@ -11,6 +23,10 @@ get'keys';*;set'keyPresses';
 get'keys';-;
 get'__oldKeys';*;set'keyReleases';
 get'keys';set'__oldKeys';  // Calculate releases and presses
+
+1;21;rep;
+get'__oldGamepad';-;pop;
+get'gamepad';set'__oldGamepad';
 
 
 

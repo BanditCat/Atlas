@@ -201,6 +201,7 @@
       <li><a href="#cmd-enclose">e (enclose)</a></li>
       <li><a href="#cmd-extrude">ext (extrude)</a></li>
       <li><a href="#cmd-first">first / last</a></li>
+      <li><a href="#cmd-gamepad">gamepad</a></li>
       <li><a href="#cmd-get">get</a></li>
       <li><a href="#cmd-if">if / ifn</a></li>
       <li><a href="#cmd-img">img (image)</a></li>
@@ -627,6 +628,12 @@ Shape:
 Strides:
 1.00</code></pre>
     </p>
+  </section>
+
+  <section id="cmd-gamepad">
+    <h2>gamepad</h2>
+    <p>This command pushes a vector of vectors corresponding to the gamepad state of attached controllers.
+    The returned vectors are of the form [throttleLeft throttleRight leftStickX leftStickY rightStickX rightStickY leftShoulder rightShoulder home up right down left select start a b x y leftStick rightStick]</p>
   </section>
 
   <section id="cmd-get">

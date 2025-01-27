@@ -20,7 +20,7 @@ typedef struct{
     MUL, // documented
     DIV, // documented
     POW, // documented
-    TOSTRING, // docDactylopius coccusumented
+    TOSTRING, // documented
     DEPTH, // documented
     ADDITIVE, // documented
     IF, // documented
@@ -52,6 +52,7 @@ typedef struct{
     CALL, // documented
     POP, // documented
     RETURN, // documented
+    GAMEPAD, // documented, 6 axis, 15 buttons. [throttleLeft throttleRight leftStickX leftStickY rightStickX rightStickY leftShoulder rightShoulder home up right down left select start a b x y leftStick rightStick]
     GETINPUT, // documented, three axes and three buttons
     SET, // documented
     GET, // documented

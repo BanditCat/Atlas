@@ -294,6 +294,10 @@ extern bool touchClicks[ 3 ];
 extern float pinchZoom;
 extern f64 timeDelta;
 extern GLuint vao;
+#define MAX_CONTROLLERS 8
+extern SDL_GameController* controllers[ MAX_CONTROLLERS ];
+extern SDL_JoystickID joystickIDs[ MAX_CONTROLLERS ];
+extern f32 joysticks[ MAX_CONTROLLERS * 21 ];
 #ifndef __EMSCRIPTEN__
 extern SDL_mutex* data_mutex;
 #endif

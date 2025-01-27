@@ -1,7 +1,6 @@
-keys;set'keys';input;set'input'; // Set input variables
+include'inc\stdlib.atl';
 
 'inc\nbodies.atl';
-include'inc\stdlib.atl';
 include'inc\nav.atl';
 
 

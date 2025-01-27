@@ -1,6 +1,8 @@
 2;get'input'; // Double click to get next demo
-[3 4 0];s;first;-;if'nodblclick';
-;load;l'nodblclick';pop;
+[3 4 0];s;first;-;ifn'__load';
+get'gamepad';[14 15 0];s;first;ifn'__noload';
+l'__load';load;
+l'__noload';pop;
 
 
 // Jump table for demos. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.

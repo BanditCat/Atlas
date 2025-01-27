@@ -562,6 +562,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "gamepad" ) ){  // Last
+    curStep->type = GAMEPAD;
+    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+
   } else if( !strcmp( command, "toString" ) ){  // Unextrude
     curStep->type = TOSTRING;
     // dbg( "Linenum %u commandnum %u: toString\n", linenum, commandnum );
@@ -1147,7 +1151,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       static const u32 wsshape[ 1 ] = { 6 };
       f32* data = mem( 6, f32 );
       int dx, dy;
-      mainPoll();
+      //mainPoll();
       SDL_GetRelativeMouseState( &dx, &dy );  // Get mouse delta
       data[ 0 ] = dx;
       data[ 1 ] = dy;
@@ -1192,6 +1196,30 @@ bool runProgram( tensorStack* ts, program** progp ){
       SDL_UnlockMutex( data_mutex );
 #endif
       push( ts, newTensor( 1, wsshape, data ) );
+      break;
+    }
+    case GAMEPAD: {
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      u32 gpshape[ 4 ] = { 0, 21, 1, 1 };
+      f32* data;
+      
+      for( u32 i = 0; i < MAX_CONTROLLERS; ++i )
+	if( controllers[ i ] ){
+	  ++gpshape[ 0 ];
+	}
+      data = mem( gpshape[ 0 ] * 21, f32 );
+      u32 c = 0;
+      for( u32 i = 0; i < MAX_CONTROLLERS; ++i )
+	if( controllers[ i ] ){
+	   memcpy( data + c++ * 21, &joysticks[ i * 21 ], sizeof( f32 ) * 21 );
+	}
+
+      push( ts, newTensor( 2, gpshape, data ) );
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif
       break;
     }
     case POW: {
@@ -1282,7 +1310,6 @@ bool runProgram( tensorStack* ts, program** progp ){
 		i3 * t2->strides[ 3 ];
               *offset2 = *offset2 - *offset1;
             }
-
       pop( ts );
       // dbg( "%s", "sub" );
       break;
@@ -1772,7 +1799,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case KEYS: {
       f32* data = mem( SDL_NUM_SCANCODES, f32 );
-      mainPoll();
+      //mainPoll();
       const u8* ks = SDL_GetKeyboardState( NULL );
       u32 size = SDL_NUM_SCANCODES;
       for( u32 i = 0; i < SDL_NUM_SCANCODES; ++i )
@@ -1784,12 +1811,15 @@ bool runProgram( tensorStack* ts, program** progp ){
 #ifdef DBG
       check_memory_leaks();
 #endif
+      if( !ts->size )
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Empty stack during set statement." );
       if( !s->var.size ){
 	if( p->bigvarts[ s->var.index ] )
 	  deleteTensor( p->bigvarts[ s->var.index ] );
 	p->bigvarts[ s->var.index ] = ts->stack[ ts->size - 1 ];
 	ts->stack[ --ts->size ] = NULL;
 	takeOwnership( p->bigvarts[ s->var.index ] );
+
       }else{
 	if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
 	    ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
@@ -1856,6 +1886,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     case GET: {
       if( !s->var.size ){
 	tensor* t = copyTensor( p->bigvarts[ s->var.index ] );
+	takeOwnership( t );
 	push( ts, t );
       }else{
 	static const u32 shape1[ 4 ] = { 1 };

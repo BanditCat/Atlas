@@ -985,7 +985,7 @@ void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
   if( t == NULL )
     error( "%s", "Tensor is NULL in tensorSliceHelper." );
   if( axis >= t->rank )
-    error( "Axis %u is out of bounds for tensor of rank %u.", axis, t->rank );
+    error( "Axis %u is out of bounds for tensor of rank %u in slice.", axis, t->rank );
 
   s32 len = t->shape[ axis ];
 
@@ -1028,12 +1028,12 @@ void tensorTakeFirstHelper( tensor* t ){
 
   // Adjust the offset to point to the first element along axis 0
   t->offset += 0 * t->strides[ 0 ];
-
+  
   // Reduce the rank by one
   t->rank -= 1;
 
   // Shift the shapes and strides arrays to remove the first axis
-  for( u32 i = 0; i < t->rank; ++i ){
+  for( u32 i = 0; i <= t->rank; ++i ){
     t->shape[ i ] = t->shape[ i + 1 ];
     t->strides[ i ] = t->strides[ i + 1 ];
   }
