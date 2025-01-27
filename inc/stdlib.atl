@@ -25,7 +25,11 @@ get'__oldKeys';*;set'keyReleases';
 get'keys';set'__oldKeys';  // Calculate releases and presses
 
 1;21;rep;
-get'__oldGamepad';-;pop;
+get'__oldGamepad';-;
+get'gamepad';*;set'gamepadPresses';
+1;21;rep;
+get'gamepad';-;
+get'__oldGamepad';*;set'gamepadReleases';
 get'gamepad';set'__oldGamepad';
 
 
@@ -51,12 +55,30 @@ get'__nav2dInited';if'__nav2dInitDone';
 1;set'__nav2dInited';
 l'__nav2dInitDone';
 
+get'gamepad';[2 4 0];s;timeDelta;2;rep;*;get'zoom';0;dup;0;cat;/;get'offs';+;set'offs' 2;
+get'gamepad';[4 6 0];s;timeDelta;2;rep;*;get'zoom';0;dup;0;cat;/;get'rightClickParam';+;set'rightClickParam' 2;
+get'zoom';get'gamepad';[0 1 0];s;first;timeDelta;*;1;+;e;*;set'zoom' 1;
+get'zoom';get'gamepad';[1 2 0];s;first;timeDelta;*;1;+;e;/;set'zoom' 1;
+get'gamepad';[15 16 0];s;first;ifn'__nogpmc';
+get'middleClickParam';[0];timeDelta;e;0;cat;-;set'middleClickParam' 2;
+l'__nogpmc';
+get'gamepad';[18 19 0];s;first;ifn'__nogpmc2';
+get'middleClickParam';[0];timeDelta;e;0;cat;+;set'middleClickParam' 2;
+l'__nogpmc2';
+get'gamepad';[16 17 0];s;first;ifn'__nogpmc3';
+get'middleClickParam';timeDelta;e;[0];0;cat;+;set'middleClickParam' 2;
+l'__nogpmc3';
+get'gamepad';[17 18 0];s;first;ifn'__nogpmc4';
+get'middleClickParam';timeDelta;e;[0];0;cat;-;set'middleClickParam' 2;
+l'__nogpmc4';
+
 get'input'; // deal with input, a 6 value rank 1 tensor; three axes (x y wheel) then three buttons (left right middle).
 [1.2];1;dup;[2 3 0];s;^;get'zoom';*;set'zoom' 1; // set zoom unconditionally
 0;dup;[3 4 0];s;first;ifn'__nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';0;dup;0;cat;/;
 get'offs';+;set'offs' 2;
 l'__nomouse';
+
 0;dup;[4 5 0];s;first;ifn'__nomouse2'; // if mouse button 2 not held jump to nomouse2
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;get'zoom';0;dup;0;cat;/;
 get'rightClickParam';+;set'rightClickParam' 2;

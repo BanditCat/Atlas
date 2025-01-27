@@ -41,12 +41,12 @@ ret[0] = color\
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keys;[58 59 0];s;first;ifn'skipf1';
+get'keys';[58 59 0];s;first;ifn'skipf1';
 'Nothing to see here!   ';e;
 'No interactive controls';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-keys;[59 60 0];s;first;ifn'skipf2';
+get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

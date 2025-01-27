@@ -243,10 +243,11 @@ l'end';
 
 
 
+
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keys;[58 59 0];s;first;ifn'skipf1';
+get'keys';[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view           ';e;
 'Right click: fly forward              ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space: fly around';e;0;cat;
@@ -254,7 +255,7 @@ keys;[58 59 0];s;first;ifn'skipf1';
 'Enter key: pause simulation           ';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-keys;[59 60 0];s;first;ifn'skipf2';
+get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

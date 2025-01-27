@@ -32,14 +32,16 @@ float val = af( tf + uv ).r\
 ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, time * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0, 0.0 )\
 ' 1 1 4;
 
+
+
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keys;[58 59 0];s;first;ifn'skipf1';
+get'keys';[58 59 0];s;first;ifn'skipf1';
 'Mouse click and hold: freeze flame';e;
 textToTexture;blitText;
 l'skipf1';
-keys;[59 60 0];s;first;ifn'skipf2';
+get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

@@ -1,31 +1,34 @@
 2;get'input'; // Double click to get next demo
 [3 4 0];s;first;-;ifn'__load';
-get'gamepad';[14 15 0];s;first;ifn'__noload';
+get'gamepadReleases';[14 15 0];s;first;ifn'__noload';
 l'__load';load;
 l'__noload';pop;
 
 
 // Jump table for demos. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.
 get'keys';
-0;dup;[41 42 0];s;first;ifn'go';
+0;dup;[41 42 0];s;first;
+get'gamepad';[19 20 0];s;first;+;
+get'gamepad';[20 21 0];s;first;+;
+ifn'__go';
 quit;  // Quit if escape pressed.
-l'go';
-0;dup;[30 31 0];s;first;ifn'go1';
+l'__go';
+0;dup;[30 31 0];s;first;ifn'__go1';
 load'main.atl';
-l'go1';
-0;dup;[31 32 0];s;first;ifn'go2';
+l'__go1';
+0;dup;[31 32 0];s;first;ifn'__go2';
 load'inc\triangle.atl';
-l'go2';
-0;dup;[32 33 0];s;first;ifn'go3';
+l'__go2';
+0;dup;[32 33 0];s;first;ifn'__go3';
 load'inc\fire.atl';
-l'go3';
-0;dup;[33 34 0];s;first;ifn'go4';
+l'__go3';
+0;dup;[33 34 0];s;first;ifn'__go4';
 load'inc\mandelbrot.atl';
-l'go4';
-0;dup;[34 35 0];s;first;ifn'go5';
+l'__go4';
+0;dup;[34 35 0];s;first;ifn'__go5';
 load'inc\terrain.atl';
-l'go5';
-0;dup;[35 36 0];s;first;ifn'go6';
+l'__go5';
+0;dup;[35 36 0];s;first;ifn'__go6';
 load'inc\nbodies.atl';
-l'go6';
+l'__go6';
 pop; // pop keys

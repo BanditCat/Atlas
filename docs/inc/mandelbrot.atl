@@ -63,17 +63,18 @@ ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
 
 
 
+
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keys;[58 59 0];s;first;ifn'skipf1';
+get'keys';[58 59 0];s;first;ifn'skipf1';
 'Click and drag: move fractal        ';e;
 'Right click drag: change peterbation';e;0;cat;
 'Middle click drag: change exponent  ';e;0;cat;
 'Mouse wheel: zoom                   ';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-keys;[59 60 0];s;first;ifn'skipf2';
+get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

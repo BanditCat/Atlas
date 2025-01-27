@@ -1062,7 +1062,7 @@ void tensorTakeLastHelper( tensor* t ){
   t->rank -= 1;
 
   // Shift the shapes and strides arrays to remove the first axis
-  for( u32 i = 0; i < t->rank; ++i ){
+  for( u32 i = 0; i <= t->rank; ++i ){
     t->shape[ i ] = t->shape[ i + 1 ];
     t->strides[ i ] = t->strides[ i + 1 ];
   }
