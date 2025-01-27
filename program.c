@@ -1150,18 +1150,18 @@ bool runProgram( tensorStack* ts, program** progp ){
     case GETINPUT: {
       static const u32 wsshape[ 1 ] = { 6 };
       f32* data = mem( 6, f32 );
-      int dx, dy;
+      //int dx, dy;
       //mainPoll();
-      SDL_GetRelativeMouseState( &dx, &dy );  // Get mouse delta
-      data[ 0 ] = dx;
-      data[ 1 ] = dy;
+      //SDL_GetRelativeMouseState( &dx, &dy );  // Get mouse delta
 #ifndef __EMSCRIPTEN__
       SDL_LockMutex( data_mutex );
 #endif
+      data[ 0 ] = dx;dx = 0;
+      data[ 1 ] = dy;dy = 0;
       f32 delta = ( mouseWheel - mouseWheelPos ) / 10.0;
       data[ 2 ] = delta;
       mouseWheelPos += delta;
-      Uint32 buttons = SDL_GetMouseState( NULL, NULL );
+      //Uint32 buttons = SDL_GetMouseState( NULL, NULL );
       if( ( buttons & SDL_BUTTON( SDL_BUTTON_LEFT ) || touchClicks[ 0 ] ) && !touchClicks[ 1 ] && !touchClicks[ 2 ] )
         data[ 3 ] = 1;
       else

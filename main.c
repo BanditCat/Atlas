@@ -20,7 +20,17 @@ GLuint vao = 0;
 SDL_GameController* controllers[ MAX_CONTROLLERS ] = { NULL };
 SDL_JoystickID joystickIDs[ MAX_CONTROLLERS ] = { -1 };
 f32 joysticks[ MAX_CONTROLLERS * 21 ] = { 0 };
+u32 buttons = 0;
+f32 dx = 0;
+f32 dy = 0;
+f32 posx = 0;
+f32 posy = 0;
+f32 mouseWheel = 0;
+f32 mouseWheelPos = 0.0;
 
+bool doubleClicks[ 3 ] = { 0 };
+bool touchClicks[ 3 ] = { 0 };
+float pinchZoom = 0.0;
 
 // Main must define these.
 
@@ -31,12 +41,6 @@ SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
 u64 memc = 0;
 #endif
 
-f32 mouseWheel = 0;
-f32 mouseWheelPos = 0.0;
-
-bool doubleClicks[ 3 ] = { 0 };
-bool touchClicks[ 3 ] = { 0 };
-float pinchZoom = 0.0;
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -170,18 +174,46 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif      
+    } else if( event.type == SDL_MOUSEMOTION ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      posx = event.motion.x; posy = event.motion.y;
+      dx += event.motion.xrel; dy += event.motion.yrel;
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
 #ifndef __EMSCRIPTEN__
       SDL_LockMutex( data_mutex );
 #endif
       if( event.button.clicks == 2 ){
-	if( event.button.button & SDL_BUTTON( SDL_BUTTON_LEFT ) )
+	if( event.button.button == SDL_BUTTON_LEFT )
 	  doubleClicks[ 0 ] = 1;
-	if( event.button.button & SDL_BUTTON( SDL_BUTTON_RIGHT ) )
+	if( event.button.button == SDL_BUTTON_RIGHT )
 	  doubleClicks[ 1 ] = 1;
-	if( event.button.button & SDL_BUTTON( SDL_BUTTON_MIDDLE ) )
+	if( event.button.button == SDL_BUTTON_MIDDLE )
 	  doubleClicks[ 2 ] = 1;
       }
+      if( event.button.button == SDL_BUTTON_LEFT )
+	buttons |= SDL_BUTTON( SDL_BUTTON_LEFT );
+      if( event.button.button == SDL_BUTTON_RIGHT )
+	buttons |= SDL_BUTTON( SDL_BUTTON_RIGHT );
+      if( event.button.button == SDL_BUTTON_MIDDLE )
+	buttons |= SDL_BUTTON( SDL_BUTTON_MIDDLE );
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+    } else if( event.type == SDL_MOUSEBUTTONUP ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      if( event.button.button == SDL_BUTTON_LEFT )
+	buttons &= ~SDL_BUTTON( SDL_BUTTON_LEFT );
+      if( event.button.button == SDL_BUTTON_RIGHT )
+	buttons &= ~SDL_BUTTON( SDL_BUTTON_RIGHT );
+      if( event.button.button == SDL_BUTTON_MIDDLE )
+	buttons &= ~SDL_BUTTON( SDL_BUTTON_MIDDLE );
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif      

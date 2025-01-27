@@ -110,16 +110,18 @@ l'__nav3dInitDone';
 
 0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
 
+get'gamepad';[4 6 0];s;timeDelta;2;rep;*;[800 800];*;get'__rot';+;set'__rot';
 
 get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;get'__rot';+;set'__rot';
+l'mouse1skip';
+
 get'__rot';first;-300;/;[0 1 0];rot; // rot about x
 get'__rot';last;-300;/;[1 0 0];rot;m; // rot about y
 set'worldRotation' 16;
 get'__rot';last;300;/;[1 0 0];rot; // rot about y
 get'__rot';first;300;/;[0 1 0];rot;m; // rot about x
 set'worldUnrotation' 16;
-l'mouse1skip';
 
 
 [0 0 0];set'__accel';
@@ -153,6 +155,18 @@ get'__velocity';get'__accel';get'speed';3;rep;*;+;set'__velocity';
 get'__velocity';[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;set'__velocity';
 
 get'origin';get'__velocity';timeDelta;40;/;3;rep;*;+;set'origin' 3;
+
+
+[0 0 0];set'__joymove';
+get'gamepad';[0 1 0];s;first;3;rep;[0 0 -1];*;get'__joymove';+;set'__joymove';
+get'gamepad';[1 2 0];s;first;3;rep;[0 0 1];*;get'__joymove';+;set'__joymove';
+get'gamepad';[2 3 0];s;first;3;rep;[1 0 0];*;get'__joymove';+;set'__joymove';
+get'gamepad';[3 4 0];s;first;3;rep;[0 -1 0];*;get'__joymove';+;set'__joymove';
+
+get'worldRotation';get'__joymove';[1];0;cat;m;unext;[0 3 0];s;set'__joymove';
+
+get'__joymove';timeDelta;get'speed';*;0.3;*;3;rep;*;print;get'origin';+;set'origin' 3;
+
 return;
 
 

@@ -289,6 +289,8 @@ extern SDL_Window* window;
 extern SDL_GLContext glContext;
 extern f32 mouseWheel;
 extern f32 mouseWheelPos;
+extern u32 buttons;
+extern f32 dx, dy, posx, posy;
 extern bool doubleClicks[ 3 ];
 extern bool touchClicks[ 3 ];
 extern float pinchZoom;
