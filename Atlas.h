@@ -294,6 +294,7 @@ extern f32 dx, dy, posx, posy;
 extern bool doubleClicks[ 3 ];
 extern bool touchClicks[ 3 ];
 extern float pinchZoom;
+extern u8 keys[ SDL_NUM_SCANCODES ];
 extern f64 timeDelta;
 extern GLuint vao;
 #define MAX_CONTROLLERS 8

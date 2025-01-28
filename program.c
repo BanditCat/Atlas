@@ -1800,7 +1800,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     case KEYS: {
       f32* data = mem( SDL_NUM_SCANCODES, f32 );
       //mainPoll();
-      const u8* ks = SDL_GetKeyboardState( NULL );
+      const u8* ks = keys;
       u32 size = SDL_NUM_SCANCODES;
       for( u32 i = 0; i < SDL_NUM_SCANCODES; ++i )
 	data[ i ] = ks[ i ];

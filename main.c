@@ -27,6 +27,7 @@ f32 posx = 0;
 f32 posy = 0;
 f32 mouseWheel = 0;
 f32 mouseWheelPos = 0.0;
+u8 keys[ SDL_NUM_SCANCODES ] = { 0 };
 
 bool doubleClicks[ 3 ] = { 0 };
 bool touchClicks[ 3 ] = { 0 };
@@ -217,11 +218,27 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       SDL_UnlockMutex( data_mutex );
 #endif      
+    } else if( event.type == SDL_KEYDOWN ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      keys[ event.key.keysym.scancode ] = 1;
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+    } else if( event.type == SDL_KEYUP ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+#endif
+      keys[ event.key.keysym.scancode ] = 0;
+#ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
     } else if( event.type == SDL_CONTROLLERDEVICEADDED ){
 #ifndef __EMSCRIPTEN__
       SDL_LockMutex( data_mutex );
 #endif
-      // First checj if already attached.
+      // First check if already attached.
       bool found = false;
       for( int i = 0; i < MAX_CONTROLLERS; ++i ){
 	if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
