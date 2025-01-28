@@ -26,7 +26,7 @@ l'started'; // init code complete
 pop; // Pop the last display tensor off the stack.
 
 get'keys';[15 16 0];s;first;ifn'lkeyskip'; // rotate light if l held
-get'input';[0 2 0];s;get'lrot';+;set'lrot' 2;
+get'input';[0 2 0];s;get'3dnavParam';+;set'3dnavParam';
 l'lkeyskip';
 nav3d;get'3dnavParam';set'lrot' 2;
 get'lrot';first;-300;/;[0 1 0];rot; // rot about y
