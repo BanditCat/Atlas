@@ -8,6 +8,7 @@
 #include "SDL2/SDL_syswm.h"
 #include <dwmapi.h>
 #include <windows.h>
+#include "rtd.h"
 #endif
 
 
@@ -791,6 +792,8 @@ void start( void ){
   // Wait for rendering thread to finish
   SDL_WaitThread( renderThread, NULL );
 
+  returnToNormalWindow();
+
   SDL_DestroyMutex( data_mutex );
 #else
   // Set up the main loop for Emscripten
@@ -800,13 +803,10 @@ void start( void ){
   // Cleanup
   glDeleteProgram( shaderProgram );
   glDeleteBuffers( 1, &vbo );
-
-#ifdef __EMSCRIPTEN__
   deleteProgram( prog );
   deleteStack( ts );
 
   SDL_GL_DeleteContext( glContext );
-#endif
 
   SDL_DestroyWindow( window );
   SDL_Quit();
@@ -840,3 +840,76 @@ float getMaxAnisotropy( void ){
   return ret;
 }
 
+// We'll keep static references to the new WorkerW window/context
+static SDL_Window* rtdWindow = NULL;
+static SDL_GLContext rtdContext = NULL;
+
+#ifndef __EMSCRIPTEN__
+ 
+void switchToWorkerW(void) {
+    // 1) Hide or destroy the normal SDL window if desired
+    SDL_HideWindow(window);
+
+    // 2) Create the WorkerW child window
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    HWND workerwChild = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
+    if (!workerwChild) {
+        printf("Failed to create WorkerW child window.\n");
+        SDL_ShowWindow(window);
+        return;
+    }
+
+    // 3) Tell SDL to share contexts. This must be set BEFORE creating the new context.
+    //    We'll share it with the *current* context associated with 'window'.
+    SDL_GL_MakeCurrent(window, glContext); 
+    // Ensure the "normal" context is current so SDL knows which context we want to share.
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+
+    // 4) Wrap that HWND with an SDL_Window
+    rtdWindow = SDL_CreateWindowFrom((void*)workerwChild);
+    if (!rtdWindow) {
+        printf("SDL_CreateWindowFrom error: %s\n", SDL_GetError());
+        SDL_ShowWindow(window);
+        return;
+    }
+
+    // 5) Create a new OpenGL context on that WorkerW window, sharing with the existing one
+    rtdContext = SDL_GL_CreateContext(rtdWindow);
+    if (!rtdContext) {
+        printf("SDL_GL_CreateContext error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(rtdWindow);
+        rtdWindow = NULL;
+        SDL_ShowWindow(window);
+        return;
+    }
+
+    // 6) Now the same GPU resources (textures, buffers, etc.) will be available in both contexts.
+    //    If you want to do *all* your rendering on the WorkerW window, you can call:
+    SDL_GL_MakeCurrent(rtdWindow, rtdContext);
+
+    printf("Engaged: Now rendering on WorkerW window.\n");
+}
+
+void returnToNormalWindow(void) {
+    // If we want to go back, we can destroy the WorkerW window/context
+    if (rtdContext) {
+        SDL_GL_DeleteContext(rtdContext);
+        rtdContext = NULL;
+    }
+    if (rtdWindow) {
+        SDL_DestroyWindow(rtdWindow);
+        rtdWindow = NULL;
+    }
+    // Show the original window again
+    SDL_ShowWindow(window);
+    // Make the original context current if we want to continue rendering there
+    SDL_GL_MakeCurrent(window, glContext);
+
+    printf("[Picard’s Log] Disengaged: Back to normal SDL window.\n");
+}
+
+#endif // __EMSCRIPTEN__
+ 

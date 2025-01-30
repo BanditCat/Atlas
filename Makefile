@@ -14,8 +14,9 @@ WASM = $(HTML:.html=.wasm)
 DATA = $(HTML:.html=.data)
 
 HDRS = Atlas.h tensor.h trie.h program.h
-MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
-SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
+MSRCS = main.c tensor.c tensorPrint.c program.c trie.c rtd.c
+EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c 
+SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c rtd.c
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: all rall clean backup release tidy
@@ -43,8 +44,8 @@ icon.res: icon.rc
 
 release: $(TARGET)
 
-$(HTML): $(SRCS) $(ATLHS) 
-	$(EMCC) $(EMCCFLAGS) -o $(HTML) $(SRCS)
+$(HTML): $(EMSRCS) $(ATLHS) 
+	$(EMCC) $(EMCCFLAGS) -o $(HTML) $(EMSRCS)
 
 $(TARGET): $(OBJS) $(ATLHS) icon.res
 	$(CC) $(LDFLAGS) $(OBJS) icon.res -o $@
@@ -63,7 +64,7 @@ backup:
 	$(MAKE) clean
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'gamepad'
+	git commit -m 'render to desktop'
 	git push -u origin main
 
 # Include dependency files

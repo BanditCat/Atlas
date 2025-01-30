@@ -15,7 +15,7 @@ ret[0] = t.y < 20 ? ( t.z == 0 ? 1.0 : 0.0 ) : 0.0\
 l'started';
 
 input;
-[3 4 0];s;first;if'still';
+[3 4 0];s;first;get'gamepad';[16 17 0];s;first;+;if'still';
 get'time';[1];+;set'time' 1;
 l'still';
 6;get'wsize';[4];0;cat;

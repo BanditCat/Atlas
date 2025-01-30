@@ -225,7 +225,7 @@ return;
 
 l'blitText';
 [10 10];set'_toffset' 2;
-6;1;dup;shape;set'_tsize' 3;2;dup;shape;
+6;1;dup;shape;set'_tsize' 3;2;dup;shape;0;dup;set'_wsize' 3;
 c''''
 if( tf.x > _toffset.x && tf.y > _toffset.y && tf.x < _tsize.x / 2. + _toffset.x && tf.y < _tsize.y / 2. + _toffset.y )
   ret[0] = af( ( tf - _toffset ) * 2. )\

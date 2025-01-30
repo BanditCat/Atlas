@@ -1,19 +1,17 @@
-finish gamepads support
-MOVE ALL SDL_POLLSTUFF out of render thread.
 runs on desktop.
-gamepad works.
-
+post.
+3d fluid sim.
 
 calling print or tensorToHostMemory on a texture is undefined.
 
 intruduce qouting so strings can include quotes.
-include chain in error
+//include chain in error
 
-
-//Write standard library in Atlas.
-//f1 for instructions.
 
 a way to make glsl libraries.
 
 
 document stdlib
+
+
+hexidecitrees

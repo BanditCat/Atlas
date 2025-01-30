@@ -282,7 +282,8 @@ extern u64 memc;
     unmem( formatted_msg ); \
 } while( 0 )
 
-float getMaxAnisotropy();
+float getMaxAnisotropy( void );
+void toggleRtdMode( void );
 
 // Globals
 extern SDL_Window* window;
@@ -311,4 +312,10 @@ extern SDL_mutex* data_mutex;
 
 bool fileExists( const char *filename );
 
+#ifndef __EMSCRIPTEN__
+void switchToWorkerW( void );
+void returnToNormalWindow( void );
+#endif // __EMSCRIPTEN__
+
 #endif //ATLAS_H_INCLUDED
+
