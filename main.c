@@ -15,6 +15,7 @@
 ////////////////////////////////////////////////////////////////////
 // Global state
 
+bool wantWorkerW = false;
 bool depthTest = false;
 bool additive = false;
 GLuint vao = 0;
@@ -168,6 +169,7 @@ int running;  // Simple integer for the running flag in single-threaded mode
 
 void mainPoll( void ){
   SDL_Event event;
+  SDL_Delay( 1 ); // Without this delay, the render to desktop code can deadlock for unknown reason.
   while( SDL_PollEvent( &event ) ){
     if( event.type == SDL_QUIT ||
 	( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
@@ -195,13 +197,11 @@ void mainPoll( void ){
 #endif      
     } else if( event.type == SDL_USEREVENT ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
       if( event.user.code == RTD_EVENT_SWITCH_TO_WORKERW ){
 	switchToWorkerW();
       }else if( event.user.code == RTD_EVENT_RETURN_TO_NORMAL ){
 	returnToNormalWindow();
       }
-      SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
 #ifndef __EMSCRIPTEN__
@@ -509,7 +509,10 @@ int renderThreadFunction( void* data ){
     }
 
     // Get current window size
-    SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+    if( rtdWindow )
+      SDL_GetWindowSize( rtdWindow, &windowWidth, &windowHeight );
+    else
+      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
     
     // Adjust the viewport
     glViewport( 0, 0, windowWidth, windowHeight );
@@ -869,6 +872,7 @@ float getMaxAnisotropy( void ){
 #ifndef __EMSCRIPTEN__
  
 void switchToWorkerW(void) {
+  printf( "stww\n" );
   SDL_LockMutex( rtdMutex );
   // 1) Hide or destroy the normal SDL window if desired
   //SDL_HideWindow(window);
@@ -886,24 +890,32 @@ void switchToWorkerW(void) {
     SDL_ShowWindow(window);
     return;
   }
-  SDL_CondSignal( rtdCond );   
+  //printf( "condstww\n" );
+  SDL_CondBroadcast( rtdCond );   
   SDL_UnlockMutex( rtdMutex );
-
+  printf( "stwwd\n" );
 }
 
 void returnToNormalWindow(void) {
-    if (rtdWindow) {
-        SDL_DestroyWindow(rtdWindow);
-        rtdWindow = NULL;
-    }
-    // Show the original window again
-    SDL_ShowWindow(window);
-    // Make the original context current if we want to continue rendering there
+  printf( "rtnw\n" );
+  SDL_LockMutex( rtdMutex );
+  SDL_ShowWindow(window);
+  if (rtdWindow) {
+    SDL_DestroyWindow(rtdWindow);
+    rtdWindow = NULL;
+  }
+  // Show the original window again
+  // Make the original context current if we want to continue rendering there
+  printf( "condrtnw\n" );
+  SDL_CondBroadcast( rtdCond );   
+  SDL_UnlockMutex( rtdMutex );
+  printf( "rtnwd\n" );
 }
 
 
 // These two functions can be called from any thread
 void reqSwitchToWorkerW(void) {
+  printf( "reqstww\n" );
   //   switchToWorkerW();
   SDL_Event ev;
   SDL_zero(ev);
@@ -913,6 +925,7 @@ void reqSwitchToWorkerW(void) {
 }
 
 void reqReturnToNormalWindow(void) {
+  printf( "reqrtnw\n" );
   //  returnToNormalWindow();
   SDL_Event ev;
   SDL_zero(ev);
@@ -922,3 +935,5 @@ void reqReturnToNormalWindow(void) {
 }
 
 #endif // __EMSCRIPTEN__
+
+

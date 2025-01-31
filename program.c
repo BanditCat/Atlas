@@ -1144,7 +1144,12 @@ bool runProgram( tensorStack* ts, program** progp ){
     case WINDOWSIZE: {
       static const u32 wsshape[ 1 ] = { 2 };
       int windowWidth, windowHeight;
-      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+#ifndef __EMSCRIPTEN__
+      if( rtdWindow )
+	SDL_GetWindowSize( rtdWindow, &windowWidth, &windowHeight );
+      else
+#endif	
+	SDL_GetWindowSize( window, &windowWidth, &windowHeight );
       f32* data = mem( 2, f32 );
       data[ 0 ] = windowWidth;
       data[ 1 ] = windowHeight;
@@ -1385,15 +1390,19 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case RTD:
 #ifndef __EMSCRIPTEN__
-      
-      if (rtdContext) {
+     if (rtdContext) {
         SDL_GL_DeleteContext(rtdContext);
-        rtdContext = NULL;
+	rtdContext = NULL;
 	reqReturnToNormalWindow();
+	SDL_LockMutex( rtdMutex );
+	while (rtdWindow) {
+	  SDL_CondWait(rtdCond, rtdMutex);
+	}
+	SDL_UnlockMutex( rtdMutex );
 	SDL_GL_MakeCurrent(window, glContext);
       }else{
 	reqSwitchToWorkerW();
-	SDL_LockMutex(rtdMutex);
+	SDL_LockMutex( rtdMutex );
 	while (!rtdWindow) {
 	  SDL_CondWait(rtdCond, rtdMutex);
 	}
@@ -1408,7 +1417,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 	SDL_UnlockMutex(rtdMutex);
 	SDL_GL_MakeCurrent(rtdWindow, rtdContext);
       }
-      
+     
 #endif
       break;
     case PRINT:
