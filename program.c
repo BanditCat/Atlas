@@ -1385,7 +1385,30 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case RTD:
 #ifndef __EMSCRIPTEN__
-      reqSwitchToWorkerW();
+      
+      if (rtdContext) {
+        SDL_GL_DeleteContext(rtdContext);
+        rtdContext = NULL;
+	reqReturnToNormalWindow();
+	SDL_GL_MakeCurrent(window, glContext);
+      }else{
+	reqSwitchToWorkerW();
+	SDL_LockMutex(rtdMutex);
+	while (!rtdWindow) {
+	  SDL_CondWait(rtdCond, rtdMutex);
+	}
+	rtdContext = SDL_GL_CreateContext(rtdWindow);
+	if (!rtdContext) {
+	  printf("SDL_GL_CreateContext error: %s\n", SDL_GetError());
+	  SDL_DestroyWindow(rtdWindow);
+	  rtdWindow = NULL;
+	  SDL_ShowWindow(window);
+	  error( "%s", "No rtdContext!" );
+	}
+	SDL_UnlockMutex(rtdMutex);
+	SDL_GL_MakeCurrent(rtdWindow, rtdContext);
+      }
+      
 #endif
       break;
     case PRINT:

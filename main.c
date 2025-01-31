@@ -43,12 +43,14 @@ SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
 u64 memc = 0;
 #endif
 
+SDL_mutex* rtdMutex = NULL;
+SDL_cond*  rtdCond  = NULL;
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
 // We'll keep static references to the new WorkerW window/context
-static SDL_Window* rtdWindow = NULL;
-static SDL_GLContext rtdContext = NULL;
+SDL_Window* rtdWindow = NULL;
+SDL_GLContext rtdContext = NULL;
 
 // The compiled program to be run.
 program* prog;
@@ -707,10 +709,12 @@ void start( void ){
   SDL_AtomicSet( &running, 1 );
   // Initialize mutex
   data_mutex = SDL_CreateMutex();
-  if( data_mutex == NULL ){
-    error( "%s", "Failed to create mutex" );
+  rtdMutex = SDL_CreateMutex();
+  rtdCond  = SDL_CreateCond();
+  if( !data_mutex || ! rtdMutex || !rtdCond ){
+    error( "%s", "Failed to create mutexs or cond" );
   }
-
+  
 #else
   running = 1;
   emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
@@ -865,53 +869,29 @@ float getMaxAnisotropy( void ){
 #ifndef __EMSCRIPTEN__
  
 void switchToWorkerW(void) {
-    // 1) Hide or destroy the normal SDL window if desired
-  SDL_HideWindow(window);
+  SDL_LockMutex( rtdMutex );
+  // 1) Hide or destroy the normal SDL window if desired
+  //SDL_HideWindow(window);
+  
+  // 2) Create the WorkerW child window
+  HINSTANCE hInstance = GetModuleHandle(NULL);
+  int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+  int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+  
+  SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 
-    // 2) Create the WorkerW child window
-    HINSTANCE hInstance = GetModuleHandle(NULL);
-    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+  rtdWindow = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
+  if (!rtdWindow) {
+    printf("Failed to create WorkerW child window.\n");
+    SDL_ShowWindow(window);
+    return;
+  }
+  SDL_CondSignal( rtdCond );   
+  SDL_UnlockMutex( rtdMutex );
 
-    rtdWindow = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
-    if (!rtdWindow) {
-        printf("Failed to create WorkerW child window.\n");
-        SDL_ShowWindow(window);
-        return;
-    }
-
-    // 3) Tell SDL to share contexts. This must be set BEFORE creating the new context.
-    //    We'll share it with the *current* context associated with 'window'.
-    //SDL_GL_MakeCurrent(window, glContext); 
-    // Ensure the "normal" context is current so SDL knows which context we want to share.
-    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-
-    // 4) Wrap that HWND with an SDL_Window
-
-    // 5) Create a new OpenGL context on that WorkerW window, sharing with the existing one
-    rtdContext = SDL_GL_CreateContext(rtdWindow);
-    if (!rtdContext) {
-        printf("SDL_GL_CreateContext error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(rtdWindow);
-        rtdWindow = NULL;
-        SDL_ShowWindow(window);
-        return;
-    }
-
-    // 6) Now the same GPU resources (textures, buffers, etc.) will be available in both contexts.
-    //    If you want to do *all* your rendering on the WorkerW window, you can call:
-    SDL_GL_MakeCurrent(rtdWindow, rtdContext);
-    //SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
- 
-    printf("Engaged: Now rendering on WorkerW window.\n");
 }
 
 void returnToNormalWindow(void) {
-    // If we want to go back, we can destroy the WorkerW window/context
-    if (rtdContext) {
-        SDL_GL_DeleteContext(rtdContext);
-        rtdContext = NULL;
-    }
     if (rtdWindow) {
         SDL_DestroyWindow(rtdWindow);
         rtdWindow = NULL;
@@ -919,29 +899,26 @@ void returnToNormalWindow(void) {
     // Show the original window again
     SDL_ShowWindow(window);
     // Make the original context current if we want to continue rendering there
-    SDL_GL_MakeCurrent(window, glContext);
-
-    printf("[Picard’s Log] Disengaged: Back to normal SDL window.\n");
 }
 
 
 // These two functions can be called from any thread
 void reqSwitchToWorkerW(void) {
-  switchToWorkerW();
-  /* SDL_Event ev; */
-    /* SDL_zero(ev); */
-    /* ev.type = SDL_USEREVENT; */
-    /* ev.user.code = RTD_EVENT_SWITCH_TO_WORKERW; */
-    /* SDL_PushEvent( &ev ); */
+  //   switchToWorkerW();
+  SDL_Event ev;
+  SDL_zero(ev);
+  ev.type = SDL_USEREVENT;
+  ev.user.code = RTD_EVENT_SWITCH_TO_WORKERW;
+  SDL_PushEvent( &ev );
 }
 
 void reqReturnToNormalWindow(void) {
-  returnToNormalWindow();
-  /* SDL_Event ev; */
-    /* SDL_zero(ev); */
-    /* ev.type = SDL_USEREVENT; */
-    /* ev.user.code = RTD_EVENT_RETURN_TO_NORMAL; */
-    /* SDL_PushEvent( &ev ); */
+  //  returnToNormalWindow();
+  SDL_Event ev;
+  SDL_zero(ev);
+  ev.type = SDL_USEREVENT;
+  ev.user.code = RTD_EVENT_RETURN_TO_NORMAL;
+  SDL_PushEvent( &ev );
 }
 
 #endif // __EMSCRIPTEN__

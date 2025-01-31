@@ -304,7 +304,12 @@ extern SDL_JoystickID joystickIDs[ MAX_CONTROLLERS ];
 extern f32 joysticks[ MAX_CONTROLLERS * 21 ];
 #ifndef __EMSCRIPTEN__
 extern SDL_mutex* data_mutex;
+extern SDL_Window* rtdWindow;
+extern SDL_GLContext rtdContext;
+extern SDL_mutex* rtdMutex;
+extern SDL_cond*  rtdCond;
 #endif
+
 
 #include "trie.h"
 #include "tensor.h"
