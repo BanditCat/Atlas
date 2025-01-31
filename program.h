@@ -21,6 +21,7 @@ typedef struct{
     DIV, // documented
     POW, // documented
     TOSTRING, // documented
+    RTD, // documented
     DEPTH, // documented
     ADDITIVE, // documented
     IF, // documented

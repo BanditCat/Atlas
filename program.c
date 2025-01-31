@@ -562,6 +562,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "rtd" ) ){  // Last
+    curStep->type = RTD;
+    // dbg( "Linenum %u commandnum %u: rtd\n", linenum, commandnum );
+
   } else if( !strcmp( command, "gamepad" ) ){  // Last
     curStep->type = GAMEPAD;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
@@ -1378,6 +1382,11 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
+      break;
+    case RTD:
+#ifndef __EMSCRIPTEN__
+      reqSwitchToWorkerW();
+#endif
       break;
     case PRINT:
       printStack( ts );

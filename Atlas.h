@@ -313,8 +313,8 @@ extern SDL_mutex* data_mutex;
 bool fileExists( const char *filename );
 
 #ifndef __EMSCRIPTEN__
-void switchToWorkerW( void );
-void returnToNormalWindow( void );
+void reqSwitchToWorkerW( void );
+void reqReturnToNormalWindow( void );
 #endif // __EMSCRIPTEN__
 
 #endif //ATLAS_H_INCLUDED

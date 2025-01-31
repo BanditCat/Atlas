@@ -46,6 +46,9 @@ u64 memc = 0;
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
+// We'll keep static references to the new WorkerW window/context
+static SDL_Window* rtdWindow = NULL;
+static SDL_GLContext rtdContext = NULL;
 
 // The compiled program to be run.
 program* prog;
@@ -57,6 +60,9 @@ GLuint vbo;
 u64 curTime = 0;
 u64 prevTime = 0;
 f64 timeDelta = 0.01;
+
+void returnToNormalWindow( void );
+void switchToWorkerW( void );
 
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
@@ -183,6 +189,16 @@ void mainPoll( void ){
       posx = event.motion.x; posy = event.motion.y;
       dx += event.motion.xrel; dy += event.motion.yrel;
 #ifndef __EMSCRIPTEN__
+      SDL_UnlockMutex( data_mutex );
+#endif      
+    } else if( event.type == SDL_USEREVENT ){
+#ifndef __EMSCRIPTEN__
+      SDL_LockMutex( data_mutex );
+      if( event.user.code == RTD_EVENT_SWITCH_TO_WORKERW ){
+	switchToWorkerW();
+      }else if( event.user.code == RTD_EVENT_RETURN_TO_NORMAL ){
+	returnToNormalWindow();
+      }
       SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
@@ -558,7 +574,11 @@ int renderThreadFunction( void* data ){
     // Cleanup
     glDisableVertexAttribArray( posAttrib );
 
-    SDL_GL_SwapWindow( window );
+    if( rtdWindow )
+      SDL_GL_SwapWindow( rtdWindow );
+    else
+      SDL_GL_SwapWindow( window );
+      
     //DwmFlush();
   }
 
@@ -803,11 +823,12 @@ void start( void ){
   // Cleanup
   glDeleteProgram( shaderProgram );
   glDeleteBuffers( 1, &vbo );
+#ifdef __EMSCRIPTEN__
   deleteProgram( prog );
   deleteStack( ts );
-
   SDL_GL_DeleteContext( glContext );
-
+#endif
+  
   SDL_DestroyWindow( window );
   SDL_Quit();
 
@@ -840,23 +861,20 @@ float getMaxAnisotropy( void ){
   return ret;
 }
 
-// We'll keep static references to the new WorkerW window/context
-static SDL_Window* rtdWindow = NULL;
-static SDL_GLContext rtdContext = NULL;
 
 #ifndef __EMSCRIPTEN__
  
 void switchToWorkerW(void) {
     // 1) Hide or destroy the normal SDL window if desired
-    SDL_HideWindow(window);
+  SDL_HideWindow(window);
 
     // 2) Create the WorkerW child window
     HINSTANCE hInstance = GetModuleHandle(NULL);
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-    HWND workerwChild = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
-    if (!workerwChild) {
+    rtdWindow = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
+    if (!rtdWindow) {
         printf("Failed to create WorkerW child window.\n");
         SDL_ShowWindow(window);
         return;
@@ -864,17 +882,11 @@ void switchToWorkerW(void) {
 
     // 3) Tell SDL to share contexts. This must be set BEFORE creating the new context.
     //    We'll share it with the *current* context associated with 'window'.
-    SDL_GL_MakeCurrent(window, glContext); 
+    //SDL_GL_MakeCurrent(window, glContext); 
     // Ensure the "normal" context is current so SDL knows which context we want to share.
     SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 
     // 4) Wrap that HWND with an SDL_Window
-    rtdWindow = SDL_CreateWindowFrom((void*)workerwChild);
-    if (!rtdWindow) {
-        printf("SDL_CreateWindowFrom error: %s\n", SDL_GetError());
-        SDL_ShowWindow(window);
-        return;
-    }
 
     // 5) Create a new OpenGL context on that WorkerW window, sharing with the existing one
     rtdContext = SDL_GL_CreateContext(rtdWindow);
@@ -889,7 +901,8 @@ void switchToWorkerW(void) {
     // 6) Now the same GPU resources (textures, buffers, etc.) will be available in both contexts.
     //    If you want to do *all* your rendering on the WorkerW window, you can call:
     SDL_GL_MakeCurrent(rtdWindow, rtdContext);
-
+    //SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+ 
     printf("Engaged: Now rendering on WorkerW window.\n");
 }
 
@@ -911,5 +924,24 @@ void returnToNormalWindow(void) {
     printf("[Picard’s Log] Disengaged: Back to normal SDL window.\n");
 }
 
+
+// These two functions can be called from any thread
+void reqSwitchToWorkerW(void) {
+  switchToWorkerW();
+  /* SDL_Event ev; */
+    /* SDL_zero(ev); */
+    /* ev.type = SDL_USEREVENT; */
+    /* ev.user.code = RTD_EVENT_SWITCH_TO_WORKERW; */
+    /* SDL_PushEvent( &ev ); */
+}
+
+void reqReturnToNormalWindow(void) {
+  returnToNormalWindow();
+  /* SDL_Event ev; */
+    /* SDL_zero(ev); */
+    /* ev.type = SDL_USEREVENT; */
+    /* ev.user.code = RTD_EVENT_RETURN_TO_NORMAL; */
+    /* SDL_PushEvent( &ev ); */
+}
+
 #endif // __EMSCRIPTEN__
- 
