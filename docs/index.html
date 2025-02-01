@@ -438,33 +438,87 @@ Strides: 1
 
   <section id="cmd-c">
     <h2>c (compute)</h2>
-    <p><em>This is the main command of Atlas. The rest of the language is in support of this.</em> The <code>c</code> command takes a shape argument (the shape of the output tensor), a vertex count, and 0-4 argument tensors to feed 
-      into the shader. The <code>c</code> command is given with five quotes and three numbers afterward as 
-      <code>c'vertexShaderFuncs'optionalVertexShader'glslFuncs'glslExpression' argCount retCount channels</code>. The main (tensor) mode of operation is when channels is 0. If channels is 4, a 4 channel texture is created instead, allowing for the possibility of a vertex shader. The vertex shader has access to only a simple index i and ifloat, but also has access to textures and functions declared in vertexShaderFuncs. Up to four input tensors (argCount ≤ 4) will be 
-      available as <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code>, allowing you to sample the tensors at the 
-      top of the stack after the shape argument. Each of <code>a</code>, <code>b</code>, <code>c</code>, and <code>d</code> is a function 
-      of a single <code>ivec4</code> argument corresponding to a tensor index for that element on the stack.</p>
+c (compute)
 
-    <p>In all code sequence strings, semicolons are banned. Instead, use a 
-      backslash (<code>\</code>) to indicate the end of a statement in that shader. The <code>glslFuncs</code> string is 
-      a place to declare shader functions, constants, and in variables from the vertex shader only; other use is undefined. Likewise vertexShaderFuncs may be used to declare out variables to pass to the fragment shader. The 
-      <code>glslExpression</code> string must assign values to the <code>ret[0]</code> ... <code>ret[retCount-1]</code> variables, 
-      which will be the return values placed in the tensors on the stack. The shader defined by 
-      <code>glslExpression</code> will be given four indices: <code>i</code> (a integer linear index) and 
-							      <code>t</code> (a <code>ivec4</code> tensor index). As well as ifloat and tf, the floating point versions.
+The c command is the core compute operation in Atlas. It lets you execute custom GLSL code on the GPU to produce an output tensor (or texture) from one or more input tensors. In short, everything else in Atlas is built around making it easier to perform GPU computations using this command.
+Syntax
+<pre><code>c'vertexShaderFuncs'optionalVertexShader'glslFuncs'glslExpression' argCount retCount channels</code></pre>
 
-																There is a second mode of operation when channels is non-zero ( It must be 4 ).  In this mode, a texture is created rather than a tensor.  Textures may only be used in other c compute commands using the glsl texture functions af, bf, cf, and df, which take vec2 uv coords for arguments. Using them in other ways is undefined, and in particular commands that affect shape or strides like reverse and transpose will not work on them. The type of the ret array will reflect the number of channels, float, vec2, vec3, or vec4.
+Before calling c, you must have pushed the following onto the stack (in order):
 
-	<p>For example:</p>
-											
-    <pre><code>[[1 2][3 4]];[[2 1][5 3]]; // Push two tensors on the stack.
-6;[2 2]; // Push the desired output shape on the stack. Vertex count is 6 for two triangles when no vertex shader is supplied.
-c'''' // Call compute with no functions or constants: a blank glslFuncs
-ret[0] = a( t ) < b( t ) ? a( t ) : b( t )\  // The top of the stack will have minimum
-ret[1] = a( t ) < b( t ) ? b( t ) : a( t )\  // Below that is maximum
-' 2 2 0;
+    Output Shape: A tensor that defines the shape of the output.
+    Vertex Count: An integer specifying the vertex count (for example, 6 for two triangles when no custom vertex shader is provided).
+    Input Tensors (optional): Up to four tensors that will serve as inputs to your shader.
+
+<h3>Quoted String Parameters</h3>
+
+After the c command, there are several quoted strings that contain your shader code and declarations:
+
+    vertexShaderFuncs:
+    A string for declaring functions or variables used in the vertex shader. (For example, you can use this to declare output variables that the fragment shader will later read.)
+
+    optionalVertexShader:
+    An optional string that contains the actual vertex shader code. If omitted, a default vertex shader is used.
+
+    glslFuncs:
+    A string where you can declare additional GLSL functions, constants, or helper code.
+    Note: Semicolons are not allowed in any of these shader strings. Instead, terminate each statement with a backslash (\).
+
+    glslExpression:
+    This string contains the main shader code (similar to a fragment shader). Here you must assign values to the output array elements (ret[0] to ret[retCount - 1]). These assignments determine the output tensors.
+
+Within the shader code (especially in glslExpression), you have access to the following indices:
+
+    i: A linear (integer) index.
+    t: An ivec4 representing the multidimensional tensor index.
+    ifloat and tf: Floating-point versions of i and t.
+
+<h3>Numeric Parameters</h3>
+
+Following the quoted strings, you supply three numeric parameters:
+
+    argCount:
+    A number between 0 and 4 that tells Atlas how many input tensors (from the stack) to provide to the shader. These tensors are available as functions named a, b, c, and d. Each such function accepts an ivec4 index and returns the corresponding tensor element.
+
+    retCount:
+    The number of output values your shader produces. Your glslExpression must assign a value to each of ret[0] through ret[retCount - 1].
+
+    channels:
+    This parameter determines the output mode:
+        Tensor Mode (channels = 0):
+        The shader produces one or more tensors as output.
+        Texture Mode (channels = 4):
+        A 4-channel texture is created instead of a tensor. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
+        The type of the returned data will automatically be set to float, vec2, vec3, or vec4 depending on whether you use 1, 2, 3, or 4 channels.
+
+<h3>Important Notes</h3>
+
+    Statement Termination:
+    In all shader code strings (i.e., glslFuncs and glslExpression), you cannot use semicolons (;). Instead, end each statement with a backslash (\).
+
+    Input Tensor Access:
+    When you specify an argCount greater than zero, each of the top input tensors is made available inside your shader as a function (a, b, c, or d). These functions take an ivec4 argument (the index within the tensor) and return the corresponding value.
+
+    Operation Modes:
+        Tensor mode (when channels is 0) is the standard mode where the shader outputs a tensor.
+        Texture mode (when channels is 4) creates a 4-channel texture with some limitations regarding how it can be used later in your program.
+
+<h3>Example</h3>
+
+The following Atlas snippet uses two input tensors to compute element‐wise minimum and maximum values. The shader compares the corresponding elements from the two input tensors and writes the minimum to one output tensor and the maximum to another:
+
+<pre><code>
+[[1 2][3 4]];[[2 1][5 3]];   // Push two tensors onto the stack.
+6;[2 2];                     // Push the output shape (vertex count is 6 for two triangles).
+c''''                       // Call compute with empty vertexShaderFuncs, optionalVertexShader, and glslFuncs.
+ret[0] = a(t) < b(t) ? a(t) : b(t)\  // For each element: output the minimum into ret[0].
+ret[1] = a(t) < b(t) ? b(t) : a(t)\  // And output the maximum into ret[1].
+' 2 2 0;                    // Numeric arguments: argCount = 2, retCount = 2, channels = 0 (tensor mode).
 print;quit;
 </code></pre>
+
+After execution, the first output tensor (from ret[0]) will contain the element-wise minimum values, and the second (from ret[1]) will contain the element-wise maximum values.
+
     <p>This will print:</p>
     <pre><code>Tensor 1
 Shape: 2 2

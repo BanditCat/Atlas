@@ -1,6 +1,6 @@
 include'inc\stdlib.atl';
 
-'main.atl';
+'inc\fluid.atl';
 include'inc\nav.atl'; 
 
 
@@ -18,12 +18,12 @@ nav3d;
 [250];set'velScale' 1;
 [0.005];set'gravityEpsilon' 1;
 [0.0005];set'radiusScale' 1;
-[0.02];set'eatAmount' 1;
+[0.04];set'eatAmount' 1;
 [0.0125];set'lengthScale' 1;
 [2.5];set'bhSize' 1;
 [10000];set'biggestMass' 1;
 [10];set'smallestMass' 1;
-[0.00000002];set'colorTransfer' 1;
+[0.00000004];set'colorTransfer' 1;
 1;set'running';
 
 [[[-0.5 -0.28868 0 1] [-1.7321 -1 0 1]]

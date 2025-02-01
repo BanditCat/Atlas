@@ -863,7 +863,7 @@ void addProgram( const char* filename, char* prog, program* program ){
       if( *endi != '\'' )
 	error( "%s:%u command %u: %s", filename,
 	       linenum,
-             commandnum,
+	       commandnum,
 	       "Unmatched quote in include statement." );
       char* inc = mem( 1 + endi - starti, char );
       memcpy( inc, starti, endi - starti );
@@ -1012,8 +1012,8 @@ void finalize( program* program ){
       u32 jumpTo;
       if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo ) )
         error( "%s:%u command %u: Statement with unknown label %s", program->steps[ i ].filename,
-		   program->steps[ i ].linenum,
-		   program->steps[ i ].commandnum, program->steps[ i ].branchName );
+	       program->steps[ i ].linenum,
+	       program->steps[ i ].commandnum, program->steps[ i ].branchName );
       unmem( program->steps[ i ].branchName );
       program->steps[ i ].branch = jumpTo;
     } else if( program->steps[ i ].type == GET ){
@@ -1222,7 +1222,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       u32 c = 0;
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i )
 	if( controllers[ i ] ){
-	   memcpy( data + c++ * 21, &joysticks[ i * 21 ], sizeof( f32 ) * 21 );
+	  memcpy( data + c++ * 21, &joysticks[ i * 21 ], sizeof( f32 ) * 21 );
 	}
 
       push( ts, newTensor( 2, gpshape, data ) );
@@ -1390,7 +1390,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case RTD:
 #ifndef __EMSCRIPTEN__
-     if (rtdContext) {
+      if (rtdContext) {
         SDL_GL_DeleteContext(rtdContext);
 	rtdContext = NULL;
 	reqReturnToNormalWindow();
@@ -1448,7 +1448,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case COMPUTE:{
       if( ts->size < 2 )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement without both a shape parameter and a vertex count on "
                "the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
@@ -1469,14 +1469,14 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );
       u32 channels = p->computes[ s->compute ]->channels;
       if( channels && channels != 4 )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement with a bad channel count." );
       if( channels && rank != 3 )
-         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
-		"Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
+	error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
+	       "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
       if( channels && ( rank != 3 || shape[ 2 ] != 4 ) )
-         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
-		"Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
+	error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
+	       "Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
       
       pop( ts );
       pop( ts );
@@ -1490,10 +1490,10 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case CAT: {
       if( ts->size < 3 )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	      "Attempt to concatenate without enough arguments on the stack." );
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	       "Attempt to concatenate without enough arguments on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to concatenate with a nonscalar axis parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
@@ -1602,7 +1602,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case REVERSE: {
       if( !ts->size )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to reverse with no axis parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to reverse a nonscalar axis parameter." );
@@ -1617,7 +1617,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case SHAPE: {
       if( !ts->size )
-	 error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to get the shape of a tensor with nothing on the stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
       f32* newData = mem( cur->rank, f32 );
@@ -1631,11 +1631,11 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LENGTH: {
       if( !ts->size )
-	 error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to get the length of a tensor with nothing on the stack." );
       const tensor* top = ts->stack[ ts->size - 1 ];
       if( top->rank != 1 )
-	 error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to get the length of a tensor with rank not equal 1." );
       f32 sumsquares = 0;
       for( u32 i = 0; i < top->shape[ 0 ]; ++i )
@@ -1658,12 +1658,12 @@ bool runProgram( tensorStack* ts, program** progp ){
     case LOAD: {
       if( !s->progName ){
 	if( !ts->size )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to load a string filename with no string on the stack." );
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+		 "Attempt to load a string filename with no string on the stack." );
 	tensor* cur = ts->stack[ ts->size - 1 ];
 	if( cur->rank != 1 )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to load a string filename with a nonvector." );
+	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+		 "Attempt to load a string filename with a nonvector." );
 	char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
 	p = newProgramFromFile( fn );
 	p->filenames[ p->numFilenames++ ] = fn;
@@ -1683,7 +1683,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case FIRST: {
       if( !ts->size )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
@@ -1692,7 +1692,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LAST: {
       if( !ts->size )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
 	       "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
@@ -1759,10 +1759,10 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case TRANSPOSE:
       if( !ts->size )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to transpose with no axes parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
-         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to transpose with a axes parameter not of rank 1." );
 
       u32 axis1 = *( ts->stack[ ts->size - 1 ]->data +
@@ -1964,7 +1964,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 	t->ownsData = false;  // Ensure the tensor does not own the data
 	push( ts, t );
       }
-	// dbg( "%s", "get" );
+      // dbg( "%s", "get" );
       break;
     }
     case QUIT:

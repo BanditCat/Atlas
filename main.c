@@ -358,15 +358,15 @@ void mainPoll( void ){
 
 // Vertex Shader Source
 const GLchar* vertexSource = "#version 300 es\n"
-                             "precision highp float;\n"
-                             "precision highp int;\n"
-                             "precision highp sampler2D;\n"
-                             "in vec2 position;\n"
-                             "out vec2 fragCoord;\n"
-                             "void main(){\n"
-                             "  fragCoord = position;\n"
-                             "  gl_Position = vec4( position, 0.0, 1.0 );\n"
-                             "}\n";
+  "precision highp float;\n"
+  "precision highp int;\n"
+  "precision highp sampler2D;\n"
+  "in vec2 position;\n"
+  "out vec2 fragCoord;\n"
+  "void main(){\n"
+  "  fragCoord = position;\n"
+  "  gl_Position = vec4( position, 0.0, 1.0 );\n"
+  "}\n";
 
 // Fragment Shader Source
 const GLchar* fragmentSource =
@@ -700,239 +700,232 @@ void main_loop( void ){
 #ifndef __EMSCRIPTEN__
 int main( int argc, char* argv[] ){
 #else
-EMSCRIPTEN_KEEPALIVE 
-void start( void ){  
+  EMSCRIPTEN_KEEPALIVE 
+    void start( void ){  
 #endif
-  curTime = SDL_GetPerformanceCounter();
-  prevTime = curTime;
+    curTime = SDL_GetPerformanceCounter();
+    prevTime = curTime;
 #ifndef __EMSCRIPTEN__
-  // Set the output code page to UTF-8
-  SetConsoleOutputCP( CP_UTF8 );
+    // Set the output code page to UTF-8
+    SetConsoleOutputCP( CP_UTF8 );
   
-  SDL_AtomicSet( &running, 1 );
-  // Initialize mutex
-  data_mutex = SDL_CreateMutex();
-  rtdMutex = SDL_CreateMutex();
-  rtdCond  = SDL_CreateCond();
-  if( !data_mutex || ! rtdMutex || !rtdCond ){
-    error( "%s", "Failed to create mutexs or cond" );
-  }
-  
-#else
-  running = 1;
-  emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
-  emscripten_set_touchend_callback( "#canvas", NULL, EM_TRUE, onTouch );
-  emscripten_set_touchmove_callback( "#canvas", NULL, EM_TRUE, onTouch );
-  emscripten_set_touchcancel_callback( "#canvas", NULL, EM_TRUE, onTouch );
-#endif
-
-  setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
-  setvbuf( stderr, NULL, _IONBF, 0 ); // Unbuffer stderr
-
-  // Initialize SDL and create window in the main thread
-  if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER ) != 0 )
-    error( "SDL_Init Error: %s\n", SDL_GetError() );
-
-  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
-  SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
-  //  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-  SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
-
-  // Add SDL_WINDOW_RESIZABLE flag
-  window = SDL_CreateWindow( "Atlas",
-                             SDL_WINDOWPOS_CENTERED,
-                             SDL_WINDOWPOS_CENTERED,
-                             768,
-                             512,  // Initial window size
-                             SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
-                               SDL_WINDOW_RESIZABLE );
-  if( !window )
-    error( "SDL_CreateWindow Error: %s\n", SDL_GetError() );
-#ifndef __EMSCRIPTEN__
-  SetDarkTitleBar( window );
-#endif
-
-#ifndef __EMSCRIPTEN__
-  
-  // Do not create the OpenGL context here for non-Emscripten builds
-#else
-  // Emscripten code (single-threaded), create the context here
-  glContext = SDL_GL_CreateContext( window );
-  if( !glContext )
-    error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
-
-  // Initialize OpenGL
-  int windowWidth, windowHeight;
-  SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-  glViewport( 0, 0, windowWidth, windowHeight );
-  glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-
-  shaderProgram = createProgram( vertexSource, fragmentSource );
-
-  // Set up vertex data
-  GLfloat vertices[] = {
-    -1.0f,
-    -1.0f,  // Bottom-left
-    1.0f,
-    -1.0f,  // Bottom-right
-    -1.0f,
-    1.0f,  // Top-left
-    1.0f,
-    1.0f,  // Top-right
-  };
-
-  // Generate VBO
-  glGenBuffers( 1, &vbo );
-  glBindBuffer( GL_ARRAY_BUFFER, vbo );
-  glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
-
-  // Compile program.
-  loadProg( &prog, &ts, NULL );
-#endif
-
-
-#ifndef __EMSCRIPTEN__
-  // Create rendering and computation thread
-  void* arg = argc == 2 ? argv[ 1 ] : NULL;
-  SDL_Thread* renderThread =
-    SDL_CreateThread( renderThreadFunction, "RenderThread", arg );
-  if( renderThread == NULL ){
-    error( "%s", "Failed to create rendering thread" );
-  }
-
-  // Main thread handles SDL event loop
-  while( SDL_AtomicGet( &running ) ){
-    SDL_Event ev;
-    if( SDL_WaitEvent( &ev ) )
-      SDL_PushEvent( &ev );
-    mainPoll();
-  }
-  // Cleanup controllers
-  for( int i = 0; i < MAX_CONTROLLERS; ++i ){
-    if( controllers[ i ] ){
-      SDL_GameControllerClose( controllers[ i ] );
-      controllers[ i ] = NULL;
-      joystickIDs[ i ] = -1;
+    SDL_AtomicSet( &running, 1 );
+    // Initialize mutex
+    data_mutex = SDL_CreateMutex();
+    rtdMutex = SDL_CreateMutex();
+    rtdCond  = SDL_CreateCond();
+    if( !data_mutex || ! rtdMutex || !rtdCond ){
+      error( "%s", "Failed to create mutexs or cond" );
     }
-  }
   
-  // Wait for rendering thread to finish
-  SDL_WaitThread( renderThread, NULL );
-
-  returnToNormalWindow();
-
-  SDL_DestroyMutex( data_mutex );
 #else
-  // Set up the main loop for Emscripten
-  emscripten_set_main_loop( main_loop, 0, 1 );
+    running = 1;
+    emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
+    emscripten_set_touchend_callback( "#canvas", NULL, EM_TRUE, onTouch );
+    emscripten_set_touchmove_callback( "#canvas", NULL, EM_TRUE, onTouch );
+    emscripten_set_touchcancel_callback( "#canvas", NULL, EM_TRUE, onTouch );
 #endif
 
-  // Cleanup
-  glDeleteProgram( shaderProgram );
-  glDeleteBuffers( 1, &vbo );
+    setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
+    setvbuf( stderr, NULL, _IONBF, 0 ); // Unbuffer stderr
+
+    // Initialize SDL and create window in the main thread
+    if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER ) != 0 )
+      error( "SDL_Init Error: %s\n", SDL_GetError() );
+
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+    //  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+    SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+
+    // Add SDL_WINDOW_RESIZABLE flag
+    window = SDL_CreateWindow( "Atlas",
+			       SDL_WINDOWPOS_CENTERED,
+			       SDL_WINDOWPOS_CENTERED,
+			       768,
+			       512,  // Initial window size
+			       SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
+                               SDL_WINDOW_RESIZABLE );
+    if( !window )
+      error( "SDL_CreateWindow Error: %s\n", SDL_GetError() );
+#ifndef __EMSCRIPTEN__
+    SetDarkTitleBar( window );
+#endif
+
+#ifndef __EMSCRIPTEN__
+  
+    // Do not create the OpenGL context here for non-Emscripten builds
+#else
+    // Emscripten code (single-threaded), create the context here
+    glContext = SDL_GL_CreateContext( window );
+    if( !glContext )
+      error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
+
+    // Initialize OpenGL
+    int windowWidth, windowHeight;
+    SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+    glViewport( 0, 0, windowWidth, windowHeight );
+    glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+
+    shaderProgram = createProgram( vertexSource, fragmentSource );
+
+    // Set up vertex data
+    GLfloat vertices[] = {
+      -1.0f,
+      -1.0f,  // Bottom-left
+      1.0f,
+      -1.0f,  // Bottom-right
+      -1.0f,
+      1.0f,  // Top-left
+      1.0f,
+      1.0f,  // Top-right
+    };
+
+    // Generate VBO
+    glGenBuffers( 1, &vbo );
+    glBindBuffer( GL_ARRAY_BUFFER, vbo );
+    glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
+
+    // Compile program.
+    loadProg( &prog, &ts, NULL );
+#endif
+
+
+#ifndef __EMSCRIPTEN__
+    // Create rendering and computation thread
+    void* arg = argc == 2 ? argv[ 1 ] : NULL;
+    SDL_Thread* renderThread =
+      SDL_CreateThread( renderThreadFunction, "RenderThread", arg );
+    if( renderThread == NULL ){
+      error( "%s", "Failed to create rendering thread" );
+    }
+
+    // Main thread handles SDL event loop
+    while( SDL_AtomicGet( &running ) ){
+      SDL_Event ev;
+      if( SDL_WaitEvent( &ev ) )
+	SDL_PushEvent( &ev );
+      mainPoll();
+    }
+    // Cleanup controllers
+    for( int i = 0; i < MAX_CONTROLLERS; ++i ){
+      if( controllers[ i ] ){
+	SDL_GameControllerClose( controllers[ i ] );
+	controllers[ i ] = NULL;
+	joystickIDs[ i ] = -1;
+      }
+    }
+  
+    // Wait for rendering thread to finish
+    SDL_WaitThread( renderThread, NULL );
+
+    returnToNormalWindow();
+
+    SDL_DestroyMutex( data_mutex );
+#else
+    // Set up the main loop for Emscripten
+    emscripten_set_main_loop( main_loop, 0, 1 );
+#endif
+
+    // Cleanup
+    glDeleteProgram( shaderProgram );
+    glDeleteBuffers( 1, &vbo );
 #ifdef __EMSCRIPTEN__
-  deleteProgram( prog );
-  deleteStack( ts );
-  SDL_GL_DeleteContext( glContext );
+    deleteProgram( prog );
+    deleteStack( ts );
+    SDL_GL_DeleteContext( glContext );
 #endif
   
-  SDL_DestroyWindow( window );
-  SDL_Quit();
+    SDL_DestroyWindow( window );
+    SDL_Quit();
 
 #ifdef DEBUG
-  check_memory_leaks();
+    check_memory_leaks();
 #else
-  if( memc )
-    dbg( "mem count %llu", memc );
+    if( memc )
+      dbg( "mem count %llu", memc );
 #endif  
 
 #ifndef __EMSCRIPTEN__ 
-  return 0;
+    return 0;
 #endif  
-}
- 
-float getMaxAnisotropy( void ){
-  static float ret = 0.0;
-  if( ret )
-    return ret;
-  // Check if the anisotropic filtering extension is supported
-  const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-  if (extensions && strstr(extensions, "EXT_texture_filter_anisotropic")) {
-    // Retrieve the extension
-    GLfloat maxAnisotropy = 1.0f;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
-    ret = maxAnisotropy;
-  } else {
-    ret = 1.0f; // Default value (no anisotropic filtering)
   }
-  return ret;
-}
+ 
+  float getMaxAnisotropy( void ){
+    static float ret = 0.0;
+    if( ret )
+      return ret;
+    // Check if the anisotropic filtering extension is supported
+    const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
+    if (extensions && strstr(extensions, "EXT_texture_filter_anisotropic")) {
+      // Retrieve the extension
+      GLfloat maxAnisotropy = 1.0f;
+      glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+      ret = maxAnisotropy;
+    } else {
+      ret = 1.0f; // Default value (no anisotropic filtering)
+    }
+    return ret;
+  }
 
 
 #ifndef __EMSCRIPTEN__
  
-void switchToWorkerW(void) {
-  printf( "stww\n" );
-  SDL_LockMutex( rtdMutex );
-  // 1) Hide or destroy the normal SDL window if desired
-  //SDL_HideWindow(window);
+  void switchToWorkerW(void) {
+    SDL_LockMutex( rtdMutex );
+    // 1) Hide or destroy the normal SDL window if desired
+    //SDL_HideWindow(window);
   
-  // 2) Create the WorkerW child window
-  HINSTANCE hInstance = GetModuleHandle(NULL);
-  int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-  int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    // 2) Create the WorkerW child window
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
   
-  SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 
-  rtdWindow = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
-  if (!rtdWindow) {
-    printf("Failed to create WorkerW child window.\n");
+    rtdWindow = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
+    if (!rtdWindow) {
+      printf("Failed to create WorkerW child window.\n");
+      SDL_ShowWindow(window);
+      return;
+    }
+    //printf( "condstww\n" );
+    SDL_CondBroadcast( rtdCond );   
+    SDL_UnlockMutex( rtdMutex );
+  }
+
+  void returnToNormalWindow(void) {
+    SDL_LockMutex( rtdMutex );
     SDL_ShowWindow(window);
-    return;
+    if (rtdWindow) {
+      SDL_DestroyWindow(rtdWindow);
+      rtdWindow = NULL;
+    }
+    // Show the original window again
+    // Make the original context current if we want to continue rendering there
+    SDL_CondBroadcast( rtdCond );   
+    SDL_UnlockMutex( rtdMutex );
   }
-  //printf( "condstww\n" );
-  SDL_CondBroadcast( rtdCond );   
-  SDL_UnlockMutex( rtdMutex );
-  printf( "stwwd\n" );
-}
 
-void returnToNormalWindow(void) {
-  printf( "rtnw\n" );
-  SDL_LockMutex( rtdMutex );
-  SDL_ShowWindow(window);
-  if (rtdWindow) {
-    SDL_DestroyWindow(rtdWindow);
-    rtdWindow = NULL;
+
+  // These two functions can be called from any thread
+  void reqSwitchToWorkerW(void) {
+    //   switchToWorkerW();
+    SDL_Event ev;
+    SDL_zero(ev);
+    ev.type = SDL_USEREVENT;
+    ev.user.code = RTD_EVENT_SWITCH_TO_WORKERW;
+    SDL_PushEvent( &ev );
   }
-  // Show the original window again
-  // Make the original context current if we want to continue rendering there
-  printf( "condrtnw\n" );
-  SDL_CondBroadcast( rtdCond );   
-  SDL_UnlockMutex( rtdMutex );
-  printf( "rtnwd\n" );
-}
 
-
-// These two functions can be called from any thread
-void reqSwitchToWorkerW(void) {
-  printf( "reqstww\n" );
-  //   switchToWorkerW();
-  SDL_Event ev;
-  SDL_zero(ev);
-  ev.type = SDL_USEREVENT;
-  ev.user.code = RTD_EVENT_SWITCH_TO_WORKERW;
-  SDL_PushEvent( &ev );
-}
-
-void reqReturnToNormalWindow(void) {
-  printf( "reqrtnw\n" );
-  //  returnToNormalWindow();
-  SDL_Event ev;
-  SDL_zero(ev);
-  ev.type = SDL_USEREVENT;
-  ev.user.code = RTD_EVENT_RETURN_TO_NORMAL;
-  SDL_PushEvent( &ev );
-}
+  void reqReturnToNormalWindow(void) {
+    //  returnToNormalWindow();
+    SDL_Event ev;
+    SDL_zero(ev);
+    ev.type = SDL_USEREVENT;
+    ev.user.code = RTD_EVENT_RETURN_TO_NORMAL;
+    SDL_PushEvent( &ev );
+  }
 
 #endif // __EMSCRIPTEN__
 

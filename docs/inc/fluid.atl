@@ -1,0 +1,79 @@
+windowSize;set'wsize' 2;
+get'wsize';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set aspect ratio
+
+include'inc\stdlib.atl';
+
+'main.atl';
+include'inc\nav.atl';
+
+
+
+
+size;if'started'; // init code goes here
+[64];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize';
+6;get'tankSize';
+c''''
+ret[ 0 ] = float( t.x ) / 64.0\
+' 0 1 0;
+
+nav3d;
+[0.5 0.5 1.5];set'origin' 3;
+
+1; // dummy value to pop off in place of display tensor.
+l'started'; // init code complete
+nav3d;
+
+
+
+pop; // Pop the last display tensor off the stack.
+0; dup; // Duplicate tank texture so we can use it to draw.
+
+
+
+// Calculate display.
+6;get'wsize';[4];0;cat; 
+c''''
+// Compute the initial ray in view space
+vec3 ray = normalize(
+    vec3(
+      ( tf.xy / wsize * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+      -1.0
+    )
+)\
+
+// Rotate it by worldRotation
+vec3 rayDir = ( worldRotation * vec4(ray, 1.0) ).xyz\
+float accum\
+int maxSteps = 256\
+float stepSize = 0.01\
+vec3 pos = origin\
+for( int i = 0\ i < maxSteps\ i++ ){\
+    pos += rayDir * stepSize\
+    if( any( lessThan( pos, vec3( 0.0 ) ) ) || any( greaterThan( pos, vec3( 1.0 ) ) ) ){ continue\ }
+    ivec4 sampIndex = ivec4( int( floor( pos.x * tankDim ) ), int( floor( pos.y * tankDim ) ), int( floor( pos.z * tankDim ) ), 0 )\
+    float dens = a( sampIndex )\
+    accum += dens * stepSize\
+}\
+ret[ 0 ] = vec4( accum )\
+' 1 1 4;
+
+
+
+
+
+//////////////////////////////////////////////////////////////////
+// Help and framerate
+
+get'keys';[58 59 0];s;first;ifn'skipf1';
+'Click and drag: rotate view                     ';e;
+'Right click: fly forward                        ';e;0;cat;
+'w/s/a/d/c/shift/ctrl/space: fly around          ';e;0;cat;
+'Mouse wheel: change fly speed                   ';e;0;cat;
+'Hold l key and drag mouse: change light location';e;0;cat;
+textToTexture;blitText;
+l'skipf1';
+get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+1;timeDelta;/;toString;e;
+textToTexture;blitText;
+l'skipf2';
+get'keyPresses';[60 61 0];s;first;ifn'skipf3';rtd;l'skipf3';

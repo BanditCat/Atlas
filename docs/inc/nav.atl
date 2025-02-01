@@ -31,4 +31,7 @@ l'__go5';
 0;dup;[35 36 0];s;first;ifn'__go6';
 load'inc\nbodies.atl';
 l'__go6';
+0;dup;[36 37 0];s;first;ifn'__go7';
+load'inc\fluid.atl';
+l'__go7';
 pop; // pop keys
