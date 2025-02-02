@@ -11,7 +11,7 @@ include'inc\nav.atl';
 get'keyPresses';[40 41 0];s;first;get'gamepadPresses';[16 17 0];s;first;+;ifn'toggleRunning';
 [1];get'running';-;set'running' 1;
 l'toggleRunning';
-get'keyPresses';[13 14 0];s;first;get'gamepadPresses';[16 17 0];s;first;+;ifn'toggleJet';
+get'keyPresses';[13 14 0];s;first;get'gamepadPresses';[17 18 0];s;first;+;ifn'toggleJet';
 [1];get'jet';-;set'jet' 1;
 l'toggleJet';
 
@@ -21,7 +21,9 @@ size;if'started'; // init code goes here
 [1];set'running' 1;
 [1];set'jet' 1;
 [0];set'jangle' 1;
-[64];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize';
+[10.0];set'jetStrength' 1;
+[2.0];set'jetSpinRate';
+[64];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
 6;get'tankSize';[3];0;cat;
 c''''
 if( t.w == 0 )
@@ -37,7 +39,7 @@ nav3d;
 
 1; // dummy value to pop off in place of display tensor.
 l'started'; // init code complete
-get'td';[5];*;get'jangle';+;set'jangle' 1;
+get'td';get'jetSpinRate';*;get'jangle';+;set'jangle' 1;
 nav3d;
 pop; // Pop the last display tensor off the stack.
 
@@ -60,7 +62,6 @@ c''''
   vec3 jetCenter = vec3(tankDim * 0.5, tankDim * 0.5, tankDim * 0.5)\
   float jetRadius = tankDim * 0.1\
   float weight = 1.0 - smoothstep(jetRadius * 0.8, jetRadius, length(pos - jetCenter))\
-  float jetStrength = 5.0\
   float injectedVel = jetStrength * weight\
   if( t.w == 1 )
     ret[0] = a(t) + sin(jangle) * injectedVel\
