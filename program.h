@@ -22,6 +22,7 @@ typedef struct{
     POW, // documented
     TOSTRING, // documented
     RTD, // documented
+    BURY, // documented
     DEPTH, // documented
     ADDITIVE, // documented
     IF, // documented

@@ -194,6 +194,7 @@
     <ul>
       <li><a href="#cmd-additive">additive</a></li>
       <li><a href="#cmd-arith">+ / - / * / / / ^ (arithmetic)</a></li>
+      <li><a href="#cmd-b">b (bury)</a></li>
       <li><a href="#cmd-c">c (compute)</a></li>
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
       <li><a href="#cmd-depth">depth</a></li>
@@ -434,6 +435,11 @@ Strides: 1
 | 0.50 8.00 0.30 |
 +----------------+</code></pre></p>
 
+  </section>
+
+  <section id="cmd-b">
+    <h2>b (bury)</h2>
+    <p>This command takes one scalar integer argument, and then burries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;</code> would print <pre><code></code></pre> This command necessitates a deep copy if the tensor to bury is a copy or slice of some other tensor.</p>
   </section>
 
   <section id="cmd-c">
@@ -966,7 +972,7 @@ Strides: 2 1
       <pre><code>[1 2 3];set'vec' 3;</code></pre> 
       would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and 
       make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 
-      for a 4x4 matrix. If set is called without a size, the named variable will not be set as a uniform.</p>
+      for a 4x4 matrix. If set is called without a size, the named variable will not be set as a uniform.  This function necessitates a deep copy, and should be used sparingly on large tensors.</p>
   </section>
 
   <section id="cmd-shape">

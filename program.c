@@ -566,6 +566,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = RTD;
     // dbg( "Linenum %u commandnum %u: rtd\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "bury" ) ){  // Last
+    curStep->type = BURY;
+    // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
+
   } else if( !strcmp( command, "gamepad" ) ){  // Last
     curStep->type = GAMEPAD;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
@@ -1725,6 +1729,25 @@ bool runProgram( tensorStack* ts, program** progp ){
       pop( ts );
       tensorRepeat( ts, ts->size - 1, count );
       // dbg( "%s %u", "rep", count );
+      break;
+    }
+    case BURY: {
+      if( !ts->size )
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury with no parameter on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank )
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury with a nonscalar parameter." );
+      
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      u32 bury = *( ts->stack[ ts->size - 1 ]->data +
+		    ts->stack[ ts->size - 1 ]->offset );
+      pop( ts );
+      if( bury + 1 > ts->size )
+	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury past the end of the stack." );
+      tensor* tb = ts->stack[ ts->size - 1 ];
+      takeOwnership( tb );
+      for( u32 i = ts->size - 1; i > ( ts->size - 1 ) - bury; --i )
+	ts->stack[ i ] = ts->stack[ i - 1 ];
+      ts->stack[ ( ts->size - 1 ) - bury ] = tb;
       break;
     }
     case IF: {
