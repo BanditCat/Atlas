@@ -26,7 +26,7 @@ size;if'started'; // init code goes here
 [20.0];set'accumDiv' 1;
 [5.0];set'jacobiCount';
 [1.0];set'timeScale' 1;
-[64];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
+[128];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
 6;get'tankSize';[3];0;cat;
 c''''
 if( t.w == 0 )
