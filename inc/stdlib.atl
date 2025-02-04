@@ -2,9 +2,16 @@ get'__stdlibInited';if'__stdlibInitDone';
 1;set'__stdlibInited';
 0;512;rep;set'__oldKeys';
 0;21;rep;set'__oldGamepad';
+0;6;rep;set'__oldInput';
 0;21;rep;set'gamepad';
 0;21;rep;set'gamepadPresses';
 0;21;rep;set'gamepadReleases';
+0;512;rep;set'keys';
+0;512;rep;set'keyPresses';
+0;512;rep;set'keyReleases';
+0;512;rep;set'input';
+0;512;rep;set'inputPresses';
+0;512;rep;set'inputReleases';
 l'__stdlibInitDone'; // Init code
 
 keys;set'keys';input;set'input';
@@ -32,6 +39,13 @@ get'gamepad';-;
 get'__oldGamepad';*;set'gamepadReleases';
 get'gamepad';set'__oldGamepad';
 
+1;6;rep;
+get'__oldInput';-;
+get'input';*;set'inputPresses';
+1;6;rep;
+get'input';-;
+get'__oldInput';*;set'inputReleases';
+get'input';set'__oldInput';
 
 
 

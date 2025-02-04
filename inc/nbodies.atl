@@ -90,7 +90,7 @@ ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ]\
 1;
 l'started';
 
-get'keyPresses';[40 41 0];s;first;get'gamepadPresses';[16 17 0];s;first;+;ifn'toggleRunning';
+get'inputPresses';[5 6 0];s;first;get'keyPresses';[40 41 0];s;first;+;get'gamepadPresses';[16 17 0];s;first;+;ifn'toggleRunning';
 1;get'running';-;set'running';
 l'toggleRunning';
 
@@ -252,7 +252,7 @@ get'keys';[58 59 0];s;first;ifn'skipf1';
 'Right click: fly forward              ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space: fly around';e;0;cat;
 'Mouse wheel: change fly speed         ';e;0;cat;
-'Enter key: pause simulation           ';e;0;cat;
+'Enter key / middle click: pause       ';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
 get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
