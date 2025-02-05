@@ -163,7 +163,8 @@
         // Set up window resize
           window.addEventListener('resize', function() {
             Module.canvas.width = window.innerWidth;
-            Module.canvas.height = window.innerHeight;
+              Module.canvas.height = window.innerHeight;
+	     Module.ccall('resizeWindow', null, ['number', 'number'], [width, height]);
         });
 
         // Prevent default browser actions on touch to allow multi-touch in C
