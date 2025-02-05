@@ -772,10 +772,10 @@ int main( int argc, char* argv[] )
     error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
 
   // Initialize OpenGL
-  int windowWidth, windowHeight;
-  SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-  glViewport( 0, 0, windowWidth, windowHeight );
-  glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+  //int windowWidth, windowHeight;
+  //SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+  //glViewport( 0, 0, windowWidth, windowHeight );
+  //  glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
   shaderProgram = createProgram( vertexSource, fragmentSource );
 
