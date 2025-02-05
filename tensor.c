@@ -47,6 +47,8 @@ void tensorToHostMemory( tensor* t ){
     error( "%s", "Tensor is NULL in tensorToHostMemory." );
   if( !t->gpu )
     return;
+  if( t->tex.channels != 0 )
+    error( "%s", "Attempt to send a texture to host memory." );
 
   f32* hostData = mem( t->size, f32 );
   f32* tempData =
@@ -788,11 +790,11 @@ void deleteStack( tensorStack* ts ){
 void printStack( tensorStack* ts ){
   for( u32 i = ts->size - 1; i < ts->size; --i ){
     tensor* t = ts->stack[ i ];
-    printf( "Tensor %u\n", i );
-    printf( "Shape:" );
+    printf( "tensor %u\n", i );
+    printf( "shape:" );
     for( u32 j = 0; j < t->rank; ++j )
       printf( " %u", t->shape[ j ] );
-    printf( "\nStrides:" );
+    printf( "\nstrides:" );
     for( u32 j = 0; j < t->rank; ++j )
       printf( " %i", t->strides[ j ] );
     if( t->size < 256 ){

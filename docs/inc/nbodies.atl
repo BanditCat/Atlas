@@ -163,41 +163,35 @@ get'vertexCount';windowSize;[4];0;cat;
 additive;
 c'
 vec3 hsvToRgb(float H, float S, float V) {
-    float C = V * S\ // Chroma
-    float H_prime = H / 60.0\
-    float X = C * (1.0 - abs(mod(H_prime, 2.0) - 1.0))\
+  float C = V * S\ // Chroma
+  float H_prime = H / 60.0\
+  float X = C * (1.0 - abs(mod(H_prime, 2.0) - 1.0))\
 
-    vec3 rgb\
+  vec3 rgb\
 
-    if (0.0 <= H_prime && H_prime < 1.0) {
-        rgb = vec3(C, X, 0.0)\
-    }
-    else if (1.0 <= H_prime && H_prime < 2.0) {
-        rgb = vec3(X, C, 0.0)\
-    }
-    else if (2.0 <= H_prime && H_prime < 3.0) {
-        rgb = vec3(0.0, C, X)\
-    }
-    else if (3.0 <= H_prime && H_prime < 4.0) {
-        rgb = vec3(0.0, X, C)\
-    }
-    else if (4.0 <= H_prime && H_prime < 5.0) {
-        rgb = vec3(X, 0.0, C)\
-    }
-    else if (5.0 <= H_prime && H_prime < 6.0) {
-        rgb = vec3(C, 0.0, X)\
-    }
-    else {
-        rgb = vec3(0.0, 0.0, 0.0)\
-    }
+  if (0.0 <= H_prime && H_prime < 1.0) {
+    rgb = vec3( C, X, 0.0 )\
+  }else if( 1.0 <= H_prime && H_prime < 2.0 ){
+    rgb = vec3( X, C, 0.0 )\
+  }else if( 2.0 <= H_prime && H_prime < 3.0 ){
+    rgb = vec3( 0.0, C, X )\
+  }else if( 3.0 <= H_prime && H_prime < 4.0 ){
+    rgb = vec3( 0.0, X, C )\
+  }else if( 4.0 <= H_prime && H_prime < 5.0 ){
+    rgb = vec3( X, 0.0, C )\
+  }else if( 5.0 <= H_prime && H_prime < 6.0 ){
+    rgb = vec3(C, 0.0, X)\
+  }else{
+    rgb = vec3( 0.0, 0.0, 0.0 )\
+  }
 
-    float m = V - C\
-    rgb += vec3(m, m, m)\
+  float m = V - C\
+  rgb += vec3(m, m, m)\
 
-    // Clamp the result to [0,1]
-    rgb = clamp(rgb, 0.0, 1.0)\
+  // Clamp the result to [0,1]
+  rgb = clamp(rgb, 0.0, 1.0)\
 
-    return rgb\
+  return rgb\
 }
 out vec4 unitvec\
 out vec3 color\
