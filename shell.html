@@ -160,10 +160,8 @@
 
         // 5. All files are loaded, hide the loading overlay
         hideLoadingOverlay();
- console.log('Runtime initialized – attaching resize listener');
         // Set up window resize
           window.addEventListener('resize', function() {
-	      alert('foo');
             Module.canvas.width = window.innerWidth;
             Module.canvas.height = window.innerHeight;
         });

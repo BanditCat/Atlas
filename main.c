@@ -120,7 +120,16 @@ EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *us
 
 #endif // touch interface
 
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+void resizeWindow( int width, int height ){
+    // Optionally, you can print a message to verify this function is called:
+    printf( "Resizing SDL window to %d x %d\n", width, height );
 
+    // Update the SDL window's size.
+    SDL_SetWindowSize( window, width, height );
+}
+#endif
 
 #ifndef __EMSCRIPTEN__
 void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
