@@ -162,12 +162,10 @@
         hideLoadingOverlay();
 
         // Set up window resize
-        window.addEventListener('resize', function() {
+          window.addEventListener('resize', function() {
+	      alert('foo');
             Module.canvas.width = window.innerWidth;
             Module.canvas.height = window.innerHeight;
-	    if (typeof _emscripten_set_canvas_element_size === 'function') {
-		_emscripten_set_canvas_element_size('#canvas', width, height);
-	    }
         });
 
         // Prevent default browser actions on touch to allow multi-touch in C
