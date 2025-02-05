@@ -174,8 +174,8 @@
         Module.canvas.addEventListener('touchcancel', e => e.preventDefault(), { passive: false });
 
         // Finally, call your C function "start"
-        ccall("start", null, [], []);
         Module.ccall('resizeWindow', null, ['number', 'number'], [ window.innerWidth, window.innerHeight]);
+        ccall("start", null, [], []);
       },
 
       // Redirect print and printErr to the console
