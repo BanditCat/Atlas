@@ -802,6 +802,10 @@ int main( int argc, char* argv[] ){
 
     // Main thread handles SDL event loop
     while( SDL_AtomicGet( &running ) ){
+      u32 windowWidth, windowHeight;
+      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+      glViewport( 0, 0, windowWidth, windowHeight );
+      
       SDL_Event ev;
       if( SDL_WaitEvent( &ev ) )
 	SDL_PushEvent( &ev );
