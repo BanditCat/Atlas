@@ -264,8 +264,7 @@
       language is to make it easier to program the GPU. Most commands consume their arguments; for example 
       the sequence <code>1;if'go';</code> would push a 1 onto the stack, and then immediately consume it as a 
       truth value and branch to the label 'go'.</p>
-    <p>Atlas runs natively on Windows 10 and 11, and also on the web using emscripten. Porting to Linux 
-      is unlikely without third party help, but shouldn't be too hard in principle.</p>
+    <p>Atlas runs natively on Windows 10 and 11, and also on the web using emscripten.</p>
   </section>
 
   <section id="program-model">
@@ -433,7 +432,25 @@ strides: 1
 
   <section id="cmd-b">
     <h2>b (bury)</h2>
-    <p>This command takes one scalar integer argument, and then burries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;</code> would print <pre><code></code></pre> This command necessitates a deep copy if the tensor to bury is a copy or slice of some other tensor.</p>
+    <p>This command takes one scalar integer argument, and then burries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;quit;</code> would print <pre><code>tensor 3
+shape:
+strides:
+3.00
+
+tensor 2
+shape:
+strides:
+4.00
+
+tensor 1
+shape:
+strides:
+2.00
+
+tensor 0
+shape:
+strides:
+1.00</code></pre> This command necessitates a deep copy if the tensor to bury is a copy or slice of some other tensor.</p>
   </section>
 
   <section id="cmd-c">

@@ -1,11 +1,8 @@
 //runs on desktop.
-
 //3d fluid sim.
 
-//calling print or tensorToHostMemory on a texture is undefined.
 
-introduce qouting so strings can include quotes.
-//include chain in error
+introduce quoting so strings can include quotes.
 
 
 a way to make glsl libraries.
