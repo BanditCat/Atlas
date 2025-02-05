@@ -175,6 +175,7 @@
 
         // Finally, call your C function "start"
         ccall("start", null, [], []);
+        Module.ccall('resizeWindow', null, ['number', 'number'], [ window.innerWidth, window.innerHeight]);
       },
 
       // Redirect print and printErr to the console
