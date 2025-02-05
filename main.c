@@ -15,6 +15,8 @@
 ////////////////////////////////////////////////////////////////////
 // Global state
 
+u32 jsWidth = 0;
+u32 jsHeight = 0;
 bool wantWorkerW = false;
 bool depthTest = false;
 bool additive = false;
@@ -125,7 +127,8 @@ EMSCRIPTEN_KEEPALIVE
 void resizeWindow( int width, int height ){
     // Optionally, you can print a message to verify this function is called:
     printf( "Resizing SDL window to %d x %d\n", width, height );
-
+    jsWidth = width;
+    jsHeight = height;
     // Update the SDL window's size.
     SDL_SetWindowSize( window, width, height );
 }
@@ -773,8 +776,8 @@ int main( int argc, char* argv[] )
 
   // Initialize OpenGL
   //int windowWidth, windowHeight;
-  //SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-  //glViewport( 0, 0, windowWidth, windowHeight );
+  SDL_SetWindowSize( window, jsWidth, jsHeight );
+  glViewport( 0, 0, jsWidth, jsHeight );
   //  glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
   shaderProgram = createProgram( vertexSource, fragmentSource );
