@@ -618,7 +618,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
 	break;
       case 1:
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_R, GL_FLOAT, NULL );
+	//		glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_R, GL_FLOAT, NULL );
 	break;
       case 2:
 		glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
@@ -695,8 +695,8 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer);
 #ifdef __EMSCRIPTEN__   // I dont know why it only works this way, but it only works this way.
     glDepthFunc(GL_LEQUAL);
-    glClearDepth(1.0f); 
-    glDepthRange(0.0, 1.0);
+    glClearDepthf(1.0f); 
+    glDepthRangef(0.0, 1.0);
 #else
     glDepthFunc(GL_GEQUAL);
     glClearDepth(0.0f); 

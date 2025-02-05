@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <GL/gl.h>
+//#include <GL/gl.h>
 #include <stdio.h>
 
 #ifdef DEBUG
