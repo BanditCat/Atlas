@@ -84,6 +84,7 @@ backup:
 	cp -rf $(HTML) $(JS) $(WASM) $(DATA) ./main.atl ./inc ./docs
 	cp -rf $(TARGET) ./bin
 	$(MAKE) clean
+	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
 	git commit -m 'linuxify toolset'

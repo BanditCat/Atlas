@@ -27,7 +27,7 @@ size;if'started'; // init code goes here
 [40.0];set'accumDiv' 1;
 [10.0];set'jacobiCount';
 [1.0];set'timeScale' 1;
-[192];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
+[64];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
 6;get'tankSize';[3];0;cat;c''''ret[ 0 ] = 0.0\' 0 1 0; // X y z velocity field
 6;get'tankSize';c''''ret[ 0 ] = 0.0\' 0 1 0; // Pressure
 
