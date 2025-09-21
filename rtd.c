@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "rtd.h"
+#include "Atlas.h"
 #include <stdio.h>
 #include <windows.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@
 static void EnsureRealWorkerW() {
     HWND progman = FindWindow("Progman", "Program Manager");
     if (progman) {
+      
         // 0x052C = "RegisterShellHookWindow" message forcing the creation
         // of a WorkerW behind icons, if not already present
         SendMessage(progman, 0x052C, 0, 0);
@@ -20,20 +22,51 @@ static void EnsureRealWorkerW() {
 }
 
 // Callback to find the WorkerW that is the sibling of SHELLDLL_DefView
+/* static BOOL CALLBACK EnumWindowsProc(HWND topHandle, LPARAM lParam) { */
+/*     HWND shellView = FindWindowEx(topHandle, NULL, "SHELLDLL_DefView", NULL); */
+/*     if (shellView) { */
+/*         // The WorkerW is usually the next window after SHELLDLL_DefView */
+/*         HWND workerW = FindWindowEx(NULL, topHandle, "WorkerW", NULL); */
+/*         if (workerW) { */
+/*             HWND *pOut = (HWND*)lParam; */
+/*             *pOut = workerW; */
+/*             return FALSE; // stop enumerating */
+/*         } */
+/*     } */
+/*     return TRUE; // keep going */
+/* } */
+// Finds the behind-icons WorkerW by first locating the top-level window
+// that hosts SHELLDLL_DefView, then choosing a WorkerW sibling that does
+// NOT contain SHELLDLL_DefView.
 static BOOL CALLBACK EnumWindowsProc(HWND topHandle, LPARAM lParam) {
-    HWND shellView = FindWindowEx(topHandle, NULL, "SHELLDLL_DefView", NULL);
+    // Is this top-level window the one that hosts the desktop icons?
+    HWND shellView = FindWindowExA(topHandle, NULL, "SHELLDLL_DefView", NULL);
     if (shellView) {
-        // The WorkerW is usually the next window after SHELLDLL_DefView
-        HWND workerW = FindWindowEx(NULL, topHandle, "WorkerW", NULL);
-        if (workerW) {
-            HWND *pOut = (HWND*)lParam;
-            *pOut = workerW;
-            return FALSE; // stop enumerating
+        HWND chosen = NULL;
+
+        // Enumerate all top-level WorkerW windows
+        for (HWND w = FindWindowExA(NULL, NULL, "WorkerW", NULL);
+             w;
+             w = FindWindowExA(NULL, w, "WorkerW", NULL)) {
+
+            if (w == topHandle) continue; // skip the icons host itself
+
+            // A 'real' behind-icons WorkerW should NOT have a SHELLDLL_DefView child
+            if (!FindWindowExA(w, NULL, "SHELLDLL_DefView", NULL)) {
+	      
+	      chosen = w;
+                break;
+            }
         }
+
+        if (chosen) {
+            *((HWND*)lParam) = chosen;
+            return FALSE; // stop enumerating: found it
+        }
+        // If not found yet, keep enumerating other top-levels (rare)
     }
     return TRUE; // keep going
 }
-
 // Actually find that real “behind icons” WorkerW
 static HWND FindBehindIconsWorkerW() {
     // Make sure Explorer has created the WorkerW
@@ -46,6 +79,7 @@ static HWND FindBehindIconsWorkerW() {
     }
     return workerW;
 }
+
 
 /**
  * Creates an SDL window and re-parents it under the real
@@ -93,6 +127,15 @@ SDL_Window* CreateWorkerWWindow(HINSTANCE hInstance, int screenWidth, int screen
         return NULL;
     }
 
+    // Make the SDL window child-capable BEFORE SetParent (avoids GLE=87)
+    if (!IsWindow(hwnd) || !IsWindow(workerw)) {
+        fprintf(stderr, "Invalid hwnd/parent handle(s)\n");
+        SDL_DestroyWindow(sdlWindow);
+        return NULL;
+    }
+    SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, 0);
+    
+    
     // 4) Adjust the extended style: WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, etc.
     LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
     exStyle |= (WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
@@ -103,16 +146,21 @@ SDL_Window* CreateWorkerWWindow(HINSTANCE hInstance, int screenWidth, int screen
     style |= WS_CHILD;
     style &= ~WS_POPUP;
     SetWindowLongPtr(hwnd, GWL_STYLE, style);
-
-    // 6) Re-parent the SDL window under WorkerW
-    SetParent(hwnd, workerw);
+    SetWindowPos(hwnd, NULL, 0,0,0,0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    SetLastError(0);
+    /* //HWND prev = SetParent(hwnd, workerw); */
+    /* if (!prev && GetLastError() != 0) { */
+    /*     fprintf(stderr, "SetParent failed, GLE=%lu\n", GetLastError()); */
+    /*     SDL_DestroyWindow(sdlWindow); */
+    /*     return NULL; */
+    /* } */
 
     // 7) Force style changes to take effect (and position to 0,0 if you wish)
     SetWindowPos(
         hwnd,
-        NULL,
-        0, 0, screenWidth, screenHeight,
-        SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOOWNERZORDER
+        HWND_BOTTOM,
+        0, 0, screenWidth, screenHeight, SWP_NOACTIVATE
     );
 
     // 8) Finally, show the (now child) SDL window
