@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #ifdef DEBUG
-void inline checkFramebufferStatus( GLuint framebuffer ){
+static inline void checkFramebufferStatus( GLuint framebuffer ){
   glBindFramebuffer( GL_FRAMEBUFFER, framebuffer );
 
   GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -67,7 +67,7 @@ void inline checkFramebufferStatus( GLuint framebuffer ){
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 #else
-void inline checkFramebufferStatus( GLuint framebuffer ){
+static inline void checkFramebufferStatus( GLuint framebuffer ){
 }
 #endif
 
@@ -162,7 +162,7 @@ typedef struct MemAlloc{
 extern MemAlloc* mem_list;
 extern SDL_mutex* mem_list_mutex;  // Use SDL mutex
 
-inline void*
+static inline void*
 mem_track( size_t count, size_t size, const char* file, int line ){
   // Initialize the mutex if it's not already initialized
   if( !mem_list_mutex ){
@@ -199,7 +199,7 @@ mem_track( size_t count, size_t size, const char* file, int line ){
   return ptr;
 }
 
-inline void unmem_track( void* ptr, const char* file, int line ){
+static inline void unmem_track( void* ptr, const char* file, int line ){
   if( !ptr ){
     fprintf( stderr, "Attempted to free NULL pointer at %s:%d\n", file, line );
     return;
@@ -243,7 +243,7 @@ inline void unmem_track( void* ptr, const char* file, int line ){
            line );
 }
 
-inline void check_memory_leaks( void ){
+static inline void check_memory_leaks( void ){
   if( mem_list_mutex ){
     SDL_LockMutex( mem_list_mutex );
   }

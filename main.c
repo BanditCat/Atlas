@@ -138,7 +138,7 @@ void resizeWindow( int width, int height ){
 void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
 				   GLenum severity, GLsizei length,
 				   const GLchar* message, const void* userParam ){
-  dbg( "OpenGL Debug Message:\n" );
+  dbg( "OpenGL Debug Message:%s", "\n" );
   dbg( "Source: %d, Type: %d, ID: %d, Severity: %d\n", source, type, id, severity );
   dbg( "Message: %s\n", message );
 }

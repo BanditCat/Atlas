@@ -27,7 +27,7 @@ size;if'started'; // init code goes here
 [40.0];set'accumDiv' 1;
 [10.0];set'jacobiCount';
 [1.0];set'timeScale' 1;
-[64];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
+[192];set'tankDim' 1;get'tankDim';first;3;rep;set'tankSize'; // Set constants
 6;get'tankSize';[3];0;cat;c''''ret[ 0 ] = 0.0\' 0 1 0; // X y z velocity field
 6;get'tankSize';c''''ret[ 0 ] = 0.0\' 0 1 0; // Pressure
 
@@ -148,8 +148,8 @@ if( t.x == 0 || t.x == int( tankDim )-1 ||
     t.z == 0 || t.z == int( tankDim )-1 ) {
   ret[0] = 0.0\
 } else {
-  float pL = (t.x == 0) ? b( t ) : b( t + ivec4( 1,  0,  0, 0 ) )\
-  float pR = (t.x == int(tankDim)-1) ? b( t ) : b( t + ivec4(-1,  0,  0, 0 ) )\
+  float pL = (t.x == 1) ? b( t ) : b( t + ivec4(-1,  0,  0, 0 ) )\ 
+  float pR = (t.x == int(tankDim)-2) ? b( t ) : b( t + ivec4( 1,  0,  0, 0 ) )\
   float pU = (t.y == int(tankDim)-1) ? b( t ) : b( t + ivec4( 0,  1,  0, 0 ) )\
   float pD = (t.y == 0) ? b( t ) : b( t + ivec4( 0, -1,  0, 0 ) )\
   float pF = (t.z == int(tankDim)-1) ? b( t ) : b( t + ivec4( 0,  0,  1, 0 ) )\
