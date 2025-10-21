@@ -30,9 +30,9 @@ DATA = $(HTML:.html=.data)
 
 
 HDRS = Atlas.h tensor.h trie.h program.h
-MSRCS = main.c tensor.c tensorPrint.c program.c trie.c rtd.c
+MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
 EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c 
-SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c rtd.c
+SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
 OBJS = $(SRCS:.c=.o)
 
 SDL2_CFLAGS ?= -I$(CURDIR)/SDL2/
@@ -43,9 +43,9 @@ WINDRES ?= x86_64-w64-mingw32-windres
 
 .PHONY: all rall clean backup release tidy
 
-rdall: debug
-	./$(TARGET)
 rall: release 
+	./$(TARGET)
+rdall: debug
 	./$(TARGET)
 
 

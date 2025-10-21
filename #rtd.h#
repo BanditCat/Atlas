@@ -18,19 +18,7 @@ SDL_Window* CreateWorkerWWindow( HINSTANCE hInstance,
                           int screenWidth,
                           int screenHeight );
 
-
-
-
-Hello everyone!
-
-I've created a programming language named Atlas in C, and I'm excited to share it with you. After many years of thinking about how to bridge CPU and GPU programming more effectively, I decided to build a minimalist language that focuses on a single structure: a stack of (up to 4-dimensional) tensors.
-
-Atlas is designed to be simple and efficient—it generalizes many of the concepts behind WebGL while offering some unique features. For example, it runs on Windows 10/11 and in browsers via emscripten, and it even has the capability to render directly to the Windows desktop.
-
-You can check out the documentation and demo here:
-Docs: https://banditcat.github.io/Atlas
-Demo: https://banditcat.github.io/Atlas/Atlas.html
-
-I'd love to hear your feedback and suggestions. Thanks for taking a look!
--- jon@kinda.science
-  
+SDL_Window* CreateWorkerWWindow_Native( HINSTANCE hInstance,
+					int screenWidth,
+					int screenHeight );
+  PutInDesktopBand(workerw);

@@ -8,7 +8,6 @@
 #include "SDL2/SDL_syswm.h"
 #include <dwmapi.h>
 #include <windows.h>
-#include "rtd.h"
 #endif
 
 
@@ -66,9 +65,6 @@ u64 curTime = 0;
 u64 prevTime = 0;
 f64 timeDelta = 0.01;
 
-void returnToNormalWindow( void );
-void switchToWorkerW( void );
-
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
   if( !fileExists( realName ) )
@@ -105,7 +101,7 @@ EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *us
       float y2 = touchEvent->touches[1].clientY;
       newPinchZoom = sqrtf((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
       if( oldPinchZoom != 0.0 ){
-	pinchZoom += ( newPinchZoom - oldPinchZoom ) / 20.0;
+        pinchZoom += ( newPinchZoom - oldPinchZoom ) / 20.0;
       }
       oldPinchZoom = newPinchZoom;
       touchClicks[ 1 ] = 1;
@@ -125,19 +121,19 @@ EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *us
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 void resizeWindow( int width, int height ){
-    // Optionally, you can print a message to verify this function is called:
-    printf( "Resizing SDL window to %d x %d\n", width, height );
-    jsWidth = width;
-    jsHeight = height;
-    // Update the SDL window's size.
-    SDL_SetWindowSize( window, width, height );
+  // Optionally, you can print a message to verify this function is called:
+  printf( "Resizing SDL window to %d x %d\n", width, height );
+  jsWidth = width;
+  jsHeight = height;
+  // Update the SDL window's size.
+  SDL_SetWindowSize( window, width, height );
 }
 #endif
 
 #ifndef __EMSCRIPTEN__
 void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
-				   GLenum severity, GLsizei length,
-				   const GLchar* message, const void* userParam ){
+                                   GLenum severity, GLsizei length,
+                                   const GLchar* message, const void* userParam ){
   dbg( "OpenGL Debug Message:%s", "\n" );
   dbg( "Source: %d, Type: %d, ID: %d, Severity: %d\n", source, type, id, severity );
   dbg( "Message: %s\n", message );
@@ -152,7 +148,7 @@ void enableDebugCallback() {
 
 // Thread synchronization variables
 SDL_atomic_t running;
-SDL_mutex* data_mutex = NULL;
+//SDL_mutex* data_mutex = NULL;
 void SetDarkTitleBar( SDL_Window* sdlWindow ){
   SDL_SysWMinfo wmInfo;
   SDL_VERSION( &wmInfo.version );
@@ -181,10 +177,10 @@ int running;  // Simple integer for the running flag in single-threaded mode
 
 void mainPoll( void ){
   SDL_Event event;
-  SDL_Delay( 1 ); // Without this delay, the render to desktop code can deadlock for unknown reason.
+  //SDL_Delay( 1 ); // Without this delay, the render to desktop code can deadlock for unknown reason.
   while( SDL_PollEvent( &event ) ){
     if( event.type == SDL_QUIT ||
-	( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
+        ( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
 #ifndef __EMSCRIPTEN__
       SDL_AtomicSet( &running, 0 );
 #else      
@@ -192,177 +188,169 @@ void mainPoll( void ){
 #endif      
     } else if( event.type == SDL_MOUSEWHEEL ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       mouseWheel += event.wheel.y;
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEMOTION ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       posx = event.motion.x; posy = event.motion.y;
       dx += event.motion.xrel; dy += event.motion.yrel;
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
-#endif      
-    } else if( event.type == SDL_USEREVENT ){
-#ifndef __EMSCRIPTEN__
-      if( event.user.code == RTD_EVENT_SWITCH_TO_WORKERW ){
-	switchToWorkerW();
-      }else if( event.user.code == RTD_EVENT_RETURN_TO_NORMAL ){
-	returnToNormalWindow();
-      }
+      //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       if( event.button.clicks == 2 ){
-	if( event.button.button == SDL_BUTTON_LEFT )
-	  doubleClicks[ 0 ] = 1;
-	if( event.button.button == SDL_BUTTON_RIGHT )
-	  doubleClicks[ 1 ] = 1;
-	if( event.button.button == SDL_BUTTON_MIDDLE )
-	  doubleClicks[ 2 ] = 1;
+        if( event.button.button == SDL_BUTTON_LEFT )
+          doubleClicks[ 0 ] = 1;
+        if( event.button.button == SDL_BUTTON_RIGHT )
+          doubleClicks[ 1 ] = 1;
+        if( event.button.button == SDL_BUTTON_MIDDLE )
+          doubleClicks[ 2 ] = 1;
       }
       if( event.button.button == SDL_BUTTON_LEFT )
-	buttons |= SDL_BUTTON( SDL_BUTTON_LEFT );
+        buttons |= SDL_BUTTON( SDL_BUTTON_LEFT );
       if( event.button.button == SDL_BUTTON_RIGHT )
-	buttons |= SDL_BUTTON( SDL_BUTTON_RIGHT );
+        buttons |= SDL_BUTTON( SDL_BUTTON_RIGHT );
       if( event.button.button == SDL_BUTTON_MIDDLE )
-	buttons |= SDL_BUTTON( SDL_BUTTON_MIDDLE );
+        buttons |= SDL_BUTTON( SDL_BUTTON_MIDDLE );
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEBUTTONUP ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       if( event.button.button == SDL_BUTTON_LEFT )
-	buttons &= ~SDL_BUTTON( SDL_BUTTON_LEFT );
+        buttons &= ~SDL_BUTTON( SDL_BUTTON_LEFT );
       if( event.button.button == SDL_BUTTON_RIGHT )
-	buttons &= ~SDL_BUTTON( SDL_BUTTON_RIGHT );
+        buttons &= ~SDL_BUTTON( SDL_BUTTON_RIGHT );
       if( event.button.button == SDL_BUTTON_MIDDLE )
-	buttons &= ~SDL_BUTTON( SDL_BUTTON_MIDDLE );
+        buttons &= ~SDL_BUTTON( SDL_BUTTON_MIDDLE );
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_KEYDOWN ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       keys[ event.key.keysym.scancode ] = 1;
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_KEYUP ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       keys[ event.key.keysym.scancode ] = 0;
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_CONTROLLERDEVICEADDED ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //      SDL_LockMutex( data_mutex );
 #endif
       // First check if already attached.
       bool found = false;
       for( int i = 0; i < MAX_CONTROLLERS; ++i ){
-	if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
-	  found = true;
-	}
+        if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
+          found = true;
+        }
       }
       // Find the first available slot
       if( !found ){
-	for( int i = 0; i < MAX_CONTROLLERS; ++i ){
-	  if( controllers[ i ] == NULL ){
-	    if( SDL_IsGameController(event.cdevice.which ) ){
-	      controllers[ i ] = SDL_GameControllerOpen( event.cdevice.which );
-	      if( controllers[ i ] ){
-		joystickIDs[ i ] = SDL_JoystickInstanceID( SDL_GameControllerGetJoystick( controllers[ i ] ) );
-	      }
-	    }
-	    break; // Stop after adding to one slot
-	  }
-	}
+        for( int i = 0; i < MAX_CONTROLLERS; ++i ){
+          if( controllers[ i ] == NULL ){
+            if( SDL_IsGameController(event.cdevice.which ) ){
+              controllers[ i ] = SDL_GameControllerOpen( event.cdevice.which );
+              if( controllers[ i ] ){
+                joystickIDs[ i ] = SDL_JoystickInstanceID( SDL_GameControllerGetJoystick( controllers[ i ] ) );
+              }
+            }
+            break; // Stop after adding to one slot
+          }
+        }
       }
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //      SDL_UnlockMutex( data_mutex );
 #endif      
 
     } else if( event.type == SDL_CONTROLLERDEVICEREMOVED ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //      SDL_LockMutex( data_mutex );
 #endif
       
       // Identify which controller was removed
       for( int i = 0; i < MAX_CONTROLLERS; ++i ){
-	if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
-	  SDL_GameControllerClose( controllers[ i ] );
-	  controllers[ i ] = NULL;
-	  joystickIDs[ i ] = -1;
-	}
+        if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
+          SDL_GameControllerClose( controllers[ i ] );
+          controllers[ i ] = NULL;
+          joystickIDs[ i ] = -1;
+        }
       }
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //      SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_CONTROLLERAXISMOTION ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       // Handle axis motion
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i ){
-	if( controllers[ i ] && joystickIDs[ i ] == event.caxis.which ){
-	  f32 axisValue = ( (f32)( event.caxis.value ) / 32767.0 );
-	  switch( event.caxis.axis ){
-	  case SDL_CONTROLLER_AXIS_TRIGGERLEFT: joysticks[ i * 21 + 0 ] = axisValue; break;
-	  case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: joysticks[ i * 21 + 1 ] = axisValue; break;
-	  case SDL_CONTROLLER_AXIS_LEFTX: joysticks[ i * 21 + 2 ] = axisValue; break;
-	  case SDL_CONTROLLER_AXIS_LEFTY: joysticks[ i * 21 + 3 ] = axisValue; break;
-	  case SDL_CONTROLLER_AXIS_RIGHTX: joysticks[ i * 21 + 4 ] = axisValue; break;
-	  case SDL_CONTROLLER_AXIS_RIGHTY: joysticks[ i * 21 + 5 ] = axisValue; break;
-	  }
-	}
+        if( controllers[ i ] && joystickIDs[ i ] == event.caxis.which ){
+          f32 axisValue = ( (f32)( event.caxis.value ) / 32767.0 );
+          switch( event.caxis.axis ){
+          case SDL_CONTROLLER_AXIS_TRIGGERLEFT: joysticks[ i * 21 + 0 ] = axisValue; break;
+          case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: joysticks[ i * 21 + 1 ] = axisValue; break;
+          case SDL_CONTROLLER_AXIS_LEFTX: joysticks[ i * 21 + 2 ] = axisValue; break;
+          case SDL_CONTROLLER_AXIS_LEFTY: joysticks[ i * 21 + 3 ] = axisValue; break;
+          case SDL_CONTROLLER_AXIS_RIGHTX: joysticks[ i * 21 + 4 ] = axisValue; break;
+          case SDL_CONTROLLER_AXIS_RIGHTY: joysticks[ i * 21 + 5 ] = axisValue; break;
+          }
+        }
       }
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //      SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_CONTROLLERBUTTONDOWN ||
-	       event.type == SDL_CONTROLLERBUTTONUP ){
+               event.type == SDL_CONTROLLERBUTTONUP ){
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //      SDL_LockMutex( data_mutex );
 #endif
       f32 upordown = 0.0;
       if( event.type == SDL_CONTROLLERBUTTONDOWN )
-	upordown = 1.0;
+        upordown = 1.0;
       // Handle axis motion
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i ){
-	if( controllers[ i ] && joystickIDs[ i ] == event.cbutton.which ){
-	  switch( event.cbutton.button ){
-	  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: joysticks[ i * 21 + 6 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: joysticks[ i * 21 + 7 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_GUIDE: joysticks[ i * 21 + 8 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_DPAD_UP: joysticks[ i * 21 + 9 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joysticks[ i * 21 + 10 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_DPAD_DOWN: joysticks[ i * 21 + 11 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_DPAD_LEFT: joysticks[ i * 21 + 12 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_BACK: joysticks[ i * 21 + 13 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_START: joysticks[ i * 21 + 14 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_A: joysticks[ i * 21 + 15 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_B: joysticks[ i * 21 + 16 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_X: joysticks[ i * 21 + 17 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_Y: joysticks[ i * 21 + 18 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_LEFTSTICK: joysticks[ i * 21 + 19 ] = upordown; break;
-	  case SDL_CONTROLLER_BUTTON_RIGHTSTICK: joysticks[ i * 21 + 20 ] = upordown; break;
-	  }
-	}
+        if( controllers[ i ] && joystickIDs[ i ] == event.cbutton.which ){
+          switch( event.cbutton.button ){
+          case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: joysticks[ i * 21 + 6 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: joysticks[ i * 21 + 7 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_GUIDE: joysticks[ i * 21 + 8 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_DPAD_UP: joysticks[ i * 21 + 9 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joysticks[ i * 21 + 10 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_DPAD_DOWN: joysticks[ i * 21 + 11 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_DPAD_LEFT: joysticks[ i * 21 + 12 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_BACK: joysticks[ i * 21 + 13 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_START: joysticks[ i * 21 + 14 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_A: joysticks[ i * 21 + 15 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_B: joysticks[ i * 21 + 16 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_X: joysticks[ i * 21 + 17 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_Y: joysticks[ i * 21 + 18 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_LEFTSTICK: joysticks[ i * 21 + 19 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_RIGHTSTICK: joysticks[ i * 21 + 20 ] = upordown; break;
+          }
+        }
       }
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //      SDL_UnlockMutex( data_mutex );
 #endif      
     }
   }
@@ -724,10 +712,10 @@ int main( int argc, char* argv[] )
   
   SDL_AtomicSet( &running, 1 );
   // Initialize mutex
-  data_mutex = SDL_CreateMutex();
+  //data_mutex = SDL_CreateMutex();
   rtdMutex = SDL_CreateMutex();
-  rtdCond  = SDL_CreateCond();
-  if( !data_mutex || ! rtdMutex || !rtdCond ){
+    rtdCond  = SDL_CreateCond();
+  if( ! rtdMutex || !rtdCond ){
     error( "%s", "Failed to create mutexs or cond" );
   }
   
@@ -753,12 +741,12 @@ int main( int argc, char* argv[] )
 
   // Add SDL_WINDOW_RESIZABLE flag
   window = SDL_CreateWindow( "Atlas",
-			     SDL_WINDOWPOS_CENTERED,
-			     SDL_WINDOWPOS_CENTERED,
-			     768,
-			     512,  // Initial window size
-			     SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
-			     SDL_WINDOW_RESIZABLE );
+                             SDL_WINDOWPOS_CENTERED,
+                             SDL_WINDOWPOS_CENTERED,
+                             768,
+                             512,  // Initial window size
+                             SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
+                             SDL_WINDOW_RESIZABLE );
   if( !window )
     error( "SDL_CreateWindow Error: %s\n", SDL_GetError() );
 #ifndef __EMSCRIPTEN__
@@ -815,11 +803,8 @@ int main( int argc, char* argv[] )
 
   // Main thread handles SDL event loop
   while( SDL_AtomicGet( &running ) ){
-      
-    SDL_Event ev;
-    if( SDL_WaitEvent( &ev ) )
-      SDL_PushEvent( &ev );
     mainPoll();
+    SDL_Delay(0); // Yield but don't actually sleep
   }
   // Cleanup controllers
   for( int i = 0; i < MAX_CONTROLLERS; ++i ){
@@ -833,9 +818,8 @@ int main( int argc, char* argv[] )
   // Wait for rendering thread to finish
   SDL_WaitThread( renderThread, NULL );
 
-  returnToNormalWindow();
 
-  SDL_DestroyMutex( data_mutex );
+  //SDL_DestroyMutex( data_mutex );
 #else
   // Set up the main loop for Emscripten
   emscripten_set_main_loop( main_loop, 0, 1 );
@@ -883,62 +867,5 @@ float getMaxAnisotropy( void ){
 }
 
 
-#ifndef __EMSCRIPTEN__
- 
-void switchToWorkerW(void) {
-  SDL_LockMutex( rtdMutex );
-  // 1) Hide or destroy the normal SDL window if desired
-  //SDL_HideWindow(window);
-  
-  // 2) Create the WorkerW child window
-  HINSTANCE hInstance = GetModuleHandle(NULL);
-  int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-  int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-  
-  SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
-
-  rtdWindow = CreateWorkerWWindow(hInstance, screenWidth, screenHeight);
-  if (!rtdWindow) {
-    printf("Failed to create WorkerW child window.\n");
-    SDL_ShowWindow(window);
-    return;
-  }
-  //printf( "condstww\n" );
-  SDL_CondBroadcast( rtdCond );   
-  SDL_UnlockMutex( rtdMutex );
-}
-
-void returnToNormalWindow(void) {
-  SDL_LockMutex( rtdMutex );
-  SDL_ShowWindow( window );
-  if( rtdWindow ){
-    SDL_DestroyWindow( rtdWindow );
-    rtdWindow = NULL;
-  }
-  SDL_CondBroadcast( rtdCond );   
-  SDL_UnlockMutex( rtdMutex );
-}
-
-
-// These two functions can be called from any thread
-void reqSwitchToWorkerW(void) {
-  //   switchToWorkerW();
-  SDL_Event ev;
-  SDL_zero(ev);
-  ev.type = SDL_USEREVENT;
-  ev.user.code = RTD_EVENT_SWITCH_TO_WORKERW;
-  SDL_PushEvent( &ev );
-}
-
-void reqReturnToNormalWindow(void) {
-  //  returnToNormalWindow();
-  SDL_Event ev;
-  SDL_zero(ev);
-  ev.type = SDL_USEREVENT;
-  ev.user.code = RTD_EVENT_RETURN_TO_NORMAL;
-  SDL_PushEvent( &ev );
-}
-
-#endif // __EMSCRIPTEN__
 
 

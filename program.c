@@ -1167,7 +1167,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       //mainPoll();
       //SDL_GetRelativeMouseState( &dx, &dy );  // Get mouse delta
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       data[ 0 ] = dx;dx = 0;
       data[ 1 ] = dy;dy = 0;
@@ -1206,14 +1206,14 @@ bool runProgram( tensorStack* ts, program** progp ){
 	data[ 5 ] = 2;
       } 
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif
       push( ts, newTensor( 1, wsshape, data ) );
       break;
     }
     case GAMEPAD: {
 #ifndef __EMSCRIPTEN__
-      SDL_LockMutex( data_mutex );
+      //SDL_LockMutex( data_mutex );
 #endif
       u32 gpshape[ 4 ] = { 0, 21, 1, 1 };
       f32* data;
@@ -1231,7 +1231,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 
       push( ts, newTensor( 2, gpshape, data ) );
 #ifndef __EMSCRIPTEN__
-      SDL_UnlockMutex( data_mutex );
+      //SDL_UnlockMutex( data_mutex );
 #endif
       break;
     }
@@ -1393,36 +1393,6 @@ bool runProgram( tensorStack* ts, program** progp ){
       push( ts, copyTensor( s->tensor ) );
       break;
     case RTD:
-#ifndef __EMSCRIPTEN__
-      if (rtdContext) {
-        SDL_GL_DeleteContext(rtdContext);
-	rtdContext = NULL;
-	reqReturnToNormalWindow();
-	SDL_LockMutex( rtdMutex );
-	while (rtdWindow) {
-	  SDL_CondWait(rtdCond, rtdMutex);
-	}
-	SDL_UnlockMutex( rtdMutex );
-	SDL_GL_MakeCurrent(window, glContext);
-      }else{
-	reqSwitchToWorkerW();
-	SDL_LockMutex( rtdMutex );
-	while (!rtdWindow) {
-	  SDL_CondWait(rtdCond, rtdMutex);
-	}
-	rtdContext = SDL_GL_CreateContext(rtdWindow);
-	if (!rtdContext) {
-	  printf("SDL_GL_CreateContext error: %s\n", SDL_GetError());
-	  SDL_DestroyWindow(rtdWindow);
-	  rtdWindow = NULL;
-	  SDL_ShowWindow(window);
-	  error( "%s", "No rtdContext!" );
-	}
-	SDL_UnlockMutex(rtdMutex);
-	SDL_GL_MakeCurrent(rtdWindow, rtdContext);
-      }
-     
-#endif
       break;
     case PRINT:
       printStack( ts );
