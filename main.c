@@ -45,14 +45,9 @@ SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
 u64 memc = 0;
 #endif
 
-SDL_mutex* rtdMutex = NULL;
-SDL_cond*  rtdCond  = NULL;
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
-// We'll keep static references to the new WorkerW window/context
-SDL_Window* rtdWindow = NULL;
-SDL_GLContext rtdContext = NULL;
 
 // The compiled program to be run.
 program* prog;
@@ -509,10 +504,7 @@ int renderThreadFunction( void* data ){
     }
 
     // Get current window size
-    if( rtdWindow )
-      SDL_GetWindowSize( rtdWindow, &windowWidth, &windowHeight );
-    else
-      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+    SDL_GetWindowSize( window, &windowWidth, &windowHeight );
     
     // Adjust the viewport
     glViewport( 0, 0, windowWidth, windowHeight );
@@ -579,10 +571,7 @@ int renderThreadFunction( void* data ){
     // Cleanup
     glDisableVertexAttribArray( posAttrib );
 
-    if( rtdWindow )
-      SDL_GL_SwapWindow( rtdWindow );
-    else
-      SDL_GL_SwapWindow( window );
+    SDL_GL_SwapWindow( window );
       
     //DwmFlush();
   }
@@ -711,13 +700,6 @@ int main( int argc, char* argv[] )
   SetConsoleOutputCP( CP_UTF8 );
   
   SDL_AtomicSet( &running, 1 );
-  // Initialize mutex
-  //data_mutex = SDL_CreateMutex();
-  rtdMutex = SDL_CreateMutex();
-    rtdCond  = SDL_CreateCond();
-  if( ! rtdMutex || !rtdCond ){
-    error( "%s", "Failed to create mutexs or cond" );
-  }
   
 #else
   running = 1;

@@ -562,10 +562,6 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "rtd" ) ){  // Last
-    curStep->type = RTD;
-    // dbg( "Linenum %u commandnum %u: rtd\n", linenum, commandnum );
-
   } else if( !strcmp( command, "bury" ) ){  // Last
     curStep->type = BURY;
     // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
@@ -1148,12 +1144,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     case WINDOWSIZE: {
       static const u32 wsshape[ 1 ] = { 2 };
       int windowWidth, windowHeight;
-#ifndef __EMSCRIPTEN__
-      if( rtdWindow )
-	SDL_GetWindowSize( rtdWindow, &windowWidth, &windowHeight );
-      else
-#endif	
-	SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+      SDL_GetWindowSize( window, &windowWidth, &windowHeight );
       f32* data = mem( 2, f32 );
       data[ 0 ] = windowWidth;
       data[ 1 ] = windowHeight;

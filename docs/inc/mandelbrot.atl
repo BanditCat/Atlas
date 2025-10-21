@@ -78,4 +78,3 @@ get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';
-get'keyPresses';[60 61 0];s;first;ifn'skipf3';rtd;l'skipf3';

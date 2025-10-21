@@ -87,7 +87,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'linuxify toolset'
+	git commit -m 'remove render to desktop'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)
