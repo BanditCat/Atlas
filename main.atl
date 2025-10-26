@@ -18,7 +18,7 @@ nav2d;
 '4. A mandelbrot set with peturbations.            ';e;0;cat;
 '5. A raytraced terrain flythrough.                ';e;0;cat;
 '6. A gravitational nbodies demo.                  ';e;0;cat;
-'7. A 3d fluid. (might load slow).                 ';e;0;cat;
+'7. A 4d fractal. (The set of all Julia sets.)     ';e;0;cat;
 textToTexture;
 0;dup;shape;[0 2 0];s;set'tsize' 2;
 1; // A dummy value to pop off instead of the frame since we are in init.

@@ -1,6 +1,4 @@
-//runs on desktop.
-//3d fluid sim.
-
+finish 4d nav, do 3d with roll.
 
 introduce quoting so strings can include quotes.
 

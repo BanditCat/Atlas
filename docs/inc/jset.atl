@@ -1,0 +1,146 @@
+include'inc\stdlib.atl';
+'main.atl';
+include'inc\nav.atl';
+
+size;if'started'; // init code goes here
+nav3d;
+[0 0 3];set'origin' 3;
+[0 0];set'3dnavParam';
+
+1; // dummy value to pop off in place of display tensor.
+l'started'; // init code complete
+
+pop; // Pop the last display tensor off the stack.
+
+nav3d;get'3dnavParam';[1000 1000];/;set'navp' 2;
+
+6;windowSize;0;dup;set'wdims' 2;
+get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
+[4];0;cat;
+
+////////////////////////////////////////////////////////////////////////////////
+// GLSL Functions
+////////////////////////////////////////////////////////////////////////////////
+c'''
+const int MAX_ITERS = 128\
+const int MAX_STEPS = 256\
+const float SCALE_FACTOR = 0.0625\
+const float MIN_DIST = 1.0 / float(MAX_ITERS - 1)\
+const int MAX_DEPTH = 2\
+const float INIT_DIST = 6.0\
+
+float de_julia(vec4 p) {
+  vec2 z = p.xy\
+  vec2 c = p.zw\
+  float iter = 0.0\
+  
+  for(int i = 0\ i < MAX_ITERS\ i++) {
+    z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c\
+    
+    if(dot(z,z) > 256.0) {
+      float mag = length(z)\
+      iter += 3.0 - log2(log2(mag))\
+      break\
+    }
+    iter += 1.0\
+  }
+  
+  return 1.0 / iter\
+}
+
+float raymarch(vec4 ro, vec4 rd, float maxt) {
+  float searchMin = 0.0\
+  float searchMax = maxt\
+  float minDist = 999.0\
+  float minT = 0.0\
+  
+  for(int depth = 0\ depth < MAX_DEPTH\ ++depth) {
+    float range = searchMax - searchMin\
+    float stepsize = range / float(MAX_STEPS)\
+    minDist = 999.0\
+    
+    for(float t = searchMin\ t <= searchMax\ t += stepsize) {
+      vec4 p = ro + rd * t\  // Changed to vec4!
+      float d = de_julia(p)\
+      
+      if(d < minDist) {
+        minDist = d\
+        minT = t\
+      }
+      if(minDist < MIN_DIST) break\
+    }
+    
+    float window = range * SCALE_FACTOR\
+    searchMin = max(0.0, minT - window)\
+    searchMax = min(maxt, minT + window)\
+  }
+  
+  if(minDist < MIN_DIST) return minT\
+  return -1.0\
+}
+
+// Normal estimation in 4D
+vec4 calcNormal(vec4 p) {
+  vec2 e = vec2(0.01, 0.0)\
+  return normalize(vec4(
+    de_julia(p + e.xyyy) - de_julia(p - e.xyyy),
+    de_julia(p + e.yxyy) - de_julia(p - e.yxyy),
+    de_julia(p + e.yyxy) - de_julia(p - e.yyxy),
+    de_julia(p + e.yyyx) - de_julia(p - e.yyyx)
+  ))\
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// The shader
+////////////////////////////////////////////////////////////////////////////////
+
+'
+// Compute the initial ray in view space
+vec3 ray = normalize(
+    vec3(
+      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+      -1.0
+    )
+)\
+
+// Rotate ray by camera rotation
+vec3 rd = ( worldRotation * vec4(ray, 1.0) ).xyz\
+
+float result = raymarch(vec4(origin, navp.x), vec4(rd, navp.x), INIT_DIST)\
+vec4 p4 = vec4(origin, navp.x) + vec4(rd, navp.x) * result\
+vec3 p = p4.xyz\  // For display, project to 3D
+
+vec3 color = vec3(0.1, 0.1, 0.2)\  // Background
+
+if(result > 0.0) {
+  // Hit!
+  vec4 n4 = calcNormal(p4)\  // Pass vec4, get vec4 back
+  vec3 n = normalize(n4.xyz)\  // Project to 3D for lighting
+  
+  // Simple lighting
+  vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0))\
+  float diff = max(dot(n, lightDir), 0.0)\
+  
+  // Color based on position in b-axis
+  float height = (p.z + 1.0) * 0.5\  // Map [-1,1] to [0,1]
+  color = vec3(height, 0.5, 1.0 - height) * (0.3 + 0.7 * diff)\
+}
+
+ret[0] = vec4(color, 1.0)\
+'
+0 1 4;
+
+//////////////////////////////////////////////////////////////////
+// Help and framerate
+
+get'keys';[58 59 0];s;first;ifn'skipf1';
+'Click and drag: rotate view            ';e;
+'Right click: fly forward               ';e;0;cat;
+'w/s/a/d/c/shift/ctrl/space: fly around ';e;0;cat;
+'Mouse wheel: change fly speed          ';e;0;cat;
+textToTexture;blitText;
+l'skipf1';
+get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+1;timeDelta;/;toString;e;
+textToTexture;blitText;
+l'skipf2';
