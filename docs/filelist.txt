@@ -8,4 +8,4 @@ inc\terrain.atl
 inc\terrain.bmp
 inc\triangle.atl
 inc\nbodies.atl
-inc\fluid.atl
+inc\jset.atl
