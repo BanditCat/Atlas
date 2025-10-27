@@ -16,7 +16,6 @@
 
 u32 jsWidth = 0;
 u32 jsHeight = 0;
-bool wantWorkerW = false;
 bool depthTest = false;
 bool additive = false;
 GLuint vao = 0;

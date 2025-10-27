@@ -114,7 +114,6 @@ return;
 l'nav3d';
 get'__nav3dInited';if'__nav3dInitDone';
 [0 0 0];set'__velocity';
-[0 0];set'__rot';
 1;set'speed';
 [0 0 0];set'origin' 3;
 [0 0];set'3dnavParam';
@@ -124,19 +123,6 @@ get'__nav3dInited';if'__nav3dInitDone';
 l'__nav3dInitDone';
 
 0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
-
-get'gamepad';[4 6 0];s;timeDelta;2;rep;*;[800 800];*;get'__rot';+;set'__rot';
-
-get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
-get'input';[0 2 0];s;get'__rot';+;set'__rot';
-l'mouse1skip';
-
-get'__rot';first;-300;/;[0 1 0];rot; // rot about x
-get'__rot';last;-300;/;[1 0 0];rot;m; // rot about y
-set'worldRotation' 16;
-get'__rot';last;300;/;[1 0 0];rot; // rot about y
-get'__rot';first;300;/;[0 1 0];rot;m; // rot about x
-set'worldUnrotation' 16;
 
 
 [0 0 0];set'__accel';
@@ -164,6 +150,35 @@ get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'ctkeyskip';
 [0 -1 0];
 get'__accel';+;set'__accel';
 l'ctkeyskip';
+0;set'__rotza';
+get'keys';[20 21 0];s;first;get'gamepad';[6 7 0];s;first;+;ifn'clockwiseskip';
+1;set'__rotza';
+l'clockwiseskip';
+get'keys';[8 9 0];s;first;get'gamepad';[7 8 0];s;first;+;ifn'cclockwiseskip';
+-1;set'__rotza';
+l'cclockwiseskip';
+
+get'__rotza';timeDelta;165;*;*;set'__rotza';
+get'__rotzv';get'__rotza';+;set'__rotzv';
+get'__rotzv';0.95;timeDelta;165;*;^;*;set'__rotzv';
+
+get'gamepad';[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
+get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
+get'input';[0 2 0];s;+; // get mouse delta xy and add
+l'mouse1skip';
+
+get'worldRotation';[0 1];t;[1 2 0];s;first;[0 3 0];s;set'__up';
+0;dup;first;0;dup;
+-300;/;get'__up';rot;get'worldRotation';m;set'worldRotation' 16;
+300;/;get'__up';rot;get'worldUnrotation';m;set'worldUnrotation' 16;
+last;0;dup;
+get'worldRotation';[0 1];t;[0 1 0];s;first;[0 3 0];s;set'__right';
+-300;/;get'__right';rot;get'worldRotation';m;set'worldRotation' 16;
+300;/;get'__right';rot;get'worldUnrotation';m;set'worldUnrotation' 16;
+get'worldRotation';[0 1];t;[2 3 0];s;first;[0 3 0];s;set'__forward';
+get'__rotzv';
+1500;/;get'__forward';rot;get'worldRotation';m;set'worldRotation' 16;
+
 
 get'worldRotation';get'__accel';timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;set'__accel';
 get'__velocity';get'__accel';get'speed';3;rep;*;+;set'__velocity';
