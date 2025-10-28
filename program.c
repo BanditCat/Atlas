@@ -182,7 +182,7 @@ u32 addCompute( program* p,
                 const char* glsl,
                 u32 argCount,
                 u32 retCount,
-		u32 channels ){
+                u32 channels ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
@@ -307,7 +307,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     if( !*sizep ){
       curStep->var.size = 0;
     }else if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
-	      !sizep[ charsread ] ){
+              !sizep[ charsread ] ){
       curStep->var.size = varSize;
       if( !varSize || ( varSize > 4 && varSize != 16 ) )
         error( "%s", "Invalid var size in set statement." );
@@ -356,7 +356,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       endi++;
     if( endi == starti )
       error(
-	    "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
+            "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
     if( *endi != '\'' )
       error( "%s:%u command %u: %s", filename,
              linenum,
@@ -544,8 +544,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->toCompute.channels = channels;
       if( argCount > 4 )
         error(
-	      "%s",
-	      "Compute created with more than 4 arguments. The maximum is 4." );
+              "%s",
+              "Compute created with more than 4 arguments. The maximum is 4." );
       // dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
       // linenum, commandnum, comp, argCount );
     } else
@@ -630,6 +630,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = POW;
     // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "sin" ) ){  // Exp
+    curStep->type = SIN;
+    // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "cos" ) ){  // Exp
+    curStep->type = COS;
+    // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
+
   } else if( !strcmp( command, "r" ) ){  // Reverse
     curStep->type = REVERSE;
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
@@ -701,27 +709,27 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       char* starti = command + 1;
       char* endi = starti;
       while( *endi && *endi != '\'' )
-	endi++;
+        endi++;
       if( endi == starti )
-	error( "%s:%u command %u: %s", filename,
-	       linenum,
-	       commandnum,
-	       "Empty string statement." );
+        error( "%s:%u command %u: %s", filename,
+               linenum,
+               commandnum,
+               "Empty string statement." );
       if( *endi != '\'' )
-	error( "%s:%u command %u: %s", filename,
-	       linenum,
-	       commandnum,
-	       "Unmatched quote in string statement." );
+        error( "%s:%u command %u: %s", filename,
+               linenum,
+               commandnum,
+               "Unmatched quote in string statement." );
       char* str = mem( 1 + endi - starti, char );
       memcpy( str, starti, endi - starti );
       str[ endi - starti ] = '\0';
       curStep->tensor = tensorFromString( str );
       unmem( str );
       if( *( endi + 1 ) )
-	error( "%s:%u command %u: %s", filename,
-	       linenum,
-	       commandnum,
-	       "Extra characters after string statement." );
+        error( "%s:%u command %u: %s", filename,
+               linenum,
+               commandnum,
+               "Extra characters after string statement." );
       // dbg( "Linenum %u commandnum %u: string %s\n", linenum, commandnum,
       // string );
     } else{
@@ -729,15 +737,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       f32 scalar;
       int charsread;
       if( sscanf( tp, "%f%n", &scalar, &charsread ) == 1 && !tp[ charsread ] ){
-	curStep->tensor = mem( 1, tensor );
-	curStep->tensor->size = 1;
-	for( u32 i = 0; i < 4; ++i )
-	  curStep->tensor->shape[ i ] = curStep->tensor->strides[ i ] = 1;
-	curStep->tensor->data = mem( 1, f32 );
-	*curStep->tensor->data = scalar;
-	curStep->tensor->ownsData = true;
+        curStep->tensor = mem( 1, tensor );
+        curStep->tensor->size = 1;
+        for( u32 i = 0; i < 4; ++i )
+          curStep->tensor->shape[ i ] = curStep->tensor->strides[ i ] = 1;
+        curStep->tensor->data = mem( 1, f32 );
+        *curStep->tensor->data = scalar;
+        curStep->tensor->ownsData = true;
       } else
-	curStep->tensor = parseTensor( command );
+        curStep->tensor = parseTensor( command );
     }
     // dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
 
@@ -854,24 +862,24 @@ void addProgram( const char* filename, char* prog, program* program ){
       char* starti = command + 8;
       char* endi = starti;
       while( *endi && *endi != '\'' )
-	endi++;
+        endi++;
       if( endi == starti )
-	error( "%s:%u command %u: %s", filename,
-	       linenum,
-	       commandnum,
-	       "Empty include statement." );
+        error( "%s:%u command %u: %s", filename,
+               linenum,
+               commandnum,
+               "Empty include statement." );
       if( *endi != '\'' )
-	error( "%s:%u command %u: %s", filename,
-	       linenum,
-	       commandnum,
-	       "Unmatched quote in include statement." );
+        error( "%s:%u command %u: %s", filename,
+               linenum,
+               commandnum,
+               "Unmatched quote in include statement." );
       char* inc = mem( 1 + endi - starti, char );
       memcpy( inc, starti, endi - starti );
       inc[ endi - starti ] = '\0';
       addProgramFromFile( inc, program );
       program->filenames[ program->numFilenames++ ] = inc;
       if( program->numFilenames == NUM_FILENAMES )
-	error( "%s", "NUM_FILENAMES exceeded." );
+        error( "%s", "NUM_FILENAMES exceeded." );
       // ... handle 'include' ...
       // addProgramFromFile(...);
       unmem( buf );
@@ -893,11 +901,11 @@ void finalize( program* program ){
     u32 baselen = strlen( "uniform float %s;" ) + 30;
     for( u32 i = 0; i < program->numSteps; ++i )
       if( program->steps[ i ].type == SET ){
-	if( program->steps[ i ].var.size ){
-	  nameslen += strlen( program->steps[ i ].var.name ) + 2;
-	  program->numVars++;
-	}else
-	  program->numBigvars++;
+        if( program->steps[ i ].var.size ){
+          nameslen += strlen( program->steps[ i ].var.name ) + 2;
+          program->numVars++;
+        }else
+          program->numBigvars++;
       }
     program->varOffsets = mem( program->numVars, u32 );
     program->varSizes = mem( program->numVars, u32 );
@@ -913,77 +921,77 @@ void finalize( program* program ){
     u32 offset = 0;
     for( u32 i = 0; i < program->numSteps; ++i ){
       if( program->steps[ i ].type == SET ){
-	if( !program->steps[ i ].var.size ){
-	  u32 val;
-	  if( trieSearch( program->bigvars, program->steps[ i ].var.name, &val ) ){
-	    unmem( program->steps[ i ].var.name );
-	    program->steps[ i ].var.index = val;
-	  }else{
-	    trieInsert( program->bigvars, program->steps[ i ].var.name, program->numBigvars );
-	    program->bigvarNames[ program->numBigvars ] = program->steps[ i ].var.name;
-	    program->steps[ i ].var.index = program->numBigvars;
-	    ++program->numBigvars;
-	  }
-	}else{
-	  u32 val;
-	  if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
-	    if( program->steps[ i ].var.size != program->varSizes[ val ] )
-	      error( "%s:%u command %u: %s", program->steps[ i ].filename,
-		     program->steps[ i ].linenum,
-		     program->steps[ i ].commandnum,
-		     "Incorrect size setting already set value. Size is static." );
-	    unmem( program->steps[ i ].var.name );
-	    program->steps[ i ].var.index = val;
-	  } else {
-	    trieInsert( program->vars, program->steps[ i ].var.name, program->numVars );
-	    switch( program->steps[ i ].var.size ){
-	    case 1:
-	      p += snprintf( p,
-			     bufsize - ( p - glslUniformBlock ),
-			     "uniform float %s;\n",
-			     program->steps[ i ].var.name );
-	      break;
-	    case 2:
-	      p += snprintf( p,
-			     bufsize - ( p - glslUniformBlock ),
-			     "uniform vec2 %s;\n",
-			     program->steps[ i ].var.name );
-	      break;
-	    case 3:
-	      p += snprintf( p,
-			     bufsize - ( p - glslUniformBlock ),
-			     "uniform vec3 %s;\n",
-			     program->steps[ i ].var.name );
-	      break;
-	    case 4:
-	      p += snprintf( p,
-			     bufsize - ( p - glslUniformBlock ),
-			     "uniform vec4 %s;\n",
-			     program->steps[ i ].var.name );
-	      break;
-	    case 16:
-	      p += snprintf( p,
-			     bufsize - ( p - glslUniformBlock ),
-			     "uniform mat4 %s;\n",
-			     program->steps[ i ].var.name );
-	      break;
-	    default:
-	      error( "%s", "Logic error in Atlas! My code is ass!" );
-	    }
-	    program->varNames[ program->numVars ] = program->steps[ i ].var.name;
-	    program->varOffsets[ program->numVars ] = offset;
-	    program->varSizes[ program->numVars ] = program->steps[ i ].var.size;
-	    if( program->steps[ i ].var.size == 1 || program->steps[ i ].var.size == 2 )
-	      offset += 2;
-	    else if( program->steps[ i ].var.size == 3 ||
-		     program->steps[ i ].var.size == 4 )
-	      offset += 4;
-	    else
-	      offset += 16;
-	    program->steps[ i ].var.index = program->numVars;
-	    ++program->numVars;
-	  }
-	}
+        if( !program->steps[ i ].var.size ){
+          u32 val;
+          if( trieSearch( program->bigvars, program->steps[ i ].var.name, &val ) ){
+            unmem( program->steps[ i ].var.name );
+            program->steps[ i ].var.index = val;
+          }else{
+            trieInsert( program->bigvars, program->steps[ i ].var.name, program->numBigvars );
+            program->bigvarNames[ program->numBigvars ] = program->steps[ i ].var.name;
+            program->steps[ i ].var.index = program->numBigvars;
+            ++program->numBigvars;
+          }
+        }else{
+          u32 val;
+          if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
+            if( program->steps[ i ].var.size != program->varSizes[ val ] )
+              error( "%s:%u command %u: %s", program->steps[ i ].filename,
+                     program->steps[ i ].linenum,
+                     program->steps[ i ].commandnum,
+                     "Incorrect size setting already set value. Size is static." );
+            unmem( program->steps[ i ].var.name );
+            program->steps[ i ].var.index = val;
+          } else {
+            trieInsert( program->vars, program->steps[ i ].var.name, program->numVars );
+            switch( program->steps[ i ].var.size ){
+            case 1:
+              p += snprintf( p,
+                             bufsize - ( p - glslUniformBlock ),
+                             "uniform float %s;\n",
+                             program->steps[ i ].var.name );
+              break;
+            case 2:
+              p += snprintf( p,
+                             bufsize - ( p - glslUniformBlock ),
+                             "uniform vec2 %s;\n",
+                             program->steps[ i ].var.name );
+              break;
+            case 3:
+              p += snprintf( p,
+                             bufsize - ( p - glslUniformBlock ),
+                             "uniform vec3 %s;\n",
+                             program->steps[ i ].var.name );
+              break;
+            case 4:
+              p += snprintf( p,
+                             bufsize - ( p - glslUniformBlock ),
+                             "uniform vec4 %s;\n",
+                             program->steps[ i ].var.name );
+              break;
+            case 16:
+              p += snprintf( p,
+                             bufsize - ( p - glslUniformBlock ),
+                             "uniform mat4 %s;\n",
+                             program->steps[ i ].var.name );
+              break;
+            default:
+              error( "%s", "Logic error in Atlas! My code is ass!" );
+            }
+            program->varNames[ program->numVars ] = program->steps[ i ].var.name;
+            program->varOffsets[ program->numVars ] = offset;
+            program->varSizes[ program->numVars ] = program->steps[ i ].var.size;
+            if( program->steps[ i ].var.size == 1 || program->steps[ i ].var.size == 2 )
+              offset += 2;
+            else if( program->steps[ i ].var.size == 3 ||
+                     program->steps[ i ].var.size == 4 )
+              offset += 4;
+            else
+              offset += 16;
+            program->steps[ i ].var.index = program->numVars;
+            ++program->numVars;
+          }
+        }
       }
     }
 
@@ -1012,27 +1020,27 @@ void finalize( program* program ){
       u32 jumpTo;
       if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo ) )
         error( "%s:%u command %u: Statement with unknown label %s", program->steps[ i ].filename,
-	       program->steps[ i ].linenum,
-	       program->steps[ i ].commandnum, program->steps[ i ].branchName );
+               program->steps[ i ].linenum,
+               program->steps[ i ].commandnum, program->steps[ i ].branchName );
       unmem( program->steps[ i ].branchName );
       program->steps[ i ].branch = jumpTo;
     } else if( program->steps[ i ].type == GET ){
       u32 vi;
       if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) ){
-	if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) )
-	  error( "%s:%u command %u: Attempt to get an an unknown variable %s", program->steps[ i ].filename,
-		 program->steps[ i ].linenum,
-		 program->steps[ i ].commandnum,
-		 program->steps[ i ].var.name );
-	char* varName = program->steps[ i ].var.name;
-	program->steps[ i ].var.index = vi;
-	unmem( varName );
-	program->steps[ i ].var.size = 0;
+        if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) )
+          error( "%s:%u command %u: Attempt to get an an unknown variable %s", program->steps[ i ].filename,
+                 program->steps[ i ].linenum,
+                 program->steps[ i ].commandnum,
+                 program->steps[ i ].var.name );
+        char* varName = program->steps[ i ].var.name;
+        program->steps[ i ].var.index = vi;
+        unmem( varName );
+        program->steps[ i ].var.size = 0;
       } else{
-	char* varName = program->steps[ i ].var.name;
-	program->steps[ i ].var.index = vi;
-	unmem( varName );
-	program->steps[ i ].var.size = program->varSizes[ vi ];
+        char* varName = program->steps[ i ].var.name;
+        program->steps[ i ].var.index = vi;
+        unmem( varName );
+        program->steps[ i ].var.size = program->varSizes[ vi ];
       }
     } else if( program->steps[ i ].type == COMPUTE ){
       char* vglslpre = program->steps[ i ].toCompute.vglslpre;
@@ -1045,7 +1053,7 @@ void finalize( program* program ){
                     vglslpre, glslpre, vglsl, glsl,
                     program->steps[ i ].toCompute.argCount,
                     program->steps[ i ].toCompute.retCount,
-		    program->steps[ i ].toCompute.channels );
+                    program->steps[ i ].toCompute.channels );
       unmem( glsl );
       unmem( glslpre );
       unmem( vglsl );
@@ -1180,21 +1188,21 @@ bool runProgram( tensorStack* ts, program** progp ){
         data[ 5 ] = 0;
 
       if( pinchZoom != 0.0 ){
-	data[ 2 ] += pinchZoom;
-	pinchZoom = 0.0;
+        data[ 2 ] += pinchZoom;
+        pinchZoom = 0.0;
       }
       
       if( doubleClicks[ 0 ] ){
-	doubleClicks[ 0 ] = 0;
-	data[ 3 ] = 2;
+        doubleClicks[ 0 ] = 0;
+        data[ 3 ] = 2;
       } 
       if( doubleClicks[ 1 ] ){
-	doubleClicks[ 1 ] = 0;
-	data[ 4 ] = 2;
+        doubleClicks[ 1 ] = 0;
+        data[ 4 ] = 2;
       } 
       if( doubleClicks[ 2 ] ){
-	doubleClicks[ 2 ] = 0;
-	data[ 5 ] = 2;
+        doubleClicks[ 2 ] = 0;
+        data[ 5 ] = 2;
       } 
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
@@ -1210,15 +1218,15 @@ bool runProgram( tensorStack* ts, program** progp ){
       f32* data;
       
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i )
-	if( controllers[ i ] ){
-	  ++gpshape[ 0 ];
-	}
+        if( controllers[ i ] ){
+          ++gpshape[ 0 ];
+        }
       data = mem( gpshape[ 0 ] * 21, f32 );
       u32 c = 0;
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i )
-	if( controllers[ i ] ){
-	  memcpy( data + c++ * 21, &joysticks[ i * 21 ], sizeof( f32 ) * 21 );
-	}
+        if( controllers[ i ] ){
+          memcpy( data + c++ * 21, &joysticks[ i * 21 ], sizeof( f32 ) * 21 );
+        }
 
       push( ts, newTensor( 2, gpshape, data ) );
 #ifndef __EMSCRIPTEN__
@@ -1238,18 +1246,18 @@ bool runProgram( tensorStack* ts, program** progp ){
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible ranks." );
       for( u32 i = 0; i < t1->rank; ++i )
-	if( t1->shape[ i ] != t2->shape[ i ] )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible shapes." );
+        if( t1->shape[ i ] != t2->shape[ i ] )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to pow tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-		i3 * t1->strides[ 3 ];
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-		i3 * t2->strides[ 3 ];
+                i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+                i3 * t2->strides[ 3 ];
               *offset2 = powf( *offset2, *offset1 );
             }
 
@@ -1269,18 +1277,18 @@ bool runProgram( tensorStack* ts, program** progp ){
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible ranks." );
       for( u32 i = 0; i < t1->rank; ++i )
-	if( t1->shape[ i ] != t2->shape[ i ] )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible shapes." );
+        if( t1->shape[ i ] != t2->shape[ i ] )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to add tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-		i3 * t1->strides[ 3 ];
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-		i3 * t2->strides[ 3 ];
+                i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+                i3 * t2->strides[ 3 ];
               *offset2 = *offset2 + *offset1;
             }
 
@@ -1300,18 +1308,18 @@ bool runProgram( tensorStack* ts, program** progp ){
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible ranks." );
       for( u32 i = 0; i < t1->rank; ++i )
-	if( t1->shape[ i ] != t2->shape[ i ] )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible shapes." );
+        if( t1->shape[ i ] != t2->shape[ i ] )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sub tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-		i3 * t1->strides[ 3 ];
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-		i3 * t2->strides[ 3 ];
+                i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+                i3 * t2->strides[ 3 ];
               *offset2 = *offset2 - *offset1;
             }
       pop( ts );
@@ -1330,18 +1338,18 @@ bool runProgram( tensorStack* ts, program** progp ){
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible ranks." );
       for( u32 i = 0; i < t1->rank; ++i )
-	if( t1->shape[ i ] != t2->shape[ i ] )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible shapes." );
+        if( t1->shape[ i ] != t2->shape[ i ] )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mul tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-		i3 * t1->strides[ 3 ];
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-		i3 * t2->strides[ 3 ];
+                i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+                i3 * t2->strides[ 3 ];
               *offset2 = *offset2 * *offset1;
             }
 
@@ -1361,18 +1369,18 @@ bool runProgram( tensorStack* ts, program** progp ){
       if( t1->rank != t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible ranks." );
       for( u32 i = 0; i < t1->rank; ++i )
-	if( t1->shape[ i ] != t2->shape[ i ] )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible shapes." );
+        if( t1->shape[ i ] != t2->shape[ i ] )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to div tensors with incompatible shapes." );
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
           for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
             for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
               f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
-		i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
-		i3 * t1->strides[ 3 ];
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
               f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
-		i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
-		i3 * t2->strides[ 3 ];
+                i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+                i3 * t2->strides[ 3 ];
               *offset2 = *offset2 / *offset1;
             }
 
@@ -1380,10 +1388,48 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%s", "div" );
       break;
     }
+    case SIN: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call sin without an argument." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              *offset1 = sinf( *offset1 );
+            }
+
+      // dbg( "%s", "sin" );
+      break;
+    }
+    case COS: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call cos without an argument." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              *offset1 = cosf( *offset1 );
+            }
+
+      // dbg( "%s", "sin" );
+      break;
+    }
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
-      break;
-    case RTD:
       break;
     case PRINT:
       printStack( ts );
@@ -1413,7 +1459,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     case COMPUTE:{
       if( ts->size < 2 )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement without both a shape parameter and a vertex count on "
                "the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
@@ -1430,18 +1476,18 @@ bool runProgram( tensorStack* ts, program** progp ){
       for( u32 i = 0; i < rank; ++i )
         shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
       for( u32 i = rank; i < 4; ++ i )
-	shape[ i ] = 1;
+        shape[ i ] = 1;
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );
       u32 channels = p->computes[ s->compute ]->channels;
       if( channels && channels != 4 )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement with a bad channel count." );
       if( channels && rank != 3 )
-	error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
-	       "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
+        error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
+               "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
       if( channels && ( rank != 3 || shape[ 2 ] != 4 ) )
-	error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
-	       "Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
+        error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
+               "Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
       
       pop( ts );
       pop( ts );
@@ -1455,10 +1501,10 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case CAT: {
       if( ts->size < 3 )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to concatenate without enough arguments on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to concatenate without enough arguments on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to concatenate with a nonscalar axis parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
@@ -1466,10 +1512,10 @@ bool runProgram( tensorStack* ts, program** progp ){
                     ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
       if( ts->stack[ ts->size - 2 ]->rank != ts->stack[ ts->size - 1 ]->rank )
-	error( "%s:%u command %u: %s: %u vs %u.", s->filename, s->linenum, s->commandnum,
-	       "Attempt to concatenate tensors of different rank",
-	       ts->stack[ ts->size - 1 ]->rank,
-	       ts->stack[ ts->size - 2 ]->rank );
+        error( "%s:%u command %u: %s: %u vs %u.", s->filename, s->linenum, s->commandnum,
+               "Attempt to concatenate tensors of different rank",
+               ts->stack[ ts->size - 1 ]->rank,
+               ts->stack[ ts->size - 2 ]->rank );
       
       tensorCat( ts, ts->size - 2, ts->size - 1, axis );
       pop( ts );
@@ -1484,25 +1530,25 @@ bool runProgram( tensorStack* ts, program** progp ){
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( !t1 || t1->rank > 2 || !t2 || t2->rank > 2 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Bad tensor or tensor rank in matrix multiplication." );
+               "Bad tensor or tensor rank in matrix multiplication." );
       while( t1->rank < 2 )
-	tensorExtrude( t1 );
+        tensorExtrude( t1 );
       while( t2->rank < 2 )
-	tensorEnclose( t2 );
+        tensorEnclose( t2 );
       if( t1->shape[ 0 ] != t2->shape[ 1 ] )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Incompatible shapes in matrix multiplication." );
+               "Incompatible shapes in matrix multiplication." );
       tensorMultiply( ts );
       break;
     }
     case TOSTRING: {
       if( ts->size < 1 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to create a string without a parameter on the stack." );
+               "Attempt to create a string without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 0 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Expected a scalar for toString." );
+               "Expected a scalar for toString." );
       char* fd = formatTensorData( t1 );
       pop( ts );
       tensor* nt = tensorFromString( fd );
@@ -1513,52 +1559,52 @@ bool runProgram( tensorStack* ts, program** progp ){
     case ROT: {
       if( ts->size < 2 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to create a rotation matrix without enough parameters on the stack." );
+               "Attempt to create a rotation matrix without enough parameters on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 3 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Expected a rank 1 length 3 vector for rotation." );
+               "Expected a rank 1 length 3 vector for rotation." );
 	
       if( t2->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Expected a scalar angle for rotation." );
+               "Expected a scalar angle for rotation." );
       tensorRotate( ts, ts->size - 1, ts->size - 2 );
       break;
     }
     case PROJ: {
       if( !ts->size )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to create a projection matrix without a parameter on the stack." );
+               "Attempt to create a projection matrix without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 5 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Expected a rank 1 length 5 vector (fov, width, height, near, far) for projection." );
+               "Expected a rank 1 length 5 vector (fov, width, height, near, far) for projection." );
       tensorProject( ts, ts->size - 1 );
       break;
     }
     case TRANS: {
       if( !ts->size )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to create a translation matrix without a parameter on the stack." );
+               "Attempt to create a translation matrix without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 3 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Expected a rank 1 length 3 vector for translation." );
+               "Expected a rank 1 length 3 vector for translation." );
       tensorTranslate( ts, ts->size - 1 );
       break;
     }
     case TEXTURE: {
       tensor* cur = ts->stack[ ts->size - 1 ];
       if( !cur->gpu || cur->tex.channels != 4 )
-	error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be 4 channel." );
+        error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be 4 channel." );
       glBindTexture( GL_TEXTURE_2D, cur->tex.texture );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
       if( getMaxAnisotropy() > 1.0 ){
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
       }
       glGenerateMipmap( GL_TEXTURE_2D );
       glBindTexture( GL_TEXTURE_2D, 0 );
@@ -1567,7 +1613,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case REVERSE: {
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to reverse with no axis parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to reverse a nonscalar axis parameter." );
@@ -1582,12 +1628,12 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case SHAPE: {
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to get the shape of a tensor with nothing on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to get the shape of a tensor with nothing on the stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
       f32* newData = mem( cur->rank, f32 );
       for( u32 i = 0; i < cur->rank; ++i )
-	newData[ i ] = cur->shape[ i ];
+        newData[ i ] = cur->shape[ i ];
       u32 newShape[ 1 ] = { cur->rank };
       pop( ts );
       push( ts, newTensor( 1, newShape, newData ) );
@@ -1596,16 +1642,16 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LENGTH: {
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to get the length of a tensor with nothing on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to get the length of a tensor with nothing on the stack." );
       const tensor* top = ts->stack[ ts->size - 1 ];
       if( top->rank != 1 )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to get the length of a tensor with rank not equal 1." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to get the length of a tensor with rank not equal 1." );
       f32 sumsquares = 0;
       for( u32 i = 0; i < top->shape[ 0 ]; ++i )
-	sumsquares += top->data[ top->offset + top->strides[ 0 ] * i ] *
-	  top->data[ top->offset + top->strides[ 0 ] * i ];
+        sumsquares += top->data[ top->offset + top->strides[ 0 ] * i ] *
+          top->data[ top->offset + top->strides[ 0 ] * i ];
       f32* newData = mem( 1, f32 );
       *newData = sqrtf( sumsquares );
       pop( ts );
@@ -1622,34 +1668,34 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LOAD: {
       if( !s->progName ){
-	if( !ts->size )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-		 "Attempt to load a string filename with no string on the stack." );
-	tensor* cur = ts->stack[ ts->size - 1 ];
-	if( cur->rank != 1 )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-		 "Attempt to load a string filename with a nonvector." );
-	char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
-	p = newProgramFromFile( fn );
-	p->filenames[ p->numFilenames++ ] = fn;
+        if( !ts->size )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+                 "Attempt to load a string filename with no string on the stack." );
+        tensor* cur = ts->stack[ ts->size - 1 ];
+        if( cur->rank != 1 )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+                 "Attempt to load a string filename with a nonvector." );
+        char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
+        p = newProgramFromFile( fn );
+        p->filenames[ p->numFilenames++ ] = fn;
       }else{
-	u32 len = strlen( s->progName );
-	char* nn = mem( len + 2, char );
-	strncpy( nn, s->progName, len + 2 );
-	p = newProgramFromFile( nn );
-	p->filenames[ p->numFilenames++ ] = nn;
+        u32 len = strlen( s->progName );
+        char* nn = mem( len + 2, char );
+        strncpy( nn, s->progName, len + 2 );
+        p = newProgramFromFile( nn );
+        p->filenames[ p->numFilenames++ ] = nn;
       }
       deleteProgram( *progp );
       *progp = p;
       while( ts->size )
-	pop( ts );
+        pop( ts );
       // dbg( "%s'%s'", "load ", s=>progName );
       return true;
     }
     case FIRST: {
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to take the first element with no parameter on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -1657,8 +1703,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case LAST: {
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-	       "Attempt to take the first element with no parameter on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -1694,20 +1740,20 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case BURY: {
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury with no parameter on the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury with no parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury with a nonscalar parameter." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury with a nonscalar parameter." );
       
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 bury = *( ts->stack[ ts->size - 1 ]->data +
-		    ts->stack[ ts->size - 1 ]->offset );
+                    ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
       if( bury + 1 > ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury past the end of the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury past the end of the stack." );
       tensor* tb = ts->stack[ ts->size - 1 ];
       takeOwnership( tb );
       for( u32 i = ts->size - 1; i > ( ts->size - 1 ) - bury; --i )
-	ts->stack[ i ] = ts->stack[ i - 1 ];
+        ts->stack[ i ] = ts->stack[ i - 1 ];
       ts->stack[ ( ts->size - 1 ) - bury ] = tb;
       break;
     }
@@ -1743,10 +1789,10 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case TRANSPOSE:
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to transpose with no axes parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Attempt to transpose with a axes parameter not of rank 1." );
 
       u32 axis1 = *( ts->stack[ ts->size - 1 ]->data +
@@ -1828,7 +1874,7 @@ bool runProgram( tensorStack* ts, program** progp ){
       const u8* ks = keys;
       u32 size = SDL_NUM_SCANCODES;
       for( u32 i = 0; i < SDL_NUM_SCANCODES; ++i )
-	data[ i ] = ks[ i ];
+        data[ i ] = ks[ i ];
       push( ts, newTensor( 1, &size, data ) );
       break;
     }
@@ -1837,116 +1883,116 @@ bool runProgram( tensorStack* ts, program** progp ){
       check_memory_leaks();
 #endif
       if( !ts->size )
-	error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Empty stack during set statement." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Empty stack during set statement." );
       if( !s->var.size ){
-	if( p->bigvarts[ s->var.index ] )
-	  deleteTensor( p->bigvarts[ s->var.index ] );
-	p->bigvarts[ s->var.index ] = ts->stack[ ts->size - 1 ];
-	ts->stack[ --ts->size ] = NULL;
-	takeOwnership( p->bigvarts[ s->var.index ] );
+        if( p->bigvarts[ s->var.index ] )
+          deleteTensor( p->bigvarts[ s->var.index ] );
+        p->bigvarts[ s->var.index ] = ts->stack[ ts->size - 1 ];
+        ts->stack[ --ts->size ] = NULL;
+        takeOwnership( p->bigvarts[ s->var.index ] );
 
       }else{
-	if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
-	    ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
-	  error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Incorrect rank during set statement." );
-	if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
-	  // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
-	  error( "Incorrect size %u during set statement. Expecting %u.",
-		 s->var.size, ts->stack[ ts->size - 1 ]->size );
-	}
+        if( ( s->var.size <= 4 && ts->stack[ ts->size - 1 ]->rank != 1 ) ||
+            ( s->var.size == 16 && ts->stack[ ts->size - 1 ]->rank != 2 ) )
+          error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Incorrect rank during set statement." );
+        if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
+          // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
+          error( "Incorrect size %u during set statement. Expecting %u.",
+                 s->var.size, ts->stack[ ts->size - 1 ]->size );
+        }
 	
-	tensorToHostMemory( ts->stack[ ts->size - 1 ] );
-	f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
-	if( s->var.size <= 4 )
-	  for( s32 i = 0; i < s->var.size; ++i )
-	    uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data +
-			      ts->stack[ ts->size - 1 ]->offset +
-			      ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );
-	else
-	  for( u32 i = 0; i < 4; ++i )
-	    for( u32 j = 0; j < 4; ++j )
-	      uniform[ i * 4 + j ] =
-		*( ts->stack[ ts->size - 1 ]->data +
-		   ts->stack[ ts->size - 1 ]->offset +
-		   ts->stack[ ts->size - 1 ]->strides[ 0 ] * i +
-		   ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
-	for( u32 i = 0; i < p->numComputes; ++i ){
-	  glUseProgram( p->computes[ i ]->program );
-	  switch( p->varSizes[ s->var.index ] ){
-	  case 1:
-	    glUniform1fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-			  1,
-			  p->varBlock + p->varOffsets[ s->var.index ] );
-	    break;
-	  case 2:
-	    glUniform2fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-			  1,
-			  p->varBlock + p->varOffsets[ s->var.index ] );
-	    break;
-	  case 3:
-	    glUniform3fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-			  1,
-			  p->varBlock + p->varOffsets[ s->var.index ] );
-	    break;
-	  case 4:
-	    glUniform4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-			  1,
-			  p->varBlock + p->varOffsets[ s->var.index ] );
-	    break;
-	  case 16:
-	    glUniformMatrix4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
-				1,
-				GL_TRUE,
-				p->varBlock + p->varOffsets[ s->var.index ] );
-	    break;
-	  default:
-	    error( "%s", "Logic error in Atlas! Bad variable size." );
-	  }
-	}
+        tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+        f32* uniform = p->varBlock + p->varOffsets[ s->var.index ];
+        if( s->var.size <= 4 )
+          for( s32 i = 0; i < s->var.size; ++i )
+            uniform[ i ] = *( ts->stack[ ts->size - 1 ]->data +
+                              ts->stack[ ts->size - 1 ]->offset +
+                              ts->stack[ ts->size - 1 ]->strides[ 0 ] * i );
+        else
+          for( u32 i = 0; i < 4; ++i )
+            for( u32 j = 0; j < 4; ++j )
+              uniform[ i * 4 + j ] =
+                *( ts->stack[ ts->size - 1 ]->data +
+                   ts->stack[ ts->size - 1 ]->offset +
+                   ts->stack[ ts->size - 1 ]->strides[ 0 ] * i +
+                   ts->stack[ ts->size - 1 ]->strides[ 1 ] * j );
+        for( u32 i = 0; i < p->numComputes; ++i ){
+          glUseProgram( p->computes[ i ]->program );
+          switch( p->varSizes[ s->var.index ] ){
+          case 1:
+            glUniform1fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+                          1,
+                          p->varBlock + p->varOffsets[ s->var.index ] );
+            break;
+          case 2:
+            glUniform2fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+                          1,
+                          p->varBlock + p->varOffsets[ s->var.index ] );
+            break;
+          case 3:
+            glUniform3fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+                          1,
+                          p->varBlock + p->varOffsets[ s->var.index ] );
+            break;
+          case 4:
+            glUniform4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+                          1,
+                          p->varBlock + p->varOffsets[ s->var.index ] );
+            break;
+          case 16:
+            glUniformMatrix4fv( p->computes[ i ]->uniformLocs[ s->var.index ],
+                                1,
+                                GL_TRUE,
+                                p->varBlock + p->varOffsets[ s->var.index ] );
+            break;
+          default:
+            error( "%s", "Logic error in Atlas! Bad variable size." );
+          }
+        }
 	
-	pop( ts );
-	// dbg( "%s", "set" );
+        pop( ts );
+        // dbg( "%s", "set" );
       }
       break;
     case GET: {
       if( !s->var.size ){
-	tensor* t = copyTensor( p->bigvarts[ s->var.index ] );
-	takeOwnership( t );
-	push( ts, t );
+        tensor* t = copyTensor( p->bigvarts[ s->var.index ] );
+        takeOwnership( t );
+        push( ts, t );
       }else{
-	static const u32 shape1[ 4 ] = { 1 };
-	static const u32 shape2[ 4 ] = { 2 };
-	static const u32 shape3[ 4 ] = { 3 };
-	static const u32 shape4[ 4 ] = { 4 };
-	static const u32 shape16[ 2 ] = { 4, 4 };
-	const u32* shape;
-	u32 rank = 1;
-	switch( p->varSizes[ s->var.index ] ){
-	case 1:
-	  shape = shape1;
-	  break;
-	case 2:
-	  shape = shape2;
-	  break;
-	case 3:
-	  shape = shape3;
-	  break;
-	case 4:
-	  shape = shape4;
-	  break;
-	case 16:
-	  shape = shape16;
-	  rank = 2;
-	  break;
-	default:
-	  error( "%s %u.",
-		 "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
-		 p->varSizes[ s->var.index ] );
-	}
-	tensor* t =
-	  newTensor( rank, shape, p->varBlock + p->varOffsets[ s->var.index ] );
-	t->ownsData = false;  // Ensure the tensor does not own the data
-	push( ts, t );
+        static const u32 shape1[ 4 ] = { 1 };
+        static const u32 shape2[ 4 ] = { 2 };
+        static const u32 shape3[ 4 ] = { 3 };
+        static const u32 shape4[ 4 ] = { 4 };
+        static const u32 shape16[ 2 ] = { 4, 4 };
+        const u32* shape;
+        u32 rank = 1;
+        switch( p->varSizes[ s->var.index ] ){
+        case 1:
+          shape = shape1;
+          break;
+        case 2:
+          shape = shape2;
+          break;
+        case 3:
+          shape = shape3;
+          break;
+        case 4:
+          shape = shape4;
+          break;
+        case 16:
+          shape = shape16;
+          rank = 2;
+          break;
+        default:
+          error( "%s %u.",
+                 "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
+                 p->varSizes[ s->var.index ] );
+        }
+        tensor* t =
+          newTensor( rank, shape, p->varBlock + p->varOffsets[ s->var.index ] );
+        t->ownsData = false;  // Ensure the tensor does not own the data
+        push( ts, t );
       }
       // dbg( "%s", "get" );
       break;

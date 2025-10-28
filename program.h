@@ -20,6 +20,8 @@ typedef struct{
     MUL, // documented
     DIV, // documented
     POW, // documented
+    SIN, // documented
+    COS, // documented
     TOSTRING, // documented
     RTD, // documented
     BURY, // documented

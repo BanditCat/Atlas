@@ -1,3 +1,4 @@
+0.5; cos; print; quit;
 include'inc\stdlib.atl'; // It's advisable to include this first.
 
 'inc\triangle.atl';

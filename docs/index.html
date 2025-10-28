@@ -193,7 +193,7 @@
     <summary>Commands Reference</summary>
     <ul>
       <li><a href="#cmd-additive">additive</a></li>
-      <li><a href="#cmd-arith">+ / - / * / / / ^ (arithmetic)</a></li>
+      <li><a href="#cmd-arith">+ / - / * / / / ^ / sin / cos (arithmetic)</a></li>
       <li><a href="#cmd-b">b (bury)</a></li>
       <li><a href="#cmd-c">c (compute)</a></li>
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
@@ -417,8 +417,8 @@ l'skip';
   </section>
 
   <section id="cmd-arith">
-    <h2>+ / - / * / / / ^</h2>
-    <p>These arithmetic commands take two arguments and do one of add, subtract, multiply, divide or exponentiate them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
+    <h2>+ / - / * / / / ^ / sin / cos </h2>
+    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, or cosine them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
     <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print
     <pre><code>tensor 0
 shape: 3
