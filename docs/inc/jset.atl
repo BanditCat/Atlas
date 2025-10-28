@@ -3,16 +3,16 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 
 size;if'started'; // init code goes here
-nav3d;
-[0 0 3];set'origin' 3;
-[0 0];set'3dnavParam';
+nav4d;
+[0 0 3 0];set'fourOrigin' 4;
+4;set'speed';
 
 1; // dummy value to pop off in place of display tensor.
 l'started'; // init code complete
 
 pop; // Pop the last display tensor off the stack.
 
-nav3d;get'3dnavParam';[1000 1000];/;set'navp' 2;
+nav4d;[0 0.1];set'navp' 2;
 
 6;windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
@@ -96,18 +96,18 @@ vec4 calcNormal(vec4 p) {
 
 '
 // Compute the initial ray in view space
-vec3 ray = normalize(
-    vec3(
+vec4 ray = normalize(
+    vec4(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
-      -1.0
+      -1.0, 0.0
     )
 )\
 
 // Rotate ray by camera rotation
-vec3 rd = ( worldRotation * vec4(ray, 1.0) ).xyz\
+vec4 rd = worldRotation * ray\
 
-float result = raymarch(vec4(origin, navp.x), vec4(rd, 0.0), INIT_DIST)\
-vec4 p4 = vec4(origin, navp.x) + vec4(rd, 0.0) * result\
+float result = raymarch( fourOrigin, rd, INIT_DIST)\
+vec4 p4 = fourOrigin + rd * result\
 vec3 p = p4.xyz\  // For display, project to 3D
 
 vec3 color = vec3(0.1, 0.1, 0.2)\  // Background

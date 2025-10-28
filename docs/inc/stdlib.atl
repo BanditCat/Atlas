@@ -71,8 +71,8 @@ l'__nav2dInitDone';
 
 get'gamepad';[2 4 0];s;timeDelta;2;rep;*;get'zoom';0;dup;0;cat;/;get'offs';+;set'offs' 2;
 get'gamepad';[4 6 0];s;timeDelta;2;rep;*;get'zoom';0;dup;0;cat;/;get'rightClickParam';+;set'rightClickParam' 2;
-get'zoom';get'gamepad';[0 1 0];s;first;timeDelta;*;1;+;e;*;set'zoom' 1;
-get'zoom';get'gamepad';[1 2 0];s;first;timeDelta;*;1;+;e;/;set'zoom' 1;
+get'zoom';get'gamepad';[0 1 0];s;first;timeDelta;*;1;+;e;/;set'zoom' 1;
+get'zoom';get'gamepad';[1 2 0];s;first;timeDelta;*;1;+;e;*;set'zoom' 1;
 get'gamepad';[15 16 0];s;first;ifn'__nogpmc';
 get'middleClickParam';[0];timeDelta;e;0;cat;-;set'middleClickParam' 2;
 l'__nogpmc';
@@ -108,8 +108,8 @@ return;
 
 ////////////////////////////////////////////////////////////////////////////////
 // nav3d
-// This function takes 0 arguments but sets origin (a 3 vec) and worldRotation
-// (a 4x4 matrix) according to inputs.
+// This function takes 0 arguments but sets origin (a 3 vec) and worldRotation/
+// worldUnrotation (4x4 matrices) according to inputs.
 
 l'nav3d';
 get'__nav3dInited';if'__nav3dInitDone';
@@ -124,6 +124,9 @@ l'__nav3dInitDone';
 
 0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
 
+get'keys';[9 10 0];s;first;ifn'fkeyskip'; 
+get'input';[0 2 0];s;get'3dnavParam';+;set'3dnavParam';
+l'fkeyskip';
 
 [0 0 0];set'__accel';
 get'keys';[26 27 0];s;first;get'input';[4 5 0];s;first;+;ifn'wkeyskip';
@@ -167,18 +170,16 @@ get'input';[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;+; // get mouse delta xy and add
 l'mouse1skip';
 
-get'worldRotation';[0 1];t;[1 2 0];s;first;[0 3 0];s;set'__up';
-0;dup;first;0;dup;
+get'worldUnrotation';[1 2 0];s;first;[0 3 0];s;set'__up';
+0;dup;first;
 -300;/;get'__up';rot;get'worldRotation';m;set'worldRotation' 16;
-300;/;get'__up';rot;get'worldUnrotation';m;set'worldUnrotation' 16;
-last;0;dup;
-get'worldRotation';[0 1];t;[0 1 0];s;first;[0 3 0];s;set'__right';
+last;
+get'worldUnrotation';[0 1 0];s;first;[0 3 0];s;set'__right';
 -300;/;get'__right';rot;get'worldRotation';m;set'worldRotation' 16;
-300;/;get'__right';rot;get'worldUnrotation';m;set'worldUnrotation' 16;
-get'worldRotation';[0 1];t;[2 3 0];s;first;[0 3 0];s;set'__forward';
+get'worldUnrotation';[2 3 0];s;first;[0 3 0];s;set'__forward';
 get'__rotzv';
 1500;/;get'__forward';rot;get'worldRotation';m;set'worldRotation' 16;
-
+get'worldRotation';[0 1];t;set'worldUnrotation' 16;
 
 get'worldRotation';get'__accel';timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;set'__accel';
 get'__velocity';get'__accel';get'speed';3;rep;*;+;set'__velocity';
@@ -188,8 +189,8 @@ get'origin';get'__velocity';timeDelta;40;/;3;rep;*;+;set'origin' 3;
 
 
 [0 0 0];set'__joymove';
-get'gamepad';[0 1 0];s;first;3;rep;[0 0 -1];*;get'__joymove';+;set'__joymove';
-get'gamepad';[1 2 0];s;first;3;rep;[0 0 1];*;get'__joymove';+;set'__joymove';
+get'gamepad';[0 1 0];s;first;3;rep;[0 0 1];*;get'__joymove';+;set'__joymove';
+get'gamepad';[1 2 0];s;first;3;rep;[0 0 -1];*;get'__joymove';+;set'__joymove';
 get'gamepad';[2 3 0];s;first;3;rep;[1 0 0];*;get'__joymove';+;set'__joymove';
 get'gamepad';[3 4 0];s;first;3;rep;[0 -1 0];*;get'__joymove';+;set'__joymove';
 
@@ -206,15 +207,133 @@ get'gamepad';[12 13 0];s;first;ifn'__nogpleft';
 timeDelta;-300;*;e;[0];0;cat;get'3dnavParam';+;set'3dnavParam';
 l'__nogpleft';
 get'gamepad';[18 19 0];s;first;ifn'__nogpbty';
-timeDelta;10;*;get'speed';+;set'speed';
+timeDelta;5;*;get'speed';+;set'speed';
 l'__nogpbty';
 get'gamepad';[15 16 0];s;first;ifn'__nogpbta';
-timeDelta;-10;*;get'speed';+;set'speed';
+timeDelta;-5;*;get'speed';+;set'speed';
 get'speed';0;dup;0.1;-;if'__speedPositive';pop;0.1;l'__speedPositive';set'speed';
 l'__nogpbta';
 
 get'worldRotation';get'__joymove';[1];0;cat;m;unext;[0 3 0];s;set'__joymove';
 get'__joymove';timeDelta;get'speed';*;0.3;*;3;rep;*;get'origin';+;set'origin' 3;
+
+return;
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// nav4d
+// This function takes 0 arguments but sets fourOrigin (a 4 vec) and worldRotation/
+// worldUnrotation (4x4 matrices) according to inputs.
+
+l'nav4d';
+get'__nav4dInited';if'__nav4dInitDone';
+[0 0 0 0];set'__velocity';
+1;set'speed';
+[0 0 0 0];set'fourOrigin' 4;
+0;[0 1 0];rot;set'worldRotation' 16;
+0;[0 1 0];rot;set'worldUnrotation' 16;
+1;set'__nav4dInited';
+l'__nav4dInitDone';
+
+0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
+
+get'keyPresses';[9 10 0];s;first;ifn'4dfkeyskip';
+get'4dnavmode';if'4dnmskip';1;set'4dnavmode';1;if'4dfkeyskip';
+l'4dnmskip';0;set'4dnavmode';
+l'4dfkeyskip';
+
+[0 0 0 0];set'__accel';
+get'keys';[26 27 0];s;first;get'input';[4 5 0];s;first;+;ifn'4dwkeyskip';
+[0 0 -1 0];
+get'__accel';+;set'__accel';
+l'4dwkeyskip';
+get'keys';[22 23 0];s;first;ifn'4dskeyskip';
+[0 0 1 0];
+get'__accel';+;set'__accel';
+l'4dskeyskip';
+get'keys';[4 5 0];s;first;ifn'4dakeyskip';
+[-1 0 0 0];
+get'__accel';+;set'__accel';
+l'4dakeyskip';
+get'keys';[7 8 0];s;first;ifn'4ddkeyskip';
+[1 0 0 0];
+get'__accel';+;set'__accel';
+l'4ddkeyskip';
+get'keys';[44 45 0];s;get'keys';[225 226 0];s;+;first;ifn'4dspkeyskip';
+[0 1 0 0];
+get'__accel';+;set'__accel';
+l'4dspkeyskip';
+get'keys';[224 225 0];s;get'keys';[6 7 0];s;+;first;ifn'4dctkeyskip';
+[0 -1 0 0];
+get'__accel';+;set'__accel';
+l'4dctkeyskip';
+0;set'__rotza';
+get'keys';[20 21 0];s;first;get'gamepad';[6 7 0];s;first;+;ifn'4dclockwiseskip';
+1;set'__rotza';
+l'4dclockwiseskip';
+get'keys';[8 9 0];s;first;get'gamepad';[7 8 0];s;first;+;ifn'4dcclockwiseskip';
+-1;set'__rotza';
+l'4dcclockwiseskip';
+
+get'__rotza';timeDelta;165;*;*;set'__rotza';
+get'__rotzv';get'__rotza';+;set'__rotzv';
+get'__rotzv';0.95;timeDelta;165;*;^;*;set'__rotzv';
+
+get'gamepad';[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
+get'input';[3 4 0];s;first;ifn'4dmouse1skip'; // rotate if mouse 1
+get'input';[0 2 0];s;+; // get mouse delta xy and add
+l'4dmouse1skip';
+
+//get'worldUnrotation';[1 2 0];s;first;[0 3 0];s;set'__up';
+//0;dup;first;
+//-300;/;get'__up';rot;get'worldRotation';m;set'worldRotation' 16;
+//last;
+//get'worldUnrotation';[0 1 0];s;first;[0 3 0];s;set'__right';
+//-300;/;get'__right';rot;get'worldRotation';m;set'worldRotation' 16;
+//get'worldUnrotation';[2 3 0];s;first;[0 3 0];s;set'__forward';
+//get'__rotzv';
+//1500;/;get'__forward';rot;get'worldRotation';m;set'worldRotation' 16;
+//get'worldRotation';[0 1];t;set'worldUnrotation' 16;
+
+get'worldRotation';get'__accel';timeDelta;165;*;4;rep;*;m;unext;set'__accel';
+get'__velocity';get'__accel';get'speed';4;rep;*;+;set'__velocity';
+get'__velocity';[0.95 0.95 0.95 0.95];timeDelta;165;*;4;rep;^;*;set'__velocity';
+
+get'fourOrigin';get'__velocity';timeDelta;40;/;4;rep;*;+;set'fourOrigin' 4;
+
+
+[0 0 0 0];set'__joymove';
+get'gamepad';[0 1 0];s;first;4;rep;[0 0 1 0];*;get'__joymove';+;set'__joymove';
+get'gamepad';[1 2 0];s;first;4;rep;[0 0 -1 0];*;get'__joymove';+;set'__joymove';
+get'gamepad';[2 3 0];s;first;4;rep;[1 0 0 0];*;get'__joymove';+;set'__joymove';
+get'gamepad';[3 4 0];s;first;4;rep;[0 -1 0 0];*;get'__joymove';+;set'__joymove';
+
+get'gamepad';[9 10 0];s;first;ifn'__4dnogpup';
+//[0];timeDelta;-300;*;e;0;cat;get'3dnavParam';+;set'3dnavParam';
+l'__4dnogpup';
+get'gamepad';[11 12 0];s;first;ifn'__4dnogpdown';
+//[0];timeDelta;300;*;e;0;cat;get'3dnavParam';+;set'3dnavParam';
+l'__4dnogpdown';
+get'gamepad';[10 11 0];s;first;ifn'__4dnogpright';
+//timeDelta;300;*;e;[0];0;cat;get'3dnavParam';+;set'3dnavParam';
+l'__4dnogpright';
+get'gamepad';[12 13 0];s;first;ifn'__4dnogpleft';
+//timeDelta;-300;*;e;[0];0;cat;get'3dnavParam';+;set'3dnavParam';
+l'__4dnogpleft';
+get'gamepad';[18 19 0];s;first;ifn'__4dnogpbty';
+timeDelta;5;*;get'speed';+;set'speed';
+l'__4dnogpbty';
+get'gamepad';[15 16 0];s;first;ifn'__4dnogpbta';
+timeDelta;-5;*;get'speed';+;set'speed';
+get'speed';0;dup;0.1;-;if'__4dspeedPositive';pop;0.1;l'__4dspeedPositive';set'speed';
+l'__4dnogpbta';
+
+get'worldRotation';get'__joymove';m;unext;set'__joymove';
+get'__joymove';timeDelta;get'speed';*;0.3;*;4;rep;*;get'fourOrigin';+;set'fourOrigin' 4;
 
 return;
 
