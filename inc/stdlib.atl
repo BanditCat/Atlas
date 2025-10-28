@@ -241,8 +241,6 @@ get'rot4duv';get'rot4dvu';-;get'rot4dsin';*;
 get'rot4duu';get'rot4dvv';+;get'rot4dcosMinusOne';*;
 +;+;
 
-print;quit;
-
 return;
 
 
@@ -301,27 +299,36 @@ l'4dclockwiseskip';
 get'keys';[8 9 0];s;first;get'gamepad';[7 8 0];s;first;+;ifn'4dcclockwiseskip';
 -1;set'__rotza';
 l'4dcclockwiseskip';
+0;set'__rotwza';
+get'keys';[10 11 0];s;first;get'gamepad';[9 10 0];s;first;+;ifn'4dkataclockwiseskip';
+1;set'__rotwza';
+l'4dkataclockwiseskip';
+get'keys';[23 24 0];s;first;get'gamepad';[11 12 0];s;first;+;ifn'4dckataclockwiseskip';
+-1;set'__rotwza';
+l'4dckataclockwiseskip';
 
 get'__rotza';timeDelta;165;*;*;set'__rotza';
 get'__rotzv';get'__rotza';+;set'__rotzv';
 get'__rotzv';0.95;timeDelta;165;*;^;*;set'__rotzv';
+get'__rotwza';timeDelta;165;*;*;set'__rotwza';
+get'__rotwzv';get'__rotwza';+;set'__rotwzv';
+get'__rotwzv';0.95;timeDelta;165;*;^;*;set'__rotwzv';
 
 get'gamepad';[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
 get'input';[3 4 0];s;first;ifn'4dmouse1skip'; // rotate if mouse 1
 get'input';[0 2 0];s;+; // get mouse delta xy and add
 l'4dmouse1skip';
 
-//get'worldUnrotation';[1 2 0];s;first;[0 3 0];s;set'__up';
-//0;dup;first;
-//-300;/;get'__up';rot;get'worldRotation';m;set'worldRotation' 16;
-//last;
-//get'worldUnrotation';[0 1 0];s;first;[0 3 0];s;set'__right';
-//-300;/;get'__right';rot;get'worldRotation';m;set'worldRotation' 16;
-//get'worldUnrotation';[2 3 0];s;first;[0 3 0];s;set'__forward';
-//get'__rotzv';
-//1500;/;get'__forward';rot;get'worldRotation';m;set'worldRotation' 16;
-//get'worldRotation';[0 1];t;set'worldUnrotation' 16;
-
+get'worldRotation';[0 1];t;set'worldUnrotation' 16;
+get'worldUnrotation';[0 1 0];s;first;set'__right';
+get'worldUnrotation';[1 2 0];s;first;set'__up';
+get'worldUnrotation';[2 3 0];s;first;set'__forward';
+get'worldUnrotation';[3 4 0];s;first;set'__ana';
+get'__forward';get'__up';2;dup;last;-300;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+get'__forward';get'__right';2;dup;first;300;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+get'__up';get'__right';get'__rotzv';1500;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+get'__forward';get'__ana';get'__rotwzv';1500;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+pop; // x y rotation
 
 [0 0 0 0];set'__joymove';
 get'gamepad';[0 1 0];s;first;4;rep;[0 0 1 0];*;get'__joymove';+;set'__joymove';
