@@ -222,7 +222,28 @@ return;
 
 ////////////////////////////////////////////////////////////////////////////////
 // rot4d
-// This function takes a matrix and two orthogonal vectors and  
+// This takes two orthogonal vectors and a scalar and returns the 4d 4x4
+// rotation matrix corresponding to rotation around the plane defined by the
+// two vectors by the amount specified by the scalar. 
+
+l'rot4d';  //stack is 0: angle, 1,2:vecs
+0;dup;sin;4;rep;4;rep;set'rot4dsin';
+cos;1;-;4;rep;4;rep;set'rot4dcosMinusOne';
+e;[0 1];t;1;bury;e;[0 1];t; // turn into column vectors, call them 0: u and 1: v
+0;dup;1;dup;[0 1];t;m;set'rot4duu';
+1;dup;2;dup;[0 1];t;m;set'rot4dvv';
+0;dup;2;dup;[0 1];t;m;set'rot4duv';
+1;dup;1;dup;[0 1];t;m;set'rot4dvu';
+pop;pop;
+0;[1 0 0];rot;  // construct identity matrix
+// R = I + c_minus_1 * (uu + vv) + s * (uv - vu)
+get'rot4duv';get'rot4dvu';-;get'rot4dsin';*;
+get'rot4duu';get'rot4dvv';+;get'rot4dcosMinusOne';*;
++;+;
+
+print;quit;
+
+return;
 
 
 
@@ -301,12 +322,6 @@ l'4dmouse1skip';
 //1500;/;get'__forward';rot;get'worldRotation';m;set'worldRotation' 16;
 //get'worldRotation';[0 1];t;set'worldUnrotation' 16;
 
-get'worldRotation';get'__accel';timeDelta;165;*;4;rep;*;m;unext;set'__accel';
-get'__velocity';get'__accel';get'speed';4;rep;*;+;set'__velocity';
-get'__velocity';[0.95 0.95 0.95 0.95];timeDelta;165;*;4;rep;^;*;set'__velocity';
-
-get'fourOrigin';get'__velocity';timeDelta;40;/;4;rep;*;+;set'fourOrigin' 4;
-
 
 [0 0 0 0];set'__joymove';
 get'gamepad';[0 1 0];s;first;4;rep;[0 0 1 0];*;get'__joymove';+;set'__joymove';
@@ -320,11 +335,11 @@ l'__4dnogpup';
 get'gamepad';[11 12 0];s;first;ifn'__4dnogpdown';
 //[0];timeDelta;300;*;e;0;cat;get'3dnavParam';+;set'3dnavParam';
 l'__4dnogpdown';
-get'gamepad';[10 11 0];s;first;ifn'__4dnogpright';
-//timeDelta;300;*;e;[0];0;cat;get'3dnavParam';+;set'3dnavParam';
+get'gamepad';[10 11 0];s;first;get'keys';[27 28 0];s;first;+;ifn'__4dnogpright';  // x and 
+[0 0 0 1];get'__accel';+;set'__accel';
 l'__4dnogpright';
-get'gamepad';[12 13 0];s;first;ifn'__4dnogpleft';
-//timeDelta;-300;*;e;[0];0;cat;get'3dnavParam';+;set'3dnavParam';
+get'gamepad';[12 13 0];s;first;;get'keys';[29 30 0];s;first;+;ifn'__4dnogpleft'; // z
+[0 0 0 -1];get'__accel';+;set'__accel';
 l'__4dnogpleft';
 get'gamepad';[18 19 0];s;first;ifn'__4dnogpbty';
 timeDelta;5;*;get'speed';+;set'speed';
@@ -334,6 +349,12 @@ timeDelta;-5;*;get'speed';+;set'speed';
 get'speed';0;dup;0.1;-;if'__4dspeedPositive';pop;0.1;l'__4dspeedPositive';set'speed';
 l'__4dnogpbta';
 
+
+get'worldRotation';get'__accel';timeDelta;165;*;4;rep;*;m;unext;set'__accel';
+get'__velocity';get'__accel';get'speed';4;rep;*;+;set'__velocity';
+get'__velocity';[0.95 0.95 0.95 0.95];timeDelta;165;*;4;rep;^;*;set'__velocity';
+
+get'fourOrigin';get'__velocity';timeDelta;40;/;4;rep;*;+;set'fourOrigin' 4;
 get'worldRotation';get'__joymove';m;unext;set'__joymove';
 get'__joymove';timeDelta;get'speed';*;0.3;*;4;rep;*;get'fourOrigin';+;set'fourOrigin' 4;
 
