@@ -211,7 +211,7 @@ ret[0] = color.zyxx\
 get'keys';[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                     ';e;
 'Right click: fly forward                        ';e;0;cat;
-'w/s/a/d/c/shift/ctrl/space: fly around          ';e;0;cat;
+'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
 'Mouse wheel: change fly speed                   ';e;0;cat;
 'Hold f key and drag mouse: change light location';e;0;cat;
 textToTexture;blitText;
