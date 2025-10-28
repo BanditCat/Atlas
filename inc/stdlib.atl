@@ -262,7 +262,7 @@ l'__nav4dInitDone';
 
 0.90;get'input';[2 3 0];s;[-1];*;first;^;get'speed';*;set'speed';
 
-get'keyPresses';[9 10 0];s;first;ifn'4dfkeyskip';
+get'keyPresses';[9 10 0];s;first;get'gamepadPresses';[17 18 0];s;first;+;ifn'4dfkeyskip';
 get'4dnavmode';if'4dnmskip';1;set'4dnavmode';1;if'4dfkeyskip';
 l'4dnmskip';0;set'4dnavmode';
 l'4dfkeyskip';
@@ -324,8 +324,14 @@ get'worldUnrotation';[0 1 0];s;first;set'__right';
 get'worldUnrotation';[1 2 0];s;first;set'__up';
 get'worldUnrotation';[2 3 0];s;first;set'__forward';
 get'worldUnrotation';[3 4 0];s;first;set'__ana';
+get'4dnavmode';if'rot4dmode2';
 get'__forward';get'__up';2;dup;last;-300;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
 get'__forward';get'__right';2;dup;first;300;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+1;if'rot4dmodeskip';
+l'rot4dmode2';
+get'__ana';get'__up';2;dup;last;-300;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+get'__ana';get'__right';2;dup;first;300;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
+l'rot4dmodeskip';
 get'__up';get'__right';get'__rotzv';1500;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
 get'__forward';get'__ana';get'__rotwzv';1500;/;rot4d;get'worldRotation';m;set'worldRotation' 16;
 pop; // x y rotation
@@ -406,7 +412,7 @@ l'blitText';
 6;1;dup;shape;set'_tsize' 3;2;dup;shape;0;dup;set'_wsize' 3;
 c''''
 if( tf.x > _toffset.x && tf.y > _toffset.y && tf.x < _tsize.x / 2. + _toffset.x && tf.y < _tsize.y / 2. + _toffset.y )
-  ret[0] = af( ( tf - _toffset ) * 2. )\
+  ret[0] = af( ( tf - _toffset ) * 2.0 )\
 else
   ret[0] = bf( tf )\
 ' 2 1 4;

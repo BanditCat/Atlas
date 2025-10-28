@@ -22,7 +22,7 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 // GLSL Functions
 ////////////////////////////////////////////////////////////////////////////////
 c'''
-const int MAX_ITERS = 128\
+const int MAX_ITERS = 256\
 const int MAX_STEPS = 256\
 const float SCALE_FACTOR = 0.0625\
 const float MIN_DIST = 1.0 / float(MAX_ITERS - 1)\
