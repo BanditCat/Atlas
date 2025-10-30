@@ -1,4 +1,9 @@
-finish 4d nav, do 3d with roll.
+foo= and foo as synonyms for set'foo' and get'foo'
+fix line number warning for shader compiler errors with at least a line count for the header.
+workspaces
+FFI! (3 floats per 64 bit type)
+saving files/bitmaps
+introduce quality factor q.
 
 introduce quoting so strings can include quotes.
 
@@ -9,4 +14,6 @@ a way to make glsl libraries.
 document stdlib
 
 
-hexidecitrees
+a video game!
+MNIST
+

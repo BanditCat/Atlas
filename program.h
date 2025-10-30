@@ -77,8 +77,8 @@ typedef struct{
     } toCompute;
     struct{
       union{
-	char* name;
-	u32 index;
+        char* name;
+        u32 index;
       };
       u32 size;
     } var;
