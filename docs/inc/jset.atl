@@ -14,7 +14,7 @@ pop; // Pop the last display tensor off the stack.
 
 nav4d;[0 0.1];set'navp' 2;
 
-6;windowSize;[2 2];/;0;dup;set'wdims' 2;
+6;windowSize;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 c'''
 const float MAX_ITERS = 128.0\
 //const float MAX_STEPS = 64.0\
-const float SCALE_FACTOR = 0.0625\
+const float SCALE_FACTOR = 0.07\
 const float MAX_DIST = 0.5\
 const float MIN_DIST = 1.0 / (MAX_ITERS - 1.0)\
 const float LESS_THAN_MIN_DIST = 1.0 / float(MAX_ITERS)\
@@ -81,16 +81,6 @@ float raymarch(vec4 ro, vec4 rd, float maxt) {
   return -1.0\
 }
 
-// Normal estimation in 4D
-vec4 calcNormal(vec4 p) {
-  vec2 e = vec2(0.005, 0.0)\
-  return normalize(vec4(
-    julia(p + e.xyyy) - julia(p - e.xyyy),
-    julia(p + e.yxyy) - julia(p - e.yxyy),
-    julia(p + e.yyxy) - julia(p - e.yyxy),
-    julia(p + e.yyyx) - julia(p - e.yyyx)
-  ))\
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // The shader
@@ -110,22 +100,10 @@ vec4 rd = worldRotation * ray\
 
 float result = raymarch( fourOrigin, rd, INIT_DIST)\
 vec4 p4 = fourOrigin + rd * result\
-vec3 p = p4.xyz\  // For display, project to 3D
 
 vec3 color = vec3(0.1, -1.0, 0.2)\  // Background
 
 if(result > 0.0) {
-  // Hit!
-  vec4 n4 = calcNormal(p4)\  // Pass vec4, get vec4 back
-  vec3 n = normalize(n4.xyz)\  // Project to 3D for lighting
-  
-  // Simple lighting
-  vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0))\
-  float diff = max(dot(n, lightDir), 0.0)\
-  
-  // Color based on position in b-axis
-  float height = (p.z + 1.0) * 0.5\  // Map [-1,1] to [0,1]
-  color = vec3(height, 0.5, 1.0 - height) * (0.3 + 0.7 * diff)\
   color = vec3(0.0,result,0.0)\
 }
 
@@ -160,13 +138,39 @@ float coverage = 0.0\
 float centersample = a(center)\
 for(int i = 0\i < 12\++i){
   ivec4 ns = clamp(center+offsets[i],ivec4(0,0,0,0),ivec4(wdims,0,0))\
-  float dif = clamp((a(ns)-centersample)/epsilon,-1.0,1.0)\
-  coverage += weights[i] * dif / 12.0\
+  float smple = a(ns)\
+  if(smple > 0.0){
+    float dif = clamp((centersample-smple)/epsilon,-1.0,1.0)\
+    coverage += weights[i] * dif / 12.0\
+  }
 }
+float ambient = 0.5 - coverage * 0.5\
+float rightsample = a(center+offsets[0])\
+float upsample = a(center+offsets[1])\
+float leftsample = a(center+offsets[2])\
+float downsample = a(center+offsets[3])\
+vec3 right=normalize(vec3(aspect/wdims.x,0.0,centersample-rightsample))\
+vec3 up=normalize(vec3(0.0,1.0/(aspect*wdims.y),centersample-upsample))\
+vec3 left=normalize(vec3(-aspect/wdims.x,0.0,centersample-leftsample))\
+vec3 down=normalize(vec3(0.0,-1.0/(aspect*wdims.y),centersample-downsample))\
+vec3 nrml1=cross(right,up)\
+vec3 nrml2=cross(left,down)\
+vec4 light=fourOrigin+worldUnrotation*vec4(10.0,10.0,0.0,0.0)\
+vec4 ray = normalize(
+    vec4(
+      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+      -1.0, 0.0
+    )
+)\
+vec4 p = fourOrigin+worldRotation*ray * centersample\
+float diffuse=max(0.0,dot(normalize(nrml1+nrml2),
+  normalize(light.xyz - ray.xyz * centersample)))\
+vec4 color=normalize(p)\
 
-
-
-ret[0] = vec4(0.0,1.0-coverage,0.0,1.0)\
+if(centersample > 0.0)
+  ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.3)*color\
+else
+  ret[0] = vec4(0.0,0.2,0.7,0.0)\
 ' 1 1 4;
 
 //////////////////////////////////////////////////////////////////

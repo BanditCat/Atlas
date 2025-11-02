@@ -162,7 +162,7 @@ vec3 ray = normalize(
     )
 )\
 
-vec3 rotsun = ( lightRotation * vec4(vec3( 0.0, 1.0, 0.0 ), 1.0) ).xyz + sun\
+vec3 rotsun = ( lightRotation * vec4(0.0, 1.0, 0.0, 1.0) ).xyz + sun\
 
 // Rotate it by worldRotation
 vec3 rcrayo = ( worldRotation * vec4(ray, 1.0) ).xyz\
