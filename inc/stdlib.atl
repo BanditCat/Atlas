@@ -161,7 +161,7 @@ get'keys';[8 9 0];s;first;get'gamepad';[7 8 0];s;first;+;ifn'cclockwiseskip';
 -1;set'__rotza';
 l'cclockwiseskip';
 
-get'__rotza';timeDelta;165;*;*;set'__rotza';
+get'__rotza';timeDelta;165;*;2;^;*;set'__rotza';
 get'__rotzv';get'__rotza';+;set'__rotzv';
 get'__rotzv';0.95;timeDelta;165;*;^;*;set'__rotzv';
 
@@ -307,10 +307,10 @@ get'keys';[23 24 0];s;first;get'gamepad';[11 12 0];s;first;+;ifn'4dckataclockwis
 -1;set'__rotwza';
 l'4dckataclockwiseskip';
 
-get'__rotza';timeDelta;165;*;*;set'__rotza';
+get'__rotza';timeDelta;165;*;2;^;*;set'__rotza';
 get'__rotzv';get'__rotza';+;set'__rotzv';
 get'__rotzv';0.95;timeDelta;165;*;^;*;set'__rotzv';
-get'__rotwza';timeDelta;165;*;*;set'__rotwza';
+get'__rotwza';timeDelta;165;*;2;^;*;set'__rotwza';
 get'__rotwzv';get'__rotwza';+;set'__rotwzv';
 get'__rotwzv';0.95;timeDelta;165;*;^;*;set'__rotwzv';
 

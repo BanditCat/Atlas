@@ -14,79 +14,81 @@ pop; // Pop the last display tensor off the stack.
 
 nav4d;[0 0.1];set'navp' 2;
 
-6;windowSize;0;dup;set'wdims' 2;
+6;windowSize;[2 2];/;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
-[4];0;cat;
 
 ////////////////////////////////////////////////////////////////////////////////
 // GLSL Functions
 ////////////////////////////////////////////////////////////////////////////////
 c'''
-const int MAX_ITERS = 128\
-const int MAX_STEPS = 128\
+const float MAX_ITERS = 128.0\
+//const float MAX_STEPS = 64.0\
 const float SCALE_FACTOR = 0.0625\
-const float MIN_DIST = 1.0 / float(MAX_ITERS - 1)\
+const float MAX_DIST = 0.5\
+const float MIN_DIST = 1.0 / (MAX_ITERS - 1.0)\
+const float LESS_THAN_MIN_DIST = 1.0 / float(MAX_ITERS)\
 const int MAX_DEPTH = 2\
 const float INIT_DIST = 6.0\
 
-float de_julia(vec4 p) {
-  vec2 z = p.xy\
-  vec2 c = p.zw\
-  float iter = 0.0\
-  
-  for(int i = 0\ i < MAX_ITERS\ i++) {
-    z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c\
-    
-    if(dot(z,z) > 256.0) {
-      float mag = length(z)\
-      iter += 3.0 - log2(log2(mag))\
-      break\
+float julia(vec4 p) {
+    vec2 z = p.xy\
+    vec2 c = p.zw\
+
+    const float bailout = 4.0\
+    float iter = 0.0\
+    for (float i = 0.0\ i < MAX_ITERS\ i++) {
+        // z_{n+1} = z_n^2 + c
+        z = vec2(
+            z.x * z.x - z.y * z.y,
+            2.0 * z.x * z.y
+        ) + c\
+
+        if (dot(z, z) > bailout)
+            return max(1.0,iter + max(0.0,log(log(dot(z,z)))))\
+        ++iter\
     }
-    iter += 1.0\
-  }
-  
-  return 1.0 / iter\
+
+    return MAX_ITERS\
 }
 
 float raymarch(vec4 ro, vec4 rd, float maxt) {
   float searchMin = 0.0\
   float searchMax = maxt\
-  float minDist = 999.0\
-  float minT = 0.0\
+  float maxIter = 0.0\
+  float maxT = 0.0\
   
   for(int depth = 0\ depth < MAX_DEPTH\ ++depth) {
     float range = searchMax - searchMin\
-    float stepsize = range / float(MAX_STEPS)\
-    minDist = 999.0\
-    
-    for(float t = searchMin\ t <= searchMax\ t += stepsize) {
-      vec4 p = ro + rd * t\  // Changed to vec4!
-      float d = de_julia(p)\
+    maxIter = 0.0\
+    float iter = 100000000000000000000000000.000\
+    for(float t = searchMin\ t <= searchMax\ t += range * 0.05 / iter ) {
+      vec4 p = ro + rd * t\ 
+      iter = julia(p)\
       
-      if(d < minDist) {
-        minDist = d\
-        minT = t\
+      if(iter > maxIter) {
+        maxIter = iter\
+        maxT = t\
       }
-      if(minDist < MIN_DIST) break\
+      if(maxIter >= MAX_ITERS) break\
     }
     
     float window = range * SCALE_FACTOR\
-    searchMin = max(0.0, minT - window)\
-    searchMax = min(maxt, minT + window)\
+    searchMin = max(0.0, maxT - window)\
+    searchMax = min(maxt, maxT + window)\
   }
   
-  if(minDist < MIN_DIST) return minT\
+  if(maxIter >= MAX_ITERS) return maxT\
   return -1.0\
 }
 
 // Normal estimation in 4D
 vec4 calcNormal(vec4 p) {
-  vec2 e = vec2(0.01, 0.0)\
+  vec2 e = vec2(0.005, 0.0)\
   return normalize(vec4(
-    de_julia(p + e.xyyy) - de_julia(p - e.xyyy),
-    de_julia(p + e.yxyy) - de_julia(p - e.yxyy),
-    de_julia(p + e.yyxy) - de_julia(p - e.yyxy),
-    de_julia(p + e.yyyx) - de_julia(p - e.yyyx)
+    julia(p + e.xyyy) - julia(p - e.xyyy),
+    julia(p + e.yxyy) - julia(p - e.yxyy),
+    julia(p + e.yyxy) - julia(p - e.yyxy),
+    julia(p + e.yyyx) - julia(p - e.yyyx)
   ))\
 }
 
@@ -110,7 +112,7 @@ float result = raymarch( fourOrigin, rd, INIT_DIST)\
 vec4 p4 = fourOrigin + rd * result\
 vec3 p = p4.xyz\  // For display, project to 3D
 
-vec3 color = vec3(0.1, 0.1, 0.2)\  // Background
+vec3 color = vec3(0.1, -1.0, 0.2)\  // Background
 
 if(result > 0.0) {
   // Hit!
@@ -124,11 +126,48 @@ if(result > 0.0) {
   // Color based on position in b-axis
   float height = (p.z + 1.0) * 0.5\  // Map [-1,1] to [0,1]
   color = vec3(height, 0.5, 1.0 - height) * (0.3 + 0.7 * diff)\
+  color = vec3(0.0,result,0.0)\
 }
 
-ret[0] = vec4(color, 1.0)\
+ret[0] = color.g\
 '
-0 1 4;
+0 1 0;
+
+6;get'wdims';[4];0;cat;
+c''''
+const float epsilon = 0.05\
+ivec4 center = ivec4(tf,0,0)\
+const ivec4 offsets[12] = ivec4[12](
+    ivec4(1, 0, 0, 0),
+    ivec4(0, 1, 0, 0),
+    ivec4(-1, 0, 0, 0),
+    ivec4(0, -1, 0, 0),
+    ivec4(2, 0, 0, 0),
+    ivec4(0, 2, 0, 0),
+    ivec4(-2, 0, 0, 0),
+    ivec4(0, -2, 0, 0),
+    ivec4(1, 1, 0, 0),
+    ivec4(1, -1, 0, 0),
+    ivec4(-1, 1, 0, 0),
+    ivec4(-1, -1, 0, 0)    
+)\
+const float weights[12] = float[12](
+      1.0, 1.0, 1.0, 1.0, 
+      0.5, 0.5, 0.5, 0.5,
+      0.707, 0.707, 0.707, 0.707
+)\
+float coverage = 0.0\
+float centersample = a(center)\
+for(int i = 0\i < 12\++i){
+  ivec4 ns = clamp(center+offsets[i],ivec4(0,0,0,0),ivec4(wdims,0,0))\
+  float dif = clamp((a(ns)-centersample)/epsilon,-1.0,1.0)\
+  coverage += weights[i] * dif / 12.0\
+}
+
+
+
+ret[0] = vec4(0.0,1.0-coverage,0.0,1.0)\
+' 1 1 4;
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate

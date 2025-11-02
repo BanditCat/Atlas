@@ -1,4 +1,5 @@
 foo= and foo as synonyms for set'foo' and get'foo'
+make it so you can use semicolons in shaders!
 fix line number warning for shader compiler errors with at least a line count for the header.
 workspaces
 FFI! (3 floats per 64 bit type)

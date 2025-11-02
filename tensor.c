@@ -459,12 +459,12 @@ compute* makeCompute( const program* prog,
   // Check for fragment shader compilation errors
   glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
-    static char msg[ 512 ];
-    char log[ 512 ];
-    glGetShaderInfoLog( fragmentShader, sizeof( log ), NULL, log );
-    snprintf(
-      msg, sizeof( msg ), "Fragment shader compilation failed: %s", log );
-    //dbg( "%s", fragmentShaderSource );
+    static const u32 bufsize = 65536;
+    char* msg = mem( bufsize, char );
+    char* log = mem( bufsize, char );
+    glGetShaderInfoLog( fragmentShader, bufsize, NULL, log );
+    snprintf( msg, bufsize, "Fragment shader compilation failed: %s", log );
+    dbg( "%s", fragmentShaderSource );
     glDeleteShader( fragmentShader );
     glDeleteShader( vertexShader );
     error( "%s", msg );
