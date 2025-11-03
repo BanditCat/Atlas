@@ -14,7 +14,7 @@ pop; // Pop the last display tensor off the stack.
 
 nav4d;[0 0.1];set'navp' 2;
 
-6;windowSize;0;dup;set'wdims' 2;
+6;windowSize;[2 2];/;0;dup;set'wdims' 2;
 get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
 
 ////////////////////////////////////////////////////////////////////////////////
