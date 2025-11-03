@@ -165,12 +165,12 @@ vec4 ray = normalize(
 vec4 p = fourOrigin+worldRotation*ray * centersample\
 float diffuse=max(0.0,dot(normalize(nrml1+nrml2),
   normalize(light.xyz - ray.xyz * centersample)))\
-vec4 color=normalize(p)\
+vec4 color=normalize(p)+1.0\
 
 if(centersample > 0.0)
-  ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.3)*color\
+  ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.4)*color\
 else
-  ret[0] = vec4(0.0,0.2,0.7,0.0)\
+  ret[0] = vec4(0.0,0.0,0.0,0.0)\
 ' 1 1 4;
 
 //////////////////////////////////////////////////////////////////
