@@ -166,6 +166,7 @@
       <li><a href="#program-model">Program Model</a></li>
       <li><a href="#invocation">Invocation</a></li>
       <li><a href="#gotchas">Gotchas</a></li>
+      <li><a href="#sugar">Syntactic sugar</a></li>
     </ul>
   </details>
 
@@ -279,11 +280,16 @@
     <p>Atlas takes one parameter as an argument: the file to be run.  If not given a filename, Atlas will run "main.atl" if present, or print a brief usage message if not.  To invoke through a browser copy Atlas.html, Atlas.js, Atlas.wasm and Atlas.data to a served directory. A file named filelist.txt must also be present in the directory, which is a list of files to preload onto the filesystem.  The list will include a main.atl and any supporting files. See the docs directory for a concrete example.</p>
   </section>      
   
-  <section id="invocation">
+  <section id="gotchas">
     <h2>Gotchas</h2>
     <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command.</p>
   </section>      
 
+  <section id="sugar">
+    <h2>Syntactic Sugar</h2>
+    <p>Syntactic sugar exists for getting and setting variables: <code>get'foo'</code> can be shortened to just <code>foo</code>, <code>set'foo'</code> can be shortened to just <code>foo=</code> and <code>set'foo' N</code> can likewise be shortened to <code>foo= N</code>.</p>
+  </section>      
+  
   <hr>
 
   <section id="data-types">
