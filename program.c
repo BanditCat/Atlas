@@ -757,7 +757,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = QUIT;
     // dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
 
-  } else {  // Call
+  } else {  // Call, get or set.
     char* starti = command;
     char* endi = starti;
     while( *endi )
@@ -893,7 +893,7 @@ void addProgram( const char* filename, char* prog, program* program ){
 
 
 void finalize( program* program ){
-  // First collect variables and craft the uniform block and the program vars.
+  // Collect variables and craft the uniform block and the program vars.
   char* glslUniformBlock;
   {
     program->numVars = 0;
@@ -920,6 +920,40 @@ void finalize( program* program ){
     program->numBigvars = 0;
     u32 offset = 0;
     for( u32 i = 0; i < program->numSteps; ++i ){
+      // Check here for CALLS that are SETs
+      if( program->steps[ i ].type == CALL ){
+        u32 len = strlen( program->steps[ i ].branchName );
+        s64 back = len - 1;
+        bool arg = false;
+        u32 argloc = 0;
+        u32 sz = 0;
+        while( back >= 0 && isdigit( program->steps[ i ].branchName[ back ] ) ){
+          arg = true;
+          --back;
+        }
+        argloc = back + 1;
+        while( back >= 0 && isspace( program->steps[ i ].branchName[ back ] ) )
+          --back;
+        if( back >= 0 && program->steps[ i ].branchName[ back ] == '=' ){
+          dbg("%s","s");
+          if( arg ){
+            int charsread;
+            if( sscanf( program->steps[ i ].branchName + argloc, "%u%n",
+                        &sz, &charsread ) != 1 )
+              error( "%s", "sscanf failed!" );
+          }
+
+          if( sz > 4 && sz != 16 )
+            error( "%s", "Invalid var size in short form set statement." );
+
+          char* ns = mem( back + 1, char );
+          memcpy( ns, program->steps[ i ].branchName, back );
+          unmem( program->steps[ i ].branchName );
+          program->steps[ i ].type = SET;
+          program->steps[ i ].var.name = ns;
+          program->steps[ i ].var.size = sz;
+        }
+      }
       if( program->steps[ i ].type == SET ){
         if( !program->steps[ i ].var.size ){
           u32 val;
@@ -1018,12 +1052,35 @@ void finalize( program* program ){
     if( program->steps[ i ].type == IF || program->steps[ i ].type == IFN ||
         program->steps[ i ].type == CALL ){
       u32 jumpTo;
-      if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo ) )
-        error( "%s:%u command %u: Statement with unknown label %s", program->steps[ i ].filename,
-               program->steps[ i ].linenum,
-               program->steps[ i ].commandnum, program->steps[ i ].branchName );
-      unmem( program->steps[ i ].branchName );
-      program->steps[ i ].branch = jumpTo;
+
+      if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo ) ){
+        if( program->steps[ i ].type == CALL ){
+          u32 vi;
+          char* tp = program->steps[ i ].branchName;
+          if( !trieSearch( program->vars, program->steps[ i ].branchName, &vi ) ){
+            if( !trieSearch( program->bigvars, program->steps[ i ].branchName, &vi ) )
+              error( "%s:%u command %u: Statement with unknown label or variable %s",
+                     program->steps[ i ].filename, program->steps[ i ].linenum,
+                     program->steps[ i ].commandnum, program->steps[ i ].branchName );
+            program->steps[ i ].type = GET;
+            program->steps[ i ].var.index = vi;
+            program->steps[ i ].var.size = 0;
+            unmem( tp );
+          } else{
+            program->steps[ i ].type = GET;
+            program->steps[ i ].var.index = vi;
+            program->steps[ i ].var.size = program->varSizes[ vi ];
+            unmem( tp );
+          }
+        } else
+          error( "%s:%u command %u: Statement with unknown label %s",
+                 program->steps[ i ].filename, program->steps[ i ].linenum,
+                 program->steps[ i ].commandnum, program->steps[ i ].branchName );
+                
+      } else {
+        unmem( program->steps[ i ].branchName );
+        program->steps[ i ].branch = jumpTo;
+      }
     } else if( program->steps[ i ].type == GET ){
       u32 vi;
       if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) ){
