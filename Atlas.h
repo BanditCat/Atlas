@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4-o1.      //
+// Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4-o1.      //
 ////////////////////////////////////////////////////////////////////////////////
+
 #ifndef ATLAS_H_INCLUDED
 #define ATLAS_H_INCLUDED
 #define _CRT_SECURE_NO_WARNINGS
@@ -24,6 +25,25 @@
 
 //#include <GL/gl.h>
 #include <stdio.h>
+
+// count newlines
+static inline size_t newlines( const char* str ){
+  size_t n = 0;
+  for(const char *p = str; *p; ++p)
+        n += (*p == '\n');
+    return n;
+}
+// determine if a string is floating point.
+static inline bool isfloat(const char *str) {
+    char *endptr;
+    strtof(str, &endptr);
+    
+    // Skip trailing whitespace
+    while (isspace(*endptr)) endptr++;
+    
+    // Valid if we parsed something and reached the end
+    return endptr != str && *endptr == '\0';
+}
 
 #ifdef DEBUG
 static inline void checkFramebufferStatus( GLuint framebuffer ){

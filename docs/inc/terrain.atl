@@ -10,10 +10,10 @@ size;if'started'; // init code goes here
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 [2048 2048];set'texsize' 2;
 2048;4;fractalNoise;
-6;get'texsize';[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) )\' 1 1 4;texture;
+6;texsize;[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) );' 1 1 4;texture;
 [150 400];set'lrot' 2;
-get'lrot';first;-300;/;[0 1 0];rot; // rot about y
-get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 
 nav3d;
@@ -26,16 +26,16 @@ l'started'; // init code complete
 pop; // Pop the last display tensor off the stack.
 
 
-nav3d;get'3dnavParam';set'lrot' 2;
-get'lrot';first;-300;/;[0 1 0];rot; // rot about y
-get'lrot';last;-300;/;[1 0 0];rot;m; // rot about x
+nav3d;3dnavParam;set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 
 
 
 1;dup;1;dup; // duplicate terrain and heightmap
 6;windowSize;0;dup;set'wdims' 2;
-get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
+wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 [4];0;cat;
 
 
@@ -43,108 +43,108 @@ get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to w
 // GLSL Functions
 ////////////////////////////////////////////////////////////////////////////////
 c'''
-const float scale = 0.35\  // heightScale
-const int maxIters = 128\
-const int binSearchSteps = 32\
-const float damping = 0.7\
-const float threshhold = 0.0001\
+const float scale = 0.35;  // heightScale
+const int maxIters = 128;
+const int binSearchSteps = 32;
+const float damping = 0.7;
+const float threshhold = 0.0001;
 
-const vec3 nrml = vec3(0.0, 1.0, 0.0)\
-const vec3 uvec = vec3(1.0, 0.0, 0.0)\
-const vec3 vvec = vec3(0.0, 0.0, 1.0)\
-const mat3 tbn = mat3(uvec, vvec, nrml)\
-const vec3 pntpln = vec3(0.0, -1.0, 0.0)\
-const vec3 sun = vec3(0.5, -0.5, 0.5)\
+const vec3 nrml = vec3(0.0, 1.0, 0.0);
+const vec3 uvec = vec3(1.0, 0.0, 0.0);
+const vec3 vvec = vec3(0.0, 0.0, 1.0);
+const mat3 tbn = mat3(uvec, vvec, nrml);
+const vec3 pntpln = vec3(0.0, -1.0, 0.0);
+const vec3 sun = vec3(0.5, -0.5, 0.5);
 
 float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
-    return fract( sin( h ) * 43758.5453123 )\
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
 }
 
 float sampleHeight( vec2 uv ){
   if( uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0 )
-    return 0.6\
-  //return af( uv * texsize )\  
-  return textureGrad( _a_atex, uv, vec2( 0.000001 ), vec2( 0.000001 ) ).x\
+    return 0.6;
+  //return af( uv * texsize );  
+  return textureGrad( _a_atex, uv, vec2( 0.000001 ), vec2( 0.000001 ) ).x;
 }
 
 vec3 sampleNormal( vec2 uv ){
-  vec2 coord = uv * texsize\
-  float centers = af( coord ).x\
-  float dHx = af( coord + vec2( 1, 0 ) ).x - centers\
-  float dHy = af( coord + vec2( 0, 1 ) ).x - centers\
-  return normalize( vec3(-dHx, 1.0 / texsize.x, -dHy) )\
+  vec2 coord = uv * texsize;
+  float centers = af( coord ).x;
+  float dHx = af( coord + vec2( 1, 0 ) ).x - centers;
+  float dHy = af( coord + vec2( 0, 1 ) ).x - centers;
+  return normalize( vec3(-dHx, 1.0 / texsize.x, -dHy) );
 }
 
 vec3 binarySearchForSurface( vec3 startPos, vec3 endPos, int steps, float hscale ){
-  vec3 mid = vec3(0.0)\
-  for(int i=0\ i<steps\ i++){
-    mid = 0.5 * (startPos + endPos)\
-    float hm = sampleHeight( mid.xy ) * hscale\
+  vec3 mid = vec3(0.0);
+  for(int i=0; i<steps; i++){
+    mid = 0.5 * (startPos + endPos);
+    float hm = sampleHeight( mid.xy ) * hscale;
     if(mid.z < hm){
       // mid is "under" the surface, so pull endPos up
-      endPos = mid\
+      endPos = mid;
     } else {
       // mid is above the surface
-      startPos = mid\
+      startPos = mid;
     }
   }
-  return mid\
+  return mid;
 }
 
 bool rayTrace( inout vec3 ray, vec3 origin ){
-  vec3 viewDirWS = normalize(ray)\
+  vec3 viewDirWS = normalize(ray);
 
-  vec3 localOrigin = origin - pntpln\
-  vec3 originTS = tbn * localOrigin\
-  vec3 viewDirTS = normalize(tbn * viewDirWS)\
+  vec3 localOrigin = origin - pntpln;
+  vec3 originTS = tbn * localOrigin;
+  vec3 viewDirTS = normalize(tbn * viewDirWS);
 
-  float travel = 0.0\
-  vec3 prevPos = originTS\
-  float prevDelta = sampleHeight(prevPos.xy) * scale - prevPos.z\
+  float travel = 0.0;
+  vec3 prevPos = originTS;
+  float prevDelta = sampleHeight(prevPos.xy) * scale - prevPos.z;
 
-  bool foundIntersection = false\
-  vec3 finalPos = originTS\
-  float finalHeight = 0.0\
+  bool foundIntersection = false;
+  vec3 finalPos = originTS;
+  float finalHeight = 0.0;
 
-  for(int i = 0\ i < maxIters\ i++){
-    vec3 rayPos = originTS + travel * viewDirTS\
-    vec2 uv = rayPos.xy\
-    float h = sampleHeight(uv) * scale\
+  for(int i = 0; i < maxIters; i++){
+    vec3 rayPos = originTS + travel * viewDirTS;
+    vec2 uv = rayPos.xy;
+    float h = sampleHeight(uv) * scale;
 
-    float delta = h - rayPos.z\
+    float delta = h - rayPos.z;
 
     if( (prevDelta > 0.0 && delta < 0.0) || (prevDelta < 0.0 && delta > 0.0) ){
-      finalPos = binarySearchForSurface(prevPos, rayPos, binSearchSteps, scale)\
-      finalHeight = sampleHeight(finalPos.xy) * scale\
-      foundIntersection = true\
-      break\
+      finalPos = binarySearchForSurface(prevPos, rayPos, binSearchSteps, scale);
+      finalHeight = sampleHeight(finalPos.xy) * scale;
+      foundIntersection = true;
+      break;
     }
 
     if(abs(delta) < threshhold){
-      finalPos = rayPos\
-      finalHeight = h\
-      foundIntersection = true\
-      break\
+      finalPos = rayPos;
+      finalHeight = h;
+      foundIntersection = true;
+      break;
     }
 
-    float stepSize = -delta\// / -0.7\// / viewDirTS.z\
-    stepSize *= damping\
-    //    stepSize = clamp( stepSize, -0.04, 0.04 )\
-    travel += stepSize\
+    float stepSize = -delta;// / -0.7;// / viewDirTS.z;
+    stepSize *= damping;
+    //    stepSize = clamp( stepSize, -0.04, 0.04 );
+    travel += stepSize;
 
     // update for next loop
-    prevPos = rayPos\
-    prevDelta = delta\
+    prevPos = rayPos;
+    prevDelta = delta;
   }
 
   if(!foundIntersection)
-    finalPos = originTS + travel * viewDirTS\
+    finalPos = originTS + travel * viewDirTS;
   
   
-  ray.xy = finalPos.xy\
-  ray.z = travel\
-  return travel > 0.0 && finalPos.x > 0.01 && finalPos.x < 0.99 && finalPos.y > 0.01 && finalPos.y < 0.99\
+  ray.xy = finalPos.xy;
+  ray.z = travel;
+  return travel > 0.0 && finalPos.x > 0.01 && finalPos.x < 0.99 && finalPos.y > 0.01 && finalPos.y < 0.99;
 }
 
 
@@ -160,44 +160,44 @@ vec3 ray = normalize(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
       -1.0
     )
-)\
+);
 
-vec3 rotsun = ( lightRotation * vec4(0.0, 1.0, 0.0, 1.0) ).xyz + sun\
+vec3 rotsun = ( lightRotation * vec4(0.0, 1.0, 0.0, 1.0) ).xyz + sun;
 
 // Rotate it by worldRotation
-vec3 rcrayo = ( worldRotation * vec4(ray, 1.0) ).xyz\
-vec3 rcray = rcrayo\
-bool rcd = rayTrace( rcray, origin )\
-vec3 intersect = rcray.z * rcrayo + origin\
-vec3 sunrayo = normalize( intersect - rotsun )\
-vec3 sunray = sunrayo\
-bool sunrcd = rayTrace( sunray, rotsun )\
-vec3 sintersect = sunray.z * sunrayo + rotsun\
-bool underwater = intersect.y < -0.85\
-float watert = -( dot( nrml, origin ) + dot( -nrml, vec3( 0, -0.85, 0 ) ) ) / dot( nrml, rcrayo )\
-vec3 wintersect = rcrayo * watert + origin\
+vec3 rcrayo = ( worldRotation * vec4(ray, 1.0) ).xyz;
+vec3 rcray = rcrayo;
+bool rcd = rayTrace( rcray, origin );
+vec3 intersect = rcray.z * rcrayo + origin;
+vec3 sunrayo = normalize( intersect - rotsun );
+vec3 sunray = sunrayo;
+bool sunrcd = rayTrace( sunray, rotsun );
+vec3 sintersect = sunray.z * sunrayo + rotsun;
+bool underwater = intersect.y < -0.85;
+float watert = -( dot( nrml, origin ) + dot( -nrml, vec3( 0, -0.85, 0 ) ) ) / dot( nrml, rcrayo );
+vec3 wintersect = rcrayo * watert + origin;
 
-float csc = dot( -sunrayo, sampleNormal( rcray.xy ) )\
+float csc = dot( -sunrayo, sampleNormal( rcray.xy ) );
 
-float sunDist = dot( rcrayo, rotsun - origin ) > 0.0 ? 2.0 - 5.0 * length( cross( rcrayo, origin - rotsun ) ) : 0.0\
-float height = (sampleHeight( rcray.xy )-0.32) / 0.37\
+float sunDist = dot( rcrayo, rotsun - origin ) > 0.0 ? 2.0 - 5.0 * length( cross( rcrayo, origin - rotsun ) ) : 0.0;
+float height = (sampleHeight( rcray.xy )-0.32) / 0.37;
 vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
                    b( ivec4( 0.0, (height) * ttexsize, 1.0, 0.0 ) ),
-		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) )\
+		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) );
 
 
 color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),
-                         clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color\
+                         clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color;
 
 if( length( sintersect - intersect ) > 0.01 )
-  color *= 0.2\
+  color *= 0.2;
 
 color = mix( rcd ? color * clamp( csc, 0.1, 1.0 ) : vec3( 0.9, 0.1, 0.1 ),
             clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 ),
-            clamp( sunDist, 0.0, 1.0 ) )\
+            clamp( sunDist, 0.0, 1.0 ) );
 
 
-ret[0] = color.zyxx\
+ret[0] = color.zyxx;
 '
 2 1 4;
 
@@ -208,7 +208,7 @@ ret[0] = color.zyxx\
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-get'keys';[58 59 0];s;first;ifn'skipf1';
+keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                     ';e;
 'Right click: fly forward                        ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
@@ -216,7 +216,7 @@ get'keys';[58 59 0];s;first;ifn'skipf1';
 'Hold f key and drag mouse: change light location';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

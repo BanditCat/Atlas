@@ -14,71 +14,71 @@ pop; // Pop the last display tensor off the stack.
 
 nav4d;[0 0.1];set'navp' 2;
 
-6;windowSize;[2 2];/;0;dup;set'wdims' 2;
-get'wdims';0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop;
+6;windowSize;[2 2];/;0;dup;wdims= 2;
+wdims;0;dup;first;1;dup;last;/;0.5;^;e;aspect= 1;pop;
 
 ////////////////////////////////////////////////////////////////////////////////
 // GLSL Functions
 ////////////////////////////////////////////////////////////////////////////////
 c'''
-const float MAX_ITERS = 128.0\
-//const float MAX_STEPS = 64.0\
-const float SCALE_FACTOR = 0.07\
-const float MAX_DIST = 0.5\
-const float MIN_DIST = 1.0 / (MAX_ITERS - 1.0)\
-const float LESS_THAN_MIN_DIST = 1.0 / float(MAX_ITERS)\
-const int MAX_DEPTH = 2\
-const float INIT_DIST = 6.0\
+const float MAX_ITERS = 128.0;
+//const float MAX_STEPS = 64.0;
+const float SCALE_FACTOR = 0.07;
+const float MAX_DIST = 0.5;
+const float MIN_DIST = 1.0 / (MAX_ITERS - 1.0);
+const float LESS_THAN_MIN_DIST = 1.0 / float(MAX_ITERS);
+const int MAX_DEPTH = 2;
+const float INIT_DIST = 6.0;
 
 float julia(vec4 p) {
-    vec2 z = p.xy\
-    vec2 c = p.zw\
+    vec2 z = p.xy;
+    vec2 c = p.zw;
 
-    const float bailout = 4.0\
-    float iter = 0.0\
-    for (float i = 0.0\ i < MAX_ITERS\ i++) {
+    const float bailout = 4.0;
+    float iter = 0.0;
+    for (float i = 0.0; i < MAX_ITERS; i++) {
         // z_{n+1} = z_n^2 + c
         z = vec2(
             z.x * z.x - z.y * z.y,
             2.0 * z.x * z.y
-        ) + c\
+        ) + c;
 
         if (dot(z, z) > bailout)
-            return max(1.0,iter + max(0.0,log(log(dot(z,z)))))\
-        ++iter\
+            return max(1.0,iter + max(0.0,log(log(dot(z,z)))));
+        ++iter;
     }
 
-    return MAX_ITERS\
+    return MAX_ITERS;
 }
 
 float raymarch(vec4 ro, vec4 rd, float maxt) {
-  float searchMin = 0.0\
-  float searchMax = maxt\
-  float maxIter = 0.0\
-  float maxT = 0.0\
+  float searchMin = 0.0;
+  float searchMax = maxt;
+  float maxIter = 0.0;
+  float maxT = 0.0;
   
-  for(int depth = 0\ depth < MAX_DEPTH\ ++depth) {
-    float range = searchMax - searchMin\
-    maxIter = 0.0\
-    float iter = 100000000000000000000000000.000\
-    for(float t = searchMin\ t <= searchMax\ t += range * 0.05 / iter ) {
-      vec4 p = ro + rd * t\ 
-      iter = julia(p)\
+  for(int depth = 0; depth < MAX_DEPTH; ++depth) {
+    float range = searchMax - searchMin;
+    maxIter = 0.0;
+    float iter = 100000000000000000000000000.000;
+    for(float t = searchMin; t <= searchMax; t += range * 0.05 / iter ) {
+      vec4 p = ro + rd * t; 
+      iter = julia(p);
       
       if(iter > maxIter) {
-        maxIter = iter\
-        maxT = t\
+        maxIter = iter;
+        maxT = t;
       }
-      if(maxIter >= MAX_ITERS) break\
+      if(maxIter >= MAX_ITERS) break;
     }
     
-    float window = range * SCALE_FACTOR\
-    searchMin = max(0.0, maxT - window)\
-    searchMax = min(maxt, maxT + window)\
+    float window = range * SCALE_FACTOR;
+    searchMin = max(0.0, maxT - window);
+    searchMax = min(maxt, maxT + window);
   }
   
-  if(maxIter >= MAX_ITERS) return maxT\
-  return -1.0\
+  if(maxIter >= MAX_ITERS) return maxT;
+  return -1.0;
 }
 
 
@@ -93,28 +93,20 @@ vec4 ray = normalize(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
       -1.0, 0.0
     )
-)\
+);
 
 // Rotate ray by camera rotation
-vec4 rd = worldRotation * ray\
+vec4 rd = worldRotation * ray;
 
-float result = raymarch( fourOrigin, rd, INIT_DIST)\
-vec4 p4 = fourOrigin + rd * result\
-
-vec3 color = vec3(0.1, -1.0, 0.2)\  // Background
-
-if(result > 0.0) {
-  color = vec3(0.0,result,0.0)\
-}
-
-ret[0] = color.g\
+float result = raymarch( fourOrigin, rd, INIT_DIST);
+ret[0] = result;
 '
 0 1 0;
 
-6;get'wdims';[4];0;cat;
+6;wdims;[4];0;cat;
 c''''
-const float epsilon = 0.05\
-ivec4 center = ivec4(tf,0,0)\
+const float epsilon = 0.05;
+ivec4 center = ivec4(tf,0,0);
 const ivec4 offsets[12] = ivec4[12](
     ivec4(1, 0, 0, 0),
     ivec4(0, 1, 0, 0),
@@ -128,55 +120,55 @@ const ivec4 offsets[12] = ivec4[12](
     ivec4(1, -1, 0, 0),
     ivec4(-1, 1, 0, 0),
     ivec4(-1, -1, 0, 0)    
-)\
+);
 const float weights[12] = float[12](
       1.0, 1.0, 1.0, 1.0, 
       0.5, 0.5, 0.5, 0.5,
       0.707, 0.707, 0.707, 0.707
-)\
-float coverage = 0.0\
-float centersample = a(center)\
-for(int i = 0\i < 12\++i){
-  ivec4 ns = clamp(center+offsets[i],ivec4(0,0,0,0),ivec4(wdims,0,0))\
-  float smple = a(ns)\
+);
+float coverage = 0.0;
+float centersample = a(center);
+for(int i = 0;i < 12;++i){
+  ivec4 ns = clamp(center+offsets[i],ivec4(0,0,0,0),ivec4(wdims,0,0));
+  float smple = a(ns);
   if(smple > 0.0){
-    float dif = clamp((centersample-smple)/epsilon,-1.0,1.0)\
-    coverage += weights[i] * dif / 12.0\
+    float dif = clamp((centersample-smple)/epsilon,-1.0,1.0);
+    coverage += weights[i] * dif / 12.0;
   }
 }
-float ambient = 0.5 - coverage * 0.5\
-float rightsample = a(center+offsets[0])\
-float upsample = a(center+offsets[1])\
-float leftsample = a(center+offsets[2])\
-float downsample = a(center+offsets[3])\
-vec3 right=normalize(vec3(aspect/wdims.x,0.0,centersample-rightsample))\
-vec3 up=normalize(vec3(0.0,1.0/(aspect*wdims.y),centersample-upsample))\
-vec3 left=normalize(vec3(-aspect/wdims.x,0.0,centersample-leftsample))\
-vec3 down=normalize(vec3(0.0,-1.0/(aspect*wdims.y),centersample-downsample))\
-vec3 nrml1=cross(right,up)\
-vec3 nrml2=cross(left,down)\
-vec4 light=fourOrigin+worldUnrotation*vec4(10.0,10.0,0.0,0.0)\
+float ambient = 0.5 - coverage * 0.5;
+float rightsample = a(center+offsets[0]);
+float upsample = a(center+offsets[1]);
+float leftsample = a(center+offsets[2]);
+float downsample = a(center+offsets[3]);
+vec3 right=normalize(vec3(aspect/wdims.x,0.0,centersample-rightsample));
+vec3 up=normalize(vec3(0.0,1.0/(aspect*wdims.y),centersample-upsample));
+vec3 left=normalize(vec3(-aspect/wdims.x,0.0,centersample-leftsample));
+vec3 down=normalize(vec3(0.0,-1.0/(aspect*wdims.y),centersample-downsample));
+vec3 nrml1=cross(right,up);
+vec3 nrml2=cross(left,down);
+vec4 light=fourOrigin+worldUnrotation*vec4(10.0,10.0,0.0,0.0);
 vec4 ray = normalize(
     vec4(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
       -1.0, 0.0
     )
-)\
-vec4 p = fourOrigin+worldRotation*ray * centersample\
+);
+vec4 p = fourOrigin+worldRotation*ray * centersample;
 float diffuse=max(0.0,dot(normalize(nrml1+nrml2),
-  normalize(light.xyz - ray.xyz * centersample)))\
-vec4 color=normalize(p)+1.0\
+  normalize(light.xyz - ray.xyz * centersample)));
+vec4 color=normalize(p)+1.0;
 
 if(centersample > 0.0)
-  ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.4)*color\
+  ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.4)*color;
 else
-  ret[0] = vec4(0.0,0.0,0.0,0.0)\
+  ret[0] = vec4(0.0,0.0,0.0,0.0);
 ' 1 1 4;
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-get'keys';[58 59 0];s;first;ifn'skipf1';
+keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                ';e;
 'Right click: fly forward                   ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around ';e;0;cat;
@@ -186,7 +178,7 @@ get'keys';[58 59 0];s;first;ifn'skipf1';
 'f: switch mouse rotation mode between 3d/4d';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

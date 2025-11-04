@@ -1,15 +1,15 @@
-2;get'input'; // Double click to get next demo
+2;inputState; // Double click to get next demo
 [3 4 0];s;first;-;ifn'__load';
-get'gamepadReleases';[14 15 0];s;first;ifn'__noload';
+gamepadReleases;[14 15 0];s;first;ifn'__noload';
 l'__load';load;
 l'__noload';pop;
 
 
 // Jump table for demos. See https://wiki.libsdl.org/SDL2/SDL_Scancode for scancodes.
-get'keys';
+keyState;
 0;dup;[41 42 0];s;first;
-get'gamepad';[19 20 0];s;first;+;
-get'gamepad';[20 21 0];s;first;+;
+gamepadState;[19 20 0];s;first;+;
+gamepadState;[20 21 0];s;first;+;
 ifn'__go';
 quit;  // Quit if escape pressed.
 l'__go';

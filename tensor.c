@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al.   //
+// Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Atlas.h"
@@ -242,7 +242,7 @@ compute* makeCompute( const program* prog,
       vec4( -1.0,  1.0, 0.0, 1.0),\n\
       vec4(  1.0, -1.0, 0.0, 1.0),\n\
       vec4( -1.0,  1.0, 0.0, 1.0),\n\
-      vec4(  1.0,  1.0, 0.0, 1.0)\n						\
+      vec4(  1.0,  1.0, 0.0, 1.0)\n\
     );\n\
     void main(){\n\
       vec4 ret;\n\
@@ -388,16 +388,28 @@ compute* makeCompute( const program* prog,
   u32 bufsize = 1048576;
   char* fragmentShaderSource = mem( bufsize, char );
   char* footerSource = mem( bufsize, char );
+  u32 headerLineCount = 0;
+  u32 headerIncPreambleLineCount = 0;
   int flen;
   if( channels == 0 ){
     flen = snprintf( footerSource, bufsize, tensorFooterTemplate, retCount,
 		     retCount, retCount, retCount, retCount, glsl, retCount,
 		     glsl, retCount, glsl, retCount, glsl, retCount, retCount );
+    headerIncPreambleLineCount += newlines( tensorFooterTemplate );
   } else{
     flen = snprintf( footerSource, bufsize, textureFooterTemplate, channelsString, retCount, glsl );
+    headerIncPreambleLineCount += newlines( textureFooterTemplate );
+    headerIncPreambleLineCount += newlines( channelsString );
   }
   int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, channelsString,
 		      retCount, texFunctions, uniforms, glslpre, footerSource );
+  headerLineCount += newlines( fragmentShaderTemplate );
+  headerLineCount += newlines( channelsString );
+  headerLineCount += newlines( texFunctions );
+  headerLineCount += newlines( uniforms );
+  --headerLineCount;
+  headerIncPreambleLineCount += headerLineCount;
+  headerIncPreambleLineCount += newlines( glslpre );
   u32 smallbufsize = 65536;
   if( len < 0 || len >= bufsize - smallbufsize || flen < 0 || flen >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
@@ -428,6 +440,14 @@ compute* makeCompute( const program* prog,
   char* vertexShaderSource = mem( bufsize, char );
   len = snprintf( vertexShaderSource, bufsize, vertexShaderTemplate, uniforms, texFunctions, vglslpre,
 		  strlen( vglsl ) ? vglsl : defvshader );
+  u32 vheaderLineCount = 0;
+  u32 vheaderIncPreambleLineCount = 0;
+  vheaderLineCount += newlines( uniforms );
+  vheaderLineCount += newlines( texFunctions );
+  vheaderLineCount += 9;  
+  vheaderIncPreambleLineCount += vheaderLineCount;
+  vheaderIncPreambleLineCount += newlines( vglslpre );
+  vheaderIncPreambleLineCount += 12;
   if( len < 0 || len >= bufsize - smallbufsize || flen < 0 || flen >= bufsize )
     error( "%s", "Shader source exceeds buffer size." );
   
@@ -444,7 +464,7 @@ compute* makeCompute( const program* prog,
     char* msg = mem( bufsize, char );
     char* log = mem( bufsize, char );
     glGetShaderInfoLog( vertexShader, bufsize, NULL, log );
-    snprintf( msg, bufsize, "Vertex shader compilation failed: %s", log );
+    snprintf( msg, bufsize, "Vertex shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", vheaderLineCount, vheaderIncPreambleLineCount, log );
     glDeleteShader( vertexShader );
     error( "%s", msg );
   }
@@ -463,8 +483,7 @@ compute* makeCompute( const program* prog,
     char* msg = mem( bufsize, char );
     char* log = mem( bufsize, char );
     glGetShaderInfoLog( fragmentShader, bufsize, NULL, log );
-    snprintf( msg, bufsize, "Fragment shader compilation failed: %s", log );
-    dbg( "%s", fragmentShaderSource );
+    snprintf( msg, bufsize, "Fragment shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", headerLineCount, headerIncPreambleLineCount, log );
     glDeleteShader( fragmentShader );
     glDeleteShader( vertexShader );
     error( "%s", msg );
@@ -1155,7 +1174,7 @@ void tensorRepeatHelper( tensor* t, u32 count ){
   if( count == 0 )
     error( "%s", "Repeat count must be greater than 0." );
   if( t->rank == 4 )
-    error( "%s", "Cannot increse rank of a tensor with rank 4." );
+    error( "%s", "Cannot increase rank of a tensor with rank 4." );
 
   // Ensure data is on CPU and owned
   tensorToHostMemory( t );

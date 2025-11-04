@@ -1,9 +1,37 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2024 Jon DuBois. Written with the assistance of GPT-4 et al.   //
+// Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Atlas.h"
 
+void preprocessComputeCommands( char* prog ){
+  char* ptr = prog;
+  while( *ptr != '\0' ){
+    if( ptr[ 0 ] == 'c' && ptr[ 1 ] == '\'' &&
+        ( ptr == prog || ptr[ -1 ] == ';' || isspace( ptr[ -1 ] ) ) ){
+      ptr += 2;
+      
+      // Process exactly 4 quoted sections
+      for( int section = 0; section < 4; ++section ){
+        // Replace all ; with \ in this section (until we hit the closing ')
+        while( *ptr != '\0' && *ptr != '\'' ){
+          if( *ptr == '\\' )
+            error( "%s", "Backslash in shader! This is almost certainly an error!" );
+          if( *ptr == ';' )
+            *ptr = '\\';
+          ptr++;
+        }
+        
+        if( *ptr == '\'' )
+          ptr++;
+        else 
+          break;
+      }
+    } else {
+      ptr++;
+    }
+  }
+}
 void skipWhitespace( const char** str ){
   while( isspace( **str ) )
     ( *str )++;
@@ -543,9 +571,9 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
       if( argCount > 4 )
-        error(
-              "%s",
-              "Compute created with more than 4 arguments. The maximum is 4." );
+        error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
+      if( retCount > 4 || !retCount )
+        error( "%s", "Compute created with a bad return count, must be 1-4." );
       // dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
       // linenum, commandnum, comp, argCount );
     } else
@@ -702,8 +730,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = TRANSPOSE;
     // dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
 
-  } else if( *command == '[' || *command == '.' || *command == '-' ||
-             isdigit( *command ) || *command == '\'' ){  // A tensor
+  } else if( *command == '[' || isfloat( command ) || *command == '\'' ){  // A tensor
     curStep->type = TENSOR;
     if( *command == '\'' ){
       char* starti = command + 1;
@@ -797,7 +824,8 @@ void addProgramFromFile( const char* filename, program* program );
 // Modifies prog, adds all steps in prog to program.
 void addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
-  
+  preprocessComputeCommands( prog );
+    
   char* ptr = prog;
   u32 linenum = 1;
   u32 commandnum = 0;
@@ -899,6 +927,42 @@ void finalize( program* program ){
     program->numVars = 0;
     u32 nameslen = 0;
     u32 baselen = strlen( "uniform float %s;" ) + 30;
+    // Check here for calls that are rets
+    for( u32 i = 0; i < program->numSteps; ++i ){
+      if( program->steps[ i ].type == CALL ){
+        u32 len = strlen( program->steps[ i ].branchName );
+        s64 back = len - 1;
+        bool arg = false;
+        u32 argloc = 0;
+        u32 sz = 0;
+        while( back >= 0 && isdigit( program->steps[ i ].branchName[ back ] ) ){
+          arg = true;
+          --back;
+        }
+        argloc = back + 1;
+        while( back >= 0 && isspace( program->steps[ i ].branchName[ back ] ) )
+          --back;
+        if( back >= 0 && program->steps[ i ].branchName[ back ] == '=' ){
+          if( arg ){
+            int charsread;
+            if( sscanf( program->steps[ i ].branchName + argloc, "%u%n",
+                        &sz, &charsread ) != 1 )
+              error( "%s", "sscanf failed!" );
+          }
+
+          if( sz > 4 && sz != 16 )
+            error( "%s", "Invalid var size in short form set statement." );
+
+          char* ns = mem( back + 2, char );
+          memcpy( ns, program->steps[ i ].branchName, back );
+          ns[ back ] = '\0';
+          unmem( program->steps[ i ].branchName );
+          program->steps[ i ].type = SET;
+          program->steps[ i ].var.name = ns;
+          program->steps[ i ].var.size = sz;
+        }
+      }
+    }    
     for( u32 i = 0; i < program->numSteps; ++i )
       if( program->steps[ i ].type == SET ){
         if( program->steps[ i ].var.size ){
@@ -920,40 +984,6 @@ void finalize( program* program ){
     program->numBigvars = 0;
     u32 offset = 0;
     for( u32 i = 0; i < program->numSteps; ++i ){
-      // Check here for CALLS that are SETs
-      if( program->steps[ i ].type == CALL ){
-        u32 len = strlen( program->steps[ i ].branchName );
-        s64 back = len - 1;
-        bool arg = false;
-        u32 argloc = 0;
-        u32 sz = 0;
-        while( back >= 0 && isdigit( program->steps[ i ].branchName[ back ] ) ){
-          arg = true;
-          --back;
-        }
-        argloc = back + 1;
-        while( back >= 0 && isspace( program->steps[ i ].branchName[ back ] ) )
-          --back;
-        if( back >= 0 && program->steps[ i ].branchName[ back ] == '=' ){
-          dbg("%s","s");
-          if( arg ){
-            int charsread;
-            if( sscanf( program->steps[ i ].branchName + argloc, "%u%n",
-                        &sz, &charsread ) != 1 )
-              error( "%s", "sscanf failed!" );
-          }
-
-          if( sz > 4 && sz != 16 )
-            error( "%s", "Invalid var size in short form set statement." );
-
-          char* ns = mem( back + 1, char );
-          memcpy( ns, program->steps[ i ].branchName, back );
-          unmem( program->steps[ i ].branchName );
-          program->steps[ i ].type = SET;
-          program->steps[ i ].var.name = ns;
-          program->steps[ i ].var.size = sz;
-        }
-      }
       if( program->steps[ i ].type == SET ){
         if( !program->steps[ i ].var.size ){
           u32 val;

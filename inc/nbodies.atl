@@ -10,21 +10,21 @@ size;if'started';
 /////////////////////////////////////////////////////////////////////////
 // Constants
 nav3d;
-[0 0 3.8];set'origin' 3; // set origin
-3;set'speed';
-[100];set'sqrtParticles' 1;
-[0.002];set'timeScale' 1;
-[1];set'gravScale' 1;
-[250];set'velScale' 1;
-[0.005];set'gravityEpsilon' 1;
-[0.0005];set'radiusScale' 1;
-[0.04];set'eatAmount' 1;
-[0.0125];set'lengthScale' 1;
-[2.5];set'bhSize' 1;
-[10000];set'biggestMass' 1;
-[10];set'smallestMass' 1;
-[0.00000004];set'colorTransfer' 1;
-1;set'running';
+[0 0 3.8];origin= 3; // set origin
+3;speed=;
+[100];sqrtParticles= 1;
+[0.002];timeScale= 1;
+[1];gravScale= 1;
+[250];velScale= 1;
+[0.005];gravityEpsilon= 1;
+[0.0005];radiusScale= 1;
+[0.04];eatAmount= 1;
+[0.0125];lengthScale= 1;
+[2.5];bhSize= 1;
+[10000];biggestMass= 1;
+[10];smallestMass= 1;
+[0.00000004];colorTransfer= 1;
+1;running=;
 
 [[[-0.5 -0.28868 0 1] [-1.7321 -1 0 1]]
  [[ 0   0.57735  0 1] [0 2 0 1]] 
@@ -33,51 +33,51 @@ nav3d;
 vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
                a( ivec4( tf, 1, 0 ) ),
                a( ivec4( tf, 2, 0 ) ),
-               a( ivec4( tf, 3, 0 ) ) )\
-ret[0] = r\' 1 1 4;   // take our vertices and colors and put them in a texture.
+               a( ivec4( tf, 3, 0 ) ) );
+ret[0] = r;' 1 1 4;   // take our vertices and colors and put them in a texture.
 
 
-get'sqrtParticles';[2];^;[3];*;first;set'vertexCount';
+sqrtParticles;[2];^;[3];*;first;vertexCount=;
 
-0;set'time';
+0;time=;
 
-6;get'sqrtParticles';0;dup;0;cat;[4];0;cat;
+6;sqrtParticles;0;dup;0;cat;[4];0;cat;
 c'''
 float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
-    return fract( sin( h ) * 43758.5453123 )\
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
 }
 '
-float twopi = 6.2831853071795864769\
-float iangle = hash( tf, 0.0 ) * twopi\
-float oangle = hash( tf, 1.0 ) * twopi\ 
-float orad = 1.0\
-float irad = hash( tf, 2.0 ) * 0.2\
-float x = (orad + irad * cos(iangle)) * cos(oangle)\
-float z = (orad + irad * cos(iangle)) * sin(oangle)\
-float y = irad * sin(iangle)\
-ret[ 0 ] = vec4( x, z, y, pow( ( hash( tf, 3.0 ) * biggestMass + smallestMass ) * 0.000001, 1.0 / 3.0 ) )\
-ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, bhSize ) : ret[ 0 ]\
+float twopi = 6.2831853071795864769;
+float iangle = hash( tf, 0.0 ) * twopi;
+float oangle = hash( tf, 1.0 ) * twopi; 
+float orad = 1.0;
+float irad = hash( tf, 2.0 ) * 0.2;
+float x = (orad + irad * cos(iangle)) * cos(oangle);
+float z = (orad + irad * cos(iangle)) * sin(oangle);
+float y = irad * sin(iangle);
+ret[ 0 ] = vec4( x, z, y, pow( ( hash( tf, 3.0 ) * biggestMass + smallestMass ) * 0.000001, 1.0 / 3.0 ) );
+ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, bhSize ) : ret[ 0 ];
 ' 0 1 4; // Randomly place particles and set mass
 
 
-6;get'sqrtParticles';0;dup;0;cat;[4];0;cat;
+6;sqrtParticles;0;dup;0;cat;[4];0;cat;
 c'''
 float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 )\
-    return fract( sin( h ) * 43758.5453123 )\
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
 }
 '
-float twopi = 6.2831853071795864769\
-float iangle = hash( tf, 0.0 ) * twopi\
-float oangle = hash( tf, 1.0 ) * twopi\ 
-float orad = 1.0\
-float irad = hash( tf, 2.0 ) * 0.2\
-float x = (orad + irad * cos(iangle)) * cos(oangle)\
-float z = (orad + irad * cos(iangle)) * sin(oangle)\
-float y = irad * sin(iangle)\
-ret[ 0 ] = vec4( -z * velScale, x * velScale, 0, hash( tf, 7.0 ) )\
-ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ]\
+float twopi = 6.2831853071795864769;
+float iangle = hash( tf, 0.0 ) * twopi;
+float oangle = hash( tf, 1.0 ) * twopi; 
+float orad = 1.0;
+float irad = hash( tf, 2.0 ) * 0.2;
+float x = (orad + irad * cos(iangle)) * cos(oangle);
+float z = (orad + irad * cos(iangle)) * sin(oangle);
+float y = irad * sin(iangle);
+ret[ 0 ] = vec4( -z * velScale, x * velScale, 0, hash( tf, 7.0 ) );
+ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ];
 ' 0 1 4; // Randomly set velocity and colors
 
 
@@ -90,21 +90,21 @@ ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ]\
 1;
 l'started';
 
-get'inputPresses';[5 6 0];s;first;get'keyPresses';[40 41 0];s;first;+;get'gamepadPresses';[16 17 0];s;first;+;ifn'toggleRunning';
-1;get'running';-;set'running';
+inputPresses;[5 6 0];s;first;keyPresses;[40 41 0];s;first;+;gamepadPresses;[16 17 0];s;first;+;ifn'toggleRunning';
+1;running;-;running=;
 l'toggleRunning';
 
-get'running';ifn'notRunning';
-timeDelta;e;set'td' 1;
+running;ifn'notRunning';
+timeDelta;e;td= 1;
 1;if'pastRunTest';
 l'notRunning';
-[0];set'td' 1;
+[0];td= 1;
 l'pastRunTest'; // Test for running and run or not.
 
 
 // stack: last frame, velocity, position, verts
-get'time';timeDelta;+;set'time';
-[90];windowSize;0;cat;[0.1 1000];0;cat;proj;set'proj' 16;
+time;timeDelta;+;time=;
+[90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
 
 pop;
 
@@ -113,122 +113,122 @@ nav3d;
 // stack: velocity, position, verts
 6;1;dup;shape;
 c''''
-vec4 position = bf( tf )\
-vec3 pos = position.xyz\
-float radius = position.w\
-float mass = radius * radius * radius\
-vec4 velocity = af( tf )\
-vec3 vel = velocity.xyz\
-float color = velocity.w\
-float delta = timeScale * td\
-int iter = int( sqrtParticles )\
+vec4 position = bf( tf );
+vec3 pos = position.xyz;
+float radius = position.w;
+float mass = radius * radius * radius;
+vec4 velocity = af( tf );
+vec3 vel = velocity.xyz;
+float color = velocity.w;
+float delta = timeScale * td;
+int iter = int( sqrtParticles );
 
-vec3 grav = vec3( 0.0 )\
-for( int x1 = 0\ x1 < iter\ ++x1 )
-  for( int y1 = 0\ y1 < iter\ ++y1 ){
-    vec2 i1 = vec2( x1, y1 ) + vec2( 0.5 )\
-    vec4 iposition = bf( i1 )\
-    vec3 ipos = iposition.xyz\
-    float iradius = iposition.w\
-    float icolor = af( i1 ).w\
-    float imass = iradius * iradius * iradius\
-    float distance = length( ipos - pos ) * lengthScale + gravityEpsilon\
+vec3 grav = vec3( 0.0 );
+for( int x1 = 0; x1 < iter; ++x1 )
+  for( int y1 = 0; y1 < iter; ++y1 ){
+    vec2 i1 = vec2( x1, y1 ) + vec2( 0.5 );
+    vec4 iposition = bf( i1 );
+    vec3 ipos = iposition.xyz;
+    float iradius = iposition.w;
+    float icolor = af( i1 ).w;
+    float imass = iradius * iradius * iradius;
+    float distance = length( ipos - pos ) * lengthScale + gravityEpsilon;
     if( distance > gravityEpsilon ){
-      float force = imass * mass / ( distance * distance )\
-      vec3 forcevec = normalize( ipos - pos ) * force\
-      grav += forcevec\
+      float force = imass * mass / ( distance * distance );
+      vec3 forcevec = normalize( ipos - pos ) * force;
+      grav += forcevec;
       if( distance < (iradius + radius) * radiusScale / lengthScale ){
         if( mass > imass ){
-	  mass += eatAmount * delta * imass\
+	  mass += eatAmount * delta * imass;
 	}else{
-	  mass -= eatAmount * delta * mass\
+	  mass -= eatAmount * delta * mass;
 	}
-	color = color + ( icolor - color ) * colorTransfer\
-	radius = pow( mass, 0.333333333333333333 )\
+	color = color + ( icolor - color ) * colorTransfer;
+	radius = pow( mass, 0.333333333333333333 );
       }
     }
   }
    
-grav *= gravScale\
-vec3 accel = grav / mass\
+grav *= gravScale;
+vec3 accel = grav / mass;
 
-ret[ 0 ] = vec4( vel + delta * accel, color )\
-ret[ 1 ] = vec4( pos + vel * delta + 0.5 * accel * delta * delta, radius )\
+ret[ 0 ] = vec4( vel + delta * accel, color );
+ret[ 1 ] = vec4( pos + vel * delta + 0.5 * accel * delta * delta, radius );
 ' 2 2 4;
 
 2;dup;2;dup;2;dup;
 // stack: velocity, position, verts, velocity, position, verts 
 
-get'vertexCount';windowSize;[4];0;cat;
+vertexCount;windowSize;[4];0;cat;
 additive;
 c'
 vec3 hsvToRgb(float H, float S, float V) {
-  float C = V * S\ // Chroma
-  float H_prime = H / 60.0\
-  float X = C * (1.0 - abs(mod(H_prime, 2.0) - 1.0))\
+  float C = V * S; // Chroma
+  float H_prime = H / 60.0;
+  float X = C * (1.0 - abs(mod(H_prime, 2.0) - 1.0));
 
-  vec3 rgb\
+  vec3 rgb;
 
   if (0.0 <= H_prime && H_prime < 1.0) {
-    rgb = vec3( C, X, 0.0 )\
+    rgb = vec3( C, X, 0.0 );
   }else if( 1.0 <= H_prime && H_prime < 2.0 ){
-    rgb = vec3( X, C, 0.0 )\
+    rgb = vec3( X, C, 0.0 );
   }else if( 2.0 <= H_prime && H_prime < 3.0 ){
-    rgb = vec3( 0.0, C, X )\
+    rgb = vec3( 0.0, C, X );
   }else if( 3.0 <= H_prime && H_prime < 4.0 ){
-    rgb = vec3( 0.0, X, C )\
+    rgb = vec3( 0.0, X, C );
   }else if( 4.0 <= H_prime && H_prime < 5.0 ){
-    rgb = vec3( X, 0.0, C )\
+    rgb = vec3( X, 0.0, C );
   }else if( 5.0 <= H_prime && H_prime < 6.0 ){
-    rgb = vec3(C, 0.0, X)\
+    rgb = vec3(C, 0.0, X);
   }else{
-    rgb = vec3( 0.0, 0.0, 0.0 )\
+    rgb = vec3( 0.0, 0.0, 0.0 );
   }
 
-  float m = V - C\
-  rgb += vec3(m, m, m)\
+  float m = V - C;
+  rgb += vec3(m, m, m);
 
   // Clamp the result to [0,1]
-  rgb = clamp(rgb, 0.0, 1.0)\
+  rgb = clamp(rgb, 0.0, 1.0);
 
-  return rgb\
+  return rgb;
 }
-out vec4 unitvec\
-out vec3 color\
+out vec4 unitvec;
+out vec3 color;
 '
-vec4 vert = cf( vec2( float(i%3) + 0.5, 0 ) )\
-vec4 particle = bf( vec2( ivec2( (i/3) % int( sqrtParticles ), (i/3) / int( sqrtParticles ) ) ) )\
-vec4 velocity = af( vec2( ivec2( (i/3) % int( sqrtParticles ), (i/3) / int( sqrtParticles ) ) ) )\
-vec4 hpart = vec4( particle.xyz, 0.0 )\
+vec4 vert = cf( vec2( float(i%3) + 0.5, 0 ) );
+vec4 particle = bf( vec2( ivec2( (i/3) % int( sqrtParticles ), (i/3) / int( sqrtParticles ) ) ) );
+vec4 velocity = af( vec2( ivec2( (i/3) % int( sqrtParticles ), (i/3) / int( sqrtParticles ) ) ) );
+vec4 hpart = vec4( particle.xyz, 0.0 );
 
-vec3 right = vec3( worldUnrotation[ 0 ][ 0 ], worldUnrotation[ 1 ][ 0 ], worldUnrotation[ 2 ][ 0 ])\
-vec3 up    = vec3( worldUnrotation[ 0 ][ 1 ], worldUnrotation[ 1 ][ 1 ], worldUnrotation[ 2 ][ 1 ])\
-vec3 wp = particle.xyz + ( right * vert.x + up * vert.y ) * particle.w\
+vec3 right = vec3( worldUnrotation[ 0 ][ 0 ], worldUnrotation[ 1 ][ 0 ], worldUnrotation[ 2 ][ 0 ]);
+vec3 up    = vec3( worldUnrotation[ 0 ][ 1 ], worldUnrotation[ 1 ][ 1 ], worldUnrotation[ 2 ][ 1 ]);
+vec3 wp = particle.xyz + ( right * vert.x + up * vert.y ) * particle.w;
 
 ret = proj*worldUnrotation*( hpart +
                              -vec4( origin, 0.0 ) + //rot *
-                             vec4(wp, 1.0 ) )\
+                             vec4(wp, 1.0 ) );
 	   
-unitvec = vec4( cf( vec2( float(i%3) + 0.5, 1 ) ).xyz, 1.0 )\ //ret.z / ret.w )\
-color = hsvToRgb( velocity.w * 360.0, 0.7, 1.0 )\
+unitvec = vec4( cf( vec2( float(i%3) + 0.5, 1 ) ).xyz, 1.0 ); //ret.z / ret.w );
+color = hsvToRgb( velocity.w * 360.0, 0.7, 1.0 );
 '
-in vec4 unitvec\
-in vec3 color\
+in vec4 unitvec;
+in vec3 color;
 '
-float ul = length( unitvec.xy )\
-float alpha = 1.0 - ul\
-alpha = exp( -ul*ul*4.0 )\
-float weight = ul < 1.0 ? alpha : 0.0\
-vec3 wcolor = weight * color * alpha\
-ret[0] = vec4( wcolor, weight )\
+float ul = length( unitvec.xy );
+float alpha = 1.0 - ul;
+alpha = exp( -ul*ul*4.0 );
+float weight = ul < 1.0 ? alpha : 0.0;
+vec3 wcolor = weight * color * alpha;
+ret[0] = vec4( wcolor, weight );
 
 ' 3 1 4;
 additive;
 // stack: frame*, velocity, position, verts
 
 6;1;dup;shape;c''''
-vec4 wcolor = af( tf )\
-ret[0]= wcolor / wcolor.a\
+vec4 wcolor = af( tf );
+ret[0]= wcolor / wcolor.a;
 ' 1 1 4;
 // stack: frame, velocity, position, verts
 
@@ -241,7 +241,7 @@ l'end';
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-get'keys';[58 59 0];s;first;ifn'skipf1';
+keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view               ';e;
 'Right click: fly forward                  ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around';e;0;cat;
@@ -249,7 +249,7 @@ get'keys';[58 59 0];s;first;ifn'skipf1';
 'Enter key / middle click: pause           ';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

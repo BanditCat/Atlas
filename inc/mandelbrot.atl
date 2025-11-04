@@ -5,60 +5,60 @@ include'inc\nav.atl';
 
 
 nav2d;
-get'rightClickParam';set'perturb' 2;
-get'middleClickParam';last;e;set'exp' 1;
+rightClickParam;perturb= 2;
+middleClickParam;last;e;exp= 1;
 
 size;if'started';
 1;1;1;nav2d;
-[0.125 0];set'offs' 2;
-[0 2];set'middleClickParam' 2;
+[0.125 0];offs= 2;
+[0 2];middleClickParam= 2;
 l'started';
 pop;pop;pop;
 
 
 
-windowSize;set'wsize' 2;
-6;get'wsize';
+windowSize;wsize= 2;
+6;wsize;
 c''''
-vec4 tf = vec4( t )\
-ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x * 4.0\
-ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y * 4.0\
+vec4 tf = vec4( t );
+ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x * 4.0;
+ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y * 4.0;
 '0 2 0;
-6;get'wsize';c''''ret[0]=perturb.x\ret[1]=perturb.y\' 0 2 0;
+6;wsize;c''''ret[0]=perturb.x;ret[1]=perturb.y;' 0 2 0;
 1;if'skip'; 
 
 l'mand';
 3;dup;3;dup;
-6;get'wsize';
+6;wsize;
 c'''
 vec2 mand( vec2 x, vec2 c, float e ){
-  float angle = atan( x.y, x.x ) * e\
-  float mag = pow( length( x ), e )\
-  return vec2( cos( angle ) * mag + c.x, sin( angle ) * mag + c.y )\
+  float angle = atan( x.y, x.x ) * e;
+  float mag = pow( length( x ), e );
+  return vec2( cos( angle ) * mag + c.x, sin( angle ) * mag + c.y );
 }
 float mand2( vec2 x, vec2 c ){
-  float count = 0.0\
-  vec2 nx = x\
-  for( int i = 0\ i < 32\ ++i ){
-    nx = mand( nx, c, exp )\
+  float count = 0.0;
+  vec2 nx = x;
+  for( int i = 0; i < 32; ++i ){
+    nx = mand( nx, c, exp );
     if( length( nx ) > 4.0 )
-      break\
-    ++count\
+      break;
+    ++count;
   }
-  return count\
+  return count;
 }
 '
-vec2 x = vec2( c( ivec4( t.xy, 0, 0 ) ), d( ivec4( t.xy, 0, 0 ) ) )\
-vec2 c = vec2( a( ivec4( t.xy, 0, 0 ) ), b( ivec4( t.xy, 0, 0 ) ) )\
-float r = mand2( x, c )\
-ret[ 0 ] = r\' 4 1 0;
+vec2 x = vec2( c( ivec4( t.xy, 0, 0 ) ), d( ivec4( t.xy, 0, 0 ) ) );
+vec2 c = vec2( a( ivec4( t.xy, 0, 0 ) ), b( ivec4( t.xy, 0, 0 ) ) );
+float r = mand2( x, c );
+ret[ 0 ] = r;' 4 1 0;
 return;
 
 
 l'skip';
 mand;
-6;get'wsize';[4];0;cat;c''''
-ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
+6;wsize;[4];0;cat;c''''
+ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 );
 ' 1 1 4;
 
 
@@ -67,14 +67,14 @@ ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 )\
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-get'keys';[58 59 0];s;first;ifn'skipf1';
+keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: move fractal        ';e;
 'Right click drag: change peterbation';e;0;cat;
 'Middle click drag: change exponent  ';e;0;cat;
 'Mouse wheel: zoom                   ';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

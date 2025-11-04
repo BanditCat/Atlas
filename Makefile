@@ -87,7 +87,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Syntatic sugar'
+	git commit -m 'language update complete'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)

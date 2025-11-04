@@ -4,7 +4,7 @@ include'inc\stdlib.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 
 size;if'started';
-0;set'time';
+0;time= ;
 [[[-0.5 -0.28868 0 1] [1 0 0 1]]
  [[ 0   0.57735  0 1] [0 1 0 1]] 
  [[ 0.5 -0.28868 0 1] [0 0 1 1]]];
@@ -12,28 +12,28 @@ size;if'started';
 vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
                a( ivec4( tf, 1, 0 ) ),
                a( ivec4( tf, 2, 0 ) ),
-               a( ivec4( tf, 3, 0 ) ) )\
-ret[0] = r\' 1 1 4;   // first we take our vertices and colors and put them in a texture.
+               a( ivec4( tf, 3, 0 ) ) );
+ret[0] = r;' 1 1 4;   // first we take our vertices and colors and put them in a texture.
 1;
 l'started';
-get'time';timeDelta;+;set'time';
-[90];windowSize;0;cat;[0.1 1000];0;cat;proj;set'proj' 16;
-[0 0 -1.5];translate;set'trans' 16;
-get'time';[0 1 0];rot;set'rot' 16;
+time;timeDelta;+;time=;
+[90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
+[0 0 -1.5];translate;trans= 16;
+time;[0 1 0];rot;rot= 16;
 
 pop;
 
 0;dup;
 3;windowSize;[4];0;cat;
 c'
-out vec4 color\
+out vec4 color;
 '
-ret = proj*( trans*rot*af( vec2( ifloat, 0 ) ) )\
-color = af( vec2( ifloat, 1 ) )\
+ret = proj*( trans*rot*af( vec2( ifloat, 0 ) ) );
+color = af( vec2( ifloat, 1 ) );
 '
-in vec4 color\
+in vec4 color;
 '
-ret[0] = color\
+ret[0] = color;
 ' 1 1 4;
 
 
@@ -41,12 +41,12 @@ ret[0] = color\
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-get'keys';[58 59 0];s;first;ifn'skipf1';
+keyState;[58 59 0];s;first;ifn'skipf1';
 'Nothing to see here!   ';e;
 'No interactive controls';e;0;cat;
 textToTexture;blitText;
 l'skipf1';
-get'keys';[59 60 0];s;first;get'gamepad';[13 14 0];s;first;+;ifn'skipf2';
+keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 textToTexture;blitText;
 l'skipf2';

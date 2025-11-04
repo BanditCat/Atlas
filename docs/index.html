@@ -161,12 +161,11 @@
     <summary>Overview</summary>
     <ul>
       <li><a href="#introduction">Introduction</a></li>
-      <li><a href="#audience">Audience</a></li>
       <li><a href="#basic-concepts">Basic Concepts</a></li>
       <li><a href="#program-model">Program Model</a></li>
       <li><a href="#invocation">Invocation</a></li>
       <li><a href="#gotchas">Gotchas</a></li>
-      <li><a href="#sugar">Syntactic sugar</a></li>
+      <li><a href="#sugar">Syntactic Sugar</a></li>
     </ul>
   </details>
 
@@ -486,11 +485,10 @@ After the c command, there are several quoted strings that contain your shader c
     A string for declaring functions or variables used in the vertex shader. (For example, you can use this to declare output variables that the fragment shader will later read.)
 
     optionalVertexShader:
-    An optional string that contains the actual vertex shader code. If omitted, a default vertex shader is used.
+    An optional string that contains the actual vertex shader code. If omitted, a default vertex shader is used that generates two triangles covering the whole tensor.
 
     glslFuncs:
     A string where you can declare additional GLSL functions, constants, or helper code.
-    Note: Semicolons are not allowed in any of these shader strings. Instead, terminate each statement with a backslash (\).
 
     glslExpression:
     This string contains the main shader code (similar to a fragment shader). Here you must assign values to the output array elements (ret[0] to ret[retCount - 1]). These assignments determine the output tensors.
@@ -520,9 +518,6 @@ Following the quoted strings, you supply three numeric parameters:
         The type of the returned data will automatically be set to float, vec2, vec3, or vec4 depending on whether you use 1, 2, 3, or 4 channels.
 
 <h3>Important Notes</h3>
-
-    Statement Termination:
-    In all shader code strings (i.e., glslFuncs and glslExpression), you cannot use semicolons (;). Instead, end each statement with a backslash (\).
 
     Input Tensor Access:
     When you specify an argCount greater than zero, each of the top input tensors is made available inside your shader as a function (a, b, c, or d). These functions take an ivec4 argument (the index within the tensor) and return the corresponding value.
