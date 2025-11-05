@@ -93,7 +93,7 @@ typedef struct{
   u32 commandnum;
 } step;
 
-#define NUM_FILENAMES 256
+#define NUM_FILENAMES 65536
 typedef struct{
   compute** computes;
   u32 numComputes;

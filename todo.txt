@@ -1,4 +1,5 @@
 workspaces
+name mangling for opengl replace . with _ and check for leading digit as error, document
 FFI! (3 floats per 64 bit type)
 saving files/bitmaps
 introduce quality factor q.

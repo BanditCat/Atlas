@@ -6,7 +6,7 @@
 
 void takeOwnership( tensor* t ){
   if( t == NULL )
-    error( "%s", "Tensor is GPU or NULL in takeOwnership." );
+    error( "%s", "Tensor is NULL in takeOwnership." );
 
   if( t->ownsData )
     return;  // Already owns data, nothing to do

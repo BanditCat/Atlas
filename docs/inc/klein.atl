@@ -1,0 +1,220 @@
+include'inc\stdlib.atl';
+'main.atl';
+include'inc\nav.atl';
+
+size;if'started'; // init code goes here
+nav4d;
+[0 0 8 0];set'fourOrigin' 4;  // Moved camera back a bit
+4;set'speed';
+
+1; // dummy value to pop off in place of display tensor.
+l'started'; // init code complete
+
+pop; // Pop the last display tensor off the stack.
+
+nav4d;[0 0.1];set'navp' 2;
+
+6;windowSize;[2 2];/;0;dup;wdims= 2;
+wdims;0;dup;first;1;dup;last;/;0.5;^;e;aspect= 1;pop;
+[4];0;cat;
+////////////////////////////////////////////////////////////////////////////////
+// GLSL Functions
+////////////////////////////////////////////////////////////////////////////////
+c'''
+const float MAX_STEPS = 40.0;
+const float EPSILON = 0.4;
+const float MAX_DIST = 15.0;
+const float KLEIN_R = 2.0;  // Major radius
+const float KLEIN_r = 1.0;  // Minor radius
+
+// Distance estimator for Klein bottle in 4D
+vec4 kleinSurface(float u, float v) {
+    vec4 surface;
+    surface.x = (KLEIN_R + KLEIN_r * cos(v)) * cos(u);
+    surface.y = (KLEIN_R + KLEIN_r * cos(v)) * sin(u);
+    surface.z = KLEIN_r * sin(v) * cos(u * 0.5);
+    surface.w = KLEIN_r * sin(v) * sin(u * 0.5);
+    return surface;
+}
+
+// Partial derivatives
+vec4 dSurface_du(float u, float v) {
+    vec4 d;
+    float rPlusRcosv = KLEIN_R + KLEIN_r * cos(v);
+    d.x = -rPlusRcosv * sin(u);
+    d.y = rPlusRcosv * cos(u);
+    d.z = -KLEIN_r * sin(v) * sin(u * 0.5) * 0.5;
+    d.w = KLEIN_r * sin(v) * cos(u * 0.5) * 0.5;
+    return d;
+}
+
+vec4 dSurface_dv(float u, float v) {
+    vec4 d;
+    d.x = -KLEIN_r * sin(v) * cos(u);
+    d.y = -KLEIN_r * sin(v) * sin(u);
+    d.z = KLEIN_r * cos(v) * cos(u * 0.5);
+    d.w = KLEIN_r * cos(v) * sin(u * 0.5);
+    return d;
+}
+
+float kleinBottleDistance(vec4 p) {
+    // Initial guess based on projection to xy plane
+    float u = atan(p.y, p.x);
+    float v = 0.0;
+    
+    // Newton's method iterations (5-8 iterations usually enough)
+    for(int iter = 0; iter < 40; iter++) {
+        vec4 s = kleinSurface(u, v);
+        vec4 diff = s - p;
+        
+        vec4 du = dSurface_du(u, v);
+        vec4 dv = dSurface_dv(u, v);
+        
+        // Gradient of squared distance
+        float grad_u = 2.0 * dot(diff, du);
+        float grad_v = 2.0 * dot(diff, dv);
+        
+        // Hessian approximation (Gauss-Newton)
+        float hess_uu = 2.0 * dot(du, du);
+        float hess_vv = 2.0 * dot(dv, dv);
+        float hess_uv = 2.0 * dot(du, dv);
+        
+        // Solve 2x2 system for Newton step
+        float det = hess_uu * hess_vv - hess_uv * hess_uv;
+        //       if(abs(det) < 0.0001) break;
+        
+        float delta_u = -(hess_vv * grad_u - hess_uv * grad_v) / det;
+        float delta_v = -(hess_uu * grad_v - hess_uv * grad_u) / det;
+        
+        u += delta_u;
+        v += delta_v;
+        
+        // Early exit if converged
+        //        if(abs(delta_u) < 0.001 && abs(delta_v) < 0.001) break;
+    }
+    
+    vec4 closest = kleinSurface(u, v);
+    return distance(p, closest);
+}
+float kleinBottleDistance2(vec4 p) {
+    float minDist = 100000.0;
+    const int U_SAMPLES = 6;
+    const int V_SAMPLES = 6;
+    
+    // Sample the parametric surface to find closest point
+    for(int i = 0; i < U_SAMPLES; i++) {
+        float u = float(i) * 6.28318530718 / float(U_SAMPLES);
+        
+        for(int j = 0; j < V_SAMPLES; j++) {
+            float v = float(j) * 6.28318530718 / float(V_SAMPLES);
+            
+            // Klein bottle parametric equations in 4D
+            vec4 surface;
+            surface.x = (KLEIN_R + KLEIN_r * cos(v)) * cos(u);
+            surface.y = (KLEIN_R + KLEIN_r * cos(v)) * sin(u);
+            surface.z = KLEIN_r * sin(v) * cos(u * 0.5);
+            surface.w = KLEIN_r * sin(v) * sin(u * 0.5);
+            
+            float dist = distance(p, surface);
+            minDist = min(minDist, dist);
+        }
+    }
+    
+    return minDist;
+}
+
+// HSV to RGB helper
+vec3 hsvToRgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+vec4 volumeRender(vec4 ro, vec4 rd) {
+    vec4 accumulated = vec4(0.0);
+    float t = 0.0;
+    
+    for(float i = 0.0; i < MAX_STEPS; i++) {
+        vec4 p = ro + rd * t;
+        float d = kleinBottleDistance(p);
+        
+        // Convert distance to hue (rainbow gradient)
+        float hue = fract(d * 0.5); // Adjust multiplier for color frequency
+        vec3 rgb = hsvToRgb(vec3(hue, 1.0, 1.0));
+        
+        // Weight by proximity (closer = brighter)
+        float intensity = exp(-d * 2.0); // Adjust falloff rate
+        
+        accumulated.rgb += rgb * intensity * 0.1; // Step size factor
+        accumulated.a += intensity * 0.1;
+        
+        if(t > MAX_DIST) break;
+        
+        t += 0.3; // Fixed step size for volume rendering
+    }
+    
+    return accumulated;
+}
+
+float raymarch(vec4 ro, vec4 rd) {
+    float t = 0.0;
+    
+    for(float i = 0.0; i < MAX_STEPS; i++) {
+        vec4 p = ro + rd * t;
+        float d = kleinBottleDistance(p);
+        
+        if(d < EPSILON) {
+            return t;  // Hit the surface
+        }
+        
+        if(t > MAX_DIST) {
+            return -1.0;  // Went too far
+        }
+        
+        t += d * 0.5;  // March by fraction of distance
+    }
+    
+    return -1.0;  // No hit
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// The shader
+////////////////////////////////////////////////////////////////////////////////
+
+'
+// Compute the initial ray in view space
+vec4 ray = normalize(
+    vec4(
+      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+      -1.0, 0.0
+    )
+);
+
+// Rotate ray by camera rotation
+vec4 rd = worldRotation * ray;
+
+float result = raymarch( fourOrigin, rd );
+vec4 volrend = volumeRender( fourOrigin, rd );
+ret[0] = volrend;
+'
+0 1 4;
+
+
+//////////////////////////////////////////////////////////////////
+// Help and framerate
+
+keyState;[58 59 0];s;first;ifn'skipf1';
+'Click and drag: rotate view                ';e;
+'Right click: fly forward                   ';e;0;cat;
+'w/s/a/d/c/shift/ctrl/space/q/e: fly around ';e;0;cat;
+'Mouse wheel: change fly speed              ';e;0;cat;
+'z/x: translate through 4d                  ';e;0;cat;
+'t/g: rotate through the zw plane           ';e;0;cat;
+'f: switch mouse rotation mode between 3d/4d';e;0;cat;
+textToTexture;blitText;
+l'skipf1';
+keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+1;timeDelta;/;toString;e;
+textToTexture;blitText;
+l'skipf2';

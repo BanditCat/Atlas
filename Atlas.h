@@ -129,7 +129,6 @@ static inline const char* GetGLErrorString( GLenum error ){
                err,                                                            \
                __FILE__,                                                       \
                __LINE__ );                                                     \
-      /* You can choose to exit or handle the error here */                    \
     }                                                                          \
   } while( 0 )
 #else

@@ -34,4 +34,7 @@ l'__go6';
 0;dup;[36 37 0];s;first;ifn'__go7';
 load'inc\jset.atl';
 l'__go7';
+0;dup;[37 38 0];s;first;ifn'__go8';
+load'inc\klein.atl';
+l'__go8';
 pop; // pop keys
