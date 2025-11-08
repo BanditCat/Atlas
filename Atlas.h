@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4-o1.      //
+// Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef ATLAS_H_INCLUDED
@@ -25,6 +25,11 @@
 
 //#include <GL/gl.h>
 #include <stdio.h>
+
+
+// The current workspace, this will be prefixed onto all variables and labels in program.c:addStep.  This may be the empty string "" but must not be null, as no checks are performed.
+extern char* workspace;
+
 
 // count newlines
 static inline size_t newlines( const char* str ){

@@ -87,7 +87,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Klein bottle'
+	git commit -m 'Workspaces'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)

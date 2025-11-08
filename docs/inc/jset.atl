@@ -105,7 +105,7 @@ ret[0] = result;
 
 6;wdims;[4];0;cat;
 c''''
-const float epsilon = 0.05;
+const float epsilon = 0.0005;
 ivec4 center = ivec4(tf,0,0);
 const ivec4 offsets[12] = ivec4[12](
     ivec4(1, 0, 0, 0),

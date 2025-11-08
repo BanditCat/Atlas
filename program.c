@@ -927,7 +927,7 @@ void finalize( program* program ){
     program->numVars = 0;
     u32 nameslen = 0;
     u32 baselen = strlen( "uniform float %s;" ) + 30;
-    // Check here for calls that are rets
+    // Check here for calls that are sets
     for( u32 i = 0; i < program->numSteps; ++i ){
       if( program->steps[ i ].type == CALL ){
         u32 len = strlen( program->steps[ i ].branchName );
