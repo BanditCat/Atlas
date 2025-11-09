@@ -30,7 +30,8 @@ f32 posy = 0;
 f32 mouseWheel = 0;
 f32 mouseWheelPos = 0.0;
 u8 keys[ SDL_NUM_SCANCODES ] = { 0 };
-char* workspace = "";
+// We set this in main to a mallocd empty string then also deallocate it in main.
+char* workspace = NULL;
 
 
 bool doubleClicks[ 3 ] = { 0 };
@@ -696,6 +697,8 @@ int main( int argc, char* argv[] )
 {
   curTime = SDL_GetPerformanceCounter();
   prevTime = curTime;
+  workspace = mem( 1, char );
+  workspace[ 0 ] = '\0';
 #ifndef __EMSCRIPTEN__
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );
@@ -809,6 +812,7 @@ int main( int argc, char* argv[] )
 #endif
 
   // Cleanup
+  unmem( workspace );
   glDeleteProgram( shaderProgram );
   glDeleteBuffers( 1, &vbo );
 #ifdef __EMSCRIPTEN__

@@ -1,3 +1,4 @@
+workspace'std';
 __stdlibInited;if'__stdlibInitDone';
 1;__stdlibInited=;
 0;512;rep;__oldKeys=;

@@ -61,7 +61,8 @@ typedef struct{
     SET, // documented
     GET, // documented
     TEXTURE, // documented
-    WINDOWSIZE // documented
+    WINDOWSIZE, // documented
+    WORKSPACE // documented
   } type;
   union{
     tensor* tensor;

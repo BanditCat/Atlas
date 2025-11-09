@@ -233,6 +233,7 @@
       <li><a href="#cmd-unext">unext (unextrude)</a></li>
       <li><a href="#cmd-while">while / for</a></li>
       <li><a href="#cmd-windowSize">windowSize</a></li>
+      <li><a href="#cmd-workspace">workspace</a></li>
     </ul>
   </details>
 </nav>
@@ -294,7 +295,7 @@
   <section id="data-types">
     <h2>Data Types</h2>
     <p>All data in Atlas is floating point. This means that linear indexing only works out to about 16 million
-      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or adressing will fail. All other types of data 
+      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or addressing will fail. All other types of data 
       (e.g. strings) are converted into a tensor of floating point values.</p>
     <ul>
       <li><strong>Number:</strong> Integers and floats, scalars are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
@@ -1105,7 +1106,12 @@ quit;
 
   <section id="cmd-windowSize">
     <h2>windowSize</h2>
-    <p>This command pushes a 2-vector on to the stack with the width and height of the display window.</p>
+    <p>This command pushes a 2-vector onto the stack with the width and height of the display window.</p>
+  </section>
+
+  <section id="cmd-workspace">
+    <h2>workspace</h2>
+    <p>This command takes one immediate string parameter and sets the current workspace for the current file.  For example, workspace'foo' will cause all subsequent sets and gets to be prefixed by "foo." and all glsl variables will be prefixed by "foo_".  Because both sets and gets are prefixed, the current file need not prefix normal gets, just the glsl variables must always be prefixed as they are statically compiled at script inititialization.</p>
   </section>
 
 </main>

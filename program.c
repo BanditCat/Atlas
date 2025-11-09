@@ -278,7 +278,29 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
   curStep->commandnum = commandnum;
   ++p->numSteps;
 
-  if( !strncmp( command, "l'", 2 ) ){  // Label
+  if( !strncmp( command, "workspace'", 10 ) ){  // Workspace
+    char* starti = command + 10;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty workspace." );
+    if( *endi != '\'' )
+      error( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Unmatched quote in workspace." );
+    char* work = mem( 1 + endi - starti, char );
+    memcpy( work, starti, endi - starti );
+    work[ endi - starti ] = '\0';
+    if( *( endi + 1 ) )
+      error( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Extra characters after workspace." );
+    unmem( workspace );
+    
+  } else if( !strncmp( command, "l'", 2 ) ){  // Label
     char* starti = command + 2;
     char* endi = starti;
     while( *endi && *endi != '\'' )
