@@ -5,7 +5,7 @@ include'inc\nav.atl';
 size;if'started'; // init code goes here
 std.nav4d;
 [0 0 3 0];std.fourOrigin= 4;
-4;speed=;
+4;std.speed=;
 
 1; // dummy value to pop off in place of display tensor.
 l'started'; // init code complete

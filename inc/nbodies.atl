@@ -11,7 +11,7 @@ size;if'started';
 // Constants
 std.nav3d;
 [0 0 3.8];std.origin= 3; // set origin
-3;speed=;
+3;std.speed=;
 [100];sqrtParticles= 1;
 [0.002];timeScale= 1;
 [1];gravScale= 1;
