@@ -205,7 +205,10 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-compute* makeCompute( const program* prog,
+compute* makeCompute( const char* filename,
+                      u32 linenum,
+                      u32 commandnum,
+                      const program* prog,
                       const char* uniforms,
 		      const char* vglslpre,
                       const char* glslpre,
@@ -464,7 +467,7 @@ compute* makeCompute( const program* prog,
     char* msg = mem( bufsize, char );
     char* log = mem( bufsize, char );
     glGetShaderInfoLog( vertexShader, bufsize, NULL, log );
-    snprintf( msg, bufsize, "Vertex shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", vheaderLineCount, vheaderIncPreambleLineCount, log );
+    snprintf( msg, bufsize, "%s:%u command %u:\nVertex shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", filename, linenum, commandnum, vheaderLineCount, vheaderIncPreambleLineCount, log );
     glDeleteShader( vertexShader );
     error( "%s", msg );
   }
@@ -483,7 +486,7 @@ compute* makeCompute( const program* prog,
     char* msg = mem( bufsize, char );
     char* log = mem( bufsize, char );
     glGetShaderInfoLog( fragmentShader, bufsize, NULL, log );
-    snprintf( msg, bufsize, "Fragment shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", headerLineCount, headerIncPreambleLineCount, log );
+    snprintf( msg, bufsize, "%s:%u command %u:\nFragment shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", filename, linenum, commandnum, headerLineCount, headerIncPreambleLineCount, log );
     glDeleteShader( fragmentShader );
     glDeleteShader( vertexShader );
     error( "%s", msg );
@@ -538,10 +541,19 @@ compute* makeCompute( const program* prog,
 
   // Get uniforms locations from program.
   ret->uniformLocs = mem( prog->numVars, GLuint );
-  for( u32 i = 0; i < prog->numVars; ++i )
-    ret->uniformLocs[ i ] =
-      glGetUniformLocation( ret->program, prog->varNames[ i ] );
-
+  for( u32 i = 0; i < prog->numVars; ++i ){
+    u32 varlen = strlen( prog->varNames[ i ] );
+    char* safeName = mem( varlen + 1, char );
+    memcpy( safeName, prog->varNames[ i ], varlen + 1 );
+    for( u32 i = 0; i < varlen; ++i )
+      if( safeName[ i ] == '.' )
+        safeName[ i ] = '_';
+    int rv = glGetUniformLocation( ret->program, safeName );
+    ret->uniformLocs[ i ] = rv;
+    //    if( rv == -1 )
+      //      error( "Error getting uniform location %s %s!", safeName, uniforms );
+    unmem( safeName );
+  }
   // Cleanup shaders (they're no longer needed once the program is linked)
   glDeleteShader( vertexShader );
   glDeleteShader( fragmentShader );

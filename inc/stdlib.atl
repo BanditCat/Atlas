@@ -1,9 +1,9 @@
 workspace'std';
-__stdlibInited;if'__stdlibInitDone';
-1;__stdlibInited=;
-0;512;rep;__oldKeys=;
-0;21;rep;__oldGamepad=;
-0;6;rep;__oldInput=;
+stdlibInited;if'stdlibInitDone';
+1;stdlibInited=;
+0;512;rep;oldKeys=;
+0;21;rep;oldGamepad=;
+0;6;rep;oldInput=;
 0;21;rep;gamepadState=;
 0;21;rep;gamepadPresses=;
 0;21;rep;gamepadReleases=;
@@ -13,45 +13,45 @@ __stdlibInited;if'__stdlibInitDone';
 0;512;rep;inputState=;
 0;512;rep;inputPresses=;
 0;512;rep;inputReleases=;
-l'__stdlibInitDone'; // Init code
+l'stdlibInitDone'; // Init code
 
 keys;keyState=;input;inputState=;
-gamepad;0;dup;shape;first;ifn'__nogamepad';
+gamepad;0;dup;shape;first;ifn'nogamepad';
 first;
-1;if'__gamepadDone';
-l'__nogamepad';
+1;if'gamepadDone';
+l'nogamepad';
 pop;0;21;rep;
-l'__gamepadDone';
+l'gamepadDone';
 gamepadState=; // Set input variables, it's important to do this just once per frame for smoothest performance
 
 1;512;rep;
-__oldKeys;-;
+oldKeys;-;
 keyState;*;keyPresses=;
 1;512;rep;
 keyState;-;
-__oldKeys;*;keyReleases=;
-keyState;__oldKeys=;  // Calculate releases and presses
+oldKeys;*;keyReleases=;
+keyState;oldKeys=;  // Calculate releases and presses
 
 1;21;rep;
-__oldGamepad;-;
+oldGamepad;-;
 gamepadState;*;gamepadPresses=;
 1;21;rep;
 gamepadState;-;
-__oldGamepad;*;gamepadReleases=;
-gamepadState;__oldGamepad=;
+oldGamepad;*;gamepadReleases=;
+gamepadState;oldGamepad=;
 
 1;6;rep;
-__oldInput;-;
+oldInput;-;
 inputState;*;inputPresses=;
 1;6;rep;
 inputState;-;
-__oldInput;*;inputReleases=;
-inputState;__oldInput=;
+oldInput;*;inputReleases=;
+inputState;oldInput=;
 
 
 
 
-1;if'__stdlibend'; // Jump past functions
+1;if'stdlibend'; // Jump past functions
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,45 +62,45 @@ inputState;__oldInput=;
 
 
 l'nav2d';
-__nav2dInited;if'__nav2dInitDone';
+nav2dInited;if'nav2dInitDone';
 [1];zoom= 1;
 [0 0];rightClickParam= 2;
 [0 0];offs= 2;
 [0 0];middleClickParam= 2;
-1;__nav2dInited=;
-l'__nav2dInitDone';
+1;nav2dInited=;
+l'nav2dInitDone';
 
 gamepadState;[2 4 0];s;timeDelta;2;rep;*;zoom;0;dup;0;cat;/;offs;+;offs= 2;
 gamepadState;[4 6 0];s;timeDelta;2;rep;*;zoom;0;dup;0;cat;/;rightClickParam;+;rightClickParam= 2;
 zoom;gamepadState;[0 1 0];s;first;timeDelta;*;1;+;e;/;zoom= 1;
 zoom;gamepadState;[1 2 0];s;first;timeDelta;*;1;+;e;*;zoom= 1;
-gamepadState;[15 16 0];s;first;ifn'__nogpmc';
+gamepadState;[15 16 0];s;first;ifn'nogpmc';
 middleClickParam;[0];timeDelta;e;0;cat;-;middleClickParam= 2;
-l'__nogpmc';
-gamepadState;[18 19 0];s;first;ifn'__nogpmc2';
+l'nogpmc';
+gamepadState;[18 19 0];s;first;ifn'nogpmc2';
 middleClickParam;[0];timeDelta;e;0;cat;+;middleClickParam= 2;
-l'__nogpmc2';
-gamepadState;[16 17 0];s;first;ifn'__nogpmc3';
+l'nogpmc2';
+gamepadState;[16 17 0];s;first;ifn'nogpmc3';
 middleClickParam;timeDelta;e;[0];0;cat;+;middleClickParam= 2;
-l'__nogpmc3';
-gamepadState;[17 18 0];s;first;ifn'__nogpmc4';
+l'nogpmc3';
+gamepadState;[17 18 0];s;first;ifn'nogpmc4';
 middleClickParam;timeDelta;e;[0];0;cat;-;middleClickParam= 2;
-l'__nogpmc4';
+l'nogpmc4';
 
 inputState; // deal with input, a 6 value rank 1 tensor; three axes (x y wheel) then three buttons (left right middle).
 [1.2];1;dup;[2 3 0];s;^;zoom;*;zoom= 1; // set zoom unconditionally
-0;dup;[3 4 0];s;first;ifn'__nomouse'; // if mouse button 1 not held jump to nomouse
+0;dup;[3 4 0];s;first;ifn'nomouse'; // if mouse button 1 not held jump to nomouse
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;zoom;0;dup;0;cat;/;
 offs;+;offs= 2;
-l'__nomouse';
+l'nomouse';
 
-0;dup;[4 5 0];s;first;ifn'__nomouse2'; // if mouse button 2 not held jump to nomouse2
+0;dup;[4 5 0];s;first;ifn'nomouse2'; // if mouse button 2 not held jump to nomouse2
 0;dup;[0 2 0];s;windowSize;[1 2 0];s;0;dup;0;cat;/;zoom;0;dup;0;cat;/;
 rightClickParam;+;rightClickParam= 2;
-l'__nomouse2';
-0;dup;[5 6 0];s;first;ifn'__nomouse3'; // if mouse button 3 not held jump to nomouse3
+l'nomouse2';
+0;dup;[5 6 0];s;first;ifn'nomouse3'; // if mouse button 3 not held jump to nomouse3
 0;dup;[0 2 0];s;[400 400];/;middleClickParam;+;middleClickParam= 2;
-l'__nomouse3';
+l'nomouse3';
 pop;
 return;
 
@@ -113,15 +113,15 @@ return;
 // worldUnrotation (4x4 matrices) according to inputs.
 
 l'nav3d';
-__nav3dInited;if'__nav3dInitDone';
-[0 0 0];__velocity=;
+nav3dInited;if'nav3dInitDone';
+[0 0 0];velocity=;
 1;speed=;
 [0 0 0];origin= 3;
 [0 0];3dnavParam=;
 0;[0 1 0];rot;worldRotation= 16;
 0;[0 1 0];rot;worldUnrotation= 16;
-1;__nav3dInited=;
-l'__nav3dInitDone';
+1;nav3dInited=;
+l'nav3dInitDone';
 
 0.90;inputState;[2 3 0];s;[-1];*;first;^;speed;*;speed=;
 
@@ -129,94 +129,94 @@ keyState;[9 10 0];s;first;ifn'fkeyskip';
 inputState;[0 2 0];s;3dnavParam;+;3dnavParam=;
 l'fkeyskip';
 
-[0 0 0];__accel=;
+[0 0 0];accel=;
 keyState;[26 27 0];s;first;inputState;[4 5 0];s;first;+;ifn'wkeyskip';
 [0 0 -1];
-__accel;+;__accel=;
+accel;+;accel=;
 l'wkeyskip';
 keyState;[22 23 0];s;first;ifn'skeyskip';
 [0 0 1];
-__accel;+;__accel=;
+accel;+;accel=;
 l'skeyskip';
 keyState;[4 5 0];s;first;ifn'akeyskip';
 [-1 0 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'akeyskip';
 keyState;[7 8 0];s;first;ifn'dkeyskip';
 [1 0 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'dkeyskip';
 keyState;[44 45 0];s;keyState;[225 226 0];s;+;first;ifn'spkeyskip';
 [0 1 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'spkeyskip';
 keyState;[224 225 0];s;keyState;[6 7 0];s;+;first;ifn'ctkeyskip';
 [0 -1 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'ctkeyskip';
-0;__rotza=;
+0;rotza=;
 keyState;[20 21 0];s;first;gamepadState;[6 7 0];s;first;+;ifn'clockwiseskip';
-1;__rotza=;
+1;rotza=;
 l'clockwiseskip';
 keyState;[8 9 0];s;first;gamepadState;[7 8 0];s;first;+;ifn'cclockwiseskip';
--1;__rotza=;
+-1;rotza=;
 l'cclockwiseskip';
 
-__rotza;timeDelta;165;*;2;^;*;__rotza=;
-__rotzv;__rotza;+;__rotzv=;
-__rotzv;0.95;timeDelta;165;*;^;*;__rotzv=;
+rotza;timeDelta;165;*;2;^;*;rotza=;
+rotzv;rotza;+;rotzv=;
+rotzv;0.95;timeDelta;165;*;^;*;rotzv=;
 
 gamepadState;[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
 inputState;[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
 inputState;[0 2 0];s;+; // get mouse delta xy and add
 l'mouse1skip';
 
-worldUnrotation;[1 2 0];s;first;[0 3 0];s;__up=;
+worldUnrotation;[1 2 0];s;first;[0 3 0];s;up=;
 0;dup;first;
--300;/;__up;rot;worldRotation;m;worldRotation= 16;
+-300;/;up;rot;worldRotation;m;worldRotation= 16;
 last;
-worldUnrotation;[0 1 0];s;first;[0 3 0];s;__right=;
--300;/;__right;rot;worldRotation;m;worldRotation= 16;
-worldUnrotation;[2 3 0];s;first;[0 3 0];s;__forward=;
-__rotzv;
-1500;/;__forward;rot;worldRotation;m;worldRotation= 16;
+worldUnrotation;[0 1 0];s;first;[0 3 0];s;right=;
+-300;/;right;rot;worldRotation;m;worldRotation= 16;
+worldUnrotation;[2 3 0];s;first;[0 3 0];s;forward=;
+rotzv;
+1500;/;forward;rot;worldRotation;m;worldRotation= 16;
 worldRotation;[0 1];t;worldUnrotation= 16;
 
-worldRotation;__accel;timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;__accel=;
-__velocity;__accel;speed;3;rep;*;+;__velocity=;
-__velocity;[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;__velocity=;
+worldRotation;accel;timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;accel=;
+velocity;accel;speed;3;rep;*;+;velocity=;
+velocity;[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;velocity=;
 
-origin;__velocity;timeDelta;40;/;3;rep;*;+;origin= 3;
+origin;velocity;timeDelta;40;/;3;rep;*;+;origin= 3;
 
 
-[0 0 0];__joymove=;
-gamepadState;[0 1 0];s;first;3;rep;[0 0 1];*;__joymove;+;__joymove=;
-gamepadState;[1 2 0];s;first;3;rep;[0 0 -1];*;__joymove;+;__joymove=;
-gamepadState;[2 3 0];s;first;3;rep;[1 0 0];*;__joymove;+;__joymove=;
-gamepadState;[3 4 0];s;first;3;rep;[0 -1 0];*;__joymove;+;__joymove=;
+[0 0 0];joymove=;
+gamepadState;[0 1 0];s;first;3;rep;[0 0 1];*;joymove;+;joymove=;
+gamepadState;[1 2 0];s;first;3;rep;[0 0 -1];*;joymove;+;joymove=;
+gamepadState;[2 3 0];s;first;3;rep;[1 0 0];*;joymove;+;joymove=;
+gamepadState;[3 4 0];s;first;3;rep;[0 -1 0];*;joymove;+;joymove=;
 
-gamepadState;[9 10 0];s;first;ifn'__nogpup';
+gamepadState;[9 10 0];s;first;ifn'nogpup';
 [0];timeDelta;-300;*;e;0;cat;3dnavParam;+;3dnavParam=;
-l'__nogpup';
-gamepadState;[11 12 0];s;first;ifn'__nogpdown';
+l'nogpup';
+gamepadState;[11 12 0];s;first;ifn'nogpdown';
 [0];timeDelta;300;*;e;0;cat;3dnavParam;+;3dnavParam=;
-l'__nogpdown';
-gamepadState;[10 11 0];s;first;ifn'__nogpright';
+l'nogpdown';
+gamepadState;[10 11 0];s;first;ifn'nogpright';
 timeDelta;300;*;e;[0];0;cat;3dnavParam;+;3dnavParam=;
-l'__nogpright';
-gamepadState;[12 13 0];s;first;ifn'__nogpleft';
+l'nogpright';
+gamepadState;[12 13 0];s;first;ifn'nogpleft';
 timeDelta;-300;*;e;[0];0;cat;3dnavParam;+;3dnavParam=;
-l'__nogpleft';
-gamepadState;[18 19 0];s;first;ifn'__nogpbty';
+l'nogpleft';
+gamepadState;[18 19 0];s;first;ifn'nogpbty';
 timeDelta;5;*;speed;+;speed=;
-l'__nogpbty';
-gamepadState;[15 16 0];s;first;ifn'__nogpbta';
+l'nogpbty';
+gamepadState;[15 16 0];s;first;ifn'nogpbta';
 timeDelta;-5;*;speed;+;speed=;
-speed;0;dup;0.1;-;if'__speedPositive';pop;0.1;l'__speedPositive';speed=;
-l'__nogpbta';
+speed;0;dup;0.1;-;if'speedPositive';pop;0.1;l'speedPositive';speed=;
+l'nogpbta';
 
-worldRotation;__joymove;[1];0;cat;m;unext;[0 3 0];s;__joymove=;
-__joymove;timeDelta;speed;*;0.3;*;3;rep;*;origin;+;origin= 3;
+worldRotation;joymove;[1];0;cat;m;unext;[0 3 0];s;joymove=;
+joymove;timeDelta;speed;*;0.3;*;3;rep;*;origin;+;origin= 3;
 
 return;
 
@@ -252,14 +252,14 @@ return;
 // worldUnrotation (4x4 matrices) according to inputs.
 
 l'nav4d';
-__nav4dInited;if'__nav4dInitDone';
-[0 0 0 0];__velocity=;
+nav4dInited;if'nav4dInitDone';
+[0 0 0 0];velocity=;
 1;speed=;
 [0 0 0 0];fourOrigin= 4;
 0;[0 1 0];rot;worldRotation= 16;
 0;[0 1 0];rot;worldUnrotation= 16;
-1;__nav4dInited=;
-l'__nav4dInitDone';
+1;nav4dInited=;
+l'nav4dInitDone';
 
 0.90;inputState;[2 3 0];s;[-1];*;first;^;speed;*;speed=;
 
@@ -268,52 +268,52 @@ keyPresses;[9 10 0];s;first;gamepadPresses;[17 18 0];s;first;+;ifn'4dfkeyskip';
 l'4dnmskip';0;4dnavmode=;
 l'4dfkeyskip';
 
-[0 0 0 0];__accel=;
+[0 0 0 0];accel=;
 keyState;[26 27 0];s;first;inputState;[4 5 0];s;first;+;ifn'4dwkeyskip';
 [0 0 -1 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'4dwkeyskip';
 keyState;[22 23 0];s;first;ifn'4dskeyskip';
 [0 0 1 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'4dskeyskip';
 keyState;[4 5 0];s;first;ifn'4dakeyskip';
 [-1 0 0 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'4dakeyskip';
 keyState;[7 8 0];s;first;ifn'4ddkeyskip';
 [1 0 0 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'4ddkeyskip';
 keyState;[44 45 0];s;keyState;[225 226 0];s;+;first;ifn'4dspkeyskip';
 [0 1 0 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'4dspkeyskip';
 keyState;[224 225 0];s;keyState;[6 7 0];s;+;first;ifn'4dctkeyskip';
 [0 -1 0 0];
-__accel;+;__accel=;
+accel;+;accel=;
 l'4dctkeyskip';
-0;__rotza=;
+0;rotza=;
 keyState;[20 21 0];s;first;gamepadState;[6 7 0];s;first;+;ifn'4dclockwiseskip';
-1;__rotza=;
+1;rotza=;
 l'4dclockwiseskip';
 keyState;[8 9 0];s;first;gamepadState;[7 8 0];s;first;+;ifn'4dcclockwiseskip';
--1;__rotza=;
+-1;rotza=;
 l'4dcclockwiseskip';
-0;__rotwza=;
+0;rotwza=;
 keyState;[10 11 0];s;first;gamepadState;[9 10 0];s;first;+;ifn'4dkataclockwiseskip';
-1;__rotwza=;
+1;rotwza=;
 l'4dkataclockwiseskip';
 keyState;[23 24 0];s;first;gamepadState;[11 12 0];s;first;+;ifn'4dckataclockwiseskip';
--1;__rotwza=;
+-1;rotwza=;
 l'4dckataclockwiseskip';
 
-__rotza;timeDelta;165;*;2;^;*;__rotza=;
-__rotzv;__rotza;+;__rotzv=;
-__rotzv;0.95;timeDelta;165;*;^;*;__rotzv=;
-__rotwza;timeDelta;165;*;2;^;*;__rotwza=;
-__rotwzv;__rotwza;+;__rotwzv=;
-__rotwzv;0.95;timeDelta;165;*;^;*;__rotwzv=;
+rotza;timeDelta;165;*;2;^;*;rotza=;
+rotzv;rotza;+;rotzv=;
+rotzv;0.95;timeDelta;165;*;^;*;rotzv=;
+rotwza;timeDelta;165;*;2;^;*;rotwza=;
+rotwzv;rotwza;+;rotwzv=;
+rotwzv;0.95;timeDelta;165;*;^;*;rotwzv=;
 
 gamepadState;[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
 inputState;[3 4 0];s;first;ifn'4dmouse1skip'; // rotate if mouse 1
@@ -321,56 +321,56 @@ inputState;[0 2 0];s;+; // get mouse delta xy and add
 l'4dmouse1skip';
 
 worldRotation;[0 1];t;worldUnrotation= 16;
-worldUnrotation;[0 1 0];s;first;__right=;
-worldUnrotation;[1 2 0];s;first;__up=;
-worldUnrotation;[2 3 0];s;first;__forward=;
-worldUnrotation;[3 4 0];s;first;__ana=;
+worldUnrotation;[0 1 0];s;first;right=;
+worldUnrotation;[1 2 0];s;first;up=;
+worldUnrotation;[2 3 0];s;first;forward=;
+worldUnrotation;[3 4 0];s;first;ana=;
 4dnavmode;if'rot4dmode2';
-__forward;__up;2;dup;last;-300;/;rot4d;worldRotation;m;worldRotation= 16;
-__forward;__right;2;dup;first;300;/;rot4d;worldRotation;m;worldRotation= 16;
+forward;up;2;dup;last;-300;/;rot4d;worldRotation;m;worldRotation= 16;
+forward;right;2;dup;first;300;/;rot4d;worldRotation;m;worldRotation= 16;
 1;if'rot4dmodeskip';
 l'rot4dmode2';
-__ana;__up;2;dup;last;-300;/;rot4d;worldRotation;m;worldRotation= 16;
-__ana;__right;2;dup;first;300;/;rot4d;worldRotation;m;worldRotation= 16;
+ana;up;2;dup;last;-300;/;rot4d;worldRotation;m;worldRotation= 16;
+ana;right;2;dup;first;300;/;rot4d;worldRotation;m;worldRotation= 16;
 l'rot4dmodeskip';
-__up;__right;__rotzv;1500;/;rot4d;worldRotation;m;worldRotation= 16;
-__forward;__ana;__rotwzv;1500;/;rot4d;worldRotation;m;worldRotation= 16;
+up;right;rotzv;1500;/;rot4d;worldRotation;m;worldRotation= 16;
+forward;ana;rotwzv;1500;/;rot4d;worldRotation;m;worldRotation= 16;
 pop; // x y rotation
 
-[0 0 0 0];__joymove=;
-gamepadState;[0 1 0];s;first;4;rep;[0 0 1 0];*;__joymove;+;__joymove=;
-gamepadState;[1 2 0];s;first;4;rep;[0 0 -1 0];*;__joymove;+;__joymove=;
-gamepadState;[2 3 0];s;first;4;rep;[1 0 0 0];*;__joymove;+;__joymove=;
-gamepadState;[3 4 0];s;first;4;rep;[0 -1 0 0];*;__joymove;+;__joymove=;
+[0 0 0 0];joymove=;
+gamepadState;[0 1 0];s;first;4;rep;[0 0 1 0];*;joymove;+;joymove=;
+gamepadState;[1 2 0];s;first;4;rep;[0 0 -1 0];*;joymove;+;joymove=;
+gamepadState;[2 3 0];s;first;4;rep;[1 0 0 0];*;joymove;+;joymove=;
+gamepadState;[3 4 0];s;first;4;rep;[0 -1 0 0];*;joymove;+;joymove=;
 
-gamepadState;[9 10 0];s;first;ifn'__4dnogpup';
+gamepadState;[9 10 0];s;first;ifn'4dnogpup';
 //[0];timeDelta;-300;*;e;0;cat;3dnavParam;+;3dnavParam=;
-l'__4dnogpup';
-gamepadState;[11 12 0];s;first;ifn'__4dnogpdown';
+l'4dnogpup';
+gamepadState;[11 12 0];s;first;ifn'4dnogpdown';
 //[0];timeDelta;300;*;e;0;cat;3dnavParam;+;3dnavParam=;
-l'__4dnogpdown';
-gamepadState;[10 11 0];s;first;keyState;[27 28 0];s;first;+;ifn'__4dnogpright';  // x and 
-[0 0 0 1];__accel;+;__accel=;
-l'__4dnogpright';
-gamepadState;[12 13 0];s;first;;keyState;[29 30 0];s;first;+;ifn'__4dnogpleft'; // z
-[0 0 0 -1];__accel;+;__accel=;
-l'__4dnogpleft';
-gamepadState;[18 19 0];s;first;ifn'__4dnogpbty';
+l'4dnogpdown';
+gamepadState;[10 11 0];s;first;keyState;[27 28 0];s;first;+;ifn'4dnogpright';  // x and 
+[0 0 0 1];accel;+;accel=;
+l'4dnogpright';
+gamepadState;[12 13 0];s;first;;keyState;[29 30 0];s;first;+;ifn'4dnogpleft'; // z
+[0 0 0 -1];accel;+;accel=;
+l'4dnogpleft';
+gamepadState;[18 19 0];s;first;ifn'4dnogpbty';
 timeDelta;5;*;speed;+;speed=;
-l'__4dnogpbty';
-gamepadState;[15 16 0];s;first;ifn'__4dnogpbta';
+l'4dnogpbty';
+gamepadState;[15 16 0];s;first;ifn'4dnogpbta';
 timeDelta;-5;*;speed;+;speed=;
-speed;0;dup;0.1;-;if'__4dspeedPositive';pop;0.1;l'__4dspeedPositive';speed=;
-l'__4dnogpbta';
+speed;0;dup;0.1;-;if'4dspeedPositive';pop;0.1;l'4dspeedPositive';speed=;
+l'4dnogpbta';
 
 
-worldRotation;__accel;timeDelta;165;*;4;rep;*;m;unext;__accel=;
-__velocity;__accel;speed;4;rep;*;+;__velocity=;
-__velocity;[0.95 0.95 0.95 0.95];timeDelta;165;*;4;rep;^;*;__velocity=;
+worldRotation;accel;timeDelta;165;*;4;rep;*;m;unext;accel=;
+velocity;accel;speed;4;rep;*;+;velocity=;
+velocity;[0.95 0.95 0.95 0.95];timeDelta;165;*;4;rep;^;*;velocity=;
 
-fourOrigin;__velocity;timeDelta;40;/;4;rep;*;+;fourOrigin= 4;
-worldRotation;__joymove;m;unext;__joymove=;
-__joymove;timeDelta;speed;*;0.3;*;4;rep;*;fourOrigin;+;fourOrigin= 4;
+fourOrigin;velocity;timeDelta;40;/;4;rep;*;+;fourOrigin= 4;
+worldRotation;joymove;m;unext;joymove=;
+joymove;timeDelta;speed;*;0.3;*;4;rep;*;fourOrigin;+;fourOrigin= 4;
 
 return;
 
@@ -387,13 +387,13 @@ return;
 // The function returns 1 tensor: the text texture itself.
 
 l'textToTexture';
-[4];_tzoom= 1;
+[4];tzoom= 1;
 [0 1];t;1;r; // Adjust char matrix
 img'inc\font.bmp'; // load font
-6;2;dup;shape;[6 8];*;[1 1];+;_tzoom;0;dup;0;cat;*;[4];0;cat;
+6;2;dup;shape;[6 8];*;[1 1];+;tzoom;0;dup;0;cat;*;[4];0;cat;
 c''''
-float x = ( tf.x - _tzoom ) / _tzoom;
-float y = tf.y / _tzoom;
+float x = ( tf.x - std_tzoom ) / std_tzoom;
+float y = tf.y / std_tzoom;
 ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
           a( ivec4( mod( floor( x ), 6.0 ),
           mod( y, 8.0 ) + 1328.0 - 8.0 * b( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
@@ -409,11 +409,11 @@ return;
 // to blit it onto.
 
 l'blitText';
-[10 10];_toffset= 2;
-6;1;dup;shape;_tsize= 3;2;dup;shape;0;dup;_wsize= 3;
+[10 10];toffset= 2;
+6;1;dup;shape;tsize= 3;2;dup;shape;0;dup;wsize= 3;
 c''''
-if( tf.x > _toffset.x && tf.y > _toffset.y && tf.x < _tsize.x / 2. + _toffset.x && tf.y < _tsize.y / 2. + _toffset.y )
-  ret[0] = af( ( tf - _toffset ) * 2.0 );
+if( tf.x > std_toffset.x && tf.y > std_toffset.y && tf.x < std_tsize.x / 2. + std_toffset.x && tf.y < std_tsize.y / 2. + std_toffset.y )
+  ret[0] = af( ( tf - std_toffset ) * 2.0 );
 else
   ret[0] = bf( tf );
 ' 2 1 4;
@@ -429,22 +429,22 @@ return;
 
 
 l'perlin';  
-_time= 1;
-_amp= 1;
-2;rep;_texsize= 2;
+time= 1;
+amp= 1;
+2;rep;texsize= 2;
 
-2;rep;0;dup;_gradsize= 2;pop;6;_gradsize;[2];0;cat;
+2;rep;0;dup;gradsize= 2;pop;6;gradsize;[2];0;cat;
 c'''  // Push the gradients.
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
     return fract( sin( h ) * 43758.5453123 );
 }
 '
-ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), _time ) * 2.0 * 3.1415928 ) :
-                  cos( hash( vec2( t.xy ), _time ) * 2.0 * 3.1415928 );
+ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), std_time ) * 2.0 * 3.1415928 ) :
+                  cos( hash( vec2( t.xy ), std_time ) * 2.0 * 3.1415928 );
 ' 0 1 0;
 
-6;_texsize;
+6;texsize;
 c'''
 float fade( float x ){
     return x*x*x*(x*(x*6.0 - 15.0)+10.0);
@@ -453,7 +453,7 @@ float lerp( float a, float b, float t ){
     return a + t*(b - a);
 }
 '
-vec2 c1 = vec2( t.xy ) * _gradsize / _texsize;
+vec2 c1 = vec2( t.xy ) * std_gradsize / std_texsize;
 vec2 fract = fract( c1 );
 ivec2 ic1 = ivec2( c1 );
 ivec2 ic2 = ic1 + ivec2( 1, 0 );
@@ -472,7 +472,7 @@ float v  = fade( fract.y );
 float v1 = lerp( fc1, fc2, u );
 float v2 = lerp( fc3, fc4, u );
 float v3 = lerp( v1, v2, v );
-ret[0]=_amp*(v3 * 0.5 + 0.5);
+ret[0]=std_amp*(v3 * 0.5 + 0.5);
 ' 1 1 0;
 return;
 
@@ -485,22 +485,22 @@ return;
 // returns a tensor with multiple combined octaves of perlin noise.
 
 l'fractalNoise';
-__fngradsize=;
-__fntexsize=;
-[0.5];__fnamp=;
-[1];__fnseed=;
+fngradsize=;
+fntexsize=;
+[0.5];fnamp=;
+[1];fnseed=;
 
-__fngradsize;__fntexsize;__fnamp;__fnseed;perlin;
+fngradsize;fntexsize;fnamp;fnseed;perlin;
 
-l'__fnloop';
-__fngradsize;2;*;__fngradsize=;
-__fnamp;[0.5];*;__fnamp=;
-__fnseed;[1.2];+;__fnseed=;
-__fngradsize;__fntexsize;__fnamp;__fnseed;perlin;
-6;__fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0;
-__fntexsize;__fngradsize;/;4;-;if'__fnloop';
+l'fnloop';
+fngradsize;2;*;fngradsize=;
+fnamp;[0.5];*;fnamp=;
+fnseed;[1.2];+;fnseed=;
+fngradsize;fntexsize;fnamp;fnseed;perlin;
+6;fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0;
+fntexsize;fngradsize;/;4;-;if'fnloop';
 return;
 
 
 
-l'__stdlibend';
+l'stdlibend';

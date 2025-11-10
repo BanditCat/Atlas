@@ -282,7 +282,7 @@
   
   <section id="gotchas">
     <h2>Gotchas</h2>
-    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command.</p>
+    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'.  Because of this, and because OpenGL reserves variables containing __, you must not start vairable names with an underscore.  Because of the way workspaces work, simply prefixing the workspace, you cannot access one workspace from inside another, you must temporarily switch workspaces to do that.  You must use either workspace'foo' to gain access to foo without a prefix, or use workspace'', the empty workspace, which can access any other workspace by prefixing it.</p>
   </section>      
 
   <section id="sugar">
@@ -494,7 +494,7 @@ After the c command, there are several quoted strings that contain your shader c
     glslExpression:
     This string contains the main shader code (similar to a fragment shader). Here you must assign values to the output array elements (ret[0] to ret[retCount - 1]). These assignments determine the output tensors.
 
-Within the shader code (especially in glslExpression), you have access to the following indices:
+Within the shader code all variables that were <a href="#cmd-set">set</a> with a numeric argument are avaliable with any '.'s replaced by '_' to allow for workspaces. You also have access to the following indices:
 
     i: A linear (integer) index.
     t: An ivec4 representing the multidimensional tensor index.
@@ -1111,7 +1111,7 @@ quit;
 
   <section id="cmd-workspace">
     <h2>workspace</h2>
-    <p>This command takes one immediate string parameter and sets the current workspace for the current file.  For example, workspace'foo' will cause all subsequent sets and gets to be prefixed by "foo." and all glsl variables will be prefixed by "foo_".  Because both sets and gets are prefixed, the current file need not prefix normal gets, just the glsl variables must always be prefixed as they are statically compiled at script inititialization.</p>
+    <p>This command takes one immediate string parameter and sets the current workspace for the current file.  For example, workspace'foo' will cause all subsequent sets and gets to be prefixed by "foo." and all glsl variables will be prefixed by "foo_".  Because both sets and gets are prefixed, the current file need not prefix normal gets, just the glsl variables must always be prefixed as they are statically compiled at script inititialization.  All subseqent commands are prefixed this way until the end of file or next workspace command.</p>
   </section>
 
 </main>

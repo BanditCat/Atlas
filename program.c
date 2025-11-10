@@ -202,7 +202,10 @@ void removeComments( char* prog ){
   *dst = '\0';  // Null-terminate the modified string
 }
 // This adds a compute statement to p and returns its index.
-u32 addCompute( program* p,
+u32 addCompute( const char* filename,
+                u32 linenum,
+                u32 commandnum,
+                program* p,
                 const char* uniforms,
                 const char* vglslpre,
                 const char* glslpre,
@@ -219,7 +222,11 @@ u32 addCompute( program* p,
     p->computes = tp;
   }
   p->computes[ p->numComputes ] =
-    makeCompute( p, uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount, channels );
+    makeCompute( filename,
+                 linenum,
+                 commandnum,
+                 p,
+                 uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount, channels );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -283,23 +290,22 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     char* endi = starti;
     while( *endi && *endi != '\'' )
       endi++;
-    if( endi == starti )
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty workspace." );
     if( *endi != '\'' )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
-             "Unmatched quote in workspace." );
-    char* work = mem( 1 + endi - starti, char );
+             "Unmatched quote in workspace command." );
+    char* work = mem( 2 + endi - starti, char );
     memcpy( work, starti, endi - starti );
     work[ endi - starti ] = '\0';
     if( *( endi + 1 ) )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
-             "Extra characters after workspace." );
+             "Extra characters after workspace command." );
     unmem( workspace );
-    
+    workspace = work;
+    --p->numSteps;
   } else if( !strncmp( command, "l'", 2 ) ){  // Label
     char* starti = command + 2;
     char* endi = starti;
@@ -312,9 +318,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Unmatched quote in label." );
-    char* label = mem( 1 + endi - starti, char );
-    memcpy( label, starti, endi - starti );
-    label[ endi - starti ] = '\0';
+    u32 worklen = strlen( workspace );
+    char* label = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( label, workspace, worklen );
+      label[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( label + worklen, starti, endi - starti );
+    label[ worklen + endi - starti ] = '\0';
     --p->numSteps;
     if( *( endi + 1 ) )
       error( "%s:%u command %u: %s", filename,
@@ -346,9 +358,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Unmatched quote in set statement." );
-    char* varName = mem( 1 + endi - starti, char );
-    memcpy( varName, starti, endi - starti );
-    varName[ endi - starti ] = '\0';
+    u32 worklen = strlen( workspace );
+    char* varName = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( varName, workspace, worklen );
+      varName[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( varName + worklen, starti, endi - starti );
+    varName[ worklen + endi - starti ] = '\0';
     char* sizep = endi + 1;
     u32 varSize;
     int charsread;
@@ -386,9 +404,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Unmatched quote in get statement." );
-    char* varName = mem( 1 + endi - starti, char );
-    memcpy( varName, starti, endi - starti );
-    varName[ endi - starti ] = '\0';
+    u32 worklen = strlen( workspace );
+    char* varName = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( varName, workspace, worklen );
+      varName[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( varName + worklen, starti, endi - starti );
+    varName[ worklen + endi - starti ] = '\0';
     if( *( endi + 1 ) )
       error( "%s:%u command %u: %s", filename,
              linenum,
@@ -412,9 +436,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Unmatched quote in if statement." );
-    char* branchName = mem( 1 + endi - starti, char );
-    memcpy( branchName, starti, endi - starti );
-    branchName[ endi - starti ] = '\0';
+    u32 worklen = strlen( workspace );
+    char* branchName = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( branchName, workspace, worklen );
+      branchName[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( branchName + worklen, starti, endi - starti );
+    branchName[ worklen + endi - starti ] = '\0';
     curStep->type = IF;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
@@ -440,9 +470,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Unmatched quote in ifn statement." );
-    char* branchName = mem( 1 + endi - starti, char );
-    memcpy( branchName, starti, endi - starti );
-    branchName[ endi - starti ] = '\0';
+    u32 worklen = strlen( workspace );
+    char* branchName = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( branchName, workspace, worklen );
+      branchName[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( branchName + worklen, starti, endi - starti );
+    branchName[ worklen + endi - starti ] = '\0';
     curStep->type = IFN;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
@@ -816,9 +852,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Empty call statement." );
-    char* branchName = mem( 1 + endi - starti, char );
-    memcpy( branchName, starti, endi - starti );
-    branchName[ endi - starti ] = '\0';
+    u32 worklen = strlen( workspace );
+    char* branchName = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( branchName, workspace, worklen );
+      branchName[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( branchName + worklen, starti, endi - starti );
+    branchName[ worklen + endi - starti ] = '\0';
     curStep->type = CALL;
     curStep->branchName = branchName;
     // dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum,
@@ -847,7 +889,12 @@ void addProgramFromFile( const char* filename, program* program );
 void addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
   preprocessComputeCommands( prog );
-    
+  // Always reset to workplace'' for a new program.
+  unmem( workspace );
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
+  
+  
   char* ptr = prog;
   u32 linenum = 1;
   u32 commandnum = 0;
@@ -939,6 +986,10 @@ void addProgram( const char* filename, char* prog, program* program ){
       unmem( buf );
     }
   }
+  // Reset afterwards too, we dont want to leave the including file in the workspace.
+  unmem( workspace );
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
 }
 
 
@@ -1029,41 +1080,48 @@ void finalize( program* program ){
             unmem( program->steps[ i ].var.name );
             program->steps[ i ].var.index = val;
           } else {
+            u32 varlen = strlen( program->steps[ i ].var.name );
+            char* safeName = mem( varlen + 1, char );
+            memcpy( safeName, program->steps[ i ].var.name, varlen + 1 );
+            for( u32 i = 0; i < varlen; ++i )
+              if( safeName[ i ] == '.' )
+                safeName[ i ] = '_';
             trieInsert( program->vars, program->steps[ i ].var.name, program->numVars );
             switch( program->steps[ i ].var.size ){
             case 1:
               p += snprintf( p,
                              bufsize - ( p - glslUniformBlock ),
                              "uniform float %s;\n",
-                             program->steps[ i ].var.name );
+                             safeName );
               break;
             case 2:
               p += snprintf( p,
                              bufsize - ( p - glslUniformBlock ),
                              "uniform vec2 %s;\n",
-                             program->steps[ i ].var.name );
+                             safeName );
               break;
             case 3:
               p += snprintf( p,
                              bufsize - ( p - glslUniformBlock ),
                              "uniform vec3 %s;\n",
-                             program->steps[ i ].var.name );
+                             safeName );
               break;
             case 4:
               p += snprintf( p,
                              bufsize - ( p - glslUniformBlock ),
                              "uniform vec4 %s;\n",
-                             program->steps[ i ].var.name );
+                             safeName );
               break;
             case 16:
               p += snprintf( p,
                              bufsize - ( p - glslUniformBlock ),
                              "uniform mat4 %s;\n",
-                             program->steps[ i ].var.name );
+                             safeName );
               break;
             default:
-              error( "%s", "Logic error in Atlas! My code is ass!" );
+              error( "%s", "Logic error in Atlas!" );
             }
+            unmem( safeName );
             program->varNames[ program->numVars ] = program->steps[ i ].var.name;
             program->varOffsets[ program->numVars ] = offset;
             program->varSizes[ program->numVars ] = program->steps[ i ].var.size;
@@ -1157,7 +1215,10 @@ void finalize( program* program ){
       char* glsl = program->steps[ i ].toCompute.glsl;
       char* vglsl = program->steps[ i ].toCompute.vglsl;
       program->steps[ i ].compute =
-        addCompute( program,
+        addCompute( program->steps[ i ].filename,
+                    program->steps[ i ].linenum,
+                    program->steps[ i ].commandnum,
+                    program,
                     glslUniformBlock,
                     vglslpre, glslpre, vglsl, glsl,
                     program->steps[ i ].toCompute.argCount,
