@@ -4,14 +4,14 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 
 
-nav2d;
-rightClickParam;perturb= 2;
-middleClickParam;last;e;exp= 1;
+std.nav2d;
+std.rightClickParam;perturb= 2;
+std.middleClickParam;last;e;exp= 1;
 
 size;if'started';
-1;1;1;nav2d;
-[0.125 0];offs= 2;
-[0 2];middleClickParam= 2;
+1;1;1;std.nav2d;
+[0.125 0];std.offs= 2;
+[0 2];std.middleClickParam= 2;
 l'started';
 pop;pop;pop;
 
@@ -21,8 +21,8 @@ windowSize;wsize= 2;
 6;wsize;
 c''''
 vec4 tf = vec4( t );
-ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / zoom - offs.x * 4.0;
-ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / zoom + offs.y * 4.0;
+ret[ 0 ] = ( ( tf.x + 0.5 ) * 4.0 / wsize.x - 2.0 ) * wsize.x / wsize.y / std_zoom - std_offs.x * 4.0;
+ret[ 1 ] = ( ( tf.y + 0.5 ) * 4.0 / wsize.y - 2.0 ) / std_zoom + std_offs.y * 4.0;
 '0 2 0;
 6;wsize;c''''ret[0]=perturb.x;ret[1]=perturb.y;' 0 2 0;
 1;if'skip'; 
@@ -67,14 +67,14 @@ ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 );
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keyState;[58 59 0];s;first;ifn'skipf1';
+std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: move fractal        ';e;
 'Right click drag: change peterbation';e;0;cat;
 'Middle click drag: change exponent  ';e;0;cat;
 'Mouse wheel: zoom                   ';e;0;cat;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf1';
-keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf2';

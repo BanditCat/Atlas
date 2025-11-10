@@ -14,8 +14,8 @@ ret[0] = t.y < 20 ? ( t.z == 0 ? 1.0 : 0.0 ) : 0.0;
 ' 0 1 0;
 l'started';
 
-inputState;
-[3 4 0];s;first;gamepadState;[16 17 0];s;first;+;if'still';
+std.inputState;
+[3 4 0];s;first;std.gamepadState;[16 17 0];s;first;+;if'still';
 time;[1];+;time= 1;
 l'still';
 6;wsize;[4];0;cat;
@@ -37,11 +37,11 @@ ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( t
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keyState;[58 59 0];s;first;ifn'skipf1';
+std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Mouse click and hold: freeze flame';e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf1';
-keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf2';

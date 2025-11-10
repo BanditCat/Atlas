@@ -9,8 +9,8 @@ size;if'started';
 // init code
 /////////////////////////////////////////////////////////////////////////
 // Constants
-nav3d;
-[0 0 3.8];origin= 3; // set origin
+std.nav3d;
+[0 0 3.8];std.origin= 3; // set origin
 3;speed=;
 [100];sqrtParticles= 1;
 [0.002];timeScale= 1;
@@ -90,7 +90,7 @@ ret[ 0 ] = i == 0 ? vec4( 0.0, 0.0, 0.0, 0.3 ) : ret[ 0 ];
 1;
 l'started';
 
-inputPresses;[5 6 0];s;first;keyPresses;[40 41 0];s;first;+;gamepadPresses;[16 17 0];s;first;+;ifn'toggleRunning';
+std.inputPresses;[5 6 0];s;first;std.keyPresses;[40 41 0];s;first;+;std.gamepadPresses;[16 17 0];s;first;+;ifn'toggleRunning';
 1;running;-;running=;
 l'toggleRunning';
 
@@ -108,7 +108,7 @@ time;timeDelta;+;time=;
 
 pop;
 
-nav3d;
+std.nav3d;
 
 // stack: velocity, position, verts
 6;1;dup;shape;
@@ -201,12 +201,12 @@ vec4 particle = bf( vec2( ivec2( (i/3) % int( sqrtParticles ), (i/3) / int( sqrt
 vec4 velocity = af( vec2( ivec2( (i/3) % int( sqrtParticles ), (i/3) / int( sqrtParticles ) ) ) );
 vec4 hpart = vec4( particle.xyz, 0.0 );
 
-vec3 right = vec3( worldUnrotation[ 0 ][ 0 ], worldUnrotation[ 1 ][ 0 ], worldUnrotation[ 2 ][ 0 ]);
-vec3 up    = vec3( worldUnrotation[ 0 ][ 1 ], worldUnrotation[ 1 ][ 1 ], worldUnrotation[ 2 ][ 1 ]);
+vec3 right = vec3( std_worldUnrotation[ 0 ][ 0 ], std_worldUnrotation[ 1 ][ 0 ], std_worldUnrotation[ 2 ][ 0 ]);
+vec3 up    = vec3( std_worldUnrotation[ 0 ][ 1 ], std_worldUnrotation[ 1 ][ 1 ], std_worldUnrotation[ 2 ][ 1 ]);
 vec3 wp = particle.xyz + ( right * vert.x + up * vert.y ) * particle.w;
 
-ret = proj*worldUnrotation*( hpart +
-                             -vec4( origin, 0.0 ) + //rot *
+ret = proj*std_worldUnrotation*( hpart +
+                             -vec4( std_origin, 0.0 ) + //rot *
                              vec4(wp, 1.0 ) );
 	   
 unitvec = vec4( cf( vec2( float(i%3) + 0.5, 1 ) ).xyz, 1.0 ); //ret.z / ret.w );
@@ -241,15 +241,15 @@ l'end';
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keyState;[58 59 0];s;first;ifn'skipf1';
+std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view               ';e;
 'Right click: fly forward                  ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around';e;0;cat;
 'Mouse wheel: change fly speed             ';e;0;cat;
 'Enter key / middle click: pause           ';e;0;cat;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf1';
-keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf2';

@@ -3,16 +3,16 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 
 size;if'started'; // init code goes here
-nav4d;
-[0 0 3 0];set'fourOrigin' 4;
-4;set'speed';
+std.nav4d;
+[0 0 3 0];std.fourOrigin= 4;
+4;speed=;
 
 1; // dummy value to pop off in place of display tensor.
 l'started'; // init code complete
 
 pop; // Pop the last display tensor off the stack.
 
-nav4d;[0 0.1];set'navp' 2;
+std.nav4d;[0 0.1];navp= 2;
 
 6;windowSize;[2 2];/;0;dup;wdims= 2;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;aspect= 1;pop;
@@ -96,9 +96,9 @@ vec4 ray = normalize(
 );
 
 // Rotate ray by camera rotation
-vec4 rd = worldRotation * ray;
+vec4 rd = std_worldRotation * ray;
 
-float result = raymarch( fourOrigin, rd, INIT_DIST);
+float result = raymarch( std_fourOrigin, rd, INIT_DIST);
 ret[0] = result;
 '
 0 1 0;
@@ -147,14 +147,14 @@ vec3 left=normalize(vec3(-aspect/wdims.x,0.0,centersample-leftsample));
 vec3 down=normalize(vec3(0.0,-1.0/(aspect*wdims.y),centersample-downsample));
 vec3 nrml1=cross(right,up);
 vec3 nrml2=cross(left,down);
-vec4 light=fourOrigin+worldUnrotation*vec4(10.0,10.0,0.0,0.0);
+vec4 light=std_fourOrigin+std_worldUnrotation*vec4(10.0,10.0,0.0,0.0);
 vec4 ray = normalize(
     vec4(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
       -1.0, 0.0
     )
 );
-vec4 p = fourOrigin+worldRotation*ray * centersample;
+vec4 p = std_fourOrigin+std_worldRotation*ray * centersample;
 float diffuse=max(0.0,dot(normalize(nrml1+nrml2),
   normalize(light.xyz - ray.xyz * centersample)));
 vec4 color=normalize(p)+1.0;
@@ -168,7 +168,7 @@ else
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keyState;[58 59 0];s;first;ifn'skipf1';
+std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                ';e;
 'Right click: fly forward                   ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around ';e;0;cat;
@@ -176,9 +176,9 @@ keyState;[58 59 0];s;first;ifn'skipf1';
 'z/x: translate through 4d                  ';e;0;cat;
 't/g: rotate through the zw plane           ';e;0;cat;
 'f: switch mouse rotation mode between 3d/4d';e;0;cat;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf1';
-keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf2';

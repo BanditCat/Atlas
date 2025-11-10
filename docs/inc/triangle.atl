@@ -41,12 +41,12 @@ ret[0] = color;
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keyState;[58 59 0];s;first;ifn'skipf1';
+std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Nothing to see here!   ';e;
 'No interactive controls';e;0;cat;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf1';
-keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf2';

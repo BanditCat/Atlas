@@ -9,16 +9,16 @@ include'inc\nav.atl';
 size;if'started'; // init code goes here
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 [2048 2048];set'texsize' 2;
-2048;4;fractalNoise;
+2048;4;std.fractalNoise;
 6;texsize;[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) );' 1 1 4;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 
-nav3d;
-[0.5 -0.5 1.5];set'origin' 3;
-[150 400];set'3dnavParam';
+std.nav3d;
+[0.5 -0.5 1.5];std.origin= 3;
+[150 400];3dnavParam=;
 
 1; // dummy value to pop off in place of display tensor.
 l'started'; // init code complete
@@ -26,7 +26,7 @@ l'started'; // init code complete
 pop; // Pop the last display tensor off the stack.
 
 
-nav3d;3dnavParam;set'lrot' 2;
+std.nav3d;3dnavParam;set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
@@ -165,21 +165,21 @@ vec3 ray = normalize(
 vec3 rotsun = ( lightRotation * vec4(0.0, 1.0, 0.0, 1.0) ).xyz + sun;
 
 // Rotate it by worldRotation
-vec3 rcrayo = ( worldRotation * vec4(ray, 1.0) ).xyz;
+vec3 rcrayo = ( std_worldRotation * vec4(ray, 1.0) ).xyz;
 vec3 rcray = rcrayo;
-bool rcd = rayTrace( rcray, origin );
-vec3 intersect = rcray.z * rcrayo + origin;
+bool rcd = rayTrace( rcray, std_origin );
+vec3 intersect = rcray.z * rcrayo + std_origin;
 vec3 sunrayo = normalize( intersect - rotsun );
 vec3 sunray = sunrayo;
 bool sunrcd = rayTrace( sunray, rotsun );
 vec3 sintersect = sunray.z * sunrayo + rotsun;
 bool underwater = intersect.y < -0.85;
-float watert = -( dot( nrml, origin ) + dot( -nrml, vec3( 0, -0.85, 0 ) ) ) / dot( nrml, rcrayo );
-vec3 wintersect = rcrayo * watert + origin;
+float watert = -( dot( nrml, std_origin ) + dot( -nrml, vec3( 0, -0.85, 0 ) ) ) / dot( nrml, rcrayo );
+vec3 wintersect = rcrayo * watert + std_origin;
 
 float csc = dot( -sunrayo, sampleNormal( rcray.xy ) );
 
-float sunDist = dot( rcrayo, rotsun - origin ) > 0.0 ? 2.0 - 5.0 * length( cross( rcrayo, origin - rotsun ) ) : 0.0;
+float sunDist = dot( rcrayo, rotsun - std_origin ) > 0.0 ? 2.0 - 5.0 * length( cross( rcrayo, std_origin - rotsun ) ) : 0.0;
 float height = (sampleHeight( rcray.xy )-0.32) / 0.37;
 vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
                    b( ivec4( 0.0, (height) * ttexsize, 1.0, 0.0 ) ),
@@ -208,15 +208,15 @@ ret[0] = color.zyxx;
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-keyState;[58 59 0];s;first;ifn'skipf1';
+std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                     ';e;
 'Right click: fly forward                        ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
 'Mouse wheel: change fly speed                   ';e;0;cat;
 'Hold f key and drag mouse: change light location';e;0;cat;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf1';
-keyState;[59 60 0];s;first;gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
-textToTexture;blitText;
+std.textToTexture;std.blitText;
 l'skipf2';
