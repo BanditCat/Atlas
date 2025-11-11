@@ -78,14 +78,20 @@ typedef struct{
     } toCompute;
     struct{
       union{
-        char* name;
+        struct{
+          char* name;
+          char* baseName;
+        };
         u32 index;
       };
       u32 size;
     } var;
     u32 compute;
     u32 branch;
-    char* branchName;
+    struct{
+      char* branchName;
+      char* branchBaseName;
+    };
     char* varName;
     char* progName;
   };

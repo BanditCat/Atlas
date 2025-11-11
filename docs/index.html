@@ -282,7 +282,7 @@
   
   <section id="gotchas">
     <h2>Gotchas</h2>
-    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'.  Because of this, and because OpenGL reserves variables containing __, you must not start vairable names with an underscore.  Because of the way workspaces work, simply prefixing the workspace, you cannot access one workspace from inside another, you must temporarily switch workspaces to do that.  You must use either workspace'foo' to gain access to foo without a prefix, or use workspace'', the empty workspace, which can access any other workspace by prefixing it.</p>
+    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'.  Because of this, and because OpenGL reserves variables containing __, you must not start glsl vairable names with an underscore if in a workspace.</p>
   </section>      
 
   <section id="sugar">
@@ -296,7 +296,7 @@
     <h2>Data Types</h2>
     <p>All data in Atlas is floating point. This means that linear indexing only works out to about 16 million
       (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or addressing will fail. All other types of data 
-      (e.g. strings) are converted into a tensor of floating point values.</p>
+      (e.g. strings) are converted into a tensor of floating point values. Strings use backslash as the escape character so that '\'' is a string with a single quote and '\\' is a single backslash etc.</p>
     <ul>
       <li><strong>Number:</strong> Integers and floats, scalars are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
       <li><strong>String:</strong> Text codepoints in single quotes (e.g., <code>'Hello'</code>).</li>

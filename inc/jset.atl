@@ -2,6 +2,7 @@ include'inc\stdlib.atl';
 'inc\klein.atl';
 include'inc\nav.atl';
 
+
 size;if'started'; // init code goes here
 std.nav4d;
 [0 0 3 0];std.fourOrigin= 4;

@@ -388,6 +388,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              "Malformed set statement." );
     // dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum,
     // varName );
+    if( worklen )
+      curStep->var.baseName = varName + worklen;
 
   } else if( !strncmp( command, "get'", 4 ) ){  // Get
     char* starti = command + 4;
@@ -420,6 +422,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              "Extra characters after get statement." );
     curStep->type = GET;
     curStep->var.name = varName;
+    if( worklen )
+      curStep->var.baseName = varName + worklen;
     // dbg( "Linenum %u commandnum %u: get var %s\n", linenum, commandnum,
     // varName );
 
@@ -454,6 +458,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              "Extra characters after if statement." );
     // dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum,
     // branchName );
+    if( worklen )
+      curStep->branchBaseName = branchName + worklen;
 
   } else if( !strncmp( command, "ifn'", 4 ) ){  // Ifn
     char* starti = command + 4;
@@ -488,6 +494,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              "Extra characters after ifn statement." );
     // dbg( "Linenum %u commandnum %u: ifn to %s\n", linenum, commandnum,
     // branchName );
+    if( worklen )
+      curStep->branchBaseName = branchName + worklen;
 
   } else if( !strncmp( command, "img'", 4 ) ){  // img
     char* starti = command + 4;
@@ -793,8 +801,23 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     if( *command == '\'' ){
       char* starti = command + 1;
       char* endi = starti;
-      while( *endi && *endi != '\'' )
-        endi++;
+      while (*endi) {
+        if (*endi == '\'') {
+          // Count backslashes immediately before this quote
+          int bslashes = 0;
+          char *p = endi;
+          
+          while( p > starti && p[-1] == '\\' ){
+            ++bslashes;
+            --p;
+          }
+
+          if( ( bslashes & 1 ) == 0 )
+            break;
+        }
+        ++endi;
+      }    
+      
       if( endi == starti )
         error( "%s:%u command %u: %s", filename,
                linenum,
@@ -807,7 +830,18 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
                "Unmatched quote in string statement." );
       char* str = mem( 1 + endi - starti, char );
       memcpy( str, starti, endi - starti );
-      str[ endi - starti ] = '\0';
+      u32 back = endi - starti;
+      
+      // remove backslashes
+      for( u32 i = 0; i < back; ++i )
+        if( str[ i ] == '\\' ){
+          --back;
+          for( u32 j = i; j < back; ++j )
+            str[ j ] = str[ j + 1 ];
+        }
+      str[ back ] = '\0';
+      
+      
       curStep->tensor = tensorFromString( str );
       unmem( str );
       if( *( endi + 1 ) )
@@ -865,6 +899,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->branchName = branchName;
     // dbg( "Linenum %u commandnum %u: call to %s\n", linenum, commandnum,
     // branchName );
+    if( worklen )
+      curStep->branchBaseName = branchName + worklen;
   }
 }
 program* newProgram( void ){
@@ -889,10 +925,6 @@ void addProgramFromFile( const char* filename, program* program );
 void addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
   preprocessComputeCommands( prog );
-  // Always reset to workplace'' for a new program.
-  unmem( workspace );
-  workspace = mem( 1, char );
-  workspace[ 0 ] = 0;
   
   
   char* ptr = prog;
@@ -974,6 +1006,10 @@ void addProgram( const char* filename, char* prog, program* program ){
       memcpy( inc, starti, endi - starti );
       inc[ endi - starti ] = '\0';
       addProgramFromFile( inc, program );
+      // reset workspace.
+      unmem( workspace );
+      workspace = mem( 1, char );
+      workspace[ 0 ] = 0;
       program->filenames[ program->numFilenames++ ] = inc;
       if( program->numFilenames == NUM_FILENAMES )
         error( "%s", "NUM_FILENAMES exceeded." );
@@ -986,10 +1022,6 @@ void addProgram( const char* filename, char* prog, program* program ){
       unmem( buf );
     }
   }
-  // Reset afterwards too, we dont want to leave the including file in the workspace.
-  unmem( workspace );
-  workspace = mem( 1, char );
-  workspace[ 0 ] = 0;
 }
 
 
@@ -1163,19 +1195,37 @@ void finalize( program* program ){
         program->steps[ i ].type == CALL ){
       u32 jumpTo;
 
-      if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo ) ){
+      if( !trieSearch( program->labels, program->steps[ i ].branchName, &jumpTo )
+          && !trieSearch( program->labels, program->steps[ i ].branchBaseName, &jumpTo ) ){
         if( program->steps[ i ].type == CALL ){
           u32 vi;
           char* tp = program->steps[ i ].branchName;
           if( !trieSearch( program->vars, program->steps[ i ].branchName, &vi ) ){
-            if( !trieSearch( program->bigvars, program->steps[ i ].branchName, &vi ) )
-              error( "%s:%u command %u: Statement with unknown label or variable %s",
-                     program->steps[ i ].filename, program->steps[ i ].linenum,
-                     program->steps[ i ].commandnum, program->steps[ i ].branchName );
-            program->steps[ i ].type = GET;
-            program->steps[ i ].var.index = vi;
-            program->steps[ i ].var.size = 0;
-            unmem( tp );
+            if( !trieSearch( program->bigvars, program->steps[ i ].branchName, &vi ) ){
+              if( !trieSearch( program->vars, program->steps[ i ].branchBaseName, &vi ) ){
+                if( !trieSearch( program->bigvars, program->steps[ i ].branchBaseName, &vi ) )
+                  error( "%s:%u command %u: Statement with unknown label or variable %s",
+                         program->steps[ i ].filename, program->steps[ i ].linenum,
+                         program->steps[ i ].commandnum,
+                         program->steps[ i ].branchBaseName?
+                         program->steps[ i ].branchBaseName:
+                         program->steps[ i ].branchName );
+                program->steps[ i ].type = GET;
+                program->steps[ i ].var.index = vi;
+                program->steps[ i ].var.size = 0;
+                unmem( tp );
+              } else{
+                program->steps[ i ].type = GET;
+                program->steps[ i ].var.index = vi;
+                program->steps[ i ].var.size = program->varSizes[ vi ];
+                unmem( tp );
+              }
+            } else {
+              program->steps[ i ].type = GET;
+              program->steps[ i ].var.index = vi;
+              program->steps[ i ].var.size = 0;
+              unmem( tp );
+            }
           } else{
             program->steps[ i ].type = GET;
             program->steps[ i ].var.index = vi;
@@ -1185,7 +1235,10 @@ void finalize( program* program ){
         } else
           error( "%s:%u command %u: Statement with unknown label %s",
                  program->steps[ i ].filename, program->steps[ i ].linenum,
-                 program->steps[ i ].commandnum, program->steps[ i ].branchName );
+                 program->steps[ i ].commandnum,
+                 program->steps[ i ].branchBaseName?
+                 program->steps[ i ].branchBaseName:
+                 program->steps[ i ].branchName );
                 
       } else {
         unmem( program->steps[ i ].branchName );
@@ -1194,16 +1247,31 @@ void finalize( program* program ){
     } else if( program->steps[ i ].type == GET ){
       u32 vi;
       if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) ){
-        if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) )
-          error( "%s:%u command %u: Attempt to get an an unknown variable %s", program->steps[ i ].filename,
-                 program->steps[ i ].linenum,
-                 program->steps[ i ].commandnum,
-                 program->steps[ i ].var.name );
-        char* varName = program->steps[ i ].var.name;
-        program->steps[ i ].var.index = vi;
-        unmem( varName );
-        program->steps[ i ].var.size = 0;
-      } else{
+        if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) ){
+          if( !trieSearch( program->vars, program->steps[ i ].var.baseName, &vi ) ){
+            if( !trieSearch( program->bigvars, program->steps[ i ].var.baseName, &vi ) )
+              error( "%s:%u command %u: Attempt to get an an unknown variable %s",
+                     program->steps[ i ].filename,
+                     program->steps[ i ].linenum,
+                     program->steps[ i ].commandnum,
+                     program->steps[ i ].var.name );
+            char* varName = program->steps[ i ].var.name;
+            program->steps[ i ].var.index = vi;
+            unmem( varName );
+            program->steps[ i ].var.size = 0;
+          } else {
+            char* varName = program->steps[ i ].var.name;
+            program->steps[ i ].var.index = vi;
+            unmem( varName );
+            program->steps[ i ].var.size = program->varSizes[ vi ];
+          }
+        } else {
+          char* varName = program->steps[ i ].var.name;
+          program->steps[ i ].var.index = vi;
+          unmem( varName );
+          program->steps[ i ].var.size = 0;
+        }
+      } else {
         char* varName = program->steps[ i ].var.name;
         program->steps[ i ].var.index = vi;
         unmem( varName );
@@ -1270,9 +1338,20 @@ void addProgramFromFile( const char* filename, program* program ){
   unmem( buffer );
 }
 program* newProgramFromFile( const char* filename ){
+  // Always reset to workplace'' for a new program.
+  unmem( workspace );
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
+
   program* prog = newProgram();
   addProgramFromFile( filename, prog );
   finalize( prog );
+
+
+  // Reset afterwards too.
+  unmem( workspace );
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
   return prog;
 }
 
