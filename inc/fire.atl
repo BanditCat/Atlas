@@ -1,6 +1,6 @@
 include'inc\stdlib.atl';
 
-'inc\mandelbrot.atl';
+'inc\\mandelbrot.atl';
 include'inc\nav.atl';
 
 windowSize;wsize= 2;

@@ -1,6 +1,6 @@
 include'inc\stdlib.atl'; // It's advisable to include this first.
 
-'inc\triangle.atl';
+'inc\\triangle.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 
 

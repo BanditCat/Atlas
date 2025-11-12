@@ -1,6 +1,6 @@
 include'inc\stdlib.atl';
 
-'inc\nbodies.atl';
+'inc\\nbodies.atl';
 include'inc\nav.atl';
 
 

@@ -1,6 +1,6 @@
 include'inc\stdlib.atl';
 
-'inc\terrain.atl';
+'inc\\terrain.atl';
 include'inc\nav.atl';
 
 

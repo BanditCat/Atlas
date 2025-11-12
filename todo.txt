@@ -1,5 +1,4 @@
-introduce quoting so strings can include quotes.
-FFI! (3 floats per 64 bit type)
+
 saving files/bitmaps
 introduce quality factor q.
 
@@ -16,3 +15,4 @@ MNIST
 
 rotors instead of quaternions instead of 4x4 mats.  
 
+//FFI! (3 floats per 64 bit type)  <---- this idea nixed.  Focus on what is good on both web and native, not things that are native only.  This also reduces the chance of malware.

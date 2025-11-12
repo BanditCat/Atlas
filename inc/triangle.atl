@@ -1,6 +1,6 @@
 include'inc\stdlib.atl';
 
-'inc\fire.atl';
+'inc\\fire.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 
 size;if'started';
