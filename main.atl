@@ -9,7 +9,7 @@ std.nav2d;
 [4];std.tzoom=;
 // Draw the text just once.
 'Hello world! Esc to exit. Double click/tap or     ';e;
-'press the 1 - 7 keys to see the different demos.  ';e;0;cat;
+'press the 1 - 8 keys to see the different demos.  ';e;0;cat;
 'Press f1 for help or f2 for framerate at any time.';e;0;cat;
 'Gamepads work also and are self explanatory.      ';e;0;cat;
 '1. This text.                                     ';e;0;cat;
