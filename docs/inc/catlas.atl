@@ -59,8 +59,8 @@ int index = gl_VertexID / 6;
 int x = index / 1024;
 int y = index - x * 1024;
 vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
-v.z = af( v.xy );
-color = bf( (0.6 - v.wz) * 80.0 ).bgr;
+v.z = af( v.xy ).x;
+color = bf( (0.6 - v.zw) * 80.0 ).bgr;
 v.xy /= 1024.0;
 ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
 '
