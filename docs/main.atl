@@ -9,7 +9,7 @@ std.nav2d;
 [4];std.tzoom=;
 // Draw the text just once.
 'Hello world! Esc to exit. Double click/tap or     ';e;
-'press the 1 - 8 keys to see the different demos.  ';e;0;cat;
+'press the 1 - 9 keys to see the different demos.  ';e;0;cat;
 'Press f1 for help or f2 for framerate at any time.';e;0;cat;
 'Gamepads work also and are self explanatory.      ';e;0;cat;
 '1. This text.                                     ';e;0;cat;
@@ -20,6 +20,7 @@ std.nav2d;
 '6. A gravitational nbodies demo.                  ';e;0;cat;
 '7. A 4d fractal. (The set of all Julia sets.)     ';e;0;cat;
 '8. A Klein bottle in 4d.                          ';e;0;cat;
+'9. The game Catlas :D                             ';e;0;cat;
 std.textToTexture;
 0;dup;shape;[0 2 0];s;tsize= 2;
 1; // A dummy value to pop off instead of the frame since we are in init.

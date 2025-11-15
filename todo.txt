@@ -1,18 +1,5 @@
+backface culling
 
-saving files/bitmaps
-introduce quality factor q.
-
-
-
-a way to make glsl libraries.
+CATLAS!
 
 
-document stdlib
-
-
-a video game!
-MNIST
-
-rotors instead of quaternions instead of 4x4 mats.  
-
-//FFI! (3 floats per 64 bit type)  <---- this idea nixed.  Focus on what is good on both web and native, not things that are native only.  This also reduces the chance of malware.

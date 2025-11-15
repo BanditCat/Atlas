@@ -1,5 +1,5 @@
 include'inc\stdlib.atl';
-'main.atl';
+'inc\\catlas.atl';
 include'inc\nav.atl';
 
 size;if'started'; // init code goes here

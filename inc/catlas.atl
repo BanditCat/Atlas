@@ -1,0 +1,92 @@
+include'inc\stdlib.atl';
+'main.atl';
+include'inc\nav.atl';
+
+
+
+
+size;if'started'; // init code goes here
+img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
+[1024 1024];set'texsize' 2;
+1024;4;std.fractalNoise;
+6;texsize;[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) );' 1 1 4;texture;
+[150 400];set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
+set'lightRotation' 16;
+
+std.nav3d;
+[0.5 -0.5 1.5];std.origin= 3;
+[150 400];std.3dnavParam=;
+
+1; // dummy value to pop off in place of display tensor.
+l'started'; // init code complete
+
+pop; // Pop the last display tensor off the stack.
+
+
+std.nav3d;std.3dnavParam;set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
+set'lightRotation' 16;
+
+
+
+1;dup;1;dup; // duplicate terrain and heightmap
+windowSize;set'wdims' 2;
+wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
+
+
+
+
+
+[90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
+
+depth;
+6;1024;1024;*;*;windowSize;[4];0;cat;
+c'
+vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+out vec3 color;
+'
+int index = gl_VertexID / 6;
+int x = index / 1024;
+int y = index - x * 1024;
+vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
+v.z = af( v.xy );
+color = bf( (0.6 - v.wz) * 80.0 ).bgr;
+v.xy /= 1024.0;
+ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
+'
+in vec3 color;
+'
+ret[0] = vec4(color,1.0);
+'
+2 1 4;
+
+depth;
+
+
+
+
+//////////////////////////////////////////////////////////////////
+// Help and framerate
+
+std.keyState;[58 59 0];s;first;ifn'skipf1';
+'Click and drag: rotate view                     ';e;
+'Right click: fly forward                        ';e;0;cat;
+'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
+'Mouse wheel: change fly speed                   ';e;0;cat;
+'Hold f key and drag mouse: change light location';e;0;cat;
+std.textToTexture;std.blitText;
+l'skipf1';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+1;timeDelta;/;toString;e;
+std.textToTexture;std.blitText;
+l'skipf2';
