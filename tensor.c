@@ -768,7 +768,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
-
+  glFinish();
   return rets;
 }
 

@@ -25,6 +25,7 @@ typedef struct{
     TOSTRING, // documented
     RTD, // documented
     BURY, // documented
+    BACKFACE, // documented
     DEPTH, // documented
     ADDITIVE, // documented
     IF, // documented

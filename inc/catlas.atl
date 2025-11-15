@@ -42,7 +42,7 @@ wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window
 
 [90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
 
-depth;
+depth;backface;
 6;1024;1024;*;*;windowSize;[4];0;cat;
 c'
 vec4 verts[] = vec4[](
@@ -50,8 +50,8 @@ vec4( 0.0,0.0,0.0,1.0 ),
 vec4( 0.0,1.0,0.0,1.0 ), 
 vec4( 1.0,0.0,0.0,1.0 ), 
 vec4( 1.0,1.0,0.0,1.0 ),
-vec4( 0.0,1.0,0.0,1.0 ), 
-vec4( 1.0,0.0,0.0,1.0 ) 
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ) 
 );
 out vec3 color;
 '
@@ -69,8 +69,7 @@ in vec3 color;
 ret[0] = vec4(color,1.0);
 '
 2 1 4;
-
-depth;
+depth;backface;
 
 
 

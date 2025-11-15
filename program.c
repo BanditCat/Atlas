@@ -660,6 +660,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = BURY;
     // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "backface" ) ){  // Last
+    curStep->type = BACKFACE;
+    // dbg( "Linenum %u commandnum %u: backface\n", linenum, commandnum );
+
   } else if( !strcmp( command, "gamepad" ) ){  // Last
     curStep->type = GAMEPAD;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
@@ -2004,6 +2008,13 @@ bool runProgram( tensorStack* ts, program** progp ){
       for( u32 i = ts->size - 1; i > ( ts->size - 1 ) - bury; --i )
         ts->stack[ i ] = ts->stack[ i - 1 ];
       ts->stack[ ( ts->size - 1 ) - bury ] = tb;
+      break;
+    }
+    case BACKFACE: {
+      if( glIsEnabled( GL_CULL_FACE ) == GL_TRUE )
+        glDisable( GL_CULL_FACE );
+      else
+        glEnable( GL_CULL_FACE );
       break;
     }
     case IF: {
