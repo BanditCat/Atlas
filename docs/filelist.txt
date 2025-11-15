@@ -10,3 +10,4 @@ inc\triangle.atl
 inc\nbodies.atl
 inc\jset.atl
 inc\klein.atl
+inc\catlas.atl
