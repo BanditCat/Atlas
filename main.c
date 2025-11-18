@@ -460,8 +460,8 @@ int renderThreadFunction( void* data ){
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
   glViewport( 0, 0, windowWidth, windowHeight );
   glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-  SDL_GL_SetSwapInterval( -1 ); // VRR
-  SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
+  SDL_GL_SetSwapInterval( 1 ); // VRR
+  SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
   /* SDL_GL_SetSwapInterval( 0 ); */
   /* SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0"); */
 

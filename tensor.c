@@ -57,10 +57,10 @@ void tensorToHostMemory( tensor* t ){
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glFramebufferTexture2D(
-    GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
+                         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
   CHECK_GL_ERROR();
   glReadPixels(
-    0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
+               0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
   CHECK_GL_ERROR();
   //  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   CHECK_GL_ERROR();
@@ -125,7 +125,7 @@ void tensorToGPUMemory( tensor* t ){
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glFramebufferTexture2D(
-    GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
+                         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
 
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
     error( "%s", "Framebuffer is not complete." );
@@ -192,8 +192,8 @@ void deleteTensor( tensor* t ){
         t->tex.texture = 0;
       }
       if( t->tex.depthbuffer ){
-	glDeleteRenderbuffers( 1, &t->tex.depthbuffer );
-	t->tex.depthbuffer = 0;
+        glDeleteRenderbuffers( 1, &t->tex.depthbuffer );
+        t->tex.depthbuffer = 0;
       }
       if( t->tex.framebuffer ){
         glDeleteFramebuffers( 1, &t->tex.framebuffer );
@@ -210,13 +210,13 @@ compute* makeCompute( const char* filename,
                       u32 commandnum,
                       const program* prog,
                       const char* uniforms,
-		      const char* vglslpre,
+                      const char* vglslpre,
                       const char* glslpre,
                       const char* vglsl,
                       const char* glsl,
                       u32 argCount,
                       u32 retCount,
-		      u32 channels ){
+                      u32 channels ){
   const char* channelsString;
   switch( channels ){
   case 0:
@@ -357,8 +357,8 @@ compute* makeCompute( const char* filename,
     }\n\
     %s\n\
     %s\n";
-   char* tensorFooterTemplate = 
-      "void main(){\n\
+  char* tensorFooterTemplate = 
+    "void main(){\n\
       int i = ( int( gl_FragCoord.x ) + int( gl_FragCoord.y ) * _a_dims.x ) * 4;\n\
       float ifloat = float( i ) + 0.5;\n\
       ivec4 t = _a_toTensorIndices( i );\n\
@@ -379,8 +379,8 @@ compute* makeCompute( const char* filename,
       ++i; t = _a_toTensorIndices( i ); ++ifloat; tf = vec4( t ) + 0.5;\n\
       {%s}\n\
       for( int j = 0; j < %u; ++j ) _a_a[ j ] = ret[ j ];\n";
-   char* textureFooterTemplate =
-     "void main(){\n\
+  char* textureFooterTemplate =
+    "void main(){\n\
      %s ret[ %u ];\n\
      vec2 tf = gl_FragCoord.xy;\n\
      float ifloat = floor( tf.y ) * float( _a_dims.x ) + floor( tf.x ) + 0.5;\n\
@@ -396,8 +396,8 @@ compute* makeCompute( const char* filename,
   int flen;
   if( channels == 0 ){
     flen = snprintf( footerSource, bufsize, tensorFooterTemplate, retCount,
-		     retCount, retCount, retCount, retCount, glsl, retCount,
-		     glsl, retCount, glsl, retCount, glsl, retCount, retCount );
+                     retCount, retCount, retCount, retCount, glsl, retCount,
+                     glsl, retCount, glsl, retCount, glsl, retCount, retCount );
     headerIncPreambleLineCount += newlines( tensorFooterTemplate );
   } else{
     flen = snprintf( footerSource, bufsize, textureFooterTemplate, channelsString, retCount, glsl );
@@ -405,7 +405,7 @@ compute* makeCompute( const char* filename,
     headerIncPreambleLineCount += newlines( channelsString );
   }
   int len = snprintf( fragmentShaderSource, bufsize, fragmentShaderTemplate, channelsString,
-		      retCount, texFunctions, uniforms, glslpre, footerSource );
+                      retCount, texFunctions, uniforms, glslpre, footerSource );
   headerLineCount += newlines( fragmentShaderTemplate );
   headerLineCount += newlines( channelsString );
   headerLineCount += newlines( texFunctions );
@@ -420,9 +420,9 @@ compute* makeCompute( const char* filename,
     for( u32 i = 0; i < retCount; ++i ){
       char* smallbuf = mem( smallbufsize, char );
       snprintf( smallbuf,
-		smallbufsize,
-		"    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u "
-		"], _a_a[ %u ] );\n", i, i, i, i, i );
+                smallbufsize,
+                "    _a_fragColor[ %u ] = vec4( _a_r[ %u ], _a_g[ %u ], _a_b[ %u "
+                "], _a_a[ %u ] );\n", i, i, i, i, i );
       strncat( fragmentShaderSource, smallbuf, 1000 );
       unmem( smallbuf );
     }
@@ -431,8 +431,8 @@ compute* makeCompute( const char* filename,
     for( u32 i = 0; i < retCount; ++i ){
       char* smallbuf = mem( smallbufsize, char );
       snprintf( smallbuf,
-		smallbufsize,
-		"    _a_fragColor[ %u ] = ret[ %u ];\n", i, i );
+                smallbufsize,
+                "    _a_fragColor[ %u ] = ret[ %u ];\n", i, i );
       strncat( fragmentShaderSource, smallbuf, 1000 );
       unmem( smallbuf );
     }
@@ -442,7 +442,7 @@ compute* makeCompute( const char* filename,
   //  Compile the vertex shader
   char* vertexShaderSource = mem( bufsize, char );
   len = snprintf( vertexShaderSource, bufsize, vertexShaderTemplate, uniforms, texFunctions, vglslpre,
-		  strlen( vglsl ) ? vglsl : defvshader );
+                  strlen( vglsl ) ? vglsl : defvshader );
   u32 vheaderLineCount = 0;
   u32 vheaderIncPreambleLineCount = 0;
   vheaderLineCount += newlines( uniforms );
@@ -551,7 +551,7 @@ compute* makeCompute( const char* filename,
     int rv = glGetUniformLocation( ret->program, safeName );
     ret->uniformLocs[ i ] = rv;
     //    if( rv == -1 )
-      //      error( "Error getting uniform location %s %s!", safeName, uniforms );
+    //      error( "Error getting uniform location %s %s!", safeName, uniforms );
     unmem( safeName );
   }
   // Cleanup shaders (they're no longer needed once the program is linked)
@@ -570,9 +570,9 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   glUseProgram( compute->program );
   if( compute->argCount > ts->size )
     error(
-      "A compute was called with %u arguments, but the stack size is only %u.",
-      compute->argCount,
-      ts->size );
+          "A compute was called with %u arguments, but the stack size is only %u.",
+          compute->argCount,
+          ts->size );
   tensor** rets = mem( compute->retCount, tensor* );
   tensor* ret;
   for( u32 i = 0; i < compute->argCount; ++i )
@@ -588,7 +588,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   if( compute->channels != 0 ){
     width = shape[ 0 ];
     height = shape[ 1 ];
-    size = width * height;
+    size = width * height * shape[ 2 ];
   }
   for( u32 reti = 0; reti < compute->retCount; ++reti ){
     u32 found = TENSOR_CACHE;
@@ -616,6 +616,8 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         ret->strides[ i ] = 1;
       }
     } else {
+      static int foo = 0;
+      printf( "foo %d\n", foo++ );
       ret = mem( 1, tensor );
       ret->tex.channels = compute->channels;
       if( rank > 4 )
@@ -647,16 +649,16 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
       case 0:
       case 4:
         glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
-	break;
+        break;
       case 1:
         glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL );
-	break;
+        break;
       case 2:
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
-	break;
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
+        break;
       case 3:
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL );
-	break;
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL );
+        break;
       }       
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
@@ -1004,8 +1006,8 @@ tensor*  tensorMultiplyHelper( tensor* t1, tensor* t2 ){
     for( u32 j = 0; j < ret->shape[ 1 ]; ++j ){
       f32 val = 0;
       for( u32 k = 0; k < t2->shape[ 1 ]; ++k )
-	val += t1->data[ t1->offset + j * t1->strides[ 1 ] + k * t1->strides[ 0 ] ] *
-	  t2->data[ t2->offset + k * t2->strides[ 1 ] + i * t2->strides[ 0 ] ];
+        val += t1->data[ t1->offset + j * t1->strides[ 1 ] + k * t1->strides[ 0 ] ] *
+          t2->data[ t2->offset + k * t2->strides[ 1 ] + i * t2->strides[ 0 ] ];
       ret->data[ i * ret->strides[ 0 ] + j * ret->strides[ 1 ] ] = val;
     }
   
@@ -1142,7 +1144,7 @@ tensor* tensorFromImageFile( const char* filename ){
   tensor* ret = mem( 1, tensor );
   SDL_Surface* image = SDL_LoadBMP( filename );
   if( !image )
-  error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
+    error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
   ret->size = image->w * image->h * 4;
   for( u32 i = 0; i < 4; ++i )
     ret->shape[ i ] = ret->strides[ i ] = 1;
@@ -1206,7 +1208,7 @@ void tensorRepeatHelper( tensor* t, u32 count ){
   f32* new_data = mem( new_size, f32 );
   for( u32 i = 0; i < count; i++ )
     memcpy(
-      new_data + i * old_size, t->data + t->offset, old_size * sizeof( f32 ) );
+           new_data + i * old_size, t->data + t->offset, old_size * sizeof( f32 ) );
   if( t->ownsData && t->data )
     unmem( t->data );
 
