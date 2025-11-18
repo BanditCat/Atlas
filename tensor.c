@@ -616,8 +616,6 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         ret->strides[ i ] = 1;
       }
     } else {
-      static int foo = 0;
-      printf( "foo %d\n", foo++ );
       ret = mem( 1, tensor );
       ret->tex.channels = compute->channels;
       if( rank > 4 )
@@ -750,6 +748,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   
   CHECK_GL_ERROR();
   // Draw the quad
+  glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
   glDrawArrays( GL_TRIANGLES, 0, vertCount );
   CHECK_GL_ERROR();
   
