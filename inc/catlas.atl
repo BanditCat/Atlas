@@ -3,12 +3,12 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 
 
-
+[1024];dim= 1;
 
 size;if'started'; // init code goes here
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
-[1024 1024];set'texsize' 2;
-1024;4;std.fractalNoise;
+dim;first;2;rep;set'texsize' 2;
+dim;first;4;std.fractalNoise;
 6;texsize;[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) );' 1 1 4;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
@@ -43,7 +43,7 @@ wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window
 [90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
 
 depth;backface;
-6;1024;1024;*;*;windowSize;[4];0;cat;
+6;dim;dim;*;first;*;windowSize;[4];0;cat;
 c'
 vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -56,12 +56,12 @@ vec4( 0.0,1.0,0.0,1.0 )
 out vec3 color;
 '
 int index = gl_VertexID / 6;
-int x = index / 1024;
-int y = index - x * 1024;
+int x = index / int( dim );
+int y = index - x * int( dim );
 vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
 v.z = af( v.xy ).x;
 color = bf( (0.6 - v.zw) * 80.0 ).bgr;
-v.xy /= 1024.0;
+v.xy /= dim;
 ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
 '
 in vec3 color;
