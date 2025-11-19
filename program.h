@@ -22,6 +22,9 @@ typedef struct{
     POW, // documented
     SIN, // documented
     COS, // documented
+    FLOOR, // documented
+    CEIL, // documented
+    MINMAX, // documented
     TOSTRING, // documented
     RTD, // documented
     BURY, // documented

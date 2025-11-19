@@ -728,13 +728,25 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = POW;
     // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "sin" ) ){  // Exp
+  } else if( !strcmp( command, "sin" ) ){  // Sin
     curStep->type = SIN;
-    // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: sin\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "cos" ) ){  // Exp
+  } else if( !strcmp( command, "cos" ) ){  // Cos
     curStep->type = COS;
-    // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: cos\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "floor" ) ){  // Floor
+    curStep->type = FLOOR;
+    // dbg( "Linenum %u commandnum %u: floor\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "ceil" ) ){  // Ceiling
+    curStep->type = CEIL;
+    // dbg( "Linenum %u commandnum %u: ceil\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "minmax" ) ){  // Ceiling
+    curStep->type = MINMAX;
+    // dbg( "Linenum %u commandnum %u: minmax\n", linenum, commandnum );
 
   } else if( !strcmp( command, "r" ) ){  // Reverse
     curStep->type = REVERSE;
@@ -1678,9 +1690,81 @@ bool runProgram( tensorStack* ts, program** progp ){
               *offset1 = cosf( *offset1 );
             }
 
-      // dbg( "%s", "sin" );
+      // dbg( "%s", "cos" );
       break;
     }
+    case FLOOR: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call floor without an argument." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              *offset1 = floorf( *offset1 );
+            }
+
+      // dbg( "%s", "floor" );
+      break;
+    }
+    case CEIL: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call ceil without an argument." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              *offset1 = ceilf( *offset1 );
+            }
+
+      // dbg( "%s", "ceil" );
+      break;
+    }
+    case MINMAX: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call minmax without an argument." );
+      if( !ts->stack[ ts->size - 1 ]->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call minmax on an empty tensor." );
+        
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      float min = FLT_MAX;
+      float max = FLT_MIN;
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              if( *offset1 < min ) min = *offset1;
+              if( *offset1 > max ) max = *offset1;
+            }
+
+      float* nt = mem( 2, float );
+      nt[ 0 ] = min; nt[ 1 ] = max;
+      u32 ntshape[ 1 ] = { 2 };
+      push( ts, newTensor( 1, ntshape, nt ) );
+      // dbg( "%s", "minmax" );
+
+      break;
+    }
+
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
       break;
@@ -1732,13 +1816,10 @@ bool runProgram( tensorStack* ts, program** progp ){
         shape[ i ] = 1;
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );
       u32 channels = p->computes[ s->compute ]->channels;
-      if( channels && channels != 4 )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to run a compute statement with a bad channel count." );
       if( channels && rank != 3 )
         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
-      if( channels && ( rank != 3 || shape[ 2 ] != 4 ) )
+      if( channels && ( rank != 3 || shape[ 2 ] != channels ) )
         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
       

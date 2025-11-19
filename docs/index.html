@@ -194,7 +194,7 @@
     <summary>Commands Reference</summary>
     <ul>
       <li><a href="#cmd-additive">additive</a></li>
-      <li><a href="#cmd-arith">+ / - / * / / / ^ / sin / cos (arithmetic)</a></li>
+      <li><a href="#cmd-arith">+ / - / * / / / ^ / sin / cos / floor / ceil (arithmetic)</a></li>
       <li><a href="#cmd-b">b (bury)</a></li>
       <li><a href="#cmd-backface">backface</a></li>
       <li><a href="#cmd-c">c (compute)</a></li>
@@ -214,6 +214,7 @@
       <li><a href="#cmd-l">l (length)</a></li>
       <li><a href="#cmd-load">load</a></li>
       <li><a href="#cmd-m">m (matrix multiply)</a></li>
+      <li><a href="#cmd-minmax">minmax (minimum and maximum)</a></li>
       <li><a href="#cmd-pop">pop</a></li>
       <li><a href="#cmd-projection">proj (projection)</a></li>
       <li><a href="#cmd-print">print</a></li>
@@ -430,8 +431,8 @@ l'skip';
   </section>
 
   <section id="cmd-arith">
-    <h2>+ / - / * / / / ^ / sin / cos </h2>
-    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, or cosine them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
+    <h2>+ / - / * / / / ^ / sin / cos / floor / ciel </h2>
+    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, or ceiling them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
     <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print
     <pre><code>tensor 0
 shape: 3
@@ -520,7 +521,7 @@ Following the quoted strings, you supply three numeric parameters:
     This parameter determines the output mode:
         Tensor Mode (channels = 0):
         The shader produces one or more tensors as output.
-        Texture Mode (channels = 4):
+        Texture Mode (channels != 0):
         A 4-channel texture is created instead of a tensor. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
         The type of the returned data will automatically be set to float, vec2, vec3, or vec4 depending on whether you use 1, 2, 3, or 4 channels.
 
@@ -817,6 +818,11 @@ strides: 1 1
 +-----------+</code></pre> </p>
   </section>
 
+  <section id="cmd-minmax">
+    <h2>minmax (minimum and maximum)</h2>
+    <p>This takes the tensor on top of the stack and replaces it by a vector of length two with the minimum and maximum values occuring in the tensor, like [min max].</p>
+  </section>
+  
   <section id="cmd-pop">
     <h2>pop</h2>
     <p>Pops the stack, resulting in a fatal error if it was empty.</p>

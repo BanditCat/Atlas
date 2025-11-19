@@ -1,4 +1,6 @@
+
 include'inc\stdlib.atl'; // It's advisable to include this first.
+6;[3 3 2];c''''ret[0]=ifloat.xx;' 0 1 2;print;ceil;print;minmax;print;quit;
 
 'inc\\triangle.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click

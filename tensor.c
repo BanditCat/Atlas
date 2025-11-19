@@ -32,7 +32,7 @@ void takeOwnership( tensor* t ){
     t->ownsData = true;
   }
 };
-// DANGER this sets owns data to false, therefore the undelyinng data MUST NOT
+// DANGER this sets owns data to false, therefore the underlying data MUST NOT
 // be destroyed BEFORE the copy while the programming is running. At exit
 // cleanup, it shouldn't matter the order of deallocation.
 tensor* copyTensor( const tensor* t ){
@@ -47,20 +47,24 @@ void tensorToHostMemory( tensor* t ){
     error( "%s", "Tensor is NULL in tensorToHostMemory." );
   if( !t->gpu )
     return;
-  if( t->tex.channels != 0 )
-    error( "%s", "Attempt to send a texture to host memory." );
 
   f32* hostData = mem( t->size, f32 );
+  u64 mult = t->tex.channels;
+  if( !mult ) mult = 4;
   f32* tempData =
-    mem( t->tex.width * t->tex.height * 4, f32 );  // RGBA channels
+    mem( t->tex.width * t->tex.height * mult, f32 );  // RGBA channels
 
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glFramebufferTexture2D(
                          GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
   CHECK_GL_ERROR();
-  glReadPixels(
-               0, 0, t->tex.width, t->tex.height, GL_RGBA, GL_FLOAT, tempData );
+  GLenum format = GL_RGBA;
+  if( t->tex.channels == 1 ) format = GL_RED;
+  if( t->tex.channels == 2 ) format = GL_RG;
+  if( t->tex.channels == 3 ) format = GL_RGB;
+    
+  glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
   CHECK_GL_ERROR();
   //  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   CHECK_GL_ERROR();
