@@ -220,6 +220,7 @@
       <li><a href="#cmd-print">print</a></li>
       <li><a href="#cmd-quit">quit</a></li>
       <li><a href="#cmd-r">r (reverse)</a></li>
+      <li><a href="#cmd-raise">raise</a></li>
       <li><a href="#cmd-repeat">rep (repeat)</a></li>
       <li><a href="#cmd-return">return</a></li>
       <li><a href="#cmd-rotate">rot (rotate)</a></li>
@@ -414,7 +415,7 @@ strides:
     <h2>Simple Gradient</h2>
     <p>
       <pre><code>size;if'skip'; // Skip if we've already created the gradient.
-6;[16 16 3];c''''ret[0]=i / 767.0\' 0 1 0; // The linear index goes to 16*16*3 - 1 = 767.0.
+6;[16 16 3];c''''ret[0]=i / 767.0\' 0 1 0 0; // The linear index goes to 16*16*3 - 1 = 767.0.
 l'skip';
 </code></pre>
       will display
@@ -477,13 +478,14 @@ c (compute)
 
 The c command is the core compute operation in Atlas. It lets you execute custom GLSL code on the GPU to produce an output tensor (or texture) from one or more input tensors. In short, everything else in Atlas is built around making it easier to perform GPU computations using this command.
 Syntax
-<pre><code>c'vertexShaderFuncs'optionalVertexShader'glslFuncs'glslExpression' argCount retCount channels</code></pre>
+<pre><code>c'vertexShaderFuncs'optionalVertexShader'glslFuncs'glslExpression' argCount retCount channels reuse</code></pre>
 
-Before calling c, you must have pushed the following onto the stack (in order):
+Before calling c, you must have pushed the following onto the stack (in order, from top to bottom):
 
     Output Shape: A tensor that defines the shape of the output.
     Vertex Count: An integer specifying the vertex count (for example, 6 for two triangles when no custom vertex shader is provided).
     Input Tensors (optional): Up to four tensors that will serve as inputs to your shader.
+    Return Tensors (optional): if reuse is nonzero, these are the tensors that the results will be drawn on top of.
 
 <h3>Quoted String Parameters</h3>
 
@@ -509,7 +511,7 @@ Within the shader code all variables that were <a href="#cmd-set">set</a> with a
 
 <h3>Numeric Parameters</h3>
 
-Following the quoted strings, you supply three numeric parameters:
+Following the quoted strings, you supply four numeric parameters:
 
     argCount:
     A number between 0 and 4 that tells Atlas how many input tensors (from the stack) to provide to the shader. These tensors are available as functions named a, b, c, and d. Each such function accepts an ivec4 index and returns the corresponding tensor element.
@@ -521,8 +523,11 @@ Following the quoted strings, you supply three numeric parameters:
     This parameter determines the output mode:
         Tensor Mode (channels = 0):
         The shader produces one or more tensors as output.
-        Texture Mode (channels = 4):
-        A 4-channel texture is created instead of a tensor. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
+        Texture Mode (channels = 1 or 4):
+        A 1 or 4 channel texture is created instead of a tensor. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
+
+    reuse:
+    This parameter indicates whether the return values are going to be placed on top of already returned values. If this parameter is nonzero, then the return values are taken from the stack, and must match the channels and dimensions of the expected return values.                               
         
 <h3>Important Notes</h3>
 
@@ -531,7 +536,7 @@ Following the quoted strings, you supply three numeric parameters:
 
     Operation Modes:
         Tensor mode (when channels is 0) is the standard mode where the shader outputs a tensor.
-        Texture mode (when channels is not 0) creates a 1 2 3 or 4-channel texture with some limitations regarding how it can be used later in your program.
+        Texture mode (when channels is not 0) creates a 1 or 4-channel texture with some limitations regarding how it can be used later in your program.
 
 <h3>Example</h3>
 
@@ -543,7 +548,7 @@ The following Atlas snippet uses two input tensors to compute element‐wise min
 c''''                       // Call compute with empty vertexShaderFuncs, optionalVertexShader, and glslFuncs.
 ret[0] = a(t) < b(t) ? a(t) : b(t)\  // For each element: output the minimum into ret[0].
 ret[1] = a(t) < b(t) ? b(t) : a(t)\  // And output the maximum into ret[1].
-' 2 2 0;                    // Numeric arguments: argCount = 2, retCount = 2, channels = 0 (tensor mode).
+' 2 2 0 0;                    // Numeric arguments: argCount = 2, retCount = 2, channels = 0, reuse = 0 (tensor mode).
 print;quit;
 </code></pre>
 
@@ -892,7 +897,12 @@ strides: 2 -1
 +---------------+
 </code></pre></p>
   </section>
-  
+
+ <section id="cmd-raise">
+    <h2>raise</h2>
+    <p>Given a scalar n, this raises the nth item on the stack to the top of the stack.</p>
+  </section>
+
   <section id="cmd-repeat">
     <h2>rep (repeat)</h2>
     <p>Given a scalar and tensor on top of the stack, this command repeats the tensor a number of times equal to the

@@ -213,7 +213,8 @@ u32 addCompute( const char* filename,
                 const char* glsl,
                 u32 argCount,
                 u32 retCount,
-                u32 channels ){
+                u32 channels,
+                bool reuse ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
@@ -226,7 +227,7 @@ u32 addCompute( const char* filename,
                  linenum,
                  commandnum,
                  p,
-                 uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount, channels );
+                 uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount, channels, reuse );
   return p->numComputes++;
 }
 char* getNextLine( char** str ){
@@ -624,9 +625,9 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     comp[ endi - starti ] = '\0';
     
     char* sizep = endi + 1;
-    u32 argCount, retCount, channels;
+    u32 argCount, retCount, channels, reuse;
     int charsread;
-    if( sscanf( sizep, "%u%u%u%n", &argCount, &retCount, &channels, &charsread ) == 3 &&
+    if( sscanf( sizep, "%u%u%u%u%n", &argCount, &retCount, &channels, &reuse, &charsread ) == 4 &&
         !sizep[ charsread ] ){
       curStep->type = COMPUTE;
       curStep->toCompute.glslpre = pre;
@@ -636,6 +637,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->toCompute.retCount = retCount;
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
+      curStep->toCompute.reuse = reuse;
       if( channels && channels != 4 && channels != 1 )
         error( "%s", "Compute created with channels not equal 0, 1 or 4.  This is a limitaiton of webgl2, sorry." );
       if( argCount > 4 )
@@ -650,171 +652,175 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              commandnum,
              "Malformed compute statement." );
 
-  } else if( !strcmp( command, "first" ) ){  // First
+  } else if( !strcmp( command, "first" ) ){
     curStep->type = FIRST;
     // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "last" ) ){  // Last
+  } else if( !strcmp( command, "last" ) ){
     curStep->type = LAST;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "bury" ) ){  // Last
+  } else if( !strcmp( command, "bury" ) ){
     curStep->type = BURY;
     // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "backface" ) ){  // Last
+  } else if( !strcmp( command, "raise" ) ){
+    curStep->type = RAISE;
+    // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "backface" ) ){
     curStep->type = BACKFACE;
     // dbg( "Linenum %u commandnum %u: backface\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "gamepad" ) ){  // Last
+  } else if( !strcmp( command, "gamepad" ) ){
     curStep->type = GAMEPAD;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "toString" ) ){  // Unextrude
+  } else if( !strcmp( command, "toString" ) ){
     curStep->type = TOSTRING;
     // dbg( "Linenum %u commandnum %u: toString\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "additive" ) ){  // Unextrude
+  } else if( !strcmp( command, "additive" ) ){
     curStep->type = ADDITIVE;
     // dbg( "Linenum %u commandnum %u: additive\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "depth" ) ){  // Unextrude
+  } else if( !strcmp( command, "depth" ) ){
     curStep->type = DEPTH;
     // dbg( "Linenum %u commandnum %u: depth\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "unext" ) ){  // Unextrude
+  } else if( !strcmp( command, "unext" ) ){
     curStep->type = UNEXTRUDE;
     // dbg( "Linenum %u commandnum %u: unext\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "l" ) ){  // Length
+  } else if( !strcmp( command, "l" ) ){
     curStep->type = LENGTH;
     // dbg( "Linenum %u commandnum %u: length\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "proj" ) ){  // Projection
+  } else if( !strcmp( command, "proj" ) ){
     curStep->type = PROJ;
     // dbg( "Linenum %u commandnum %u: proj\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "translate" ) ){  // Translate
+  } else if( !strcmp( command, "translate" ) ){
     curStep->type = TRANS;
     // dbg( "Linenum %u commandnum %u: translate\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "texture" ) ){  // First
+  } else if( !strcmp( command, "texture" ) ){
     curStep->type = TEXTURE;
     // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "m" ) ){  // Multiply matrix
+  } else if( !strcmp( command, "m" ) ){
     curStep->type = MULTM;
     // dbg( "Linenum %u commandnum %u: multm\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "keys" ) ){  // Last
+  } else if( !strcmp( command, "keys" ) ){
     curStep->type = KEYS;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "+" ) ){  // Add
+  } else if( !strcmp( command, "+" ) ){
     curStep->type = ADD;
     // dbg( "Linenum %u commandnum %u: add\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "-" ) ){  // Sub
+  } else if( !strcmp( command, "-" ) ){
     curStep->type = SUB;
     // dbg( "Linenum %u commandnum %u: sub\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "*" ) ){  // Mul
+  } else if( !strcmp( command, "*" ) ){
     curStep->type = MUL;
     // dbg( "Linenum %u commandnum %u: mul\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "/" ) ){  // Div
+  } else if( !strcmp( command, "/" ) ){
     curStep->type = DIV;
     // dbg( "Linenum %u commandnum %u: div\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "^" ) ){  // Exp
+  } else if( !strcmp( command, "^" ) ){
     curStep->type = POW;
     // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "sin" ) ){  // Sin
+  } else if( !strcmp( command, "sin" ) ){
     curStep->type = SIN;
     // dbg( "Linenum %u commandnum %u: sin\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "cos" ) ){  // Cos
+  } else if( !strcmp( command, "cos" ) ){
     curStep->type = COS;
     // dbg( "Linenum %u commandnum %u: cos\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "floor" ) ){  // Floor
+  } else if( !strcmp( command, "floor" ) ){
     curStep->type = FLOOR;
     // dbg( "Linenum %u commandnum %u: floor\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "ceil" ) ){  // Ceiling
+  } else if( !strcmp( command, "ceil" ) ){
     curStep->type = CEIL;
     // dbg( "Linenum %u commandnum %u: ceil\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "minmax" ) ){  // Ceiling
+  } else if( !strcmp( command, "minmax" ) ){
     curStep->type = MINMAX;
     // dbg( "Linenum %u commandnum %u: minmax\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "r" ) ){  // Reverse
+  } else if( !strcmp( command, "r" ) ){
     curStep->type = REVERSE;
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "timeDelta" ) ){  // Reverse
+  } else if( !strcmp( command, "timeDelta" ) ){
     curStep->type = TIME;
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "e" ) ){  // Enclose
+  } else if( !strcmp( command, "e" ) ){
     curStep->type = ENCLOSE;
     // dbg( "Linenum %u commandnum %u: enclose\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "ext" ) ){  // Extrude
+  } else if( !strcmp( command, "ext" ) ){
     curStep->type = EXTRUDE;
     // dbg( "Linenum %u commandnum %u: extrude\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "cat" ) ){  // Concatenate
+  } else if( !strcmp( command, "cat" ) ){
     curStep->type = CAT;
     // dbg( "Linenum %u commandnum %u: cat\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "pop" ) ){  // Pop
+  } else if( !strcmp( command, "pop" ) ){
     curStep->type = POP;
     // dbg( "Linenum %u commandnum %u: pop\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "rep" ) ){  // Rep
+  } else if( !strcmp( command, "rep" ) ){
     curStep->type = REPEAT;
     // dbg( "Linenum %u commandnum %u: repeat\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "shape" ) ){  // Shape
+  } else if( !strcmp( command, "shape" ) ){
     curStep->type = SHAPE;
     // dbg( "Linenum %u commandnum %u: shape\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "dup" ) ){  // Dup
+  } else if( !strcmp( command, "dup" ) ){
     curStep->type = DUP;
     // dbg( "Linenum %u commandnum %u: dup\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "s" ) ){  // Slice
+  } else if( !strcmp( command, "s" ) ){
     curStep->type = SLICE;
     // dbg( "Linenum %u commandnum %u: slice\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "size" ) ){  // Top
+  } else if( !strcmp( command, "size" ) ){
     curStep->type = TOP;
     // dbg( "Linenum %u commandnum %u: top\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "return" ) ){  // Return
+  } else if( !strcmp( command, "return" ) ){
     curStep->type = RETURN;
     // dbg( "Linenum %u commandnum %u: return\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "rot" ) ){  // Return
+  } else if( !strcmp( command, "rot" ) ){
     curStep->type = ROT;
     // dbg( "Linenum %u commandnum %u: rotate\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "input" ) ){  // Input; 3 axes and three buttons
+  } else if( !strcmp( command, "input" ) ){
     curStep->type = GETINPUT;
     // dbg( "Linenum %u commandnum %u: input\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "windowSize" ) ){  // Window size
+  } else if( !strcmp( command, "windowSize" ) ){
     curStep->type = WINDOWSIZE;
     // dbg( "Linenum %u commandnum %u: window size\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "t" ) ){  // Transpose
+  } else if( !strcmp( command, "t" ) ){
     curStep->type = TRANSPOSE;
     // dbg( "Linenum %u commandnum %u: transpose\n", linenum, commandnum );
 
-  } else if( *command == '[' || isfloat( command ) || *command == '\'' ){  // A tensor
+  } else if( *command == '[' || isfloat( command ) || *command == '\'' ){
     curStep->type = TENSOR;
     if( *command == '\'' ){
       char* starti = command + 1;
@@ -886,11 +892,11 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     }
     // dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "print" ) ){  // Print
+  } else if( !strcmp( command, "print" ) ){
     curStep->type = PRINT;
     // dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "quit" ) ){  // Quit
+  } else if( !strcmp( command, "quit" ) ){
     curStep->type = QUIT;
     // dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
 
@@ -1309,7 +1315,8 @@ void finalize( program* program ){
                     vglslpre, glslpre, vglsl, glsl,
                     program->steps[ i ].toCompute.argCount,
                     program->steps[ i ].toCompute.retCount,
-                    program->steps[ i ].toCompute.channels );
+                    program->steps[ i ].toCompute.channels,
+                    program->steps[ i ].toCompute.reuse );
       unmem( glsl );
       unmem( glslpre );
       unmem( vglsl );
@@ -2085,13 +2092,40 @@ bool runProgram( tensorStack* ts, program** progp ){
       u32 bury = *( ts->stack[ ts->size - 1 ]->data +
                     ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      if( bury + 1 > ts->size )
+      if( bury >= ts->size )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury past the end of the stack." );
       tensor* tb = ts->stack[ ts->size - 1 ];
-      takeOwnership( tb );
-      for( u32 i = ts->size - 1; i > ( ts->size - 1 ) - bury; --i )
+      for( u32 i = ts->size - 1; i > ( ts->size - 1 ) - bury; --i ){
+        if( !tb->ownsData && ts->stack[ i - 1 ]->ownsData &&
+            tb->gpu == ts->stack[ i - 1 ]->gpu &&
+            ( tb->data == ts->stack[ i - 1 ]->data || tb->tex.texture == ts->stack[ i - 1 ]->tex.texture ) )
+          takeOwnership( tb );
         ts->stack[ i ] = ts->stack[ i - 1 ];
+      }
       ts->stack[ ( ts->size - 1 ) - bury ] = tb;
+      break;
+    }
+    case RAISE: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to raise with no parameter on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to raise with a nonscalar parameter." );
+      
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      u32 raise = *( ts->stack[ ts->size - 1 ]->data +
+                     ts->stack[ ts->size - 1 ]->offset );
+      pop( ts );
+      if( raise >= ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury past the end of the stack." );
+      tensor* tr = ts->stack[ ( ts->size - 1 ) - raise ];
+      for( u32 i = ( ts->size - 1 ) - raise; i < ts->size - 1; ++i ){
+        if( tr->ownsData && !ts->stack[ i + 1 ]->ownsData &&
+            tr->gpu == ts->stack[ i + 1 ]->gpu &&
+            ( tr->data == ts->stack[ i + 1 ]->data || tr->tex.texture == ts->stack[ i + 1 ]->tex.texture ) )
+          takeOwnership( ts->stack[ i + 1 ] );
+        ts->stack[ i ] = ts->stack[ i + 1 ];
+      }
+      ts->stack[ ts->size - 1 ] = tr;
       break;
     }
     case BACKFACE: {

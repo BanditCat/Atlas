@@ -198,7 +198,7 @@ float result = raymarch( std_fourOrigin, rd );
 vec4 volrend = volumeRender( std_fourOrigin, rd );
 ret[0] = volrend;
 '
-0 1 4;
+0 1 4 0;
 
 
 //////////////////////////////////////////////////////////////////

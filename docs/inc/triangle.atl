@@ -13,7 +13,7 @@ vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
                a( ivec4( tf, 1, 0 ) ),
                a( ivec4( tf, 2, 0 ) ),
                a( ivec4( tf, 3, 0 ) ) );
-ret[0] = r;' 1 1 4;   // first we take our vertices and colors and put them in a texture.
+ret[0] = r;' 1 1 4 0;   // first we take our vertices and colors and put them in a texture.
 1;
 l'started';
 time;timeDelta;+;time=;
@@ -34,7 +34,7 @@ color = af( vec2( ifloat, 1 ) );
 in vec4 color;
 '
 ret[0] = color;
-' 1 1 4;
+' 1 1 4 0;
 
 
 

@@ -28,6 +28,7 @@ typedef struct{
     TOSTRING, // documented
     RTD, // documented
     BURY, // documented
+    RAISE, // documented
     BACKFACE, // documented
     DEPTH, // documented
     ADDITIVE, // documented
@@ -79,6 +80,7 @@ typedef struct{
       char* glslpre;
       u32 channels;
       u32 vertCount;
+      bool reuse;
     } toCompute;
     struct{
       union{

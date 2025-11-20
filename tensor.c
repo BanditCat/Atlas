@@ -220,7 +220,8 @@ compute* makeCompute( const char* filename,
                       const char* glsl,
                       u32 argCount,
                       u32 retCount,
-                      u32 channels ){
+                      u32 channels,
+                      bool reuse ){
   const char* channelsString;
   switch( channels ){
   case 0:
@@ -234,6 +235,7 @@ compute* makeCompute( const char* filename,
   ret->argCount = argCount;
   ret->retCount = retCount;
   ret->channels = channels;
+  ret->reuse = reuse;
   const char* vertexShaderTemplate = "\
     #version 300 es\n\
     precision highp float;\n\
@@ -595,83 +597,86 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     size = width * height * shape[ 2 ];
   }
   for( u32 reti = 0; reti < compute->retCount; ++reti ){
-    u32 found = TENSOR_CACHE;
-    for( u32 i = 0; i < TENSOR_CACHE; ++i )
-      if( ts->cache[ i ] && size == ts->cache[ i ]->size && ts->cache[ i ]->tex.channels == compute->channels ){
-        found = i;
-        break;
-      }
-    if( found != TENSOR_CACHE ){
-      ret = ts->cache[ found ];
-      ret->tex.channels = compute->channels;
-      ts->cache[ found ] = NULL;
-      ret->rank = rank;
-      ret->size = 1;
-      ret->offset = 0;
-      ret->ownsData = true;
-      ret->gpu = true;
-      for( u32 i = 0; i < rank; ++i ){
-        ret->shape[ i ] = shape[ i ];
-        ret->strides[ rank - i - 1 ] = ret->size;
-        ret->size *= shape[ rank - i - 1 ];
-      }
-      for( u32 i = rank; i < 4; ++i ){
-        ret->shape[ i ] = 1;
-        ret->strides[ i ] = 1;
-      }
+    if( compute->reuse ){
     } else {
-      ret = mem( 1, tensor );
-      ret->tex.channels = compute->channels;
-      if( rank > 4 )
-        error( "%s", "Rank exceeds maximum of 4." );
+      u32 found = TENSOR_CACHE;
+      for( u32 i = 0; i < TENSOR_CACHE; ++i )
+        if( ts->cache[ i ] && size == ts->cache[ i ]->size && ts->cache[ i ]->tex.channels == compute->channels ){
+          found = i;
+          break;
+        }
+      if( found != TENSOR_CACHE ){
+        ret = ts->cache[ found ];
+        ret->tex.channels = compute->channels;
+        ts->cache[ found ] = NULL;
+        ret->rank = rank;
+        ret->size = 1;
+        ret->offset = 0;
+        ret->ownsData = true;
+        ret->gpu = true;
+        for( u32 i = 0; i < rank; ++i ){
+          ret->shape[ i ] = shape[ i ];
+          ret->strides[ rank - i - 1 ] = ret->size;
+          ret->size *= shape[ rank - i - 1 ];
+        }
+        for( u32 i = rank; i < 4; ++i ){
+          ret->shape[ i ] = 1;
+          ret->strides[ i ] = 1;
+        }
+      } else {
+        ret = mem( 1, tensor );
+        ret->tex.channels = compute->channels;
+        if( rank > 4 )
+          error( "%s", "Rank exceeds maximum of 4." );
+        
+        // Initialize basic properties
+        ret->rank = rank;
+        ret->size = 1;
+        ret->offset = 0;
+        ret->ownsData = true;
+        ret->gpu = true;
+        for( u32 i = 0; i < rank; ++i ){
+          ret->shape[ i ] = shape[ i ];
+          ret->strides[ rank - i - 1 ] = ret->size;
+          ret->size *= shape[ rank - i - 1 ];
+        }
+        for( u32 i = rank; i < 4; ++i ){
+          ret->shape[ i ] = 1;
+          ret->strides[ i ] = 1;
+        }
+        ret->tex.width = width;
+        ret->tex.height = height;
 
-      // Initialize basic properties
-      ret->rank = rank;
-      ret->size = 1;
-      ret->offset = 0;
-      ret->ownsData = true;
-      ret->gpu = true;
-      for( u32 i = 0; i < rank; ++i ){
-        ret->shape[ i ] = shape[ i ];
-        ret->strides[ rank - i - 1 ] = ret->size;
-        ret->size *= shape[ rank - i - 1 ];
+        CHECK_GL_ERROR();
+        // Create OpenGL texture
+        glGenTextures( 1, &ret->tex.texture );
+        glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+        switch( compute->channels ){
+        case 0:
+        case 4:
+          glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
+          break;
+        case 1:
+          glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL );
+        break;
+        case 2:
+          glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
+          break;
+        case 3:
+          glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL );
+          break;
+        }       
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
+        /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
+        
+        CHECK_GL_ERROR();
+        // Create framebuffer
+        glGenFramebuffers( 1, &ret->tex.framebuffer );
       }
-      for( u32 i = rank; i < 4; ++i ){
-        ret->shape[ i ] = 1;
-        ret->strides[ i ] = 1;
-      }
-      ret->tex.width = width;
-      ret->tex.height = height;
-
-      CHECK_GL_ERROR();
-      // Create OpenGL texture
-      glGenTextures( 1, &ret->tex.texture );
-      glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
-      switch( compute->channels ){
-      case 0:
-      case 4:
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
-        break;
-      case 1:
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL );
-        break;
-      case 2:
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
-        break;
-      case 3:
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL );
-        break;
-      }       
-      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-      glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-      /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
-      /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
-	
-      CHECK_GL_ERROR();
-      // Create framebuffer
-      glGenFramebuffers( 1, &ret->tex.framebuffer );
     }
     rets[ reti ] = ret;
   }
@@ -752,7 +757,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   
   CHECK_GL_ERROR();
   // Draw the quad
-  glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+  glClear( GL_COLOR_BUFFER_BIT );
   glDrawArrays( GL_TRIANGLES, 0, vertCount );
   CHECK_GL_ERROR();
   
@@ -836,12 +841,16 @@ void printStack( tensorStack* ts ){
     printf( "\nstrides:" );
     for( u32 j = 0; j < t->rank; ++j )
       printf( " %i", t->strides[ j ] );
-    if( t->size < 256 ){
+    if( t->size < MAX_TENSOR_DIPLAY_SIZE ){
       char* fd = formatTensorData( t );
       printf( "\n%s\n\n", fd );
       unmem( fd );
-    } else
-      printf( "\n[large tensor]\n\n" );
+    } else {
+      if( t->tex.channels )
+        printf( "\n[large texture]\n\n" );        
+      else
+        printf( "\n[large tensor]\n\n" );
+    }
   }
 }
 

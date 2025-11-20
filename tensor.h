@@ -7,7 +7,7 @@
 // THIS LIST IS CRAWLED THROUGH LINEARLY, DONT make it huge
 
 #define TENSOR_CACHE 10
-
+#define MAX_TENSOR_DIPLAY_SIZE 1024
 
 typedef struct{
   u32 rank;              // Rank of the tensor (0 to 4)
@@ -40,6 +40,7 @@ typedef struct{
   GLuint argTexLocation[ 4 ];
   GLuint* uniformLocs;
   u32 channels;
+  bool reuse;
 } compute;
 
 typedef struct{
@@ -60,7 +61,7 @@ tensorStack* newStack( void );
 tensor* newTensor( u32 rank, const u32* shape, f32* data );
 compute* makeCompute( const char* filename, u32 linenum, u32 commandnum, 
                      const program* prog, const char* uniforms, const char* vglslpre, const char* glslpre,
-		      const char* vglsl, const char* glsl, u32 argCount, u32 retCount, u32 channels );
+                      const char* vglsl, const char* glsl, u32 argCount, u32 retCount, u32 channels, bool reuse );
 void deleteCompute( compute* i );
 tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
 				const compute* initializer, u32 vertCount );

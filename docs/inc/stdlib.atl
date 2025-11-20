@@ -398,7 +398,7 @@ ret[0] = vec4( ( mod( floor( x ), 6.0 ) != 5.0 ?
           a( ivec4( mod( floor( x ), 6.0 ),
           mod( y, 8.0 ) + 1328.0 - 8.0 * b( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
 	  ,1.0, 0.0 ) ) : 1.0 ) );
-' 2 1 4;texture;
+' 2 1 4 0;texture;
 return;
 
 
@@ -416,7 +416,7 @@ if( tf.x > std_toffset.x && tf.y > std_toffset.y && tf.x < std_tsize.x / 2. + st
   ret[0] = af( ( tf - std_toffset ) * 2.0 );
 else
   ret[0] = bf( tf );
-' 2 1 4;
+' 2 1 4 0;
 return;
 
 
@@ -442,7 +442,7 @@ float hash( vec2 p, float time ){
 '
 ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), std_time ) * 2.0 * 3.1415928 ) :
                   cos( hash( vec2( t.xy ), std_time ) * 2.0 * 3.1415928 );
-' 0 1 0;
+' 0 1 0 0;
 
 6;texsize;
 c'''
@@ -473,7 +473,7 @@ float v1 = lerp( fc1, fc2, u );
 float v2 = lerp( fc3, fc4, u );
 float v3 = lerp( v1, v2, v );
 ret[0]=std_amp*(v3 * 0.5 + 0.5);
-' 1 1 0;
+' 1 1 0 0;
 return;
 
 
@@ -497,7 +497,7 @@ fngradsize;2;*;fngradsize=;
 fnamp;[0.5];*;fnamp=;
 fnseed;[1.2];+;fnseed=;
 fngradsize;fntexsize;fnamp;fnseed;perlin;
-6;fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0;
+6;fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0 0;
 fntexsize;fngradsize;/;4;-;if'fnloop';
 return;
 

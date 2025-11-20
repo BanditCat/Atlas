@@ -11,7 +11,7 @@ size;if'started';
 6;wsize;[3];0;cat;
 c''''
 ret[0] = t.y < 20 ? ( t.z == 0 ? 1.0 : 0.0 ) : 0.0;
-' 0 1 0;
+' 0 1 0 0;
 l'started';
 
 std.inputState;
@@ -30,7 +30,7 @@ vec2 uv = vec2( floor( hash( tf, time * 10.32213 ) * 3.0 ) - 1.0,
 float val = af( tf + uv ).r;
 
 ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, time * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0, 0.0 );
-' 1 1 4;
+' 1 1 4 0;
 
 
 

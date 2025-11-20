@@ -102,7 +102,7 @@ vec4 rd = std_worldRotation * ray;
 float result = raymarch( std_fourOrigin, rd, INIT_DIST);
 ret[0] = result;
 '
-0 1 0;
+0 1 0 0;
 
 6;wdims;[4];0;cat;
 c''''
@@ -164,7 +164,7 @@ if(centersample > 0.0)
   ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.4)*color;
 else
   ret[0] = vec4(0.0,0.0,0.0,0.0);
-' 1 1 4;
+' 1 1 4 0;
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate
