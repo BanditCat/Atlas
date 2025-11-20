@@ -3,13 +3,26 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 
 
-[1024];dim= 1;
+[1024];dim= 1; // constants
+[0.2];hscale= 1;
+[0.05];waterLevel= 1;
+[30.0];waterFogScale= 1;
+[0.0 0.15 0.25];waterColor= 3;
+
 
 size;if'started'; // init code goes here
-img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;set'ttexsize' 1;
 dim;first;2;rep;set'texsize' 2;
+img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
+6;[1];ttexsize;0;cat;[3];0;cat;
+c''''ret[0] = vec3( a( ivec4( 0, tf.y, 2, 0 ) ),
+                    a( ivec4( 0, tf.y, 1, 0 ) ),  
+                    a( ivec4( 0, tf.y, 0, 0 ) ) );' 1 1 3;texture;
 dim;first;4;std.fractalNoise;
-6;texsize;[4];0;cat;c''''ret[0]=vec4( a( ivec4( tf, 0, 0 ) ) );' 1 1 4;texture;
+// get minmax
+print;0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;print;
+
+
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias ) / hspan;' 1 1 1;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
@@ -40,7 +53,7 @@ wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window
 
 
 
-[90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
+[90];windowSize;0;cat;[0.1 10];0;cat;proj;proj= 16;
 
 depth;backface;
 6;dim;dim;*;first;*;windowSize;[4];0;cat;
@@ -54,19 +67,30 @@ vec4( 0.0,1.0,0.0,1.0 ),
 vec4( 1.0,0.0,0.0,1.0 ) 
 );
 out vec3 color;
+out vec3 worldPos;
 '
 int index = gl_VertexID / 6;
 int x = index / int( dim );
 int y = index - x * int( dim );
 vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
-v.z = af( v.xy ).x;
-color = bf( (0.6 - v.zw) * 80.0 ).bgr;
+v.z = af( v.xy );
+vec2 c = vec2( 0.0, v.z * ttexsize );
+color = bf( c ).rgb;
 v.xy /= dim;
+v.z *= hscale;
+worldPos = v.yzx;
 ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
 '
 in vec3 color;
+in vec3 worldPos;
 '
-ret[0] = vec4(color,1.0);
+vec3 d = worldPos - std_origin;
+float len = length( d );
+float t = ( waterLevel - std_origin.y ) / d.y;
+float waterDepth = len * ( 1.0 - t );
+float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
+
+ret[0] = vec4( mix( color, waterColor, fog ), 1.0 );
 '
 2 1 4;
 depth;backface;

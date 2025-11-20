@@ -1755,7 +1755,8 @@ bool runProgram( tensorStack* ts, program** progp ){
               if( *offset1 < min ) min = *offset1;
               if( *offset1 > max ) max = *offset1;
             }
-
+      
+      pop( ts );
       float* nt = mem( 2, float );
       nt[ 0 ] = min; nt[ 1 ] = max;
       u32 ntshape[ 1 ] = { 2 };
@@ -1930,8 +1931,8 @@ bool runProgram( tensorStack* ts, program** progp ){
     }
     case TEXTURE: {
       tensor* cur = ts->stack[ ts->size - 1 ];
-      if( !cur->gpu || cur->tex.channels != 4 )
-        error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be 4 channel." );
+      if( !cur->gpu || cur->tex.channels == 0 )
+        error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
       glBindTexture( GL_TEXTURE_2D, cur->tex.texture );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
       glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );

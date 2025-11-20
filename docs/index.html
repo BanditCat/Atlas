@@ -532,7 +532,7 @@ Following the quoted strings, you supply three numeric parameters:
 
     Operation Modes:
         Tensor mode (when channels is 0) is the standard mode where the shader outputs a tensor.
-        Texture mode (when channels is 4) creates a 4-channel texture with some limitations regarding how it can be used later in your program.
+        Texture mode (when channels is not 0) creates a 1 2 3 or 4-channel texture with some limitations regarding how it can be used later in your program.
 
 <h3>Example</h3>
 
@@ -1081,7 +1081,7 @@ strides: 1 2
 
   <section id="cmd-texture">
     <h2>texture</h2>
-    <p>This command takes the tensor on top of the stack, which must be rank 3, 4 component like [512 512 4], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
+    <p>This command takes the tensor on top of the stack, which must be rank 3, 1 2 3 or 4 component like [512 512 4], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
   </section>
 
   <section id="cmd-timeDelta">
