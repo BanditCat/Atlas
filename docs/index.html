@@ -521,10 +521,9 @@ Following the quoted strings, you supply three numeric parameters:
     This parameter determines the output mode:
         Tensor Mode (channels = 0):
         The shader produces one or more tensors as output.
-        Texture Mode (channels != 0):
+        Texture Mode (channels = 4):
         A 4-channel texture is created instead of a tensor. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
-        The type of the returned data will automatically be set to float, vec2, vec3, or vec4 depending on whether you use 1, 2, 3, or 4 channels.
-
+        
 <h3>Important Notes</h3>
 
     Input Tensor Access:
@@ -1081,7 +1080,7 @@ strides: 1 2
 
   <section id="cmd-texture">
     <h2>texture</h2>
-    <p>This command takes the tensor on top of the stack, which must be rank 3, 1 2 3 or 4 component like [512 512 4], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
+    <p>This command takes the tensor on top of the stack, which must be rank 3, 4 component like [512 512 4], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
   </section>
 
   <section id="cmd-timeDelta">

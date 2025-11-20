@@ -636,6 +636,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->toCompute.retCount = retCount;
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
+      if( channels && channels != 4 && channels != 1 )
+        error( "%s", "Compute created with channels not equal 0, 1 or 4.  This is a limitaiton of webgl2, sorry." );
       if( argCount > 4 )
         error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
       if( retCount > 4 || !retCount )
