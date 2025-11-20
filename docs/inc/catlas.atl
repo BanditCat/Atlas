@@ -87,6 +87,7 @@ in vec3 worldPos;
 vec3 d = worldPos - std_origin;
 float len = length( d );
 float t = ( waterLevel - std_origin.y ) / d.y;
+t = clamp( t, 0.0, 1.0 );
 float waterDepth = len * ( 1.0 - t );
 float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
 
