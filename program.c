@@ -1837,9 +1837,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       pop( ts );
       tensor** rets =
         newTensorsInitialized( p, ts, rank, shape, p->computes[ s->compute ], vertCount );
-      for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
-        push( ts, rets[ p->computes[ s->compute ]->retCount - i - 1 ] );
-      unmem( rets );
+      if( rets ){
+        for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
+          push( ts, rets[ p->computes[ s->compute ]->retCount - i - 1 ] );
+        unmem( rets );
+      }
       // dbg( "%s", "compute" );
       break;
     }

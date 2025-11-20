@@ -574,11 +574,15 @@ void deleteCompute( compute* i ){
 tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute, u32 vertCount ){
   CHECK_GL_ERROR();
   glUseProgram( compute->program );
-  if( compute->argCount > ts->size )
-    error(
-          "A compute was called with %u arguments, but the stack size is only %u.",
-          compute->argCount,
-          ts->size );
+  if( compute->reuse ){
+    if( compute->argCount + compute->retCount > ts->size )
+      error( "A compute was called with %u arguments and %u returns, but the stack size is only %u.",
+             compute->argCount, compute->retCount, ts->size );
+  } else
+    if( compute->argCount > ts->size )
+      error( "A compute was called with %u arguments, but the stack size is only %u.",
+             compute->argCount,
+             ts->size );
   tensor** rets = mem( compute->retCount, tensor* );
   tensor* ret;
   for( u32 i = 0; i < compute->argCount; ++i )
@@ -598,6 +602,12 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   }
   for( u32 reti = 0; reti < compute->retCount; ++reti ){
     if( compute->reuse ){
+      tensor* t = ts->stack[ ( ( ts->size - 1 ) - compute->argCount ) - reti ];
+      if( !t->gpu || ( t->tex.channels != compute->channels ) )
+        error( "%s", "Attempt to return on top of a incompatible texture (wrong channel count)." );
+      if( t->tex.width != width || t->tex.height != height )
+        error( "%s", "Attempt to return on top of a incompatible texture (bad size)." );
+      ret = t;
     } else {
       u32 found = TENSOR_CACHE;
       for( u32 i = 0; i < TENSOR_CACHE; ++i )
@@ -729,23 +739,24 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
 
   if( depthTest ){
     if( !ret->tex.depthbuffer )
-      glGenRenderbuffers(1, &ret->tex.depthbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, ret->tex.depthbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer);
+      glGenRenderbuffers( 1, &ret->tex.depthbuffer );
+    glBindRenderbuffer( GL_RENDERBUFFER, ret->tex.depthbuffer );
+    glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height );
+    glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer );
 #ifdef __EMSCRIPTEN__   // I dont know why it only works this way, but it only works this way.
-    glDepthFunc(GL_LEQUAL);
-    glClearDepthf(1.0f); 
-    glDepthRangef(0.0, 1.0);
+    glDepthFunc( GL_LEQUAL );
+    glClearDepthf( 1.0f ); 
+    glDepthRangef( 0.0, 1.0 );
 #else
-    glDepthFunc(GL_GEQUAL);
-    glClearDepth(0.0f); 
-    glDepthRange(1.0, 0.0);
+    glDepthFunc( GL_GEQUAL );
+    glClearDepth( 0.0f); 
+    glDepthRange( 1.0, 0.0 );
 #endif
     glViewport( 0, 0, width, height );
-    glDepthMask(GL_TRUE);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
+    glDepthMask( GL_TRUE );
+    if( !compute->reuse )
+      glClear( GL_DEPTH_BUFFER_BIT );
+    glEnable( GL_DEPTH_TEST );
   } else
     glDisable( GL_DEPTH_TEST );
 
@@ -757,7 +768,8 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   
   CHECK_GL_ERROR();
   // Draw the quad
-  glClear( GL_COLOR_BUFFER_BIT );
+  if( !compute->reuse )
+    glClear( GL_COLOR_BUFFER_BIT );
   glDrawArrays( GL_TRIANGLES, 0, vertCount );
   CHECK_GL_ERROR();
   
@@ -781,8 +793,12 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
 #ifndef EMSCRIPTEN // only need this for native afaict
   glFinish();
 #endif
- 
-  return rets;
+
+  if( compute->reuse ){
+    unmem( rets );
+    return NULL;
+  } else
+    return rets;
 }
 
 void push( tensorStack* ts, tensor* t ){
