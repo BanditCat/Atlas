@@ -1197,6 +1197,7 @@ tensor* tensorFromImageFile( const char* filename ){
     }
   }
   SDL_FreeSurface( image );
+  tensorToGPUMemory( ret );
   return ret;
 }
 tensor* tensorFromString( const char* string ){

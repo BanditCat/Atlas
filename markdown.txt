@@ -1,0 +1,4 @@
+Atlas: a new coordinate system for GPUs.
+
+Atlas is a glsl wrapper that is compiled at runtime into an intermediate representation, and run immediatly.  In other words, it's a scripting language.  
+It's faster than C for most workloads!  Because GPU.   

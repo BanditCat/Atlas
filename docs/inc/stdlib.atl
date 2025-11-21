@@ -411,12 +411,25 @@ return;
 l'blitText';
 [10 10];toffset= 2;
 6;1;dup;shape;tsize= 3;2;dup;shape;0;dup;wsize= 3;
-c''''
-if( tf.x > std_toffset.x && tf.y > std_toffset.y && tf.x < std_tsize.x / 2. + std_toffset.x && tf.y < std_tsize.y / 2. + std_toffset.y )
-  ret[0] = af( ( tf - std_toffset ) * 2.0 );
-else
-  ret[0] = bf( tf );
-' 2 1 4 0;
+c'
+vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+'
+int index = gl_VertexID / 6;
+vec4 v = verts[ gl_VertexID % 6 ];
+v.xy *= std_tsize.xy / ( std_wsize.xy * 2.0 );
+v.xy += std_toffset.xy / std_wsize.xy;
+
+ret = v * 2.0 - 1.0;
+''
+ret[0] = af( ( tf - std_toffset ) * 2.0 );
+' 1 1 4 1;
 return;
 
 
