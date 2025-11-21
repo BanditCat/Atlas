@@ -51,7 +51,7 @@ l'started'; // init code complete
 std.nav3d;std.3dnavParam;set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
-set'lightRotation' 16;
+0;dup;set'lightRotation' 16;[0 1 0 0];m;unext;[0 3 0];s;lightDir= 3;
 
 
 
@@ -79,29 +79,40 @@ vec4( 1.0,0.0,0.0,1.0 )
 );
 out vec3 color;
 out vec3 worldPos;
+out vec3 normal;
 '
 int index = gl_VertexID / 6;
 int x = index / int( dim );
 int y = index - x * int( dim );
 vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
-v.z = af( v.xy ).x;
-vec2 c = vec2( 0.0, v.z * ttexsize );
+v.z = af( v.xy ).x * hscale;
+vec2 c = vec2( 0.0, ( v.z / hscale ) * ttexsize );
 color = bf( c ).rgb;
+
+float leftSample = af( v.xy - vec2( 1.0, 0.0 ) ).x * hscale;
+float rightSample = af( v.xy + vec2( 1.0, 0.0 ) ).x * hscale;
+vec3 nrml1 = vec3( 2.0 / dim, 0.0, leftSample - rightSample );
+float upSample = af( v.xy - vec2( 0.0, 1.0 ) ).x * hscale;
+float downSample = af( v.xy + vec2( 0.0, 1.0 ) ).x * hscale;
+vec3 nrml2 = vec3( 0.0, 2.0 / dim, upSample - downSample );
+normal = normalize( cross( nrml1, nrml2 ) ).yzx;
+
+
 v.xy /= dim;
-v.z *= hscale;
 worldPos = v.yzx;
 ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
 '
 in vec3 color;
 in vec3 worldPos;
+in vec3 normal;
 '
 vec3 d = worldPos - std_origin;
 float len = length( d );
 float t = ( waterLevel - std_origin.y ) / d.y;
 float waterDepth = len * ( 1.0 - t );
 float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
-
-ret[0] = vec4( mix( color, waterColor, fog ), 1.0 );
+float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
+ret[0] = vec4( mix( color, waterColor, fog ), 1.0 ) * diffuse;
 '
 3 1 4 0;
 depth;backface;
