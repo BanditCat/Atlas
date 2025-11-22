@@ -151,7 +151,7 @@ lightPos /= lightPos.w;
 lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
 float lightDepth = df( lightPos.xy * shadowSize.xy ).x;
 float curDepth = lightPos.z;
-float shadow = ( curDepth - 0.001 ) > lightDepth ? 1.0 : 0.0;
+float shadow = ( curDepth - 0.001 ) > lightDepth ? 0.7 : 0.0;
 
 float len = length( d );
 float t = ( waterLevel - std_origin.y ) / d.y;
@@ -167,22 +167,22 @@ if( tf.x < shadowSize.x / 5.0 && tf.y < shadowSize.y / 5.0 )
 '
 4 1 4 0;
 
-6;1;dup;shape;c''''
-vec3 ray = normalize(
-    vec3(
-      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
-      -1.0
-    )
-);
-ray = ( std_worldRotation * vec4( ray, 1.0 ) ).xyz;
-float skyness = clamp( dot( ray, vec3( 0.0, 1.0, 0.0 ) ) * 5.0 + 2.3, 0.0, 1.0 );
-vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
-                     vec3( 0.1, 0.2, 0.9 ),
-                     clamp( dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ), 0.0, 1.0 ) );
-float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
-skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
-ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
-' 0 1 4 1;
+//6;1;dup;shape;c''''
+//vec3 ray = normalize(
+//    vec3(
+//      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+//      -1.0
+//    )
+//);
+//ray = ( std_worldRotation * vec4( ray, 1.0 ) ).xyz;
+//float skyness = clamp( dot( ray, vec3( 0.0, 1.0, 0.0 ) ) * 5.0 + 2.3, 0.0, 1.0 );
+//vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
+//                     vec3( 0.1, 0.2, 0.9 ),
+//                     clamp( dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ), 0.0, 1.0 ) );
+//float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
+//skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
+//ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
+//' 0 1 4 1;
 depth;backface;
 
 
