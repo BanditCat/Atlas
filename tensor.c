@@ -246,12 +246,12 @@ compute* makeCompute( const char* filename,
     %s\n\
     %s\n\
     const vec4 _a_corners[ 6 ] = vec4[](\n\
-      vec4( -1.0, -1.0, 0.0, 1.0),\n\
-      vec4(  1.0, -1.0, 0.0, 1.0),\n\
-      vec4( -1.0,  1.0, 0.0, 1.0),\n\
-      vec4(  1.0, -1.0, 0.0, 1.0),\n\
-      vec4( -1.0,  1.0, 0.0, 1.0),\n\
-      vec4(  1.0,  1.0, 0.0, 1.0)\n\
+      vec4( -1.0, -1.0, 1.0, 1.0),\n\
+      vec4(  1.0, -1.0, 1.0, 1.0),\n\
+      vec4( -1.0,  1.0, 1.0, 1.0),\n\
+      vec4( -1.0,  1.0, 1.0, 1.0),\n\
+      vec4(  1.0, -1.0, 1.0, 1.0),\n\
+      vec4(  1.0,  1.0, 1.0, 1.0)\n\
     );\n\
     void main(){\n\
       vec4 ret;\n\
@@ -1409,6 +1409,31 @@ void tensorProject( tensorStack* ts, u32 index ){
   ret[ 4  ] = 0;          ret[ 5  ] = fov*aspect; ret[ 6  ] = 0;                      ret[ 7  ] = 0;
   ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = -(far+near)/(far-near); ret[ 11 ] = -2*far*near/(far-near);
   ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = -1;                     ret[ 15 ] = 0;
+  u32 shape[ 2 ] = { 4, 4 };
+  push( ts, newTensor( 2, shape, ret ) );
+}
+void tensorOrtho( tensorStack* ts, u32 index ){
+  tensor* top = ts->stack[ index ];
+  tensorToHostMemory( top );
+  float left = top->data[ top->offset + top->strides[ 0 ] * 0 ];
+  float right = top->data[ top->offset + top->strides[ 0 ] * 1 ];
+  float bottom = top->data[ top->offset + top->strides[ 0 ] * 2 ];
+  float topv = top->data[ top->offset + top->strides[ 0 ] * 3 ];
+  float near = top->data[ top->offset + top->strides[ 0 ] * 4 ];
+  float far = top->data[ top->offset + top->strides[ 0 ] * 5 ];
+  float rl = right - left;
+  float rlp = right + left;
+  float tb = topv - bottom;
+  float tbp = topv + bottom;
+  float fn = far - near;
+  float fnp = far + near;
+  
+  pop( ts );
+  f32* ret = mem( 16, f32 );
+  ret[ 0  ] = 2.0 / rl;   ret[ 1  ] = 0;          ret[ 2  ] = 0;                      ret[ 3  ] = -rlp/rl;
+  ret[ 4  ] = 0;          ret[ 5  ] = 2.0 / tb;   ret[ 6  ] = 0;                      ret[ 7  ] = -tbp/tb;
+  ret[ 8  ] = 0;          ret[ 9  ] = 0;          ret[ 10 ] = -2.0 / fn;              ret[ 11 ] = -fnp/fn;
+  ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = 0;                      ret[ 15 ] = 1;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }

@@ -53,6 +53,7 @@ typedef struct{
     ROT, // documented
     TRANS, // documented
     PROJ, // documented
+    ORTHO, // documented
     LENGTH, // documented
     TIME, // documented
     REPEAT, // documented

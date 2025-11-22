@@ -700,6 +700,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = PROJ;
     // dbg( "Linenum %u commandnum %u: proj\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "ortho" ) ){
+    curStep->type = ORTHO;
+    // dbg( "Linenum %u commandnum %u: ortho\n", linenum, commandnum );
+
   } else if( !strcmp( command, "translate" ) ){
     curStep->type = TRANS;
     // dbg( "Linenum %u commandnum %u: translate\n", linenum, commandnum );
@@ -1927,6 +1931,17 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Expected a rank 1 length 5 vector (fov, width, height, near, far) for projection." );
       tensorProject( ts, ts->size - 1 );
+      break;
+    }
+    case ORTHO: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to create a orthographic projection matrix without a parameter on the stack." );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      if( t1->rank != 1 || t1->shape[ 0 ] != 6 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Expected a rank 1 length 6 vector (left, right, bottom, top, near, far) for orthographic projection." );
+      tensorOrtho( ts, ts->size - 1 );
       break;
     }
     case TRANS: {

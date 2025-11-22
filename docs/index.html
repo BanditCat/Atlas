@@ -215,6 +215,7 @@
       <li><a href="#cmd-load">load</a></li>
       <li><a href="#cmd-m">m (matrix multiply)</a></li>
       <li><a href="#cmd-minmax">minmax (minimum and maximum)</a></li>
+      <li><a href="#cmd-ortho">ortho (orthographic)</a></li>
       <li><a href="#cmd-pop">pop</a></li>
       <li><a href="#cmd-projection">proj (projection)</a></li>
       <li><a href="#cmd-print">print</a></li>
@@ -825,6 +826,11 @@ strides: 1 1
   <section id="cmd-minmax">
     <h2>minmax (minimum and maximum)</h2>
     <p>This takes the tensor on top of the stack and replaces it by a vector of length two with the minimum and maximum values occuring in the tensor, like [min max].</p>
+  </section>
+  
+  <section id="cmd-ortho">
+    <h2>ortho (orthographic)</h2>
+    <p>This takes a 6-vector argument in the form <code>[left right bottom top near far]</code> and pushes a corresponding orthographic projection matrix onto the stack.</p>
   </section>
   
   <section id="cmd-pop">

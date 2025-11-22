@@ -94,4 +94,5 @@ char* tensorToString( tensor* t );
 void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex );
 void tensorTranslate( tensorStack* ts, u32 index );
 void tensorProject( tensorStack* ts, u32 index );
+void tensorOrtho( tensorStack* ts, u32 index );
 
