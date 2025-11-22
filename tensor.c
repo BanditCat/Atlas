@@ -744,7 +744,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height );
     glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer );
 #ifdef __EMSCRIPTEN__   // I dont know why it only works this way, but it only works this way.
-    glDepthFunc( GL_LESS );
+    glDepthFunc( GL_LEQUAL );
     glClearDepthf( 1.0f ); 
     glDepthRangef( 0.0, 1.0 );
 #else
