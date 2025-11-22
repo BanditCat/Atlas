@@ -12,6 +12,8 @@ size;if'started'; // init code goes here
 [30.0];waterFogScale= 1;
 [0.0 0.15 0.25];waterColor= 3;
 [2048 2048 1];shadowSize= 3;
+[0.0001];shadowBias= 1;
+[100];softShadows= 1;
 
 
 dim;first;2;rep;set'texsize' 2;
@@ -149,9 +151,21 @@ vec3 d = worldPos - std_origin;
 vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
 lightPos /= lightPos.w;
 lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
-float lightDepth = df( lightPos.xy * shadowSize.xy ).x;
 float curDepth = lightPos.z;
-float shadow = ( curDepth - 0.001 ) > lightDepth ? 0.7 : 0.0;
+float centerLightDepth = df( lightPos.xy * shadowSize.xy ).x;
+float spread = clamp( ( curDepth - centerLightDepth ) * softShadows, 1.0, 1000.0 );
+
+float shadow = 0.0;
+for( float dx = -2.0; dx <= 2.0; ++dx ){
+  for( float dy = -2.0; dy <= 2.0; ++dy ){
+    vec2 delta = vec2( dx, dy ) * spread;
+    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
+  }
+}
+shadow /= 25.0;
+shadow *= 0.7;
+
 
 float len = length( d );
 float t = ( waterLevel - std_origin.y ) / d.y;
