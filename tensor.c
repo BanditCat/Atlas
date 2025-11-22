@@ -246,12 +246,12 @@ compute* makeCompute( const char* filename,
     %s\n\
     %s\n\
     const vec4 _a_corners[ 6 ] = vec4[](\n\
-      vec4( -1.0, -1.0, 0.0, 1.0),\n\
-      vec4(  1.0, -1.0, 0.0, 1.0),\n\
-      vec4( -1.0,  1.0, 0.0, 1.0),\n\
-      vec4( -1.0,  1.0, 0.0, 1.0),\n\
-      vec4(  1.0, -1.0, 0.0, 1.0),\n\
-      vec4(  1.0,  1.0, 0.0, 1.0)\n\
+      vec4( -1.0, -1.0, 1.0, 1.0),\n\
+      vec4(  1.0, -1.0, 1.0, 1.0),\n\
+      vec4( -1.0,  1.0, 1.0, 1.0),\n\
+      vec4( -1.0,  1.0, 1.0, 1.0),\n\
+      vec4(  1.0, -1.0, 1.0, 1.0),\n\
+      vec4(  1.0,  1.0, 1.0, 1.0)\n\
     );\n\
     void main(){\n\
       vec4 ret;\n\
@@ -743,14 +743,14 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     glBindRenderbuffer( GL_RENDERBUFFER, ret->tex.depthbuffer );
     glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height );
     glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, ret->tex.depthbuffer );
-#ifdef __EMSCRIPTEN__   // I dont know why it only works this way, but it only works this way.
+#ifdef __EMSsCRIPTEN__   // I dont know why it only works this way, but it only works this way.
     glDepthFunc( GL_LEQUAL );
     glClearDepthf( 1.0f ); 
     glDepthRangef( 0.0, 1.0 );
 #else
     glDepthFunc( GL_GEQUAL );
-    glClearDepth( 0.0f); 
-    glDepthRange( 1.0, 0.0 );
+    glClearDepthf( 0.0f); 
+    glDepthRangef( 1.0, 0.0 );
 #endif
     glViewport( 0, 0, width, height );
     glDepthMask( GL_TRUE );
