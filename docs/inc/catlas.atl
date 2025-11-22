@@ -161,9 +161,7 @@ float waterDepth = len * ( 1.0 - t );
 float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
 float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
-ret[ 0 ] = vec4( diffuse * color, 1.0 );
-if( tf.x < shadowSize.x / 5.0 && tf.y < shadowSize.y / 5.0 )
-  ret[ 0 ] = df( tf.xy * 5.0 ).xxxx;
+ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
 4 1 4 0;
 
@@ -182,8 +180,6 @@ vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
 float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
 skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
 ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
-if( tf.x < 100.0 || tf.y < 100.0 )
-  discard;
 ' 0 1 4 1;
 depth;backface;
 
