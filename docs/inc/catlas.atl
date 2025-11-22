@@ -12,8 +12,9 @@ size;if'started'; // init code goes here
 [30.0];waterFogScale= 1;
 [0.0 0.15 0.25];waterColor= 3;
 [2048 2048 1];shadowSize= 3;
-[0.0001];shadowBias= 1;
+[0.001];shadowBias= 1;
 [100];softShadows= 1;
+[0];timer= 1;
 
 
 dim;first;2;rep;set'texsize' 2;
@@ -42,6 +43,7 @@ c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display
 
 
 l'started'; // init code complete
+timer;timeDelta;e;+;timer= 1;
 // Stack here: prevFrame, heightMap, gradient
 
 
@@ -146,6 +148,10 @@ ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
 in vec3 color;
 in vec3 worldPos;
 in vec3 normal;
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
 '
 vec3 d = worldPos - std_origin;
 vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
@@ -158,7 +164,9 @@ float spread = clamp( ( curDepth - centerLightDepth ) * softShadows, 1.0, 1000.0
 float shadow = 0.0;
 for( float dx = -2.0; dx <= 2.0; ++dx ){
   for( float dy = -2.0; dy <= 2.0; ++dy ){
-    vec2 delta = vec2( dx, dy ) * spread;
+    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
+    vec2 delta = ( vec2( dx, dy ) + jitter ) * spread;
+
     float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
     shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
   }
