@@ -749,7 +749,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     glDepthRangef( 0.0, 1.0 );
 #else
     glDepthFunc( GL_GEQUAL );
-    glClearDepthf( 0.0f); 
+    glClearDepthf( 0.0f ); 
     glDepthRangef( 1.0, 0.0 );
 #endif
     glViewport( 0, 0, width, height );
