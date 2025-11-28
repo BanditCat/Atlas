@@ -59,7 +59,7 @@ l'skip';
 mand;
 6;wsize;[4];0;cat;c''''
 ret[0] = vec4( a( ivec4( tf, 0, 0 ) ) / 31.0 );
-' 1 1 4 0;
+' 1 1 40 0;
 
 
 

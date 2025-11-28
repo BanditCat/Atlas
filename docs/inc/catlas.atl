@@ -13,7 +13,7 @@ size;if'started'; // init code goes here
 [0.0 0.15 0.25];waterColor= 3;
 [2048 2048 1];shadowSize= 3;
 [0.001];shadowBias= 1;
-[100];softShadows= 1;
+[50];softShadows= 1;
 [0];timer= 1;
 
 
@@ -28,7 +28,7 @@ dim;first;4;std.fractalNoise;
 0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
 
 
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias ) / hspan;' 1 1 1 0;texture;
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 10 0;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
@@ -159,7 +159,7 @@ lightPos /= lightPos.w;
 lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
 float curDepth = lightPos.z;
 float centerLightDepth = df( lightPos.xy * shadowSize.xy ).x;
-float spread = clamp( ( curDepth - centerLightDepth ) * softShadows, 1.0, 1000.0 );
+float spread = clamp( ( curDepth - centerLightDepth ) * softShadows, 1.0, 100000000.0 );
 
 float shadow = 0.0;
 for( float dx = -2.0; dx <= 2.0; ++dx ){
@@ -185,7 +185,7 @@ float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
 ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
-4 1 4 0;
+4 1 40 0;
 
 6;1;dup;shape;c''''
 vec3 ray = normalize(
@@ -202,7 +202,7 @@ vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
 float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
 skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
 ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
-' 0 1 4 1;
+' 0 1 40 1;
 depth;backface;
 
 

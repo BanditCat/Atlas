@@ -225,10 +225,10 @@ compute* makeCompute( const char* filename,
   const char* channelsString;
   switch( channels ){
   case 0:
-  case 4: channelsString = "vec4"; break;
-  case 1: channelsString = "float"; break;
-  case 2: channelsString = "vec2"; break;
-  case 3: channelsString = "vec3"; break;
+  case 4: case 40: channelsString = "vec4"; break;
+  case 1: case 10: channelsString = "float"; break;
+  case 2: case 20: channelsString = "vec2"; break;
+  case 3: case 30: channelsString = "vec3"; break;
   }
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
@@ -604,9 +604,9 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
     if( compute->reuse ){
       tensor* t = ts->stack[ ( ( ts->size - 1 ) - compute->argCount ) - reti ];
       if( !t->gpu || ( t->tex.channels != compute->channels ) )
-        error( "%s", "Attempt to return on top of a incompatible texture (wrong channel count)." );
+        error( "%s", "Attempt to return on top of a incompatible tensor (wrong channel count)." );
       if( t->tex.width != width || t->tex.height != height )
-        error( "%s", "Attempt to return on top of a incompatible texture (bad size)." );
+        error( "%s", "Attempt to return on top of a incompatible tensor (bad size)." );
       ret = t;
     } else {
       u32 found = TENSOR_CACHE;
@@ -662,13 +662,19 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         glGenTextures( 1, &ret->tex.texture );
         glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
         switch( compute->channels ){
+        case 40:
+          glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+          break;
         case 0:
         case 4:
           glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
           break;
+        case 10:
+          glTexImage2D( GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL );
+          break;
         case 1:
           glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL );
-        break;
+          break;
         case 2:
           glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
           break;

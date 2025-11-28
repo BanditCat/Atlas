@@ -11,6 +11,9 @@
 #endif
 
 
+#define CGLTF_IMPLEMENTATION 1
+#include "cgltf.h"
+
 ////////////////////////////////////////////////////////////////////
 // Global state
 
@@ -520,7 +523,7 @@ int renderThreadFunction( void* data ){
       error( "%s", "Display tensor not of rank 3" );
     if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 4 )
       error( "%s", "Display tensor not a 4 component tensor of rank 3." );
-    if( ts->stack[ ts->size - 1 ]->tex.channels != 4 )
+    if( ts->stack[ ts->size - 1 ]->tex.channels != 4 && ts->stack[ ts->size - 1 ]->tex.channels != 40 )
       error( "%s", "Display tensor not a 4 channel tensor of rank 3." );
 
     glClear( GL_COLOR_BUFFER_BIT );

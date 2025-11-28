@@ -638,8 +638,8 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
       curStep->toCompute.reuse = reuse;
-      if( channels && channels != 4 && channels != 1 )
-        error( "%s", "Compute created with channels not equal 0, 1 or 4.  This is a limitaiton of webgl2, sorry." );
+      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 )
+        error( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
       if( argCount > 4 )
         error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
       if( retCount > 4 || !retCount )
@@ -1830,6 +1830,8 @@ bool runProgram( tensorStack* ts, program** progp ){
         shape[ i ] = 1;
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );
       u32 channels = p->computes[ s->compute ]->channels;
+      if( channels >= 10 )
+        channels /= 10;
       if( channels && rank != 3 )
         error( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
                "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );

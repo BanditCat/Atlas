@@ -229,7 +229,7 @@ additive;
 6;1;dup;shape;c''''
 vec4 wcolor = af( tf );
 ret[0]= wcolor / wcolor.a;
-' 1 1 4 0;
+' 1 1 40 0;
 // stack: frame, velocity, position, verts
 
 

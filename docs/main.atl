@@ -43,7 +43,7 @@ c''''
 ret[0] = vec4( 0.0, ( tf.x - std_offs.x * wsize.y * std_zoom >= 0.0 && tf.y + std_offs.y * wsize.y * std_zoom >= 0.0 &&
            tf.x - std_offs.x * wsize.y * std_zoom <= tsize.x * std_zoom && tf.y + std_offs.y * wsize.y * std_zoom <= tsize.y * std_zoom ) ?
            1.0 - af( ( tf.xy + std_offs * vec2( -1.0, 1.0 ) * wsize.yy * std_zoom ) / std_zoom ).x : 0.0, 1.0, 0.0 );
-' 1 1 4 0;
+' 1 1 40 0;
 
 
 //////////////////////////////////////////////////////////////////

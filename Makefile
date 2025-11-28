@@ -29,7 +29,7 @@ WASM = $(HTML:.html=.wasm)
 DATA = $(HTML:.html=.data)
 
 
-HDRS = Atlas.h tensor.h trie.h program.h
+HDRS = Atlas.h tensor.h trie.h program.h cgltf.h
 MSRCS = main.c tensor.c tensorPrint.c program.c trie.c
 EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c 
 SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c
@@ -87,7 +87,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Catlas :D'
+	git commit -m '8-bit textures'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)

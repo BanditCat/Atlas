@@ -416,7 +416,7 @@ strides:
     <h2>Simple Gradient</h2>
     <p>
       <pre><code>size;if'skip'; // Skip if we've already created the gradient.
-6;[16 16 3];c''''ret[0]=i / 767.0\' 0 1 0 0; // The linear index goes to 16*16*3 - 1 = 767.0.
+6;[16 16 3];c''''ret[0]=i / 767.0;' 0 1 0 0; // The linear index goes to 16*16*3 - 1 = 767.0.
 l'skip';
 </code></pre>
       will display
@@ -524,8 +524,8 @@ Following the quoted strings, you supply four numeric parameters:
     This parameter determines the output mode:
         Tensor Mode (channels = 0):
         The shader produces one or more tensors as output.
-        Texture Mode (channels = 1 or 4):
-        A 1 or 4 channel texture is created instead of a tensor. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
+        Texture Mode (channels = 1, 4, 10, or 40):
+        A 1 or 4 channel texture is created instead of a tensor. channels = 10 is like channels = 1 but with a normalized 8-bit component.  Likewise for 40 and 4. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
 
     reuse:
     This parameter indicates whether the return values are going to be placed on top of already returned values. If this parameter is nonzero, then the return values are taken from the stack, and must match the channels and dimensions of the expected return values.                               
@@ -547,8 +547,8 @@ The following Atlas snippet uses two input tensors to compute element‐wise min
 [[1 2][3 4]];[[2 1][5 3]];   // Push two tensors onto the stack.
 6;[2 2];                     // Push the output shape (vertex count is 6 for two triangles).
 c''''                       // Call compute with empty vertexShaderFuncs, optionalVertexShader, and glslFuncs.
-ret[0] = a(t) < b(t) ? a(t) : b(t)\  // For each element: output the minimum into ret[0].
-ret[1] = a(t) < b(t) ? b(t) : a(t)\  // And output the maximum into ret[1].
+ret[0] = a(t) < b(t) ? a(t) : b(t);  // For each element: output the minimum into ret[0].
+ret[1] = a(t) < b(t) ? b(t) : a(t);  // And output the maximum into ret[1].
 ' 2 2 0 0;                    // Numeric arguments: argCount = 2, retCount = 2, channels = 0, reuse = 0 (tensor mode).
 print;quit;
 </code></pre>
@@ -1096,7 +1096,7 @@ strides: 1 2
 
   <section id="cmd-texture">
     <h2>texture</h2>
-    <p>This command takes the tensor on top of the stack, which must be rank 3, 4 component like [512 512 4], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
+    <p>This command takes the texture on top of the stack, which must be rank 3, 1 or 4 component like [512 512 4] or [256 256 1], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
   </section>
 
   <section id="cmd-timeDelta">
