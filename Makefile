@@ -87,7 +87,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m '8-bit textures'
+	git commit -m 'gltf'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)
