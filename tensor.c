@@ -126,13 +126,13 @@ void tensorToGPUMemory( tensor* t ){
 
   // Prepare padded data for texture upload
   f32* paddedData = mem( twidth * theight * 4, f32 );
-  memset( paddedData, 0, twidth * theight * 4 * sizeof( f32 ) );
-  memcpy( paddedData, t->data + t->offset, t->size * sizeof( f32 ) );
+  memcpy( paddedData, t->data, t->size * sizeof( f32 ) );
 
   t->tex.width = twidth;
   t->tex.height = theight;
   t->tex.layers = 1;
   t->tex.channels = 0;
+  
   
   glGenTextures( 1, &t->tex.texture );
   glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
