@@ -53,7 +53,7 @@ void tensorToHostMemory( tensor* t ){
   f32* hostData = mem( t->size, f32 );
 
   u64 mult = t->tex.channels;
-  if( mult > 10 )
+  if( mult >= 10 )
     mult /= 10;
   if( !mult ) mult = 4; // Generic storage is RGBA (4 floats)
   
@@ -67,20 +67,17 @@ void tensorToHostMemory( tensor* t ){
   CHECK_GL_ERROR();
   
   GLenum format = GL_RGBA;
-  if( t->tex.channels == 1 ) format = GL_RED;
-  if( t->tex.channels == 2 ) format = GL_RG;
-  if( t->tex.channels == 3 ) format = GL_RGB;
-    
+  if( t->tex.channels == 1 || t->tex.channels == 10 ) format = GL_RED;
+  if( t->tex.channels == 2 || t->tex.channels == 20 ) format = GL_RG;
+  if( t->tex.channels == 3 || t->tex.channels == 30 ) format = GL_RGB;
+
   for( u32 i = 0; i < t->tex.layers; ++i ){
     glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i );
-    // Reads the full texture (data + padding) into tempData
     glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
     
-    // --- FIX START ---
     u64 offset = (u64)i * layerElementCount;
     u64 elementsToCopy = layerElementCount;
 
-    // Clamp copy size so we don't write texture padding into host memory
     if( offset + elementsToCopy > t->size ){
         if( offset >= t->size ) {
             elementsToCopy = 0;
@@ -90,7 +87,6 @@ void tensorToHostMemory( tensor* t ){
     }
 
     memcpy( hostData + offset, tempData, elementsToCopy * sizeof( f32 ) );
-    // --- FIX END ---
   }
   CHECK_GL_ERROR();
 
