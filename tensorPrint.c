@@ -61,7 +61,10 @@ char** splitString( char* str, u32* lineCount ){
   while( line != NULL ){
     if( *lineCount >= capacity ){
       capacity *= 2;
-      lines = (char**)realloc( lines, sizeof( char* ) * capacity );
+      char** newLines = (char**)mem( sizeof( char* ) * capacity, u8 );
+      memcpy( newLines, lines, sizeof( char* ) * *lineCount );
+      unmem( lines );
+      lines = newLines;
     }
     lines[ *lineCount ] = custom_strdup( line );
     ( *lineCount )++;
@@ -288,8 +291,10 @@ char* helper( u32 dimIndex,
           memset( emptyLine, ' ', width );
           emptyLine[ width ] = '\0';
 
-          blockLinesArray[ i ] = (char**)realloc( blockLinesArray[ i ],
-                                                  sizeof( char* ) * maxHeight );
+          char** tp = mem( maxHeight, char* );
+          memcpy( tp, blockLinesArray[ i ], currentHeight * sizeof( char* ) );
+          unmem( blockLinesArray[ i ] );
+          blockLinesArray[ i ] = tp;
           for( u32 j = currentHeight; j < maxHeight; j++ ){
             blockLinesArray[ i ][ j ] = custom_strdup( emptyLine );
           }
@@ -438,8 +443,11 @@ char* helper( u32 dimIndex,
           u32 currLen = strlen( blockLinesArray[ i ][ j ] );
           if( currLen < actualMaxWidth ){
             u32 diff = actualMaxWidth - currLen;
-            blockLinesArray[ i ][ j ] =
-              (char*)realloc( blockLinesArray[ i ][ j ], actualMaxWidth + 1 );
+
+            char* tp = mem( actualMaxWidth + 1, char );
+            memcpy( tp, blockLinesArray[ i ][ j ], currLen );
+            unmem( blockLinesArray[ i ][ j ] );
+            blockLinesArray[ i ][ j ] = tp;
             memset( blockLinesArray[ i ][ j ] + currLen, ' ', diff );
             blockLinesArray[ i ][ j ][ actualMaxWidth ] = '\0';
             // Optionally rtrim if you want to remove trailing spaces again
