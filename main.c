@@ -373,7 +373,7 @@ const GLchar* fragmentSource =
   "precision highp sampler2D;\n"
   "in vec2 fragCoord;\n"
   "out vec4 fragColor;\n"
-  "uniform sampler2D tex;\n"
+  "uniform sampler2DArray tex;\n"
   "uniform vec2 resolution;\n"
   "uniform vec4 strides;\n"
   "uniform vec4 shape;\n"
@@ -385,11 +385,11 @@ const GLchar* fragmentSource =
   "  float channel = mod( lindex, 4.0 );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x "
   ") ) + 0.25 ) / dims;\n"
-  "  vec4 texel = texture( tex, uv );\n"
+  "  vec4 texel = texture( tex, vec3( uv, 0 ) );\n"
   "  return texel[ int( channel ) ];\n"
   "}\n"
   "void main(){\n"
-  "  fragColor = texture( tex, gl_FragCoord.xy / resolution );\n"
+  "  fragColor = texture( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ) );\n"
   "}\n";
 
 // Function to compile shaders
@@ -533,7 +533,7 @@ int renderThreadFunction( void* data ){
 
     // Bind the texture to texture unit 0
     glActiveTexture( GL_TEXTURE0 );
-    glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->size - 1 ]->tex.texture );
+    glBindTexture( GL_TEXTURE_2D_ARRAY, ts->stack[ ts->size - 1 ]->tex.texture );
 
     // Set uniforms
     GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
@@ -642,7 +642,7 @@ void main_loop( void ){
 
   // Bind the texture to texture unit 0
   glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_2D, ts->stack[ ts->size - 1 ]->tex.texture );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, ts->stack[ ts->size - 1 ]->tex.texture );
 
   // Set uniforms
   GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );

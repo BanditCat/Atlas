@@ -57,8 +57,7 @@ void tensorToHostMemory( tensor* t ){
 
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
-  glFramebufferTexture2D(
-                         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
+  glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
   CHECK_GL_ERROR();
   GLenum format = GL_RGBA;
   if( t->tex.channels == 1 ) format = GL_RED;
@@ -110,44 +109,45 @@ void tensorToGPUMemory( tensor* t ){
   t->tex.channels = 0;
   
   glGenTextures( 1, &t->tex.texture );
-  glBindTexture( GL_TEXTURE_2D, t->tex.texture );
-  glTexImage2D( GL_TEXTURE_2D,
+  glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+  glTexImage3D( GL_TEXTURE_2D_ARRAY,
                 0,
                 GL_RGBA32F,
                 t->tex.width,
                 t->tex.height,
+                1,
                 0,
                 GL_RGBA,
                 GL_FLOAT,
                 NULL );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
   /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
   /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
 
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
-  glFramebufferTexture2D(
-                         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, t->tex.texture, 0 );
+  glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
 
   if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
     error( "%s", "Framebuffer is not complete." );
 
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-  glBindTexture( GL_TEXTURE_2D, t->tex.texture );
-  glTexSubImage2D( GL_TEXTURE_2D,
+  glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+  glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0,
                    0,
                    0,
                    0,
                    t->tex.width,
                    t->tex.height,
+                   1,
                    GL_RGBA,
                    GL_FLOAT,
                    paddedData );
-  glBindTexture( GL_TEXTURE_2D, 0 );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
 
   unmem( paddedData );
   if( t->ownsData ){
@@ -269,7 +269,7 @@ compute* makeCompute( const char* filename,
     uniform ivec4 _a_astrides;\n\
     uniform int _a_atoffset;\n\
     uniform ivec2 _a_adims;\n\
-    uniform sampler2D _a_atex;\n\
+    uniform sampler2DArray _a_atex;\n\
     float a( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_adims );\n\
       int lindex = _a_atoffset;\n\
@@ -278,16 +278,16 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_adims.x, pixel_index / _a_adims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_atex, uv );\n\
+      vec4 texel = texture( _a_atex, vec3( uv, 0.0 ) );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 af( vec2 uv ){\n\
-      return texture( _a_atex, uv / vec2( _a_adims )  );\n\
+      return texture( _a_atex, vec3( uv / vec2( _a_adims ), 0.0 ) );\n\
     }\n\
     uniform ivec4 _a_bstrides;\n\
     uniform int _a_btoffset;\n\
     uniform ivec2 _a_bdims;\n\
-    uniform sampler2D _a_btex;\n\
+    uniform sampler2DArray _a_btex;\n\
     float b( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_bdims );\n\
       int lindex = _a_btoffset;\n\
@@ -296,16 +296,16 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_bdims.x, pixel_index / _a_bdims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_btex, uv );\n\
+      vec4 texel = texture( _a_btex, vec3( uv, 0.0 ) );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 bf( vec2 uv ){\n\
-      return texture( _a_btex, uv / vec2( _a_bdims )  );\n\
+      return texture( _a_btex, vec3( uv / vec2( _a_bdims ), 0.0 ) );\n\
     }\n\
     uniform ivec4 _a_cstrides;\n\
     uniform int _a_ctoffset;\n\
     uniform ivec2 _a_cdims;\n\
-    uniform sampler2D _a_ctex;\n\
+    uniform sampler2DArray _a_ctex;\n\
     float c( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_cdims );\n\
       int lindex = _a_ctoffset;\n\
@@ -314,16 +314,16 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_cdims.x, pixel_index / _a_cdims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_ctex, uv );\n\
+      vec4 texel = texture( _a_ctex, vec3( uv, 0.0 ) );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 cf( vec2 uv ){\n\
-      return texture( _a_ctex, uv / vec2( _a_cdims )  );\n\
+      return texture( _a_ctex, vec3( uv / vec2( _a_cdims ), 0.0 ) );\n\
     }\n\
     uniform ivec4 _a_dstrides;\n\
     uniform int _a_dtoffset;\n\
     uniform ivec2 _a_ddims;\n\
-    uniform sampler2D _a_dtex;\n\
+    uniform sampler2DArray _a_dtex;\n\
     float d( ivec4 i ){\n\
       vec2 a_adims = vec2( _a_ddims );\n\
       int lindex = _a_dtoffset;\n\
@@ -332,11 +332,11 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_ddims.x, pixel_index / _a_ddims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_dtex, uv );\n\
+      vec4 texel = texture( _a_dtex, vec3( uv, 0.0 ) );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 df( vec2 uv ){\n\
-      return texture( _a_dtex, uv / vec2( _a_ddims ) );\n\
+      return texture( _a_dtex, vec3( uv / vec2( _a_ddims ), 0.0 ) );\n\
     }\n";
   
   // Fragment shader template
@@ -661,34 +661,34 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         CHECK_GL_ERROR();
         // Create OpenGL texture
         glGenTextures( 1, &ret->tex.texture );
-        glBindTexture( GL_TEXTURE_2D, ret->tex.texture );
+        glBindTexture( GL_TEXTURE_2D_ARRAY, ret->tex.texture );
         switch( compute->channels ){
         case 40:
-          glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, width, height, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
           break;
         case 0:
         case 4:
-          glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA32F, width, height, 1, 0, GL_RGBA, GL_FLOAT, NULL );
           break;
         case 10:
-          glTexImage2D( GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, 1, 0, GL_RED, GL_UNSIGNED_BYTE, NULL );
           break;
         case 1:
-          glTexImage2D( GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R32F, width, height, 1, 0, GL_RED, GL_FLOAT, NULL );
           break;
         case 2:
-          glTexImage2D( GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RG32F, width, height, 1, 0, GL_RG, GL_FLOAT, NULL );
           break;
         case 3:
-          glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGB32F, width, height, 1, 0, GL_RGB, GL_FLOAT, NULL );
           break;
         }       
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-        /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
-        /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        /* glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
+        /* glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
         
         CHECK_GL_ERROR();
         // Create framebuffer
@@ -699,11 +699,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   }
   glBindFramebuffer( GL_FRAMEBUFFER, rets[ 0 ]->tex.framebuffer );
   for( u32 i = 0; i < compute->retCount; ++i )
-    glFramebufferTexture2D( GL_FRAMEBUFFER,
-                            GL_COLOR_ATTACHMENT0 + i,
-                            GL_TEXTURE_2D,
-                            rets[ i ]->tex.texture,
-                            0 );
+    glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, rets[ i ]->tex.texture, 0, 0 );
 
   
 
@@ -722,7 +718,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   for( u32 i = 0; i < compute->argCount; ++i ){
     glActiveTexture( GL_TEXTURE0 + i );
     const tensor* at = ts->stack[ ( ts->size - 1 ) - i ];
-    glBindTexture( GL_TEXTURE_2D, at->tex.texture );
+    glBindTexture( GL_TEXTURE_2D_ARRAY, at->tex.texture );
     glUniform1i( compute->argTexLocation[ i ], i );
     glUniform2i( compute->argDimsLocation[ i ], at->tex.width, at->tex.height );
     glUniform4i( compute->argStridesLocation[ i ],
@@ -784,7 +780,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   for( u32 i = 0; i < compute->retCount; ++i )
     glFramebufferTexture2D( GL_FRAMEBUFFER,
                             GL_COLOR_ATTACHMENT0 + i,
-                            GL_TEXTURE_2D,
+                            GL_TEXTURE_2D_ARRAY,
                             0,
                             0 );
   //  glBindTexture( GL_TEXTURE_2D, 0 );
