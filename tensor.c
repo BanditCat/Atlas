@@ -1346,11 +1346,9 @@ void tensorEnsureContiguous( tensor* t ){
   if( tensorIsContiguous( t ) )
     return;  // Already contiguous, nothing to do.
 
-  printf("boop7!");
   
   f32* newData = mem( t->size, f32 );
 
-  printf("boop6!");
   u32 std_strides[ 4 ] = { 1, 1, 1, 1 };
   if( t->rank > 0 ){
     std_strides[ t->rank - 1 ] = 1;
@@ -1359,7 +1357,6 @@ void tensorEnsureContiguous( tensor* t ){
     }
   }
 
-  printf("boop5!");
   u32 indices[ 4 ] = { 0, 0, 0, 0 };
   for( u32 i = 0; i < t->size; ++i ){
     // Compute multi-dimensional index based on standard strides.
@@ -1378,25 +1375,21 @@ void tensorEnsureContiguous( tensor* t ){
     // Copy the element to the new data buffer.
     newData[ i ] = t->data[ src_idx ];
   }
-  printf("boop4!");
 
   // Free old data if owned.
   if( t->ownsData ){
     unmem( t->data );
   }
 
-  printf("boop3!");
   // Update tensor with new contiguous data.
   t->data = newData;
   t->offset = 0;
   t->ownsData = true;
 
-  printf("boop2!");
   // Update strides to standard.
   for( u32 i = 0; i < t->rank; ++i ){
     t->strides[ i ] = std_strides[ i ];
   }
-  printf("boop1!");
 }
 char* tensorToString( tensor* t ){
   if( t->rank != 1 )
