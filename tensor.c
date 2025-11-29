@@ -107,9 +107,15 @@ void tensorToHostMemory( tensor* t ){
     }
   }
 
+  t->offset = 0;
   t->data = hostData;
   t->gpu = false;
   t->ownsData = true;
+  u32 stride = 1;
+  for( int i = t->rank - 1; i >= 0; --i ){
+    t->strides[ i ] = stride;
+    stride *= t->shape[ i ];
+  }
 }
 void tensorToGPUMemory( tensor* t ){
   if( t == NULL )
@@ -125,7 +131,7 @@ void tensorToGPUMemory( tensor* t ){
   // Prepare padded data for texture upload
   f32* paddedData = mem( twidth * theight * 4, f32 );
   memset( paddedData, 0, twidth * theight * 4 * sizeof( f32 ) );
-  memcpy( paddedData, t->data, t->size * sizeof( f32 ) );
+  memcpy( paddedData, t->data + t->offset, t->size * sizeof( f32 ) );
 
   t->tex.width = twidth;
   t->tex.height = theight;
@@ -1335,11 +1341,12 @@ void tensorEnsureContiguous( tensor* t ){
   if( t == NULL )
     error( "%s", "Tensor is NULL in tensorEnsureContiguous." );
 
+  if( t->gpu )
+    tensorToHostMemory( t );
+
   if( tensorIsContiguous( t ) )
     return;  // Already contiguous, nothing to do.
 
-  if( t->gpu )
-    tensorToHostMemory( t );
 
   f32* newData = mem( t->size, f32 );
 
@@ -1482,6 +1489,7 @@ void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels ){
   tensor* t = ts->stack[ index ];
   if( !t ) error( "%s", "Tensor is NULL in tensorToTextureArray." );
   tensorEnsureContiguous( t );
+  dbg( "%s %f", "ddd ", t->data[ t->offset ] );
   
   if( t->rank != 4 ) error( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
   if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] / 10 != channels ) )
@@ -1498,18 +1506,20 @@ void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels ){
     case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
     default: error( "%s", "Unsupported channel format for textureArray." );
   }
-  dbg( "%s", "12322" );
+  dbg( "%s %f", "12322", 0.6 );
 
   // 4. Create Texture Array
   glGenTextures( 1, &t->tex.texture );
-  glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
-  dbg( "%s %p %u %u", "1232", t->data, width, t->offset );
+  //  glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+  dbg( "%s %f", "12322", 0.5 );
   
   // Allocation
-  float* tmp = mem( 10000000, float );
-  memcpy( tmp, t->data, 5 );
-  glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, tmp );
-  dbg( "%s", "123232" );
+  CHECK_GL_ERROR();
+  dbg( "%s %f", "12322", t->data[ t->offset ] );
+  glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, t->data + t->offset );
+  dbg( "%s %f", "12322", t->data[ t->offset ] );
+  //glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA32F, width, height, 1, 0, GL_RGBA, GL_FLOAT, NULL );
+  CHECK_GL_ERROR();
   
   // Mipmaps & Params
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
