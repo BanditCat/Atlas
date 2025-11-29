@@ -128,9 +128,9 @@ void tensorToGPUMemory( tensor* t ){
 
   // Prepare padded data for texture upload
   f32* paddedData = mem( twidth * theight * 4, f32 );
-  memcpy( paddedData, tdata, t->size * sizeof( f32 ) );
+  memcpy( paddedData, tdata + t->offset, t->size * sizeof( f32 ) );
 
-  
+  t->offset = 0;
   t->tex.width = twidth;
   t->tex.height = theight;
   t->tex.layers = 1;
