@@ -118,7 +118,7 @@ void tensorToGPUMemory( tensor* t ){
     error( "%s", "Tensor is NULL in tensorToGPUMemory." );
   if( t->gpu )
     return;
-  // tensorEnsureContiguous( t );
+  tensorEnsureContiguous( t );
 
   //  texture dimensions for GPU storage
   f32* tdata = t->data;
