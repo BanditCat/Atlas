@@ -118,7 +118,9 @@ void tensorToGPUMemory( tensor* t ){
     error( "%s", "Tensor is NULL in tensorToGPUMemory." );
   if( t->gpu )
     return;
-  // Calculate texture dimensions for GPU storage
+  tensorEnsureContiguous( t );
+
+  //  texture dimensions for GPU storage
   f32* tdata = t->data;
   u32 pixels = ( t->size + 3 ) / 4;  // RGBA = 4 floats per pixel
   u32 twidth = ceilf( sqrtf( (f32)pixels ) );
@@ -126,8 +128,9 @@ void tensorToGPUMemory( tensor* t ){
 
   // Prepare padded data for texture upload
   f32* paddedData = mem( twidth * theight * 4, f32 );
-  memcpy( paddedData, t->data, t->size * sizeof( f32 ) );
+  memcpy( paddedData, tdata, t->size * sizeof( f32 ) );
 
+  
   t->tex.width = twidth;
   t->tex.height = theight;
   t->tex.layers = 1;
@@ -1343,9 +1346,11 @@ void tensorEnsureContiguous( tensor* t ){
   if( tensorIsContiguous( t ) )
     return;  // Already contiguous, nothing to do.
 
-
+  printf("boop7!");
+  
   f32* newData = mem( t->size, f32 );
 
+  printf("boop6!");
   u32 std_strides[ 4 ] = { 1, 1, 1, 1 };
   if( t->rank > 0 ){
     std_strides[ t->rank - 1 ] = 1;
@@ -1354,6 +1359,7 @@ void tensorEnsureContiguous( tensor* t ){
     }
   }
 
+  printf("boop5!");
   u32 indices[ 4 ] = { 0, 0, 0, 0 };
   for( u32 i = 0; i < t->size; ++i ){
     // Compute multi-dimensional index based on standard strides.
@@ -1366,27 +1372,31 @@ void tensorEnsureContiguous( tensor* t ){
     // Compute source index based on current strides.
     size_t src_idx = t->offset;
     for( u32 dim = 0; dim < t->rank; ++dim ){
-      src_idx += indices[ dim ] * t->strides[ dim ];
+      src_idx += (s32)indices[ dim ] * t->strides[ dim ];
     }
 
     // Copy the element to the new data buffer.
     newData[ i ] = t->data[ src_idx ];
   }
+  printf("boop4!");
 
   // Free old data if owned.
   if( t->ownsData ){
     unmem( t->data );
   }
 
+  printf("boop3!");
   // Update tensor with new contiguous data.
   t->data = newData;
   t->offset = 0;
   t->ownsData = true;
 
+  printf("boop2!");
   // Update strides to standard.
   for( u32 i = 0; i < t->rank; ++i ){
     t->strides[ i ] = std_strides[ i ];
   }
+  printf("boop1!");
 }
 char* tensorToString( tensor* t ){
   if( t->rank != 1 )
