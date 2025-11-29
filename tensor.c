@@ -820,11 +820,11 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   CHECK_GL_ERROR();
   
   for( u32 i = 0; i < compute->retCount; ++i )
-    glFramebufferTexture2D( GL_FRAMEBUFFER,
-                            GL_COLOR_ATTACHMENT0 + i,
-                            GL_TEXTURE_2D_ARRAY,
-                            0,
-                            0 );
+    glFramebufferTextureLayer( GL_FRAMEBUFFER,
+                               GL_COLOR_ATTACHMENT0 + i,
+                               0,
+                               0,
+                               0 );
   //  glBindTexture( GL_TEXTURE_2D, 0 );
   // glBindBuffer( GL_UNIFORM_BUFFER, 0 );
   // glBindBufferBase( GL_UNIFORM_BUFFER, 0, 0 );
