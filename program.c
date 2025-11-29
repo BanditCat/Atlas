@@ -712,6 +712,18 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = TEXTURE;
     // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
 
+  } else if( !strncmp( command, "textureArray", 12 ) ){
+    char* sizep = command + 12;
+    u32 channels;
+    int charsread;
+    if( sscanf( sizep, "%u%n", &channels, &charsread ) == 1 && !sizep[ charsread ] ){
+      curStep->type = TEXTUREARRAY;
+      if( channels != 1 && channels != 10 && channels != 4 && channels != 40 )
+        error( "%s:%u command %u: %s", filename, linenum, commandnum, "textureArray statement with a bad channel count." );
+      curStep->var.size = channels; // Storing channel count in var.size
+    } else
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Malformed textureArray statement." );
+    
   } else if( !strcmp( command, "m" ) ){
     curStep->type = MULTM;
     // dbg( "Linenum %u commandnum %u: multm\n", linenum, commandnum );
@@ -1955,6 +1967,12 @@ bool runProgram( tensorStack* ts, program** progp ){
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
                "Expected a rank 1 length 3 vector for translation." );
       tensorTranslate( ts, ts->size - 1 );
+      break;
+    }
+    case TEXTUREARRAY: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to create texture array with empty stack." );
+      tensorToTextureArray( ts, ts->size - 1, s->var.size ); // var.size holds channels
       break;
     }
     case TEXTURE: {

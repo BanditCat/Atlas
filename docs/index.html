@@ -231,6 +231,7 @@
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
       <li><a href="#cmd-texture">texture</a></li>
+      <li><a href="#cmd-textureArray">textureArray</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
       <li><a href="#cmd-toString">toString</a></li>
       <li><a href="#cmd-translate">translate</a></li>
@@ -1097,6 +1098,11 @@ strides: 1 2
   <section id="cmd-texture">
     <h2>texture</h2>
     <p>This command takes the texture on top of the stack, which must be rank 3, 1 or 4 component like [512 512 4] or [256 256 1], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
+  </section>
+
+  <section id="cmd-textureArray">
+    <h2>textureArray</h2>
+    <p>This command takes the texture on top of the stack, which must be rank 4, 1 or 4 component like [512 512 512 4] or [256 32 256 1], and turns it into a 2d texture array suitable for use with the texture command to produce mipmaps.  These textures can be sampled from using the overloaded af,bf,cf,df( vec3 ) versions.  This command takes a single numeric argument, channels, which matches the c compute command: 1 for a single channel float, 10 for a single channel u8 normalized, 4 for an float vec4, and 40 for the rgba u8 version.</p>
   </section>
 
   <section id="cmd-timeDelta">

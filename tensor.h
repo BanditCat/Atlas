@@ -22,7 +22,7 @@ typedef struct{
       GLuint texture;        // OpenGL texture for reading/writing operations
       GLuint framebuffer;    // Framebuffer for rendering into the texture
       GLuint depthbuffer;    // Depth buffer for depth testing.
-      u32 width, height, channels; // If channels is non-zero, its a texture.
+      u32 width, height, layers, channels; // If channels is non-zero, its a texture.
     } tex;
   };
   bool ownsData;
@@ -95,4 +95,4 @@ void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex );
 void tensorTranslate( tensorStack* ts, u32 index );
 void tensorProject( tensorStack* ts, u32 index );
 void tensorOrtho( tensorStack* ts, u32 index );
-
+void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels );

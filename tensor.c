@@ -49,27 +49,50 @@ void tensorToHostMemory( tensor* t ){
   if( !t->gpu )
     return;
 
+  // hostData is allocated for the EXACT tensor size
   f32* hostData = mem( t->size, f32 );
+
   u64 mult = t->tex.channels;
-  if( !mult ) mult = 4;
-  f32* tempData =
-    mem( t->tex.width * t->tex.height * mult, f32 );  // RGBA channels
+  if( mult > 10 )
+    mult /= 10;
+  if( !mult ) mult = 4; // Generic storage is RGBA (4 floats)
+  
+  // layerElementCount is the TEXTURE size (which may include padding)
+  u32 layerElementCount = t->tex.width * t->tex.height * mult;
+  f32* tempData =  mem( layerElementCount, f32 ); 
 
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
   CHECK_GL_ERROR();
+  
   GLenum format = GL_RGBA;
   if( t->tex.channels == 1 ) format = GL_RED;
   if( t->tex.channels == 2 ) format = GL_RG;
   if( t->tex.channels == 3 ) format = GL_RGB;
     
-  glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
-  CHECK_GL_ERROR();
-  //  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-  CHECK_GL_ERROR();
+  for( u32 i = 0; i < t->tex.layers; ++i ){
+    glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i );
+    // Reads the full texture (data + padding) into tempData
+    glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
+    
+    // --- FIX START ---
+    u64 offset = (u64)i * layerElementCount;
+    u64 elementsToCopy = layerElementCount;
 
-  memcpy( hostData, tempData, t->size * sizeof( f32 ) );
+    // Clamp copy size so we don't write texture padding into host memory
+    if( offset + elementsToCopy > t->size ){
+        if( offset >= t->size ) {
+            elementsToCopy = 0;
+        } else {
+            elementsToCopy = t->size - offset;
+        }
+    }
+
+    memcpy( hostData + offset, tempData, elementsToCopy * sizeof( f32 ) );
+    // --- FIX END ---
+  }
+  CHECK_GL_ERROR();
 
   unmem( tempData );
 
@@ -106,6 +129,7 @@ void tensorToGPUMemory( tensor* t ){
 
   t->tex.width = twidth;
   t->tex.height = theight;
+  t->tex.layers = 1;
   t->tex.channels = 0;
   
   glGenTextures( 1, &t->tex.texture );
@@ -284,6 +308,9 @@ compute* makeCompute( const char* filename,
     vec4 af( vec2 uv ){\n\
       return texture( _a_atex, vec3( uv / vec2( _a_adims ), 0.0 ) );\n\
     }\n\
+    vec4 af( vec3 uv ){\n\
+      return texture( _a_atex, vec3( uv.xy / vec2( _a_adims ), uv.z ) );\n\
+    }\n\
     uniform ivec4 _a_bstrides;\n\
     uniform int _a_btoffset;\n\
     uniform ivec2 _a_bdims;\n\
@@ -301,6 +328,9 @@ compute* makeCompute( const char* filename,
     }\n\
     vec4 bf( vec2 uv ){\n\
       return texture( _a_btex, vec3( uv / vec2( _a_bdims ), 0.0 ) );\n\
+    }\n\
+    vec4 bf( vec3 uv ){\n\
+      return texture( _a_btex, vec3( uv.xy / vec2( _a_bdims ), uv.z ) );\n\
     }\n\
     uniform ivec4 _a_cstrides;\n\
     uniform int _a_ctoffset;\n\
@@ -320,6 +350,9 @@ compute* makeCompute( const char* filename,
     vec4 cf( vec2 uv ){\n\
       return texture( _a_ctex, vec3( uv / vec2( _a_cdims ), 0.0 ) );\n\
     }\n\
+    vec4 cf( vec3 uv ){\n\
+      return texture( _a_ctex, vec3( uv.xy / vec2( _a_cdims ), uv.z ) );\n\
+    }\n\
     uniform ivec4 _a_dstrides;\n\
     uniform int _a_dtoffset;\n\
     uniform ivec2 _a_ddims;\n\
@@ -337,6 +370,9 @@ compute* makeCompute( const char* filename,
     }\n\
     vec4 df( vec2 uv ){\n\
       return texture( _a_dtex, vec3( uv / vec2( _a_ddims ), 0.0 ) );\n\
+    }\n\
+    vec4 df( vec3 uv ){\n\
+      return texture( _a_dtex, vec3( uv.xy / vec2( _a_ddims ), uv.z ) );\n\
     }\n";
   
   // Fragment shader template
@@ -657,6 +693,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         }
         ret->tex.width = width;
         ret->tex.height = height;
+        ret->tex.layers = 1;
 
         CHECK_GL_ERROR();
         // Create OpenGL texture
@@ -1440,4 +1477,68 @@ void tensorOrtho( tensorStack* ts, u32 index ){
   ret[ 12 ] = 0;          ret[ 13 ] = 0;          ret[ 14 ] = 0;                      ret[ 15 ] = 1;
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
+}
+void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels ){
+  tensor* t = ts->stack[ index ];
+  if( !t ) error( "%s", "Tensor is NULL in tensorToTextureArray." );
+  tensorEnsureContiguous( t );
+  
+  if( t->rank != 4 ) error( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
+  if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] / 10 != channels ) )
+    error( "%s", "tensorToTextureArray called with a bad channel count." );
+  u32 width = t->shape[ 0 ];
+  u32 height = t->shape[ 1 ];
+  u32 layers = t->shape[ 2 ];
+  
+  GLenum internalFormat, format, type;
+  switch( channels ){
+    case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
+    case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
+    case 10: internalFormat = GL_R8; format = GL_RED; type = GL_UNSIGNED_BYTE; break;
+    case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
+    default: error( "%s", "Unsupported channel format for textureArray." );
+  }
+  dbg( "%s", "12322" );
+
+  // 4. Create Texture Array
+  glGenTextures( 1, &t->tex.texture );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+  dbg( "%s %p %u %u", "1232", t->data, width, t->offset );
+  
+  // Allocation
+  float* tmp = mem( 10000000, float );
+  memcpy( tmp, t->data, 5 );
+  glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, tmp );
+  dbg( "%s", "123232" );
+  
+  // Mipmaps & Params
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+  glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+  
+  dbg( "%s", "123" );
+
+  glGenFramebuffers( 1, &t->tex.framebuffer );
+  glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+  glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+
+  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+    error( "%s", "Framebuffer is not complete." );
+
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+  // 5. Update Tensor State
+  // We free the CPU data because we moved it to the GPU
+  if( t->ownsData ) unmem( t->data );
+  
+  t->gpu = true;
+  t->ownsData = true;
+  t->tex.width = width;
+  t->tex.height = height;
+  t->tex.layers = layers;
+  t->tex.channels = channels; 
 }

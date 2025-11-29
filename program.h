@@ -67,6 +67,7 @@ typedef struct{
     SET, // documented
     GET, // documented
     TEXTURE, // documented
+    TEXTUREARRAY, // documented
     WINDOWSIZE, // documented
     WORKSPACE // documented
   } type;

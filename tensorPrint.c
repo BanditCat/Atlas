@@ -503,12 +503,12 @@ char* helper( u32 dimIndex,
 
 // Main function to format tensor data
 char* formatTensorData( tensor* t ){
-  if( t->gpu && t->tex.channels != 0 ){
-    char* rets = "[texture]";
-    char* ret = mem( strlen( rets ) + 1, char );
-    strcpy( ret, rets );
-    return ret;
-  }
+  /* if( t->gpu && t->tex.channels != 0 ){ */
+  /*   char* rets = "[texture]"; */
+  /*   char* ret = mem( strlen( rets ) + 1, char ); */
+  /*   strcpy( ret, rets ); */
+  /*   return ret; */
+  /* } */
   tensorToHostMemory( t );
   u32 shape_length = t->rank + 1;
   u32* shape = mem( shape_length, u32 );
