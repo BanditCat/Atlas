@@ -382,7 +382,7 @@ compute* makeCompute( const char* filename,
     #version 300 es\n\
     precision highp float;\n\
     precision highp int;\n\
-    precision highp sampler2D;\n\
+    precision highp sampler2DArray;\n\
     layout(location = 0) out %s _a_fragColor[ %u ];\n\
     uniform ivec2 _a_dims; // Texture dimensions\n\
     uniform ivec4 _a_strides; // Tensor shape\n\
