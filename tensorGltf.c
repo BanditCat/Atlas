@@ -175,61 +175,85 @@ tensor** loadGltfCooked(const char* filename, u32* outCount) {
 
   if (data->meshes_count == 0) error("No meshes found in %s", filename);
 
-  // Setup Animation Baking
+  // --- ANIMATION BAKING ---
   tensor* t_anim = NULL;
+  
+  // We need both skins and animations to do anything useful
   if (data->skins_count > 0 && data->animations_count > 0) {
     cgltf_skin* skin = &data->skins[0];
-    cgltf_animation* anim = &data->animations[0];
     u32 bone_count = skin->joints_count;
-    u32 fps = 30; // Bake rate
-        
-    f32 max_time = 0.0f;
-    for(int i=0; i<anim->samplers_count; ++i) {
-      if(anim->samplers[i].input->max[0] > max_time) 
-        max_time = anim->samplers[i].input->max[0];
-    }
-        
-    u32 frame_count = (u32)(max_time * fps) + 1;
-    if(frame_count == 0) frame_count = 1;
+    u32 anim_count = data->animations_count;
+    u32 fps = 30; 
 
-    // Allocate Animation Tensor: [Frames, Bones, 4, 4]
-    // Rank 4 tensor
-    u32 anim_shape[4] = {frame_count, bone_count, 4, 4};
-    f32* anim_data = mem(frame_count * bone_count * 16, f32);
-
-    // BAKE LOOP
-    for(u32 f=0; f<frame_count; ++f) {
-      f32 time = (f32)f / (f32)fps;
-            
-      for(u32 b=0; b<bone_count; ++b) {
-        cgltf_node* joint = skin->joints[b];
-                
-        // 1. Global Transform of Bone at Time T
-        mat4 global_pose = get_node_global_transform(joint, anim, time);
-                
-        // 2. Inverse Bind Matrix (Bind Pose -> Bone Space)
-        mat4 inv_bind = {0};
-        // Default to identity if IBM not present
-        inv_bind.m[0]=1; inv_bind.m[5]=1; inv_bind.m[10]=1; inv_bind.m[15]=1;
-        if(skin->inverse_bind_matrices) {
-          cgltf_accessor_read_float(skin->inverse_bind_matrices, b, inv_bind.m, 16);
-        }
-
-        // 3. Final Skin Matrix = Global * InvBind
-        mat4 skin_mat = mat4_mul(global_pose, inv_bind);
-                
-        // 4. Store in Tensor (Row-major in memory for simple upload, or standard layout)
-        // Tensor indexing: frame * (bones*16) + bone * 16
-        u32 idx = (f * bone_count * 16) + (b * 16);
-        memcpy(anim_data + idx, skin_mat.m, 16 * sizeof(f32));
+    // 1. Determine Global Max Duration across ALL animations
+    // We need a common 'Frame' dimension, so the tensor size is dictated by the longest clip.
+    f32 global_max_time = 0.0f;
+    for(u32 a=0; a<anim_count; ++a) {
+      cgltf_animation* anim = &data->animations[a];
+      for(int i=0; i<anim->samplers_count; ++i) {
+        if(anim->samplers[i].input->max[0] > global_max_time) 
+          global_max_time = anim->samplers[i].input->max[0];
       }
     }
+    
+    u32 frame_count = (u32)(global_max_time * fps) + 1;
+    if(frame_count == 0) frame_count = 1;
+
+    // 2. Allocate Tensor: [Frames, Bones, Anims, 16]
+    u32 anim_shape[4] = {frame_count, bone_count, anim_count, 16};
+    
+    // Total floats = Frames * Bones * Anims * 16
+    u32 total_floats = frame_count * bone_count * anim_count * 16;
+    f32* anim_data = mem(total_floats, f32);
+
+    // 3. BAKE LOOP
+    for(u32 f=0; f<frame_count; ++f) {
+      f32 time = (f32)f / (f32)fps;
+      
+      for(u32 b=0; b<bone_count; ++b) {
+        cgltf_node* joint = skin->joints[b];
+
+        // Cache Inverse Bind Matrix for this bone (same for all anims)
+        mat4 inv_bind = {0};
+        inv_bind.m[0]=1; inv_bind.m[5]=1; inv_bind.m[10]=1; inv_bind.m[15]=1; // Identity default
         
+        if(skin->inverse_bind_matrices) {
+           cgltf_accessor_read_float(skin->inverse_bind_matrices, b, inv_bind.m, 16);
+        }
+
+        // Iterate over all animations for this Frame/Bone combination
+        for(u32 a=0; a<anim_count; ++a) {
+           cgltf_animation* anim = &data->animations[a];
+
+           // A. Sample Global Transform
+           // Note: sample_node_at_time handles clamping if 'time' > anim duration
+           mat4 global_pose = get_node_global_transform(joint, anim, time);
+           
+           // B. Apply Inverse Bind: SkinMat = Global * InvBind
+           mat4 skin_mat = mat4_mul(global_pose, inv_bind);
+
+           // C. Calculate Index
+           // Layout: [Frame][Bone][Anim][Matrix]
+           // Stride for one Frame = (bone_count * anim_count * 16)
+           // Stride for one Bone  = (anim_count * 16)
+           // Stride for one Anim  = 16
+           
+           u32 idx = (f * bone_count * anim_count * 16) + 
+                     (b * anim_count * 16) + 
+                     (a * 16);
+
+           memcpy(anim_data + idx, skin_mat.m, 16 * sizeof(f32));
+        }
+      }
+    }
+    
     t_anim = newTensor(4, anim_shape, anim_data);
     tensorToGPUMemory(t_anim);
+
   } else {
-    // Dummy animation tensor if none exists (1 frame, 1 bone, identity)
-    u32 s[4] = {1,1,4,4};
+    // Dummy animation tensor if none exists: [1, 1, 1, 16] identity
+    // Adjusted to match new rank-4 structure
+    u32 s[4] = {1,1,1,16}; 
     f32* d = mem(16, f32);
     memset(d, 0, 16*sizeof(f32));
     d[0]=1; d[5]=1; d[10]=1; d[15]=1;
