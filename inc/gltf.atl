@@ -170,6 +170,8 @@ vec3 hsv2rgb(vec3 c) {
     vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
     return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
 }
+
+// Raw fetch
 mat4 getBoneMat(int frame, int bone, int anim) {
     return mat4(
         c(ivec4(frame, bone, anim, 0)), c(ivec4(frame, bone, anim, 1)), c(ivec4(frame, bone, anim, 2)), c(ivec4(frame, bone, anim, 3)),
@@ -177,6 +179,13 @@ mat4 getBoneMat(int frame, int bone, int anim) {
         c(ivec4(frame, bone, anim, 8)), c(ivec4(frame, bone, anim, 9)), c(ivec4(frame, bone, anim, 10)), c(ivec4(frame, bone, anim, 11)),
         c(ivec4(frame, bone, anim, 12)), c(ivec4(frame, bone, anim, 13)), c(ivec4(frame, bone, anim, 14)), c(ivec4(frame, bone, anim, 15))
     );
+}
+
+mat4 getLerpMat(int f0, int f1, int bone, int anim, float t) {
+    mat4 m0 = getBoneMat(f0, bone, anim);
+    mat4 m1 = getBoneMat(f1, bone, anim);
+    // Manual lerp: result = start * (1 - t) + end * t
+    return m0 * (1.0 - t) + m1 * t; 
 }
 out vec3 color;
 out vec3 normal;
@@ -192,15 +201,23 @@ vec4 weights = vec4( a( ivec4( index, 12, 0, 0 ) ), a( ivec4( index, 13, 0, 0 ) 
                      a( ivec4( index, 15, 0, 0 ) ) );
 float mat = a( ivec4( index, 16, 0, 0 ) );
 
-int frameCount = 90; // or however many frames you baked, maybe pass as uniform
-int frame = int(mod(lrot.x / 30.0, float(frameCount))); // 30 fps playback
-int anim = int(mod(lrot.y / 30.0, float(frameCount))) % int( animCount ); // 30 fps playback
+int frameCount = 90; 
+
+// Animation Logic
+float playHead = mod(lrot.x / 30.0, float(frameCount));
+int f0 = int(playHead);
+int f1 = (f0 + 1) % frameCount; 
+float t = fract(playHead);
+
+int anim = int(mod(lrot.y / 30.0, float(frameCount))) % int( animCount ); 
 
 ivec4 bi = ivec4(bones);
-mat4 skin = getBoneMat(frame, bi.x, anim) * weights.x +
-            getBoneMat(frame, bi.y, anim) * weights.y +
-            getBoneMat(frame, bi.z, anim) * weights.z +
-            getBoneMat(frame, bi.w, anim) * weights.w;
+
+// Blend the blend
+mat4 skin = getLerpMat(f0, f1, bi.x, anim, t) * weights.x +
+            getLerpMat(f0, f1, bi.y, anim, t) * weights.y +
+            getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
+            getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
 
 v = skin * v;
 normal = mat3(skin) * normal;

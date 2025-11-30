@@ -164,15 +164,46 @@ mat4 get_node_global_transform(cgltf_node* node, cgltf_animation* anim, f32 time
 // Returns array of 3 tensors: [0]=Vertices, [1]=Indices, [2]=Animation(or NULL)
 // Output Animation Tensor Shape: [Frames, Bones, 4, 4]
 tensor** loadGltfCooked(const char* filename, u32* outCount) {
+
+  FILE* file = fopen(filename, "rb");
+  if (!file) error("ATLAS: Could not open file: %s", filename);
+
+  // 2. Get exact size
+  fseek(file, 0, SEEK_END);
+  long fileSize = ftell(file);
+  fseek(file, 0, SEEK_SET);
+
+  if (fileSize <= 0) error("ATLAS: File is empty or invalid: %s", filename);
+
+  // 3. Read into memory buffer
+  void* fileData = malloc(fileSize);
+  size_t readSize = fread(fileData, 1, fileSize, file);
+  fclose(file);
+
+  if (readSize != fileSize) {
+    // This often happens in web if the virtual file system lies about size
+    printf("ATLAS WARNING: Read size mismatch. Expected %ld, got %zu. Proceeding anyway.\n", fileSize, readSize);
+  }
+
+  // 4. Parse from MEMORY (Bypasses cgltf's fopen/fread logic)
   cgltf_options options = {0};
   cgltf_data* data = NULL;
-    
-  if (cgltf_parse_file(&options, filename, &data) != cgltf_result_success) 
-    error("Failed to parse GLTF: %s", filename);
-    
-  if (cgltf_load_buffers(&options, data, filename) != cgltf_result_success) 
-    error("Failed to load GLTF buffers: %s", filename);
+  cgltf_result presult = cgltf_parse(&options, fileData, fileSize, &data);
 
+  if (presult != cgltf_result_success) {
+    // Debugging the magic number is often the smoking gun
+    unsigned char* b = (unsigned char*)fileData;
+    error("ATLAS: cgltf_parse failed (Code: %d). Header: %02X %02X %02X %02X", 
+          presult, b[0], b[1], b[2], b[3]);
+  }
+
+  // 5. Load buffers (For GLB, this just points to internal memory usually)
+  // Note: We already have the data in 'fileData', but cgltf might need to know the path for external refs.
+  // For a standard GLB, the BIN chunk is inside 'fileData', which cgltf_parse usually handles.
+  presult = cgltf_load_buffers(&options, data, filename);
+  if (presult != cgltf_result_success)
+    error( "%s", "ATLAS: Failed to load buffers" );
+ 
   if (data->meshes_count == 0) error("No meshes found in %s", filename);
 
   // --- ANIMATION BAKING ---
