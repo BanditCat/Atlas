@@ -160,7 +160,7 @@ depth;backface;
 
 
 
-gltf'inc/catlas.glb';1;dup;shape;first;
+gltf'inc\catlas.glb';1;dup;shape;first;
 3;dup;shape;[2 3 0];s;animCount= 1;
 
 4;dup;shape;
