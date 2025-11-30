@@ -268,7 +268,7 @@ tensor** loadGltfCooked(const char* filename, u32* outCount) {
   // First pass: count total vertices and indices across all meshes/primitives
   u32 total_verts = 0;
   u32 total_indices = 0;
-  u32 total_prims = 0;
+  //u32 total_prims = 0;
 
   for (u32 m = 0; m < data->meshes_count; ++m) {
     cgltf_mesh* mesh = &data->meshes[m];
@@ -280,7 +280,7 @@ tensor** loadGltfCooked(const char* filename, u32* outCount) {
       if (prim->indices) {
         total_indices += prim->indices->count;
       }
-      total_prims++;
+      //total_prims++;
     }
   }
 
