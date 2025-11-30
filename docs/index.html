@@ -206,6 +206,7 @@
       <li><a href="#cmd-first">first / last</a></li>
       <li><a href="#cmd-gamepad">gamepad</a></li>
       <li><a href="#cmd-get">get</a></li>
+      <li><a href="#cmd-gltf">gltf</a></li>
       <li><a href="#cmd-if">if / ifn</a></li>
       <li><a href="#cmd-img">img (image)</a></li>
       <li><a href="#cmd-include">include</a></li>
@@ -733,6 +734,11 @@ strides:
     <p>Gets a named variable and pushes it onto the stack as a tensor. For example 
       <pre><code>get'vec';</code></pre>
       would get a variable named <code>vec</code> and push it onto the stack. The variable name may be used directly: instead of using <code>get'foo'</code> you can just use <code>foo</code>.</p>
+  </section>
+
+  <section id="cmd-gltf">
+    <h2>gltf</h2>
+    <p>The gltf command takes one immediate string parameter, like <pre><code>gltf'filename.glb'</code></pre>, and produces 4 tensors; the vertex data, the index data, the bones x keyframes x animations data, and the texture array.</p>
   </section>
 
   <section id="cmd-if">

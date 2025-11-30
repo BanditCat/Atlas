@@ -25,6 +25,7 @@ typedef struct{
     FLOOR, // documented
     CEIL, // documented
     MINMAX, // documented
+    GLTF, // documented
     TOSTRING, // documented
     RTD, // documented
     BURY, // documented
@@ -73,6 +74,12 @@ typedef struct{
   } type;
   union{
     tensor* tensor;
+    struct{
+      tensor* verts;
+      tensor* indices;
+      tensor* bones;
+      tensor* material;
+    } gltf;
     struct{
       u32 retCount; 
       u32 argCount;

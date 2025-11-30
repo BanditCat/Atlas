@@ -39,6 +39,9 @@ l'go7';
 load'inc\klein.atl';
 l'go8';
 0;dup;[38 39 0];s;first;ifn'go9';
-load'inc\catlas.atl';
+load'inc\gltf.atl';
 l'go9';
+0;dup;[39 40 0];s;first;ifn'go0';
+load'inc\catlas.atl';
+l'go0';
 pop; // pop keys

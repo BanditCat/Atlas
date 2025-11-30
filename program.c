@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Atlas.h"
+#include "tensorGltf.h"
 
 void preprocessComputeCommands( char* prog ){
   char* ptr = prog;
@@ -526,7 +527,39 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              "Extra characters after img statement." );
     // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
     // imgName );
+    
+  } else if( !strncmp( command, "gltf'", 5 ) ){ // gltf
+    char* starti = command + 5;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty gltf statement." );
+    if( *endi != '\'' )
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Unmatched quote in gltf statement." );
+    char* gltfName = mem( 1 + endi - starti, char );
+    memcpy( gltfName, starti, endi - starti );
+    gltfName[ endi - starti ] = '\0';
+    
+    curStep->type = GLTF;
+    
+    u32 count = 0;
+    tensor** loaded = loadGltfCooked( gltfName, &count );
+    unmem( gltfName );
 
+    if( count >= 3 ) {
+        curStep->gltf.verts = loaded[0];
+        curStep->gltf.indices = loaded[1];
+        curStep->gltf.bones = loaded[2];
+        curStep->gltf.material = (count > 3) ? loaded[3] : NULL;
+    } else {
+        error("%s:%u command %u: Failed to load enough tensors from GLTF.", filename, linenum, commandnum);
+    }
+    unmem(loaded); 
+
+    if( *( endi + 1 ) )
+      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Extra characters after gltf statement." );
+      
   }else if( !strcmp( command, "load" ) ){
     curStep->type = LOAD;
     curStep->progName = NULL;    
@@ -1405,6 +1438,11 @@ void deleteProgram( program* p ){
     else if( p->steps[ i ].type == TENSOR ){
       deleteTensor( p->steps[ i ].tensor );
       p->steps[ i ].tensor = NULL;
+    } else if( p->steps[ i ].type == GLTF ){
+      deleteTensor( p->steps[ i ].gltf.verts );
+      deleteTensor( p->steps[ i ].gltf.indices );
+      deleteTensor( p->steps[ i ].gltf.bones );
+      deleteTensor( p->steps[ i ].gltf.material );
     }
   }
   deleteTrieNode( p->labels );
@@ -1794,6 +1832,12 @@ bool runProgram( tensorStack* ts, program** progp ){
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
       break;
+    case GLTF:
+      if( s->gltf.material ) push( ts, copyTensor( s->gltf.material ) );
+      if( s->gltf.bones )    push( ts, copyTensor( s->gltf.bones ) );
+      if( s->gltf.indices )  push( ts, copyTensor( s->gltf.indices ) );
+      if( s->gltf.verts )    push( ts, copyTensor( s->gltf.verts ) );
+      break;      
     case PRINT:
       printStack( ts );
       // dbg( "%s", "print" );

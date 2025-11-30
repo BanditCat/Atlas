@@ -1,0 +1,231 @@
+include'inc\stdlib.atl';
+'inc\\catlas.atl';
+include'inc\nav.atl';
+size;if'started'; // init code goes here
+
+
+
+[1024];dim= 1; // constants
+[0.2];hscale= 1;
+[0.5];hscale;[2];/;0;cat;[0.5];0;cat;hmapCenter= 3;
+[0.05];waterLevel= 1;
+[30.0];waterFogScale= 1;
+[0.0 0.15 0.25];waterColor= 3;
+[2048 2048 1];shadowSize= 3;
+[0.001];shadowBias= 1;
+[50];softShadows= 1;
+[0];timer= 1;
+
+
+dim;first;2;rep;set'texsize' 2;
+img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
+6;[1];ttexsize;0;cat;[4];0;cat;
+c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
+                    a( ivec4( 0, tf.y, 1, 0 ) ),  
+                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
+dim;first;4;std.fractalNoise;
+// get minmax
+0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
+
+
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 10 0;texture;
+[150 400];set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
+set'lightRotation' 16;
+
+std.nav3d;
+[0.5 1.0 2.0];std.origin= 3;
+[150 400];std.3dnavParam=;
+
+6;windowSize;[4];0;cat;
+c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
+
+
+l'started'; // init code complete
+timer;timeDelta;e;+;timer= 1;
+// Stack here: prevFrame, heightMap, gradient
+
+
+
+
+
+
+
+std.nav3d;std.3dnavParam;set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
+0;dup;
+set'lightRotation' 16;
+0;dup;[0 1];t;
+set'lightUnrotation' 16;
+[0 0 -1 0];m;unext;[0 3 0];s;[1 -1 1];*;lightDir= 3;
+[-0.72 0.72 -0.72 0.72 1.0 5.0];ortho;orthoproj= 16;
+
+
+
+// Stack here: prevFrame, heightMap, gradient
+
+2;dup;2;dup; // duplicate terrain and heightmap
+windowSize;set'wdims' 2;
+wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
+
+
+
+
+
+[90];windowSize;0;cat;[0.01 3];0;cat;proj;proj= 16;
+
+// Stack here: the arguments (heightmapcopy, gradientcopy, prevFrame), heightMap, gradient
+depth;backface;
+6;dim;dim;*;first;*;windowSize;[4];0;cat;
+c'
+vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+out vec3 color;
+out vec3 worldPos;
+out vec3 normal;
+'
+int index = gl_VertexID / 6;
+int x = index / int( dim );
+int y = index - x * int( dim );
+vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
+v.z = af( v.xy ).x * hscale;
+vec2 c = vec2( 0.0, ( v.z / hscale ) * ttexsize );
+color = bf( c ).rgb;
+
+float leftSample = af( v.xy - vec2( 1.0, 0.0 ) ).x * hscale;
+float rightSample = af( v.xy + vec2( 1.0, 0.0 ) ).x * hscale;
+vec3 nrml1 = vec3( 2.0 / dim, 0.0, leftSample - rightSample );
+float upSample = af( v.xy - vec2( 0.0, 1.0 ) ).x * hscale;
+float downSample = af( v.xy + vec2( 0.0, 1.0 ) ).x * hscale;
+vec3 nrml2 = vec3( 0.0, 2.0 / dim, upSample - downSample );
+normal = normalize( cross( nrml1, nrml2 ) ).yzx;
+
+
+v.xy /= dim;
+worldPos = v.yzx;
+ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
+'
+in vec3 color;
+in vec3 worldPos;
+in vec3 normal;
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+vec3 d = worldPos - std_origin;
+vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+lightPos /= lightPos.w;
+lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
+float curDepth = lightPos.z;
+
+
+float len = length( d );
+float t = ( waterLevel - std_origin.y ) / d.y;
+if( d.y > 0.0 )
+  t = 1.0;
+float waterDepth = len * ( 1.0 - t );
+float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
+float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
+ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
+'
+3 1 40 0;
+
+6;1;dup;shape;c''''
+vec3 ray = normalize(
+    vec3(
+      ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+      -1.0
+    )
+);
+ray = ( std_worldRotation * vec4( ray, 1.0 ) ).xyz;
+float skyness = clamp( dot( ray, vec3( 0.0, 1.0, 0.0 ) ) * 5.0 + 2.3, 0.0, 1.0 );
+vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
+                     vec3( 0.1, 0.2, 0.9 ),
+                     clamp( dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ), 0.0, 1.0 ) );
+float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
+skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
+ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
+' 0 1 40 1;
+depth;backface;
+
+
+
+
+gltf'art/catlas.glb';1;dup;shape;first;
+
+4;dup;shape;
+depth;backface;
+c'
+vec3 hsv2rgb(vec3 c) {
+    vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
+    return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+}
+mat4 getBoneMat(int frame, int bone) {
+    return mat4(
+        c(ivec4(frame, bone, 0, 0)), c(ivec4(frame, bone, 0, 1)), c(ivec4(frame, bone, 0, 2)), c(ivec4(frame, bone, 0, 3)),
+        c(ivec4(frame, bone, 1, 0)), c(ivec4(frame, bone, 1, 1)), c(ivec4(frame, bone, 1, 2)), c(ivec4(frame, bone, 1, 3)),
+        c(ivec4(frame, bone, 2, 0)), c(ivec4(frame, bone, 2, 1)), c(ivec4(frame, bone, 2, 2)), c(ivec4(frame, bone, 2, 3)),
+        c(ivec4(frame, bone, 3, 0)), c(ivec4(frame, bone, 3, 1)), c(ivec4(frame, bone, 3, 2)), c(ivec4(frame, bone, 3, 3))
+    );
+}
+out vec3 color;
+out vec3 normal;
+out vec2 uv;
+'
+int index = int( b( ivec4( gl_VertexID, 0, 0, 0 ) ) );
+vec4 v = vec4( a( ivec4( index, 0, 0, 0 ) ), a( ivec4( index, 1, 0, 0 ) ), a( ivec4( index, 2, 0, 0 ) ), 1.0 );
+normal = vec3( a( ivec4( index, 3, 0, 0 ) ), a( ivec4( index, 4, 0, 0 ) ), a( ivec4( index, 5, 0, 0 ) ) );
+uv = vec2( a( ivec4( index, 6, 0, 0 ) ), a( ivec4( index, 7, 0, 0 ) ) );
+vec4 bones = vec4( a( ivec4( index, 8, 0, 0 ) ), a( ivec4( index, 9, 0, 0 ) ), a( ivec4( index, 10, 0, 0 ) ),
+                   a( ivec4( index, 11, 0, 0 ) ) );
+vec4 weights = vec4( a( ivec4( index, 12, 0, 0 ) ), a( ivec4( index, 13, 0, 0 ) ), a( ivec4( index, 14, 0, 0 ) ),
+                     a( ivec4( index, 15, 0, 0 ) ) );
+float mat = a( ivec4( index, 16, 0, 0 ) );
+
+int frameCount = 90; // or however many frames you baked, maybe pass as uniform
+int frame = int(mod(lrot.x / 30.0, float(frameCount))); // 30 fps playback
+
+ivec4 bi = ivec4(bones);
+mat4 skin = getBoneMat(frame, bi.x) * weights.x +
+            getBoneMat(frame, bi.y) * weights.y +
+            getBoneMat(frame, bi.z) * weights.z +
+            getBoneMat(frame, bi.w) * weights.w;
+
+v = skin * v;
+normal = mat3(skin) * normal;
+
+color = hsv2rgb( vec3( mat / 10.0, 1.0, 1.0 ) );
+ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
+'
+in vec3 color;
+in vec3 normal;
+in vec2 uv;
+'
+ret[ 0 ] = vec4( dot( normal, lightDir ) * color, 1.0 );
+' 3 1 40 1;
+depth;backface;
+
+//////////////////////////////////////////////////////////////////
+// Help and framerate
+
+std.keyState;[58 59 0];s;first;ifn'skipf1';
+'Click and drag: rotate view                     ';e;
+'Right click: fly forward                        ';e;0;cat;
+'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
+'Mouse wheel: change fly speed                   ';e;0;cat;
+'Hold f key and drag mouse: change light location';e;0;cat;
+std.textToTexture;std.blitText;
+l'skipf1';
+std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+1;timeDelta;/;toString;e;
+std.textToTexture;std.blitText;
+l'skipf2';
