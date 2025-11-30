@@ -307,7 +307,7 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_adims.x, pixel_index / _a_adims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_atex, vec3( uv, 0.0 ) );\n\
+      vec4 texel = textureLod( _a_atex, vec3( uv, 0.0 ), 0.0 );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 af( vec2 uv ){\n\
@@ -328,7 +328,7 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_bdims.x, pixel_index / _a_bdims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_btex, vec3( uv, 0.0 ) );\n\
+      vec4 texel = textureLod( _a_btex, vec3( uv, 0.0 ), 0.0 );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 bf( vec2 uv ){\n\
@@ -349,7 +349,7 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_cdims.x, pixel_index / _a_cdims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_ctex, vec3( uv, 0.0 ) );\n\
+      vec4 texel = textureLod( _a_ctex, vec3( uv, 0.0 ), 0.0 );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 cf( vec2 uv ){\n\
@@ -370,7 +370,7 @@ compute* makeCompute( const char* filename,
       int pixel_index = lindex / 4;\n\
       int channel = lindex % 4;\n\
       vec2 uv = ( vec2( pixel_index % _a_ddims.x, pixel_index / _a_ddims.x ) + 0.5 ) / a_adims;\n\
-      vec4 texel = texture( _a_dtex, vec3( uv, 0.0 ) );\n\
+      vec4 texel = textureLod( _a_dtex, vec3( uv, 0.0 ), 0.0 );\n\
       return texel[ int( channel ) ];\n\
     }\n\
     vec4 df( vec2 uv ){\n\

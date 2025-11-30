@@ -385,11 +385,11 @@ const GLchar* fragmentSource =
   "  float channel = mod( lindex, 4.0 );\n"
   "  vec2 uv = ( vec2( mod( pixel_index, dims.x ), floor( pixel_index / dims.x "
   ") ) + 0.25 ) / dims;\n"
-  "  vec4 texel = texture( tex, vec3( uv, 0 ) );\n"
+  "  vec4 texel = textureLod( tex, vec3( uv, 0 ), 0.0 );\n"
   "  return texel[ int( channel ) ];\n"
   "}\n"
   "void main(){\n"
-  "  fragColor = texture( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ) );\n"
+  "  fragColor = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), 0.0 );\n"
   "}\n";
 
 // Function to compile shaders
