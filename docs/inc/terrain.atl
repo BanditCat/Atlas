@@ -183,7 +183,7 @@ float sunDist = dot( rcrayo, rotsun - std_origin ) > 0.0 ? 2.0 - 5.0 * length( c
 float height = (sampleHeight( rcray.xy )-0.32) / 0.37;
 vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
                    b( ivec4( 0.0, (height) * ttexsize, 1.0, 0.0 ) ),
-		   b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) );
+		               b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) );
 
 
 color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),

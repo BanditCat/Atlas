@@ -81,11 +81,11 @@ void tensorToHostMemory( tensor* t ){
     u64 elementsToCopy = layerElementCount;
 
     if( offset + elementsToCopy > t->size ){
-        if( offset >= t->size ) {
-            elementsToCopy = 0;
-        } else {
-            elementsToCopy = t->size - offset;
-        }
+      if( offset >= t->size ) {
+        elementsToCopy = 0;
+      } else {
+        elementsToCopy = t->size - offset;
+      }
     }
 
     memcpy( hostData + offset, tempData, elementsToCopy * sizeof( f32 ) );
@@ -1217,60 +1217,60 @@ Uint32 getPixel( SDL_Surface* surface, int x, int y ){
   }
 }
 tensor* tensorFromImageFile( const char* filename ){
-    int w, h, channels;
+  int w, h, channels;
     
-    // Force loading as 4 channels (RGBA), regardless of input format
-    unsigned char* pixels = stbi_load(filename, &w, &h, &channels, 4);
+  // Force loading as 4 channels (RGBA), regardless of input format
+  unsigned char* pixels = stbi_load( filename, &w, &h, &channels, 4 );
     
-    if( !pixels ) {
-        error( "Unable to load image file: %s\nReason: %s\n", filename, stbi_failure_reason() );
+  if( !pixels ) {
+    error( "Unable to load image file: %s\nReason: %s\n", filename, stbi_failure_reason() );
+  }
+
+  tensor* ret = mem( 1, tensor );
+  ret->size = w * h * 4;
+    
+  // Shape: [Width, Height, 4]
+  ret->shape[ 0 ] = w;
+  ret->shape[ 1 ] = h;
+  ret->shape[ 2 ] = 4;
+  ret->shape[ 3 ] = 1;
+    
+  ret->rank = 3;
+
+  // Strides for Column-Major Layout (X is outer dimension)
+  // index = (x * h + y) * 4 + c
+  ret->strides[ 0 ] = h * 4;
+  ret->strides[ 1 ] = 4;
+  ret->strides[ 2 ] = 1;
+  ret->strides[ 3 ] = 1;
+
+  ret->data = mem( ret->size, f32 );
+  ret->ownsData = true;
+
+  // Convert Row-Major (stb) to Column-Major + Y-Flip (Atlas)
+  for( u32 x = 0; x < w; ++x ){
+    for( u32 y = 0; y < h; ++y ){
+      // Source Index (stb is Row-Major: y * w + x)
+      // We read 'y' directly (top-down)
+      u32 src_idx = ( y * w + x ) * 4;
+
+      // Dest Index (Atlas is Column-Major: x * h + y)
+      // We write 'y' flipped (bottom-up) for OpenGL coords
+      u32 dest_y = h - 1 - y; 
+      u32 dest_idx = ( x * h + dest_y ) * 4;
+
+      // Normalize 0..255 to 0.0..1.0
+      // Mapping: R->0, G->1, B->2, A->3 (Standard RGBA)
+      ret->data[ dest_idx + 0 ] = pixels[ src_idx + 2 ] / 255.0f; // R
+      ret->data[ dest_idx + 1 ] = pixels[ src_idx + 1 ] / 255.0f; // G
+      ret->data[ dest_idx + 2 ] = pixels[ src_idx + 0 ] / 255.0f; // B
+      ret->data[ dest_idx + 3 ] = pixels[ src_idx + 3 ] / 255.0f; // A
     }
+  }
 
-    tensor* ret = mem( 1, tensor );
-    ret->size = w * h * 4;
-    
-    // Shape: [Width, Height, 4]
-    ret->shape[ 0 ] = w;
-    ret->shape[ 1 ] = h;
-    ret->shape[ 2 ] = 4;
-    ret->shape[ 3 ] = 1;
-    
-    ret->rank = 3;
-
-    // Strides for Column-Major Layout (X is outer dimension)
-    // index = (x * h + y) * 4 + c
-    ret->strides[ 0 ] = h * 4;
-    ret->strides[ 1 ] = 4;
-    ret->strides[ 2 ] = 1;
-    ret->strides[ 3 ] = 1;
-
-    ret->data = mem( ret->size, f32 );
-    ret->ownsData = true;
-
-    // Convert Row-Major (stb) to Column-Major + Y-Flip (Atlas)
-    for( u32 x = 0; x < w; ++x ){
-        for( u32 y = 0; y < h; ++y ){
-            // Source Index (stb is Row-Major: y * w + x)
-            // We read 'y' directly (top-down)
-            u32 src_idx = ( y * w + x ) * 4;
-
-            // Dest Index (Atlas is Column-Major: x * h + y)
-            // We write 'y' flipped (bottom-up) for OpenGL coords
-            u32 dest_y = h - 1 - y; 
-            u32 dest_idx = ( x * h + dest_y ) * 4;
-
-            // Normalize 0..255 to 0.0..1.0
-            // Mapping: R->0, G->1, B->2, A->3 (Standard RGBA)
-            ret->data[ dest_idx + 0 ] = pixels[ src_idx + 0 ] / 255.0f; // R
-            ret->data[ dest_idx + 1 ] = pixels[ src_idx + 1 ] / 255.0f; // G
-            ret->data[ dest_idx + 2 ] = pixels[ src_idx + 2 ] / 255.0f; // B
-            ret->data[ dest_idx + 3 ] = pixels[ src_idx + 3 ] / 255.0f; // A
-        }
-    }
-
-    stbi_image_free( pixels );
-    tensorToGPUMemory( ret );
-    return ret;
+  stbi_image_free( pixels );
+  tensorToGPUMemory( ret );
+  return ret;
 }
 tensor* tensorFromString( const char* string ){
   tensor* ret = mem( 1, tensor );
@@ -1528,11 +1528,11 @@ void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels ){
   
   GLenum internalFormat, format, type;
   switch( channels ){
-    case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_FLOAT; break;
-    case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
-    case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
-    case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
-    default: error( "%s", "Unsupported channel format for textureArray." );
+  case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_FLOAT; break;
+  case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
+  case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
+  case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
+  default: error( "%s", "Unsupported channel format for textureArray." );
   }
 
   // 4. Create Texture Array
