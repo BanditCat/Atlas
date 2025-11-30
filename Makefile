@@ -29,7 +29,6 @@ WASM = $(HTML:.html=.wasm)
 DATA = $(HTML:.html=.data)
 
 
-ASSET = catlas.glb
 HDRS = Atlas.h tensor.h trie.h program.h cgltf.h tensorGltf.h
 MSRCS = main.c tensor.c tensorPrint.c program.c trie.c tensorGltf.c
 EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c
@@ -83,7 +82,6 @@ backup:
 	$(MAKE) release
 	$(MAKE) $(HTML)
 	cp -rf $(HTML) $(JS) $(WASM) $(DATA) ./main.atl ./inc ./docs
-	cp -f art/$(ASSET) ./docs/art/$(ASSET)
 	cp -rf $(TARGET) ./bin
 	$(MAKE) clean
 	strip ./bin/$(TARGET)
