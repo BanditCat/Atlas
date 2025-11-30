@@ -442,7 +442,7 @@ return;
 
 
 l'perlin';  
-time= 1;
+randseed= 1;
 amp= 1;
 2;rep;texsize= 2;
 
@@ -453,8 +453,8 @@ float hash( vec2 p, float time ){
     return fract( sin( h ) * 43758.5453123 );
 }
 '
-ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), std_time ) * 2.0 * 3.1415928 ) :
-                  cos( hash( vec2( t.xy ), std_time ) * 2.0 * 3.1415928 );
+ret[0]=t.z == 0 ? sin( hash( vec2( t.xy ), std_randseed ) * 2.0 * 3.1415928 ) :
+                  cos( hash( vec2( t.xy ), std_randseed ) * 2.0 * 3.1415928 );
 ' 0 1 0 0;
 
 6;texsize;
