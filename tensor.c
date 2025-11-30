@@ -4,6 +4,8 @@
 
 #include "Atlas.h"
 #include "tensorGltf.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void takeOwnership( tensor* t ){
   if( t == NULL )
@@ -1215,36 +1217,60 @@ Uint32 getPixel( SDL_Surface* surface, int x, int y ){
   }
 }
 tensor* tensorFromImageFile( const char* filename ){
-  tensor* ret = mem( 1, tensor );
-  SDL_Surface* image = SDL_LoadBMP( filename );
-  if( !image )
-    error( "Unable to load BMP file! SDL Error: %s\n", SDL_GetError() );
-  ret->size = image->w * image->h * 4;
-  for( u32 i = 0; i < 4; ++i )
-    ret->shape[ i ] = ret->strides[ i ] = 1;
-  ret->shape[ 0 ] = image->w;
-  ret->shape[ 1 ] = image->h;
-  ret->shape[ 2 ] = 4;
-  ret->strides[ 1 ] = 4;
-  ret->rank = 3;
-  ret->strides[ 0 ] = image->h * 4;
-  ret->data = mem( ret->size, f32 );
-  ret->ownsData = true;
-
-  for( u32 y = 0; y < image->h; ++y ){
-    for( u32 x = 0; x < image->w; ++x ){
-      Uint32 pixel = getPixel( image, x, image->h - y - 1 );
-      Uint8 r, g, b, a;
-      SDL_GetRGBA( pixel, image->format, &r, &g, &b, &a );
-      ret->data[ ( x * image->h + y ) * 4 + 0 ] = b / 255.0;
-      ret->data[ ( x * image->h + y ) * 4 + 1 ] = g / 255.0;
-      ret->data[ ( x * image->h + y ) * 4 + 2 ] = r / 255.0;
-      ret->data[ ( x * image->h + y ) * 4 + 3 ] = a / 255.0;
+    int w, h, channels;
+    
+    // Force loading as 4 channels (RGBA), regardless of input format
+    unsigned char* pixels = stbi_load(filename, &w, &h, &channels, 4);
+    
+    if( !pixels ) {
+        error( "Unable to load image file: %s\nReason: %s\n", filename, stbi_failure_reason() );
     }
-  }
-  SDL_FreeSurface( image );
-  tensorToGPUMemory( ret );
-  return ret;
+
+    tensor* ret = mem( 1, tensor );
+    ret->size = w * h * 4;
+    
+    // Shape: [Width, Height, 4]
+    ret->shape[ 0 ] = w;
+    ret->shape[ 1 ] = h;
+    ret->shape[ 2 ] = 4;
+    ret->shape[ 3 ] = 1;
+    
+    ret->rank = 3;
+
+    // Strides for Column-Major Layout (X is outer dimension)
+    // index = (x * h + y) * 4 + c
+    ret->strides[ 0 ] = h * 4;
+    ret->strides[ 1 ] = 4;
+    ret->strides[ 2 ] = 1;
+    ret->strides[ 3 ] = 1;
+
+    ret->data = mem( ret->size, f32 );
+    ret->ownsData = true;
+
+    // Convert Row-Major (stb) to Column-Major + Y-Flip (Atlas)
+    for( u32 x = 0; x < w; ++x ){
+        for( u32 y = 0; y < h; ++y ){
+            // Source Index (stb is Row-Major: y * w + x)
+            // We read 'y' directly (top-down)
+            u32 src_idx = ( y * w + x ) * 4;
+
+            // Dest Index (Atlas is Column-Major: x * h + y)
+            // We write 'y' flipped (bottom-up) for OpenGL coords
+            u32 dest_y = h - 1 - y; 
+            u32 dest_idx = ( x * h + dest_y ) * 4;
+
+            // Normalize 0..255 to 0.0..1.0
+            // Mapping: R->0, G->1, B->2, A->3 (Standard RGBA)
+            ret->data[ dest_idx + 0 ] = pixels[ src_idx + 0 ] / 255.0f; // R
+            ret->data[ dest_idx + 1 ] = pixels[ src_idx + 1 ] / 255.0f; // G
+            ret->data[ dest_idx + 2 ] = pixels[ src_idx + 2 ] / 255.0f; // B
+            ret->data[ dest_idx + 3 ] = pixels[ src_idx + 3 ] / 255.0f; // A
+        }
+    }
+
+    stbi_image_free( pixels );
+    tensorToGPUMemory( ret );
+    return ret;
 }
 tensor* tensorFromString( const char* string ){
   tensor* ret = mem( 1, tensor );

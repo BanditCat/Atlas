@@ -30,7 +30,7 @@ WASM = $(HTML:.html=.wasm)
 DATA = $(HTML:.html=.data)
 
 
-HDRS = Atlas.h tensor.h trie.h program.h cgltf.h tensorGltf.h
+HDRS = Atlas.h tensor.h trie.h program.h cgltf.h tensorGltf.h stb_image.h
 MSRCS = main.c tensor.c tensorPrint.c program.c trie.c tensorGltf.c
 EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c
 SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c
