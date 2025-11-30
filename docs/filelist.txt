@@ -10,5 +10,6 @@ inc\triangle.atl
 inc\nbodies.atl
 inc\jset.atl
 inc\klein.atl
+inc\gltf.atl
 inc\catlas.atl
 art\catlas.glb
