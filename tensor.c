@@ -1522,9 +1522,9 @@ void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels ){
   if( t->rank != 4 ) error( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
   if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] != channels / 10 ) )
     error( "%s", "tensorToTextureArray called with a bad channel count." );
-  u32 width = t->shape[ 0 ];
+  u32 layers = t->shape[ 0 ]; 
   u32 height = t->shape[ 1 ];
-  u32 layers = t->shape[ 2 ];
+  u32 width  = t->shape[ 2 ];
   
   GLenum internalFormat, format, type;
   switch( channels ){

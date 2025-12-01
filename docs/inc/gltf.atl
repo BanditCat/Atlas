@@ -2,8 +2,10 @@ include'inc\stdlib.atl';
 'inc\\catlas.atl';
 include'inc\nav.atl';
 size;if'started'; // init code goes here
-
-
+gltf'inc\catlas.glb';
+3;raise;
+textureArray 40;
+3;bury;
 
 [1024];dim= 1; // constants
 [0.2];hscale= 1;
@@ -38,7 +40,7 @@ std.nav3d;
 [0.5 1.0 2.0];std.origin= 3;
 [150 400];std.3dnavParam=;
 
-6;windowSize;[4];0;cat;
+6;windowSize;[2 2];*;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
 
 
@@ -67,18 +69,18 @@ set'lightUnrotation' 16;
 // Stack here: prevFrame, heightMap, gradient
 
 2;dup;2;dup; // duplicate terrain and heightmap
-windowSize;set'wdims' 2;
+windowSize;[2 2];*;set'wdims' 2;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
 
 
 
-[90];windowSize;0;cat;[0.01 3];0;cat;proj;proj= 16;
+[90];windowSize;[2 2];*;0;cat;[0.01 3];0;cat;proj;proj= 16;
 
 // Stack here: the arguments (heightmapcopy, gradientcopy, prevFrame), heightMap, gradient
 depth;backface;
-6;dim;dim;*;first;*;windowSize;[4];0;cat;
+6;dim;dim;*;first;*;windowSize;[2 2];*;[4];0;cat;
 c'
 vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -160,7 +162,8 @@ depth;backface;
 
 
 
-gltf'inc\catlas.glb';3;raise;
+6;dup;6;dup;6;dup;6;dup;
+3;raise;
 //textureArray 40;
 3;bury;1;dup;shape;first;
 
@@ -241,25 +244,19 @@ vec3 T = normalize( tangent.xyz );
 vec3 B = cross( N, T ) * tangent.w;
 mat3 TBN = mat3( T, B, N );
 
-// 1. Recover the integer ID safely (add epsilon to handle -0.0001 drift)
-int matID = int(mat + 0.1);
-int albedoLayer = matID * 2;
-vec3 color = vec3( d( ivec4( albedoLayer, muv.yx * ( atlasSize - 1.0 ) + 0.5, 0.0 ) ),
-                   d( ivec4( albedoLayer, muv.yx * ( atlasSize - 1.0 ) + 0.5, 1.0 ) ),
-                   d( ivec4( albedoLayer, muv.yx * ( atlasSize - 1.0 ) + 0.5, 2.0 ) ) );
-float alpha = d( ivec4( albedoLayer, muv.yx * ( atlasSize - 1.0 ) + 0.5, 3.0 ) );
-if( alpha < 0.5 )
+vec4 color = df( vec3( muv * atlasSize, mat * 2.0 ) );
+if( color.a < 0.5 )
   discard;
-vec3 tnormal = vec3( d( ivec4( mat * 2.0 + 1.5, muv.yx * ( atlasSize - 1.0 ) + 0.5, 0.0 ) ),
-                    d( ivec4( mat * 2.0 + 1.5, muv.yx * ( atlasSize - 1.0 ) + 0.5, 1.0 ) ),
-                    0.0 );
-tnormal.xy = tnormal.xy * 2.0 - 1.0;                    
+vec4 orm = df( vec3( muv * atlasSize, mat * 2.0 + 1.0 ) );
+vec3 tnormal = orm.xyy;
+tnormal.xy = tnormal.xy * 2.0 - 1.0;
 tnormal.z = sqrt( 1.0 - length( tnormal.xy ) * length( tnormal.xy ) );                    
 
 vec3 finalNormal = normalize(TBN * tnormal);
 
-ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color , 1.0 );
+ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
+//ret[ 0 ] = vec4( color, 1.0 );
 ' 4 1 40 1;
 depth;backface;
 
@@ -278,3 +275,7 @@ std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 1;timeDelta;/;toString;e;
 std.textToTexture;std.blitText;
 l'skipf2';
+
+
+// generate mipmaps
+texture;
