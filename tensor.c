@@ -1510,8 +1510,7 @@ void tensorOrtho( tensorStack* ts, u32 index ){
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }
-void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels ){
-  tensor* t = ts->stack[ index ];
+void tensorToTextureArray( tensor* t, u32 channels ){
   if( !t ) error( "%s", "Tensor is NULL in tensorToTextureArray." );
   tensorToHostMemory( t );
   tensorEnsureContiguous( t );

@@ -2,10 +2,10 @@ include'inc\stdlib.atl';
 'inc\\catlas.atl';
 include'inc\nav.atl';
 size;if'started'; // init code goes here
-gltf'inc\catlas.glb';
-3;raise;
-textureArray 40;
-3;bury;
+
+
+'inc\\catlas.glb';gltf;  // get the 4 tensors here.
+
 
 [1024];dim= 1; // constants
 [0.2];hscale= 1;
@@ -163,9 +163,7 @@ depth;backface;
 
 
 6;dup;6;dup;6;dup;6;dup;
-3;raise;
-//textureArray 40;
-3;bury;1;dup;shape;first;
+1;dup;shape;first;
 
 3;dup;shape;0;dup;[2 3 0];s;animCount= 1;[0 1 0];s;frameCount= 1;
 4;dup;shape;[1 3 0];s;atlasSize= 2;

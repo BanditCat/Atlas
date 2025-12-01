@@ -648,7 +648,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   }
 
   t_tex = newTensor( 4, tex_shape, (f32*)tex_data );
-  tensorToGPUMemory( t_tex );
+  tensorToTextureArray( t_tex, 40 );
 
   // --- MESH LOADING (Vertices & Indices) ---
   // (Standard Mesh code...)

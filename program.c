@@ -528,38 +528,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
     // imgName );
     
-  } else if( !strncmp( command, "gltf'", 5 ) ){ // gltf
-    char* starti = command + 5;
-    char* endi = starti;
-    while( *endi && *endi != '\'' )
-      endi++;
-    if( endi == starti )
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty gltf statement." );
-    if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Unmatched quote in gltf statement." );
-    char* gltfName = mem( 1 + endi - starti, char );
-    memcpy( gltfName, starti, endi - starti );
-    gltfName[ endi - starti ] = '\0';
-    
-    curStep->type = GLTF;
-    
-    u32 count = 0;
-    tensor** loaded = loadGltfCooked( gltfName, &count );
-    unmem( gltfName );
-
-    if( count >= 3 ) {
-        curStep->gltf.verts = loaded[0];
-        curStep->gltf.indices = loaded[1];
-        curStep->gltf.bones = loaded[2];
-        curStep->gltf.material = (count > 3) ? loaded[3] : NULL;
-    } else {
-        error("%s:%u command %u: Failed to load enough tensors from GLTF.", filename, linenum, commandnum);
-    }
-    unmem(loaded); 
-
-    if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Extra characters after gltf statement." );
-      
+     
   }else if( !strcmp( command, "load" ) ){
     curStep->type = LOAD;
     curStep->progName = NULL;    
@@ -717,6 +686,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = ADDITIVE;
     // dbg( "Linenum %u commandnum %u: additive\n", linenum, commandnum );
 
+  } else if( !strncmp( command, "gltf", 4 ) ){ // gltf
+    curStep->type = GLTF;
+    // dbg( "Linenum %u commandnum %u: gltf\n", linenum, commandnum );
+    
   } else if( !strcmp( command, "depth" ) ){
     curStep->type = DEPTH;
     // dbg( "Linenum %u commandnum %u: depth\n", linenum, commandnum );
@@ -1438,11 +1411,6 @@ void deleteProgram( program* p ){
     else if( p->steps[ i ].type == TENSOR ){
       deleteTensor( p->steps[ i ].tensor );
       p->steps[ i ].tensor = NULL;
-    } else if( p->steps[ i ].type == GLTF ){
-      deleteTensor( p->steps[ i ].gltf.verts );
-      deleteTensor( p->steps[ i ].gltf.indices );
-      deleteTensor( p->steps[ i ].gltf.bones );
-      deleteTensor( p->steps[ i ].gltf.material );
     }
   }
   deleteTrieNode( p->labels );
@@ -1832,12 +1800,33 @@ bool runProgram( tensorStack* ts, program** progp ){
     case TENSOR:
       push( ts, copyTensor( s->tensor ) );
       break;
-    case GLTF:
-      if( s->gltf.material ) push( ts, copyTensor( s->gltf.material ) );
-      if( s->gltf.bones )    push( ts, copyTensor( s->gltf.bones ) );
-      if( s->gltf.indices )  push( ts, copyTensor( s->gltf.indices ) );
-      if( s->gltf.verts )    push( ts, copyTensor( s->gltf.verts ) );
+    case GLTF: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, 
+               "Attempt to gltf load with no filename on the stack." );
+      
+      tensor* tName = ts->stack[ ts->size - 1 ];
+      char* fn = tensorToString( tName );
+      if( !fn )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, 
+               "Top of stack was not a valid string tensor." );
+      
+      pop( ts ); // Remove filename
+      
+      u32 count = 0;
+      tensor** loaded = loadGltfCooked( fn, &count );
+      unmem( fn );
+
+      // Push results onto stack (Order: Material, Bones, Indices, Verts)
+      // so that Verts ends up on top.
+      if( count > 3 && loaded[3] ) push( ts, loaded[3] ); // Material/Tex
+      if( count > 2 && loaded[2] ) push( ts, loaded[2] ); // Bones
+      if( count > 1 && loaded[1] ) push( ts, loaded[1] ); // Indices
+      if( count > 0 && loaded[0] ) push( ts, loaded[0] ); // Verts
+      
+      unmem( loaded );
       break;      
+    }      
     case PRINT:
       printStack( ts );
       // dbg( "%s", "print" );
@@ -2016,7 +2005,7 @@ bool runProgram( tensorStack* ts, program** progp ){
     case TEXTUREARRAY: {
       if( !ts->size )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to create texture array with empty stack." );
-      tensorToTextureArray( ts, ts->size - 1, s->var.size ); // var.size holds channels
+      tensorToTextureArray( ts->stack[ ts->size - 1 ], s->var.size ); // var.size holds channels
       break;
     }
     case TEXTURE: {

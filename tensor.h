@@ -95,4 +95,7 @@ void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex );
 void tensorTranslate( tensorStack* ts, u32 index );
 void tensorProject( tensorStack* ts, u32 index );
 void tensorOrtho( tensorStack* ts, u32 index );
-void tensorToTextureArray( tensorStack* ts, u32 index, u32 channels );
+void tensorToTextureArray( tensor* t, u32 channels );
+// New Kettling functions
+void kettle( tensorStack* ts, u32 count, const char* filename );
+void unkettle( tensorStack* ts, const char* filename );
