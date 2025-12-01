@@ -304,7 +304,16 @@ static inline void check_memory_leaks( void ){
 #else  // NO DEBUG
 
 extern u64 memc;
-#define mem( size, T ) ( memc++, calloc( ( size ), sizeof( T ) ) )
+#define mem(size, T) mem_check(calloc((size), sizeof(T)), (size) * sizeof(T), __FILE__, __LINE__)
+
+static inline void* mem_check(void* ptr, size_t bytes, const char* file, int line) {
+    memc++;
+    if (!ptr) {
+        printf("OOM: %zu bytes at %s:%d\n", bytes, file, line);
+        exit(1);
+    }
+    return ptr;
+}
 #define unmem( F ) ( memc--, free( F ) )
 
 #endif  // DEBUG
