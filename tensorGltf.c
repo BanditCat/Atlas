@@ -101,13 +101,15 @@ void quat_slerp( f32* out, const f32* a, const f32* b, f32 t ){
 
 mat4 sample_node_at_time( cgltf_node* node, cgltf_animation* anim, f32 time ){
   f32 t[ 3 ] = { 0 }, r[ 4 ] = { 0, 0, 0, 1 }, s[ 3 ] = { 1, 1, 1 };
-
+  
   if( node->has_translation )
     memcpy( t, node->translation, 3 * sizeof( f32 ) );
   if( node->has_rotation )
     memcpy( r, node->rotation, 4 * sizeof( f32 ) );
-  if( node->has_scale )
-    memcpy( s, node->scale, 3 * sizeof( f32 ) );
+  /* if( node->has_scale ){ */
+  /*   memcpy( s, node->scale, 3 * sizeof( f32 ) ); */
+  /*   printf("boop! %f %f %f\n", node->scale[ 0 ], node->scale[ 1 ], node->scale[ 2 ] ); */
+  /* } */
 
   if( anim ){
     for( int i = 0; i < anim->channels_count; ++i ){
@@ -142,7 +144,6 @@ mat4 sample_node_at_time( cgltf_node* node, cgltf_animation* anim, f32 time ){
         cgltf_accessor_read_float( output, k, val0, comp_count );
         cgltf_accessor_read_float(
                                   output, ( k + 1 < input->count ) ? k + 1 : k, val1, comp_count );
-
         if( chan->target_path == cgltf_animation_path_type_translation )
           vec3_lerp( t, val0, val1, factor );
         if( chan->target_path == cgltf_animation_path_type_rotation )
@@ -158,8 +159,10 @@ mat4 sample_node_at_time( cgltf_node* node, cgltf_animation* anim, f32 time ){
 mat4 get_node_global_transform( cgltf_node* node,
                                 cgltf_animation* anim,
                                 f32 time ){
+
   mat4 local = sample_node_at_time( node, anim, time );
   if( node->parent ){
+    // Pass scale to parent
     mat4 parent_global = get_node_global_transform( node->parent, anim, time );
     return mat4_mul( parent_global, local );
   }
@@ -309,6 +312,8 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   cgltf_options options = { 0 };
   cgltf_data* data = NULL;
   // Parse from memory buffer
+
+
   if( cgltf_parse( &options, fileData, fileSize, &data ) !=
       cgltf_result_success )
     error( "%s", "cgltf_parse failed" );
@@ -317,7 +322,15 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
     error( "%s", "load buffers failed" );
   if( data->meshes_count == 0 )
     error( "%s", "No meshes" );
-
+  // IMMEDIATELY after parse - before any material/texture loops
+  for (u32 m = 0; m < data->meshes_count; ++m) {
+    cgltf_mesh* mesh = &data->meshes[m];
+    printf("Mesh %u: prims=%zu\n", m, mesh->primitives_count);
+    for (u32 p = 0; p < mesh->primitives_count; ++p) {
+      cgltf_primitive* prim = &mesh->primitives[p];
+      printf("  prim %u: type=%d\n", p, prim->type);
+    }
+  }
   for (u32 i = 0; i < data->materials_count; ++i) {
     cgltf_material* mat = &data->materials[i];
     printf("Mat %d: %s\n", i, mat->name ? mat->name : "unnamed");
@@ -388,6 +401,8 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   // --- ANIMATION BAKING ---
   tensor* t_anim = NULL;
   // (Standard animation code from before)
+
+  
   if( data->skins_count > 0 && data->animations_count > 0 ){
     cgltf_skin* skin = &data->skins[ 0 ];
     u32 bone_count = skin->joints_count;
@@ -637,7 +652,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
 
   // --- MESH LOADING (Vertices & Indices) ---
   // (Standard Mesh code...)
-  u32 float_per_vert = 17;
+  u32 float_per_vert = 21;
   u32 total_verts = 0;
   u32 total_indices = 0;
 
@@ -655,12 +670,42 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
     error( "%s", "No vertices" );
 
   f32* vdata = mem( total_verts * float_per_vert, f32 );
-  memset( vdata, 0, total_verts * float_per_vert * sizeof( f32 ) );
+
+  // --- CHEDDAR: AUTOMATIC UNIT SCALING ---
+  f32 global_scale = 1.0f;
+  f32 max_coord = 0.0f;
+
+  // Scan all accessors to find the bounds of the model
+  for (u32 m = 0; m < data->meshes_count; ++m) {
+    cgltf_mesh* mesh = &data->meshes[m];
+    for (u32 p = 0; p < mesh->primitives_count; ++p) {
+      cgltf_primitive* prim = &mesh->primitives[p];
+      for (int i = 0; i < prim->attributes_count; ++i) {
+        cgltf_attribute* attr = &prim->attributes[i];
+        if (attr->type == cgltf_attribute_type_position && attr->data->has_max) {
+          // Check X, Y, Z max bounds
+          for(int c=0; c<3; ++c) {
+            f32 val = fabsf(attr->data->max[c]);
+            if (val > max_coord) max_coord = val;
+            // Check min too (for negative extents)
+            val = fabsf(attr->data->min[c]);
+            if (val > max_coord) max_coord = val;
+          }
+        }
+      }
+    }
+  }
+
+  // If the model is massive (e.g. > 100 units), assume CM and scale down
+  if (max_coord > 50.0f) {
+    printf("ATLAS: Model is huge (max coord: %.2f). Assuming CM -> Scaling by 0.01\n", max_coord);
+    global_scale = 0.01f;
+  }
+  
   f32* idata = ( total_indices > 0 ) ? mem( total_indices, f32 ) : NULL;
 
   u32 vert_offset = 0;
   u32 index_offset = 0;
-  u32 mat_id = 0;
 
   for( u32 m = 0; m < data->meshes_count; ++m ){
     cgltf_mesh* mesh = &data->meshes[ m ];
@@ -669,6 +714,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
       if( prim->attributes_count == 0 )
         continue;
       u32 prim_vert_count = prim->attributes[ 0 ].data->count;
+
 
       for (int i = 0; i < prim->attributes_count; ++i) {
         cgltf_attribute* attr = &prim->attributes[i];
@@ -691,6 +737,10 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
           offset = 3;
           num_comp = 3;
         }
+        if( attr->type == cgltf_attribute_type_tangent ){
+          offset = 17;
+          num_comp = 4;
+        }
         if( attr->type == cgltf_attribute_type_texcoord ){
 
           for( u32 v = 0; v < prim_vert_count; ++v ){
@@ -706,8 +756,8 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
               f32 temp[2];
               cgltf_accessor_read_float(attr->data, v, temp, 2);
               u32 base = (vert_offset + v) * float_per_vert;
-              vdata[base + 6] = fmaxf(0.0f, fminf(1.0f, temp[0]));
-              vdata[base + 7] = fmaxf(0.0f, fminf(1.0f, temp[1]));
+              vdata[base + 6] = temp[0];//fmaxf(0.0f, fminf(1.0f, temp[0]));
+              vdata[base + 7] = temp[1];//fmaxf(0.0f, fminf(1.0f, temp[1]));
         
               // Debug: confirm writes are happening
               if (v < 2 && strstr(mesh->name, "eye")) {
@@ -744,12 +794,142 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
           for( u32 v = 0; v < prim_vert_count; ++v ){
             f32 temp[ 4 ] = { 0 };
             cgltf_accessor_read_float( attr->data, v, temp, num_comp );
+            
+            if (attr->type == cgltf_attribute_type_position) {
+              temp[0] *= global_scale;
+              temp[1] *= global_scale;
+              temp[2] *= global_scale;
+            }
+
             for( int c = 0; c < num_comp; ++c )
               vdata[ ( vert_offset + v ) * float_per_vert + offset + c ] =
                 temp[ c ];
           }
         }
       }
+
+
+
+// ==================================================================================
+      // === TANGENT GENERATOR (The "Anti-Void" Logic) ====================================
+      // ==================================================================================
+      
+      // 1. Check if we actually found tangents in the file
+      bool found_tangents = false;
+      for (int i = 0; i < prim->attributes_count; ++i) {
+        if (prim->attributes[i].type == cgltf_attribute_type_tangent) {
+            found_tangents = true;
+            break;
+        }
+      }
+
+      // 2. If NO tangents, we must calculate them!
+      if (!found_tangents && prim_vert_count > 0) {
+          printf("ATLAS: Generating missing tangents for mesh %d prim %d...\n", m, p);
+
+          // Local struct for cleaner math
+          typedef struct { f32 x, y, z; } vec3;
+
+          vec3* temp_tan = mem(prim_vert_count, vec3); 
+          vec3* temp_bit = mem(prim_vert_count, vec3);
+          memset(temp_tan, 0, prim_vert_count * sizeof(vec3));
+          memset(temp_bit, 0, prim_vert_count * sizeof(vec3));
+
+          // A. Iterate over Indices (Triangles)
+          u32 index_count = (prim->indices) ? prim->indices->count : prim_vert_count;
+          
+          for (u32 k = 0; k < index_count; k += 3) {
+              u32 i0, i1, i2;
+              if (prim->indices) {
+                  i0 = cgltf_accessor_read_index(prim->indices, k + 0);
+                  i1 = cgltf_accessor_read_index(prim->indices, k + 1);
+                  i2 = cgltf_accessor_read_index(prim->indices, k + 2);
+              } else {
+                  i0 = k + 0; i1 = k + 1; i2 = k + 2;
+              }
+
+              // Read Pos (Offset 0) and UV (Offset 6)
+              // We use float_per_vert (which should be 21 now)
+              u32 stride = float_per_vert;
+              f32* v0 = &vdata[(vert_offset + i0) * stride];
+              f32* v1 = &vdata[(vert_offset + i1) * stride];
+              f32* v2 = &vdata[(vert_offset + i2) * stride];
+
+              // Pos at offset 0
+              f32 x1 = v1[0] - v0[0]; f32 x2 = v2[0] - v0[0];
+              f32 y1 = v1[1] - v0[1]; f32 y2 = v2[1] - v0[1];
+              f32 z1 = v1[2] - v0[2]; f32 z2 = v2[2] - v0[2];
+
+              // UV at offset 6
+              f32 s1 = v1[6] - v0[6]; f32 s2 = v2[6] - v0[6];
+              f32 t1 = v1[7] - v0[7]; f32 t2 = v2[7] - v0[7];
+
+              f32 r = 1.0f / (s1 * t2 - s2 * t1);
+              
+              // Prevent div by zero 
+              if (isinf(r) || isnan(r)) r = 0.0f;
+
+              f32 sdir[3] = { (t2 * x1 - t1 * x2) * r, 
+                              (t2 * y1 - t1 * y2) * r, 
+                              (t2 * z1 - t1 * z2) * r };
+                              
+              f32 tdir[3] = { (s1 * x2 - s2 * x1) * r, 
+                              (s1 * y2 - s2 * y1) * r, 
+                              (s1 * z2 - s2 * z1) * r };
+
+              // Accumulate
+              temp_tan[i0].x += sdir[0]; temp_tan[i0].y += sdir[1]; temp_tan[i0].z += sdir[2];
+              temp_tan[i1].x += sdir[0]; temp_tan[i1].y += sdir[1]; temp_tan[i1].z += sdir[2];
+              temp_tan[i2].x += sdir[0]; temp_tan[i2].y += sdir[1]; temp_tan[i2].z += sdir[2];
+
+              temp_bit[i0].x += tdir[0]; temp_bit[i0].y += tdir[1]; temp_bit[i0].z += tdir[2];
+              temp_bit[i1].x += tdir[0]; temp_bit[i1].y += tdir[1]; temp_bit[i1].z += tdir[2];
+              temp_bit[i2].x += tdir[0]; temp_bit[i2].y += tdir[1]; temp_bit[i2].z += tdir[2];
+          }
+
+          // B. Orthogonalize and Write to vdata
+          for (u32 i = 0; i < prim_vert_count; ++i) {
+               u32 stride = float_per_vert;
+               f32* vert = &vdata[(vert_offset + i) * stride];
+               
+               // Read Normal (Offset 3)
+               f32 n[3] = { vert[3], vert[4], vert[5] };
+               f32 t[3] = { temp_tan[i].x, temp_tan[i].y, temp_tan[i].z };
+               
+               // Gram-Schmidt Orthogonalize: T = T - N * dot(N, T)
+               f32 dotNT = n[0]*t[0] + n[1]*t[1] + n[2]*t[2];
+               f32 ortho[3] = { t[0] - n[0]*dotNT, 
+                                t[1] - n[1]*dotNT, 
+                                t[2] - n[2]*dotNT };
+               
+               // Normalize
+               f32 len = sqrtf(ortho[0]*ortho[0] + ortho[1]*ortho[1] + ortho[2]*ortho[2]);
+               if (len > 0.0f) {
+                   ortho[0] /= len; ortho[1] /= len; ortho[2] /= len;
+               }
+
+               // Calculate Handedness (W component)
+               // Cross(N, T) dot Bitangent
+               f32 b[3] = { temp_bit[i].x, temp_bit[i].y, temp_bit[i].z };
+               f32 c[3] = { n[1]*t[2] - n[2]*t[1], 
+                            n[2]*t[0] - n[0]*t[2], 
+                            n[0]*t[1] - n[1]*t[0] };
+               
+               f32 val = c[0]*b[0] + c[1]*b[1] + c[2]*b[2];
+               f32 w = (val < 0.0f) ? -1.0f : 1.0f;
+
+               // Store at Offset 17 (Tangent XYZW)
+               vert[17] = ortho[0];
+               vert[18] = ortho[1];
+               vert[19] = ortho[2];
+               vert[20] = w;
+          }
+
+          unmem(temp_tan);
+          unmem(temp_bit);
+      }
+      // ==================================================================================
+
 
 
       u32 prim_mat_id = 0;
@@ -829,6 +1009,10 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   cgltf_free( data );
   unmem( fileData );
 
+
+
+
+  printf("Total verts: %d, indices: %d\n", total_verts, total_indices);
   // Return 4 Tensors: Verts, Indices, Anim, Textures
   tensor** result = mem( 4, tensor* );
   result[ 0 ] = t_verts;
