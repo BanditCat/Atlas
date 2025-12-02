@@ -182,7 +182,7 @@ mat4 getBoneMat(int frame, int bone, int anim) {
     mat4 m;
     
     // We loop through the 4 columns
-    for (int col = 0; col < 4 + int( u_zero ); col++) {
+    for (int col = 0; col < 4; col++) {
         // We loop through the 4 rows
         // ADD u_zero TO THE CONDITION to prevent unrolling
         for (int row = 0; row < 4 + int( u_zero ); row++) {
