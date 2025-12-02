@@ -164,6 +164,7 @@ depth;backface;
 
 6;dup;6;dup;6;dup;6;dup;
 1;dup;shape;first;
+[0];u_zero= 1;
 
 3;dup;shape;0;dup;[2 3 0];s;animCount= 1;[0 1 0];s;frameCount= 1;
 4;dup;shape;[1 3 0];s;atlasSize= 2;
@@ -178,12 +179,26 @@ vec3 hsv2rgb(vec3 c) {
 
 // Raw fetch
 mat4 getBoneMat(int frame, int bone, int anim) {
-    return mat4(
-        c(ivec4(frame, bone, anim, 0)), c(ivec4(frame, bone, anim, 1)), c(ivec4(frame, bone, anim, 2)), c(ivec4(frame, bone, anim, 3)),
-        c(ivec4(frame, bone, anim, 4)), c(ivec4(frame, bone, anim, 5)), c(ivec4(frame, bone, anim, 6)), c(ivec4(frame, bone, anim, 7)),
-        c(ivec4(frame, bone, anim, 8)), c(ivec4(frame, bone, anim, 9)), c(ivec4(frame, bone, anim, 10)), c(ivec4(frame, bone, anim, 11)),
-        c(ivec4(frame, bone, anim, 12)), c(ivec4(frame, bone, anim, 13)), c(ivec4(frame, bone, anim, 14)), c(ivec4(frame, bone, anim, 15))
-    );
+    mat4 m;
+    
+    // We loop through the 4 columns
+    for (int col = 0; col < 4 + int( u_zero ); col++) {
+        // We loop through the 4 rows
+        // ADD u_zero TO THE CONDITION to prevent unrolling
+        for (int row = 0; row < 4 + int( u_zero ); row++) {
+            
+            // Calculate the flat index (0-15) for your c() function
+            // assuming your tensor 4th dim is the 16 floats of the matrix
+            int componentIndex = col * 4 + row; 
+            
+            // Fetch the single float using your existing arbitrary logic
+            float val = c(ivec4(frame, bone, anim, componentIndex));
+            
+            // Fill the matrix
+            m[col][row] = val;
+        }
+    }
+    return m;
 }
 
 mat4 getLerpMat(int f0, int f1, int bone, int anim, float t) {
@@ -222,9 +237,9 @@ ivec4 bi = ivec4(bones);
 
 // Blend the blend
 mat4 skin = getLerpMat(f0, f1, bi.x, anim, t) * weights.x +
-            getLerpMat(f0, f1, bi.y, anim, t) * weights.y;// +
-            //getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
-            //getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
+            getLerpMat(f0, f1, bi.y, anim, t) * weights.y +
+            getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
+            getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
 
 v = skin * v;
 worldPos = v.xyz;
