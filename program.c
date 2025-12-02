@@ -702,6 +702,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LENGTH;
     // dbg( "Linenum %u commandnum %u: length\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "kettle" ) ){
+    curStep->type = KETTLE;
+    // dbg( "Linenum %u commandnum %u: kettle\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "unkettle" ) ){
+    curStep->type = UNKETTLE;
+    // dbg( "Linenum %u commandnum %u: kettle\n", linenum, commandnum );
+
   } else if( !strcmp( command, "proj" ) ){
     curStep->type = PROJ;
     // dbg( "Linenum %u commandnum %u: proj\n", linenum, commandnum );
@@ -2122,6 +2130,39 @@ bool runProgram( tensorStack* ts, program** progp ){
 
       tensorTakeLast( ts, ts->size - 1 );
       // dbg( "%s", "first" );
+      break;
+    }
+    case KETTLE: {
+      if( ts->size < 2 )
+        error( "%s:%u command %u: Kettle requires [filename, count] on stack.", s->filename, s->linenum, s->commandnum );
+      
+      // Top: Count (Scalar)
+      tensor* tCount = ts->stack[ ts->size - 1 ];
+      tensorToHostMemory( tCount );
+      u32 count = (u32)( tCount->data[ tCount->offset ] );
+      pop( ts );
+
+      // Next: Filename (String)
+      tensor* tName = ts->stack[ ts->size - 1 ];
+      char* fn = tensorToString( tName );
+      if( !fn ) error( "%s:%u command %u: Kettle filename must be a string.", s->filename, s->linenum, s->commandnum );
+      pop( ts );
+
+      kettle( ts, count, fn );
+      unmem( fn );
+      break;
+    }
+    case UNKETTLE: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: Unkettle requires [filename] on stack.", s->filename, s->linenum, s->commandnum );
+      
+      tensor* tName = ts->stack[ ts->size - 1 ];
+      char* fn = tensorToString( tName );
+      if( !fn ) error( "%s:%u command %u: Unkettle filename must be a string.", s->filename, s->linenum, s->commandnum );
+      pop( ts );
+
+      unkettle( ts, fn );
+      unmem( fn );
       break;
     }
     case DUP:

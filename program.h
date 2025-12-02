@@ -48,6 +48,8 @@ typedef struct{
     UNEXTRUDE, // documented
     KEYS, // documented
     PRINT, // documented
+    KETTLE, // documented
+    UNKETTLE, // documented
     TENSOR, // documented
     TOP, // documented
     DUP, // documented

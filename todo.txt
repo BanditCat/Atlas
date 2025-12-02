@@ -1,4 +1,5 @@
-.ktl file format.
+make command line arguments start on stack
+introduce atlas kettling into pipeline
 
 terrain splatting
 errosion

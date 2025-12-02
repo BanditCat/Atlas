@@ -30,10 +30,10 @@ WASM = $(HTML:.html=.wasm)
 DATA = $(HTML:.html=.data)
 
 
-HDRS = Atlas.h tensor.h trie.h program.h cgltf.h tensorGltf.h stb_image.h
-MSRCS = main.c tensor.c tensorPrint.c program.c trie.c tensorGltf.c
-EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c
-SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c
+HDRS = Atlas.h tensor.h trie.h program.h cgltf.h tensorGltf.h stb_image.h miniz.h
+MSRCS = main.c tensor.c tensorPrint.c program.c trie.c tensorGltf.c miniz.c
+EMSRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c miniz.c
+SRCS = main.c tensor.c glew.c tensorPrint.c program.c trie.c tensorGltf.c miniz.c
 OBJS = $(SRCS:.c=.o)
 
 SDL2_CFLAGS ?= -I$(CURDIR)/SDL2/

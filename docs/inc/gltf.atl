@@ -4,7 +4,7 @@ include'inc\nav.atl';
 size;if'started'; // init code goes here
 
 
-'inc\\catlas.glb';gltf;  // get the 4 tensors here.
+'inc\\catlas.ktl';unkettle;
 
 
 [1024];dim= 1; // constants
@@ -195,6 +195,7 @@ mat4 getLerpMat(int f0, int f1, int bone, int anim, float t) {
 out vec3 normal;
 out vec4 tangent;
 out vec2 uv;
+out vec3 worldPos;
 flat out float mat;
 '
 int index = int( b( ivec4( gl_VertexID, 0, 0, 0 ) ) );
@@ -226,6 +227,7 @@ mat4 skin = getLerpMat(f0, f1, bi.x, anim, t) * weights.x +
             getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
 
 v = skin * v;
+worldPos = v.xyz;
 normal = mat3(skin) * normal;
 tangent.xyz = mat3(skin) * tangent.xyz;
 
@@ -234,6 +236,7 @@ ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
 in vec3 normal;
 in vec4 tangent;
 in vec2 uv;
+in vec3 worldPos;
 flat in float mat;
 '
 vec2 muv = fract( uv );
@@ -247,12 +250,42 @@ if( color.a < 0.5 )
   discard;
 vec4 orm = df( vec3( muv * atlasSize, mat * 2.0 + 1.0 ) );
 vec3 tnormal = orm.xyy;
+float packedB = orm.b * 255.0;
+float metallic = floor(packedB / 64.0) / 3.0;  // 0-3 ? 0.0-1.0
+float roughness = max(mod(packedB, 64.0) / 63.0, 0.04);
+
+float ao = orm.a;
+
+vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
+vec3 V = normalize(std_origin - worldPos);  // need to pass worldPos from vert
+vec3 H = normalize(L + V);
+
 tnormal.xy = tnormal.xy * 2.0 - 1.0;
 tnormal.z = sqrt( 1.0 - length( tnormal.xy ) * length( tnormal.xy ) );                    
-
 vec3 finalNormal = normalize(TBN * tnormal);
 
-ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
+float NdotL = max(dot(finalNormal, L), 0.0);
+float NdotH = max(dot(finalNormal, H), 0.0);
+float VdotH = max(dot(V, H), 0.0);
+
+// Fresnel (Schlick) - metals reflect albedo, dielectrics reflect white
+vec3 F0 = mix(vec3(0.04), color.rgb, metallic);
+vec3 F = F0 + (1.0 - F0) * pow(1.0 - VdotH, 5.0);
+
+// GGX Distribution
+float alpha = roughness * roughness;
+float alpha2 = alpha * alpha;
+float denom = NdotH * NdotH * (alpha2 - 1.0) + 1.0;
+float D = alpha2 / (3.14159 * denom * denom + 0.0001);
+
+// Combine
+vec3 specular = F * D * 0.25;
+vec3 diffuse = (1.0 - F) * (1.0 - metallic) * color.rgb;
+vec3 ambient = color.rgb * 0.15 * ao;
+
+ret[ 0 ] = vec4( ambient + (diffuse + specular) * NdotL, 1.0 );
+//ret[0] = vec4(vec3(roughness), 1.0);
+//ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
 //ret[ 0 ] = vec4( color, 1.0 );
 ' 4 1 40 1;

@@ -6,6 +6,7 @@
 #include "tensorGltf.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "miniz.h"
 
 void takeOwnership( tensor* t ){
   if( t == NULL )
@@ -1572,4 +1573,307 @@ void tensorToTextureArray( tensor* t, u32 channels ){
   t->tex.height = height;
   t->tex.layers = layers;
   t->tex.channels = channels; 
+}
+
+
+
+
+
+
+
+// --- KETTLE IMPLEMENTATION ---
+
+typedef struct {
+  u32 magic;      // 0x4B544C32 "KTL2"
+  u32 count;      // Number of tensors
+} KettleHeader;
+
+typedef struct {
+  u32 rank;
+  u32 shape[4];
+  u32 channels;   // 1-4 (f32) or 10-40 (u8)
+  u32 isGpu;      // 1 if on GPU, 0 if CPU
+  u32 size;       // Element count
+  u32 mipmapped;
+  u32 layers, width, height;
+} KettleMeta;
+
+// Helper to write to a memory buffer and advance the offset
+void memWrite(u8* base, u64* offset, void* data, u32 size) {
+  memcpy(base + *offset, data, size);
+  *offset += size;
+}
+
+void kettle(tensorStack* ts, u32 count, const char* filename) {
+  if (count > ts->size) error("Kettle: Stack underflow. Requested %u, has %u.", count, ts->size);
+
+  u32 startIdx = ts->size - count;
+    
+  // --- PASS 1: Calculate Total Uncompressed Size ---
+  u64 totalUncompressedSize = sizeof(KettleHeader);
+
+  // We need to look at the tensors to know their specific storage size (f32 vs u8)
+  // Note: We don't modify the tensors yet, just peek at them.
+  for (u32 i = 0; i < count; ++i) {
+    tensor* t = ts->stack[startIdx + i];
+    totalUncompressedSize += sizeof(KettleMeta);
+
+    // Determine effective channels for storage size calculation
+    u32 ch = t->gpu ? t->tex.channels : 0; 
+        
+    bool isQuantized = (ch == 10 || ch == 20 || ch == 30 || ch == 40);
+    u32 elementSize = isQuantized ? sizeof(u8) : sizeof(f32);
+        
+    totalUncompressedSize += (u64)t->size * elementSize;
+  }
+
+  // --- PASS 2: Serialize to Memory ---
+  u8* rawData = mem(totalUncompressedSize, u8);
+  u64 writeHead = 0;
+
+  KettleHeader h = { 0x4B544C31, count }; // compressedSize is 0 in the inner header
+  memWrite(rawData, &writeHead, &h, sizeof(KettleHeader));
+
+  for (u32 i = 0; i < count; ++i) {
+    tensor* t = ts->stack[startIdx + i];
+
+    // 1. Prepare Meta
+    KettleMeta meta = {0};
+    meta.rank = t->rank;
+    memcpy(meta.shape, t->shape, sizeof(u32) * 4);
+    meta.size = t->size;
+    meta.isGpu = t->gpu ? 1 : 0;
+    meta.channels = t->gpu ? t->tex.channels : 0;
+
+    if (t->gpu) {
+      meta.layers = t->tex.layers;
+      meta.width = t->tex.width;
+      meta.height = t->tex.height;
+      glBindTexture(GL_TEXTURE_2D_ARRAY, t->tex.texture);
+      GLint minFilter = 0;
+      glGetTexParameteriv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, &minFilter);
+            
+      meta.mipmapped = (minFilter == GL_LINEAR_MIPMAP_LINEAR || 
+                        minFilter == GL_LINEAR_MIPMAP_NEAREST ||
+                        minFilter == GL_NEAREST_MIPMAP_LINEAR ||
+                        minFilter == GL_NEAREST_MIPMAP_NEAREST);
+
+      glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    }
+
+    // 2. Fetch Data
+    tensorToHostMemory(t);
+    tensorEnsureContiguous(t);
+
+    // 3. Write Meta
+    memWrite(rawData, &writeHead, &meta, sizeof(KettleMeta));
+
+    // 4. Write Data (Quantized or F32)
+    if (meta.channels == 10 || meta.channels == 20 || 
+        meta.channels == 30 || meta.channels == 40) {
+            
+      // We can write directly to the buffer to avoid a temp malloc
+      u8* dst = rawData + writeHead;
+      for (u32 k = 0; k < meta.size; ++k) {
+        f32 val = t->data[k];
+        if (val < 0.0f) val = 0.0f;
+        if (val > 1.0f) val = 1.0f;
+        dst[k] = (u8)(val * 255.0f);
+      }
+      writeHead += meta.size; // Advance by size * sizeof(u8)
+    } else {
+      memWrite(rawData, &writeHead, t->data, sizeof(f32) * meta.size);
+    }
+  }
+
+  // --- PASS 3: Compress and Write to Disk ---
+  mz_ulong compressedLen = mz_compressBound(totalUncompressedSize);
+  u8* compressedData = mem(compressedLen, u8);
+
+  int status = mz_compress(compressedData, &compressedLen, rawData, (mz_ulong)totalUncompressedSize);
+  if (status != MZ_OK) error("Kettle: Compression failed with error %d", status);
+
+  FILE* f = fopen(filename, "wb");
+  if (!f) error("Kettle: Could not open %s for writing.", filename);
+
+  // Write file container format: [UncompressedSize (u32)] [CompressedSize (u32)] [Data...]
+  u32 uSize = (u32)totalUncompressedSize;
+  u32 cSize = (u32)compressedLen;
+
+  fwrite(&uSize, sizeof(u32), 1, f);
+  fwrite(&cSize, sizeof(u32), 1, f);
+  fwrite(compressedData, 1, cSize, f);
+
+  fclose(f);
+    
+  // Cleanup
+  unmem(rawData);
+  unmem(compressedData);
+
+  printf("Cooked %u tensors into %s (Ratio: %.2f%%)\n", count, filename, (float)cSize/uSize * 100.0f);
+}
+
+void unkettle( tensorStack* ts, const char* filename ){
+  FILE* f = fopen( filename, "rb" );
+  if( !f ) error( "Unkettle: Could not open %s.", filename );
+  u32 uSize, cSize;
+  fread( &uSize, sizeof( u32 ), 1, f );
+  fread( &cSize, sizeof( u32 ), 1, f );
+  
+  // 1. Read Compressed Data from File
+  u8* compressedData = mem( cSize, u8 );
+  if( fread( compressedData, 1, cSize, f ) != cSize ){
+    fclose( f );
+    error( "%s", "Unkettle: File truncated." );
+  }
+  fclose( f ); // File is closed here. Do not close again at bottom.
+
+  // 2. Decompress
+  u8* decompressedBuffer = mem( uSize, u8 ); // Renamed for clarity vs macro
+  mz_ulong destLen = uSize;
+  int status = mz_uncompress( decompressedBuffer, &destLen, compressedData, cSize );
+    
+  if( status != MZ_OK ) error( "Unkettle: Decompression failed %d", status );
+    
+  unmem( compressedData );
+  
+  // 3. Setup a pointer for the parsing loop
+  u64 readHead = 0;
+
+  // Macro uses 'decompressedBuffer' specifically now
+#define READ_MEM( dest, size ) { memcpy( dest, decompressedBuffer + readHead, size ); readHead += size; }
+    
+  KettleHeader h;
+  READ_MEM( &h, sizeof(KettleHeader) );
+  if( h.magic != 0x4B544C31 ){
+    error( "Unkettle: Invalid file format in %s.", filename );
+  }
+  
+  for( u32 i = 0; i < h.count; ++i ){
+    KettleMeta meta;
+    READ_MEM( &meta, sizeof( KettleMeta ) );
+
+    tensor* t = mem( 1, tensor );
+    t->rank = meta.rank;
+    t->size = meta.size;
+    memcpy( t->shape, meta.shape, sizeof(u32)*4 );
+    
+    // Reconstruct strides
+    u32 stride = 1;
+    for( int k = t->rank - 1; k >= 0; --k ){
+      t->strides[ k ] = stride;
+      stride *= t->shape[ k ];
+    }
+    for( u32 k = t->rank; k < 4; ++k ){
+      t->shape[k] = 1;
+      t->strides[k] = 1;
+    }
+
+    t->offset = 0;
+    t->ownsData = true;
+    t->gpu = ( meta.isGpu != 0 );
+
+    if( t->gpu ){
+      // --- GPU UPLOAD PATH ---
+      t->tex.channels = meta.channels;
+      t->tex.layers = meta.layers;
+      t->tex.height = meta.height;
+      t->tex.width  = meta.width;
+
+      GLenum internalFormat = GL_RGBA32F;
+      GLenum format = GL_RGBA;
+      GLenum type = GL_FLOAT;
+      
+      // FIXED: Rename this so it doesn't shadow 'decompressedBuffer' 
+      // or confuse the macro logic
+      void* texData = NULL; 
+      
+      u32 bytesToRead = 0;
+      bool isU8 = false;
+
+      // Determine GL formats based on Atlas Channel Logic
+      if( meta.channels == 40 ){
+        internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true;
+      } else if( meta.channels == 30 ){
+        internalFormat = GL_RGB8;  format = GL_RGB;  type = GL_UNSIGNED_BYTE; isU8 = true;
+      } else if( meta.channels == 20 ){
+        internalFormat = GL_RG8;   format = GL_RG;   type = GL_UNSIGNED_BYTE; isU8 = true;
+      } else if( meta.channels == 10 ){
+        internalFormat = GL_R8;    format = GL_RED;  type = GL_UNSIGNED_BYTE; isU8 = true;
+      } else if( meta.channels == 4 ){
+        internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT;
+      } else if( meta.channels == 3 ){
+        internalFormat = GL_RGB32F;  format = GL_RGB;  type = GL_FLOAT;
+      } else if( meta.channels == 2 ){
+        internalFormat = GL_RG32F;   format = GL_RG;   type = GL_FLOAT;
+      } else if( meta.channels == 1 ){
+        internalFormat = GL_R32F;    format = GL_RED;  type = GL_FLOAT;
+      }
+
+      bytesToRead = meta.size * ( isU8 ? 1 : 4 );
+      u32 channelMult = 4;
+      if( meta.channels > 10 )
+        channelMult = meta.channels / 10;
+      else if( meta.channels )
+        channelMult = meta.channels;
+      
+      // Allocate temp buffer for upload
+      texData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 );
+      
+      // FIXED: Read from the global decompressedBuffer INTO texData
+      READ_MEM( texData, bytesToRead );
+
+      glGenTextures( 1, &t->tex.texture );
+      glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+      
+      glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+      glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
+                    t->tex.width, t->tex.height, t->tex.layers, 
+                    0, format, type, texData );
+
+      if( meta.mipmapped ){
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+        if( getMaxAnisotropy() > 1.0 )
+          glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+        glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+      }else{
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+      }
+
+      glGenFramebuffers( 1, &t->tex.framebuffer );
+      glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+      glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
+      
+      if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+        error( "%s", "Unkettle: Framebuffer incomplete." );
+          
+      glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+      glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+
+      unmem( texData ); // Free the temp buffer
+
+    } else {
+      // CPU
+      t->data = mem( meta.size, f32 );
+      
+      if( meta.channels >= 10 ) {
+        u8* tmp = mem( meta.size, u8 );
+        READ_MEM( tmp, meta.size );
+        for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f;
+        unmem( tmp );
+      } else {
+        READ_MEM( t->data, sizeof(f32) * meta.size );
+      }
+    }
+    push( ts, t );
+  }
+
+  // FIXED: Removed the second fclose(f) here
+  unmem( decompressedBuffer );
 }

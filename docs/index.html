@@ -211,6 +211,7 @@
       <li><a href="#cmd-img">img (image)</a></li>
       <li><a href="#cmd-include">include</a></li>
       <li><a href="#cmd-input">input</a></li>
+      <li><a href="#cmd-kettle">kettle</a></li>
       <li><a href="#cmd-keys">keys</a></li>
       <li><a href="#cmd-l">l (length)</a></li>
       <li><a href="#cmd-load">load</a></li>
@@ -237,6 +238,7 @@
       <li><a href="#cmd-toString">toString</a></li>
       <li><a href="#cmd-translate">translate</a></li>
       <li><a href="#cmd-unext">unext (unextrude)</a></li>
+      <li><a href="#cmd-unkettle">unkettle</a></li>
       <li><a href="#cmd-while">while / for</a></li>
       <li><a href="#cmd-windowSize">windowSize</a></li>
       <li><a href="#cmd-workspace">workspace</a></li>
@@ -776,6 +778,11 @@ strides:
       <a href="https://wiki.libsdl.org/SDL2/SDL_Scancode" style="color:#4da6ff;">See SDL_Scancode docs</a>.</p>
   </section>
 
+  <section id="cmd-kettle">
+    <h2>kettle</h2>
+    <p>This command takes one string argument and one numeric parameter, and saves that many elements off the stack into the filename provided, in a format that is optimized for loading back into the GPU.  You set up the stack with the textures and tensors you want to save, kettle them, and then can quickload them later with unkettle.  "cooking".</p>
+  </section>
+
   <section id="cmd-l">
     <h2>l (length)</h2>
     <p>This command takes a tensor of rank 1, a vector, and pushes the Euclidean distance of it onto the stack.</p>
@@ -1129,6 +1136,11 @@ strides: 1 2
     <section id="cmd-unext">
     <h2>unext (unextrude)</h2>
     <p>This command performs the reverse of extrusion on the tensor on top of the stack. That is, if the last dimension is of length 1, this command reduces the rank by 1.  If the last dimension isn't of length 1, an error is generated.</p>
+  </section>
+
+  <section id="cmd-unkettle">
+    <h2>unkettle</h2>
+    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it.</p>
   </section>
 
   <section id="cmd-while">
