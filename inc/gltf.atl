@@ -222,9 +222,9 @@ ivec4 bi = ivec4(bones);
 
 // Blend the blend
 mat4 skin = getLerpMat(f0, f1, bi.x, anim, t) * weights.x +
-            getLerpMat(f0, f1, bi.y, anim, t) * weights.y +
-            getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
-            getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
+            getLerpMat(f0, f1, bi.y, anim, t) * weights.y;// +
+            //getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
+            //getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
 
 v = skin * v;
 worldPos = v.xyz;
