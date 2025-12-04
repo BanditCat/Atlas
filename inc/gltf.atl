@@ -166,7 +166,7 @@ depth;backface;
 1;dup;shape;first;
 [0];u_zero= 1;
 
-3;dup;shape;0;dup;[2 3 0];s;animCount= 1;[0 1 0];s;frameCount= 1;
+3;dup;shape;0;dup;[0 1 0];s;boneCount= 1;[3];animCount= 1;[0 1 0];s;frameCount= 1;  //BUGBUG hardcoded 3
 4;dup;shape;[1 3 0];s;atlasSize= 2;
 time;runTime= 2;
 
@@ -177,31 +177,18 @@ vec3 hsv2rgb(vec3 c) {
     vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
     return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
 }
-
-// Raw fetch
 mat4 getBoneMat(int frame, int bone, int anim) {
     mat4 m;
-    
-    // We loop through the 4 columns
     for (int col = 0; col < 4; col++) {
-        // We loop through the 4 rows
-        // ADD u_zero TO THE CONDITION to prevent unrolling
-        for (int row = 0; row < 4 + int( u_zero ); row++) {
-            
-            // Calculate the flat index (0-15) for your c() function
-            // assuming your tensor 4th dim is the 16 floats of the matrix
-            int componentIndex = col * 4 + row; 
-            
-            // Fetch the single float using your existing arbitrary logic
-            float val = c(ivec4(frame, bone, anim, componentIndex));
-            
-            // Fill the matrix
-            m[col][row] = val;
-        }
+       vec4 val = cf(vec3(
+           float(col) + 0.5,                              // x: column within the 4-wide texture
+           float(anim) + animCount * float(bone) + 0.5,   // y: row 
+           float(frame)                                  // z: layer (frame)
+       ));
+       m[col] = val;
     }
     return m;
 }
-
 mat4 getLerpMat(int f0, int f1, int bone, int anim, float t) {
     mat4 m0 = getBoneMat(f0, bone, anim);
     mat4 m1 = getBoneMat(f1, bone, anim);

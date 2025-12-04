@@ -422,7 +422,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
     if( frame_count == 0 )
       frame_count = 1;
 
-    u32 anim_shape[ 4 ] = { frame_count, bone_count, anim_count, 16 };
+    u32 anim_shape[ 4 ] = { frame_count, bone_count * anim_count, 4, 4 };
     f32* anim_data = mem( frame_count * bone_count * anim_count * 16, f32 );
 
     for( u32 f = 0; f < frame_count; ++f ){
@@ -449,7 +449,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
       }
     }
     t_anim = newTensor( 4, anim_shape, anim_data );
-    tensorToGPUMemory( t_anim );
+    tensorToTextureArray( t_anim, 4 );
   } else {
     // Dummy animation
     u32 s[ 4 ] = { 1, 1, 1, 16 };
@@ -649,7 +649,8 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
 
   t_tex = newTensor( 4, tex_shape, (f32*)tex_data );
   tensorToTextureArray( t_tex, 40 );
-
+  textureTensor( t_tex );
+  
   // --- MESH LOADING (Vertices & Indices) ---
   // (Standard Mesh code...)
   u32 float_per_vert = 21;

@@ -1544,15 +1544,11 @@ void tensorToTextureArray( tensor* t, u32 channels ){
   glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
   
   // Mipmaps & Params
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
-  if( getMaxAnisotropy() > 1.0 ){
-    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
-  }
-  glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST  );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
   
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
@@ -1603,6 +1599,21 @@ typedef struct {
 void memWrite(u8* base, u64* offset, void* data, u32 size) {
   memcpy(base + *offset, data, size);
   *offset += size;
+}
+
+void textureTensor( tensor* cur ){
+  if( !cur->gpu || cur->tex.channels == 0 )
+    error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, cur->tex.texture );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+  if( getMaxAnisotropy() > 1.0 ){
+    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+  }
+  glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
 }
 
 void kettle(tensorStack* ts, u32 count, const char* filename) {

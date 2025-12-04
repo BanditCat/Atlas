@@ -1122,7 +1122,7 @@ strides: 1 2
 
   <section id="cmd-textureArray">
     <h2>textureArray</h2>
-    <p>This command takes the texture on top of the stack, which must be rank 4, 1 or 4 component like [512 512 512 4] or [256 32 256 1], and turns it into a 2d texture array.  These textures can be sampled from using the overloaded af,bf,cf,df( vec3 ) versions.  This command takes a single numeric argument, channels, which matches the c compute command: 1 for a single channel float, 10 for a single channel u8 normalized, 4 for an float vec4, and 40 for the rgba u8 version.  This command turns on mipmapping and anisotropic filtering for the texture.</p>
+    <p>This command takes the texture on top of the stack, which must be rank 4, 1 or 4 component like [512 512 512 4] or [256 32 256 1], and turns it into a 2d texture array.  These textures can be sampled from using the overloaded af,bf,cf,df( vec3 ) versions.  This command takes a single numeric argument, channels, which matches the c compute command: 1 for a single channel float, 10 for a single channel u8 normalized, 4 for an float vec4, and 40 for the rgba u8 version.  This command does not turn on mipmapping and anisotropic filtering for the texture, that can be done by then calling the texture command.</p>
   </section>
 
   <section id="cmd-timeDelta">

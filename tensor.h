@@ -96,6 +96,7 @@ void tensorTranslate( tensorStack* ts, u32 index );
 void tensorProject( tensorStack* ts, u32 index );
 void tensorOrtho( tensorStack* ts, u32 index );
 void tensorToTextureArray( tensor* t, u32 channels );
+void textureTensor( tensor* t );
 // New Kettling functions
 void kettle( tensorStack* ts, u32 count, const char* filename );
 void unkettle( tensorStack* ts, const char* filename );
