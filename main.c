@@ -64,6 +64,14 @@ u64 startTime = 0;
 f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 
+
+// Structure to pass argc/argv to the render thread
+typedef struct {
+  int argc;
+  char** argv;
+} LaunchArgs;
+
+
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
   if( !fileExists( realName ) )
@@ -441,6 +449,12 @@ GLuint createProgram( const GLchar* vertexSource,
 #ifndef __EMSCRIPTEN__
 // Rendering and computation thread function
 int renderThreadFunction( void* data ){
+  LaunchArgs* args = (LaunchArgs*)data;
+
+  // Determine filename: If we have >1 arg, the second one is the script
+  // argv[0] is usually the executable name
+  const char* fileName = ( args->argc >= 2 ) ? args->argv[ 1 ] : NULL;
+
   // Create the OpenGL context in the render thread
   glContext = SDL_GL_CreateContext( window );
   if( !glContext )
@@ -487,8 +501,14 @@ int renderThreadFunction( void* data ){
   glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
   // Compile program.
-  loadProg( &prog, &ts, data );
+  loadProg( &prog, &ts, fileName );
 
+  if( ts ){
+    for( int i = 2; i < args->argc; i++ ){
+      push( ts, tensorFromString( args->argv[ i ] ) );
+    }
+  }
+  
   // Main loop
   while( SDL_AtomicGet( &running ) ){
     //SDL_PumpEvents();
@@ -705,6 +725,18 @@ int main( int argc, char* argv[] )
   workspace = mem( 1, char );
   workspace[ 0 ] = '\0';
 #ifndef __EMSCRIPTEN__
+  // 1. Check if we already have a valid stdout handle (e.g. Pipe from Emacs)
+  HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
+    
+  // 2. Only if we DON'T have a handle, try to attach to the console
+  if( hOut == NULL || hOut == INVALID_HANDLE_VALUE ){
+    // ATTACH_PARENT_PROCESS is (DWORD)-1
+    if( AttachConsole( (DWORD)-1 ) ){
+      // Now redirect the streams because we are definitely detached
+      freopen( "CONOUT$", "w", stdout );
+      freopen( "CONOUT$", "w", stderr );
+    }
+  }
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );
   
@@ -784,10 +816,12 @@ int main( int argc, char* argv[] )
 
 
 #ifndef __EMSCRIPTEN__
-  // Create rendering and computation thread
-  void* arg = argc == 2 ? argv[ 1 ] : NULL;
+  LaunchArgs args;
+  args.argc = argc;
+  args.argv = argv;
+  
   SDL_Thread* renderThread =
-    SDL_CreateThread( renderThreadFunction, "RenderThread", arg );
+    SDL_CreateThread( renderThreadFunction, "RenderThread", &args );
   if( renderThread == NULL ){
     error( "%s", "Failed to create rendering thread" );
   }
@@ -813,7 +847,8 @@ int main( int argc, char* argv[] )
   //SDL_DestroyMutex( data_mutex );
 #else
   // Set up the main loop for Emscripten
-  emscripten_set_main_loop( main_loop, 0, 1 );
+  emscripten_set_main_loop( main_loop, 0, 0 );
+  return;
 #endif
 
   // Cleanup
