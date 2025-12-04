@@ -88,7 +88,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Time'
+	git commit -m 'Eval :D'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)

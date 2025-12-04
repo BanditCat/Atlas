@@ -1,4 +1,4 @@
-make command line arguments start on stack
+console
 make unkettling reentrant
 write gltfToKtl and make it display runtime info instead of printfing.
 introduce atlas to pipeline
@@ -7,4 +7,4 @@ billboarding
 terrain splatting
 errosion
 main menu
-
+repl

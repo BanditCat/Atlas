@@ -202,6 +202,7 @@
       <li><a href="#cmd-depth">depth</a></li>
       <li><a href="#cmd-dup">dup (duplicate)</a></li>
       <li><a href="#cmd-enclose">e (enclose)</a></li>
+      <li><a href="#cmd-eval">eval</a></li>
       <li><a href="#cmd-extrude">ext (extrude)</a></li>
       <li><a href="#cmd-first">first / last</a></li>
       <li><a href="#cmd-gamepad">gamepad</a></li>
@@ -291,7 +292,7 @@
   
   <section id="gotchas">
     <h2>Gotchas</h2>
-    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'.  Because of this, and because OpenGL reserves variables containing __, you must not start glsl vairable names with an underscore if in a workspace.</p>
+    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'.  Because of this, and because OpenGL reserves variables containing __, you must not start glsl variable names with an underscore if in a workspace.</p>
   </section>      
 
   <section id="sugar">
@@ -705,6 +706,11 @@ strides: 1
 | 0.50 |
 +------+</code></pre>
     </p>
+  </section>
+
+  <section id="cmd-eval">
+    <h2>eval</h2>
+    <p>This takes one string argument, an atlas program to be run immediately, not in a loop. When running, this program has access to the invoking program's variables and stack. **Variables declared only within an eval statement cannot be accessed outside it; they must be pre-declared in the containing script to be shared.**</p>
   </section>
 
   <section id="cmd-first">

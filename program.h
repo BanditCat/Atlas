@@ -38,6 +38,7 @@ typedef struct{
     TRANSPOSE, // documented
     SLICE, // documented
     LOAD, // documented
+    EVAL, // documented
     MULTM, // documented
     REVERSE, // documented
     CAT, // documented
@@ -145,6 +146,8 @@ typedef struct{
 } program;
 
 program* newProgramFromFile( const char* filename );
+// mutates but does not deallocate the string eval.
+program* newProgramFromString( char* eval );
 // Return false to exit program.
 bool runProgram( tensorStack* ts, program** progp );
 void deleteProgram( program* p );

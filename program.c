@@ -10,6 +10,7 @@ void preprocessComputeCommands( char* prog ){
   while( *ptr != '\0' ){
     if( ptr[ 0 ] == 'c' && ptr[ 1 ] == '\'' &&
         ( ptr == prog || ptr[ -1 ] == ';' || isspace( ptr[ -1 ] ) ) ){
+      ptr[ 1 ] = '\252';
       ptr += 2;
       
       // Process exactly 4 quoted sections
@@ -19,13 +20,14 @@ void preprocessComputeCommands( char* prog ){
           if( *ptr == '\\' )
             error( "%s", "Backslash in shader! This is almost certainly an error!" );
           if( *ptr == ';' )
-            *ptr = '\\';
+            *ptr = '\251';
           ptr++;
         }
         
-        if( *ptr == '\'' )
+        if( *ptr == '\'' ){
+          *ptr = '\252';
           ptr++;
-        else 
+        }else 
           break;
       }
     } else {
@@ -340,6 +342,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              label );
+    
     trieInsert( p->labels, label, p->numSteps );
     // dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label
     // );
@@ -560,12 +563,12 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     // dbg( "Linenum %u commandnum %u: load %s\n", linenum, commandnum,
     // progName );
 
-  } else if( !strncmp( command, "c'", 2 ) ){  // Compute
+  } else if( !strncmp( command, "c\252", 2 ) ){  // Compute
     char* starti = command + 2;
     char* endi = starti;
-    while( *endi && *endi != '\'' )
+    while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\'' )
+    if( *endi != '\252' )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
@@ -574,14 +577,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     memcpy( vpre, starti, endi - starti );
     // Replace \ with ;
     for( u32 i = 0; i < endi - starti; ++i )
-      if( vpre[ i ] == '\\' )
+      if( vpre[ i ] == '\251' )
         vpre[ i ] = ';';
     vpre[ endi - starti ] = '\0';
     starti = endi + 1;
     ++endi; // now get compute statements
-    while( *endi && *endi != '\'' )
+    while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\'' )
+    if( *endi != '\252' )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
@@ -590,14 +593,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     memcpy( vcomp, starti, endi - starti );
     // Replace \ with ;
     for( u32 i = 0; i < endi - starti; ++i )
-      if( vcomp[ i ] == '\\' )
+      if( vcomp[ i ] == '\251' )
         vcomp[ i ] = ';';
     vcomp[ endi - starti ] = '\0';
     starti = endi + 1;
     ++endi; // now get compute statements
-    while( *endi && *endi != '\'' )
+    while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\'' )
+    if( *endi != '\252' )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
@@ -606,14 +609,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     memcpy( pre, starti, endi - starti );
     // Replace \ with ;
     for( u32 i = 0; i < endi - starti; ++i )
-      if( pre[ i ] == '\\' )
+      if( pre[ i ] == '\251' )
         pre[ i ] = ';';
     pre[ endi - starti ] = '\0';
     starti = endi + 1;
     ++endi; // now get compute statements
-    while( *endi && *endi != '\'' )
+    while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\'' )
+    if( *endi != '\252' )
       error( "%s:%u command %u: %s", filename,
              linenum,
              commandnum,
@@ -622,7 +625,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     memcpy( comp, starti, endi - starti );
     // Replace \ with ;
     for( u32 i = 0; i < endi - starti; ++i )
-      if( comp[ i ] == '\\' )
+      if( comp[ i ] == '\251' )
         comp[ i ] = ';';
     comp[ endi - starti ] = '\0';
     
@@ -653,6 +656,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              linenum,
              commandnum,
              "Malformed compute statement." );
+
+  } else if( !strcmp( command, "eval" ) ){
+    curStep->type = EVAL;
+    // dbg( "Linenum %u commandnum %u: eval\n", linenum, commandnum );
 
   } else if( !strcmp( command, "first" ) ){
     curStep->type = FIRST;
@@ -984,7 +991,6 @@ void addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
   preprocessComputeCommands( prog );
   
-  
   char* ptr = prog;
   u32 linenum = 1;
   u32 commandnum = 0;
@@ -994,11 +1000,19 @@ void addProgram( const char* filename, char* prog, program* program ){
     char* oldPtr = ptr;
 
     // Find the next semicolon (or end-of-string if none).
-    char* semicolon = strchr( ptr, ';' );
-    if( !semicolon ){
-      semicolon = ptr + strlen( ptr );  // If no semicolon, go to end of input
-    }
+    char* semicolon = ptr;
+    bool inQuote = false;
 
+    while( *semicolon != '\0' ){
+      if( *semicolon == '\\' && *(semicolon + 1) ){
+        semicolon += 2; // Skip the escaped character
+      } else if( *semicolon == '\'' ){
+        inQuote = !inQuote;
+      } else if( *semicolon == ';' && !inQuote ){
+        break; // Found the command terminator
+      }
+      semicolon++;
+    }
     // Calculate length of this “command” chunk
     size_t cmd_length = semicolon - ptr;
 
@@ -1290,13 +1304,14 @@ void finalize( program* program ){
             program->steps[ i ].var.size = program->varSizes[ vi ];
             unmem( tp );
           }
-        } else
+        } else{
           error( "%s:%u command %u: Statement with unknown label %s",
                  program->steps[ i ].filename, program->steps[ i ].linenum,
                  program->steps[ i ].commandnum,
                  program->steps[ i ].branchBaseName?
                  program->steps[ i ].branchBaseName:
                  program->steps[ i ].branchName );
+        }
                 
       } else {
         unmem( program->steps[ i ].branchName );
@@ -1413,6 +1428,21 @@ program* newProgramFromFile( const char* filename ){
   workspace[ 0 ] = 0;
   return prog;
 }
+program* newProgramFromString( char* eval ){
+  // Always reset to workplace'' for a new program.
+  char* tw = workspace;
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
+
+  program* prog = newProgram();
+  addProgram( "{EVAL}", eval, prog );
+  finalize( prog );
+
+
+  unmem( workspace );
+  workspace = tw;
+  return prog;
+}  
 
 void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numComputes; ++i )
@@ -2126,6 +2156,46 @@ bool runProgram( tensorStack* ts, program** progp ){
         pop( ts );
       // dbg( "%s'%s'", "load ", s=>progName );
       return true;
+    }
+    case EVAL: {
+      char* codeToRun = NULL;
+
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to eval with no string on the stack." );
+        
+      tensor* cur = ts->stack[ ts->size - 1 ];
+      if( cur->rank != 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to eval a non-string tensor." );
+        
+      codeToRun = tensorToString( cur );
+        
+      pop( ts );
+      
+      program* tempProg = newProgramFromString( codeToRun );
+      f32* tempVarBlock = tempProg->varBlock;
+      tensor** tempBigVars = tempProg->bigvarts;
+      u32* tempVarOffsets = tempProg->varOffsets;
+      u32* tempVarSizes = tempProg->varSizes;
+
+      tempProg->varBlock = p->varBlock;
+      tempProg->bigvarts = p->bigvarts;
+      tempProg->varOffsets = p->varOffsets;
+      tempProg->varSizes = p->varSizes;
+
+      runProgram( ts, &tempProg );
+      
+      tempProg->varBlock = tempVarBlock;
+      tempProg->bigvarts = tempBigVars;
+      tempProg->varOffsets = tempVarOffsets;
+      tempProg->varSizes = tempVarSizes;
+      
+      deleteProgram( tempProg );
+    
+      unmem( codeToRun );
+
+      break;
     }
     case FIRST: {
       if( !ts->size )

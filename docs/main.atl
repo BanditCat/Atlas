@@ -1,3 +1,4 @@
+
 include'inc\stdlib.atl'; // It's advisable to include this first.
 
 'inc\\triangle.atl';
@@ -5,6 +6,7 @@ include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the
 
 
 size;if'started';
+'1;2;foo=;print;pop;';eval;foo;print;
 std.nav2d;
 [4];std.tzoom=;
 // Draw the text just once.

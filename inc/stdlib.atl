@@ -505,15 +505,21 @@ fntexsize=;
 
 fngradsize;fntexsize;fnamp;fnseed;perlin;
 
+l'foo';
 l'fnloop';
+l'foo2';
 fngradsize;2;*;fngradsize=;
+l'foo3';
 fnamp;[0.5];*;fnamp=;
+l'foo4';
 fnseed;[1.2];+;fnseed=;
+l'foo5';
 fngradsize;fntexsize;fnamp;fnseed;perlin;
+l'foo6';
 6;fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0 0;
+l'foo7';
 fntexsize;fngradsize;/;4;-;if'fnloop';
 return;
-
 
 
 
