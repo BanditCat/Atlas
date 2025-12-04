@@ -60,6 +60,8 @@ GLuint shaderProgram;
 GLuint vbo;
 u64 curTime = 0;
 u64 prevTime = 0;
+u64 startTime = 0;
+f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
@@ -497,6 +499,7 @@ int renderThreadFunction( void* data ){
     curTime = SDL_GetPerformanceCounter();
     timeDelta *= 0.9;
     timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+    runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
     if( !runProgram( ts, &prog ) ){
 #ifdef DBG
       check_memory_leaks();
@@ -605,6 +608,7 @@ void main_loop( void ){
   curTime = SDL_GetPerformanceCounter();
   timeDelta *= 0.9;
   timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+  runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
   if( !runProgram( ts, &prog ) ){
     running = 0;
     emscripten_cancel_main_loop();
@@ -696,6 +700,7 @@ int main( int argc, char* argv[] )
 #endif
 {
   curTime = SDL_GetPerformanceCounter();
+  startTime = curTime;
   prevTime = curTime;
   workspace = mem( 1, char );
   workspace[ 0 ] = '\0';

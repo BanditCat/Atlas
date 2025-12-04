@@ -234,6 +234,7 @@
       <li><a href="#cmd-t">t (transpose)</a></li>
       <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-textureArray">textureArray</a></li>
+      <li><a href="#cmd-time">time</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
       <li><a href="#cmd-toString">toString</a></li>
       <li><a href="#cmd-translate">translate</a></li>
@@ -1121,6 +1122,11 @@ strides: 1 2
   <section id="cmd-timeDelta">
     <h2>timeDelta</h2>
     <p>This command pushes the frame time, in seconds, onto the stack as a scalar.</p>
+  </section>
+
+  <section id="cmd-time">
+    <h2>timeDelta</h2>
+    <p>This command pushes a 2 vector with the the total time in hours as an integer, and the time since last hour in seconds.  This provides accurate runtimes for up to 1875 years.</p>
   </section>
 
   <section id="cmd-toString">

@@ -59,6 +59,7 @@ typedef struct{
     ORTHO, // documented
     LENGTH, // documented
     TIME, // documented
+    TIMEDELTA, // documented
     REPEAT, // documented
     SHAPE, // documented
     QUIT, // documented

@@ -4,7 +4,7 @@ include'inc\stdlib.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 
 size;if'started';
-0;time= ;
+0;timeSeed= ;
 [[[-0.5 -0.28868 0 1] [1 0 0 1]]
  [[ 0   0.57735  0 1] [0 1 0 1]] 
  [[ 0.5 -0.28868 0 1] [0 0 1 1]]];
@@ -16,10 +16,9 @@ vec4 r = vec4( a( ivec4( tf, 0, 0 ) ),
 ret[0] = r;' 1 1 4 0;   // first we take our vertices and colors and put them in a texture.
 1;
 l'started';
-time;timeDelta;+;time=;
 [90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
 [0 0 -1.5];translate;trans= 16;
-time;[0 1 0];rot;rot= 16;
+time;last;[0 1 0];rot;rot= 16;
 
 pop;
 
@@ -47,6 +46,6 @@ std.keyState;[58 59 0];s;first;ifn'skipf1';
 std.textToTexture;std.blitText;
 l'skipf1';
 std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
-1;timeDelta;/;toString;e;
+'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
 std.textToTexture;std.blitText;
 l'skipf2';

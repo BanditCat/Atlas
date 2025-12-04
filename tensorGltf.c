@@ -1018,7 +1018,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   result[ 0 ] = t_verts;
   result[ 1 ] = t_indices;
   result[ 2 ] = t_anim;
-  result[ 3 ] = t_tex;  // The Texture Array
+  result[ 3 ] = t_tex; 
 
   if( outCount )
     *outCount = 4;

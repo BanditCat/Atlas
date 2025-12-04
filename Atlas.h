@@ -353,6 +353,7 @@ extern bool touchClicks[ 3 ];
 extern float pinchZoom;
 extern u8 keys[ SDL_NUM_SCANCODES ];
 extern f64 timeDelta;
+extern f64 runTime;
 extern GLuint vao;
 #define MAX_CONTROLLERS 8
 extern SDL_GameController* controllers[ MAX_CONTROLLERS ];

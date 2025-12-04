@@ -791,8 +791,12 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
   } else if( !strcmp( command, "timeDelta" ) ){
+    curStep->type = TIMEDELTA;
+    // dbg( "Linenum %u commandnum %u: timeDelta\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "time" ) ){
     curStep->type = TIME;
-    // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: time\n", linenum, commandnum );
 
   } else if( !strcmp( command, "e" ) ){
     curStep->type = ENCLOSE;
@@ -2081,11 +2085,20 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%s %f", "length", *newData );
       break;
     }
-    case TIME: {
+    case TIMEDELTA: {
       f32* time = mem( 1, f32 );
       *time = timeDelta;
       push( ts, newTensor( 0, NULL, time ) );
-      // dbg( "%s", "time" );
+      // dbg( "%s", "timeDelta" );
+      break;
+    }
+    case TIME: {
+      const u32 shape[] = { 2 };
+      f32* time = mem( 2, f32 );
+      time[ 0 ] = floorf( runTime / 3600  );
+      time[ 1 ] = runTime - ( (f64)( time[ 0 ] ) * 3600.0 );
+      push( ts, newTensor( 1, shape, time ) );
+      // dbg( "%s", "timeDelta" );
       break;
     }
     case LOAD: {

@@ -39,8 +39,6 @@ ret[0] = r;' 1 1 4 0;   // take our vertices and colors and put them in a textur
 
 sqrtParticles;[2];^;[3];*;first;vertexCount=;
 
-0;time=;
-
 6;sqrtParticles;0;dup;0;cat;[4];0;cat;
 c'''
 float hash( vec2 p, float time ){
@@ -103,7 +101,7 @@ l'pastRunTest'; // Test for running and run or not.
 
 
 // stack: last frame, velocity, position, verts
-time;timeDelta;+;time=;
+cumTime;timeDelta;+;cumTime=;
 [90];windowSize;0;cat;[0.1 1000];0;cat;proj;proj= 16;
 
 pop;
@@ -250,6 +248,6 @@ std.keyState;[58 59 0];s;first;ifn'skipf1';
 std.textToTexture;std.blitText;
 l'skipf1';
 std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
-1;timeDelta;/;toString;e;
+'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
 std.textToTexture;std.blitText;
 l'skipf2';

@@ -215,6 +215,6 @@ std.keyState;[58 59 0];s;first;ifn'skipf1';
 std.textToTexture;std.blitText;
 l'skipf1';
 std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
-1;timeDelta;/;toString;e;
+'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
 std.textToTexture;std.blitText;
 l'skipf2';

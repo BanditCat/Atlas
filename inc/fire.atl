@@ -7,7 +7,6 @@ windowSize;wsize= 2;
 
 
 size;if'started';
-[0];time= 1;
 6;wsize;[3];0;cat;
 c''''
 ret[0] = t.y < 20 ? ( t.z == 0 ? 1.0 : 0.0 ) : 0.0;
@@ -16,7 +15,7 @@ l'started';
 
 std.inputState;
 [3 4 0];s;first;std.gamepadState;[16 17 0];s;first;+;if'still';
-time;[1];+;time= 1;
+timeSeed;[1];+;timeSeed= 1;
 l'still';
 6;wsize;[4];0;cat;
 c'''
@@ -25,11 +24,11 @@ float hash( vec2 p, float time ){
     return fract( sin( h ) * 43758.5453123 );
 }
 '
-vec2 uv = vec2( floor( hash( tf, time * 10.32213 ) * 3.0 ) - 1.0,
-                -1.0 - floor( hash( tf, time ) * 3.0 ) );
+vec2 uv = vec2( floor( hash( tf, timeSeed * 10.32213 ) * 3.0 ) - 1.0,
+                -1.0 - floor( hash( tf, timeSeed ) * 3.0 ) );
 float val = af( tf + uv ).r;
 
-ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, time * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0, 0.0 );
+ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, timeSeed * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0, 0.0 );
 ' 1 1 40 0;
 
 
@@ -42,6 +41,6 @@ std.keyState;[58 59 0];s;first;ifn'skipf1';
 std.textToTexture;std.blitText;
 l'skipf1';
 std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
-1;timeDelta;/;toString;e;
+'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
 std.textToTexture;std.blitText;
 l'skipf2';
