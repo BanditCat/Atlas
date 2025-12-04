@@ -1,5 +1,6 @@
 workspace'std';
 stdlibInited;if'stdlibInitDone';
+size;ifn'dontQuitEarly';quit;l'dontQuitEarly';  // If we have commandline arguments, quit, to preserve the startup logic of scripts which depend on the stack being empty.
 1;stdlibInited=;
 0;512;rep;oldKeys=;
 0;21;rep;oldGamepad=;
