@@ -805,6 +805,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = REVERSE;
     // dbg( "Linenum %u commandnum %u: reverse\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "textInput" ) ){
+    curStep->type = TEXTINPUT;
+    // dbg( "Linenum %u commandnum %u: textInput\n", linenum, commandnum );
+
   } else if( !strcmp( command, "timeDelta" ) ){
     curStep->type = TIMEDELTA;
     // dbg( "Linenum %u commandnum %u: timeDelta\n", linenum, commandnum );
@@ -901,7 +905,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
                linenum,
                commandnum,
                "Unmatched quote in string statement." );
-      char* str = mem( 1 + endi - starti, char );
+      char* str = mem( 2 + endi - starti, char );
       memcpy( str, starti, endi - starti );
       u32 back = endi - starti;
       
@@ -913,7 +917,6 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
             str[ j ] = str[ j + 1 ];
         }
       str[ back ] = '\0';
-      
       
       curStep->tensor = tensorFromString( str );
       unmem( str );
@@ -1503,6 +1506,11 @@ bool runProgram( tensorStack* ts, program** progp ){
       data[ 0 ] = windowWidth;
       data[ 1 ] = windowHeight;
       push( ts, newTensor( 1, wsshape, data ) );
+      break;
+    }
+    case TEXTINPUT: {
+      push( ts, tensorFromString( textInputBuffer ) );
+      textInputBuffer[ 0 ] = '\0';
       break;
     }
     case GETINPUT: {

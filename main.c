@@ -63,6 +63,8 @@ u64 prevTime = 0;
 u64 startTime = 0;
 f64 runTime = 0.0;
 f64 timeDelta = 0.01;
+#define TEXTINPUTBUFFERSIZE 64
+char* textInputBuffer = NULL;
 
 
 // Structure to pass argc/argv to the render thread
@@ -207,6 +209,15 @@ void mainPoll( void ){
 #endif
       posx = event.motion.x; posy = event.motion.y;
       dx += event.motion.xrel; dy += event.motion.yrel;
+#ifndef __EMSCRIPTEN__
+      //SDL_UnlockMutex( data_mutex );
+#endif      
+    } else if( event.type == SDL_TEXTINPUT ){
+#ifndef __EMSCRIPTEN__
+      //SDL_LockMutex( data_mutex );
+#endif
+      u32 remaining = TEXTINPUTBUFFERSIZE - strlen( textInputBuffer ) - 2;
+      strncat( textInputBuffer, event.text.text, remaining );
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
 #endif      
@@ -724,6 +735,7 @@ int main( int argc, char* argv[] )
   prevTime = curTime;
   workspace = mem( 1, char );
   workspace[ 0 ] = '\0';
+  textInputBuffer = mem( TEXTINPUTBUFFERSIZE, char );
 #ifndef __EMSCRIPTEN__
   // 1. Check if we already have a valid stdout handle (e.g. Pipe from Emacs)
   HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
@@ -853,6 +865,7 @@ int main( int argc, char* argv[] )
 
   // Cleanup
   unmem( workspace );
+  unmem( textInputBuffer );
   glDeleteProgram( shaderProgram );
   glDeleteBuffers( 1, &vbo );
 #ifdef __EMSCRIPTEN__

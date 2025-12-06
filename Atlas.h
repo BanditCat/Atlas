@@ -342,6 +342,7 @@ static inline void* mem_check(void* ptr, size_t bytes, const char* file, int lin
 float getMaxAnisotropy( void );
 
 // Globals
+extern char* textInputBuffer;
 extern SDL_Window* window;
 extern SDL_GLContext glContext;
 extern f32 mouseWheel;

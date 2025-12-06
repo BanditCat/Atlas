@@ -234,6 +234,7 @@
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
+      <li><a href="#cmd-textInput">textInput</a></li>
       <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-textureArray">textureArray</a></li>
       <li><a href="#cmd-time">time</a></li>
@@ -1119,6 +1120,11 @@ strides: 1 2
 | +-----------+ |
 +---------------+
 </code></pre></p>
+  </section>
+
+  <section id="cmd-textInput">
+    <h2>textInput</h2>
+    <p>This command pushes the text input since the last call to this command onto the stack as ascii.  This makes it easy to gather text from the keyboard.  Up to 64 characters are buffered.</p>
   </section>
 
   <section id="cmd-texture">

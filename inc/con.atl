@@ -4,9 +4,7 @@ workspace'con';
 
 inited;if'initEnd';  // Do init
 1;inited=;
-
 [0.01];posCutoff=;
-'test';buffer=;
 
 l'initEnd';
 
@@ -14,6 +12,7 @@ l'initEnd';
 
 // Toggle console state 
 std.keyPresses;[53 54 0];s;first;ifn'noTilde';
+textInput;pop;
 1;visible;-;visible=;
 visible;ifn'noTilde';
 [0.1];pos= 1;
@@ -31,13 +30,29 @@ l'skipPrevSizeSetup';
 
 
 
+// Input
+textInput;0;dup;shape;unext;ifn'noa';
+buffer;shape;shape;unext;ifn'skipCat';
+buffer;1;raise;0;cat;
+l'skipCat';
+buffer=;1;
+l'noa';pop;
 
-
-
+// DOING THE THING!!! :D :D :D
+std.keyPresses;[40 41 0];s;unext;ifn'skipEval';
+buffer;eval;
+l'skipEval';
 
 pop; // pop last display
 
-buffer;e;std.textToTexture;0;dup;shape;[0 2 0];s;[2 2];/;tdims= 2;
+//Add a blank tex or the buffer.
+buffer;shape;shape;unext;ifn'skipTex';
+buffer;e;std.textToTexture;
+1;if'skipConst';
+l'skipTex';
+' ';e;std.textToTexture;
+l'skipConst';
+0;dup;shape;[0 2 0];s;[2 2];/;tdims= 2;
 
 1;dup;texture; // texture the display tensor so we can blur it.
 0;dup;shape;[0 2 0];s;windowSize;0;dup;wdims= 2;/;0;dup;wmult= 2;log;wadd= 2;
@@ -49,15 +64,15 @@ float blur = con_pos * 5.0 - 2.5;
 if( (1.0 - tf.y / con_wdims.y) < ( con_pos * 0.8 ) ){
   float aboveLine = ( con_pos * 0.8 * con_wdims.y ) - ( con_wdims.y - tf.y );
   vec4 text = vec4( 0.0 );
-  if( aboveLine < 1.0 || ( aboveLine > con_tdims.y + 1.0 && aboveLine < con_tdims.y + 2.0 ) )
+  if( aboveLine < 1.0 || ( aboveLine > con_tdims.y && aboveLine < con_tdims.y + 1.0 ) )
     text = vec4( 0.0, 1.0, 0.0, 0.0 );
-  if( aboveLine > 1.0 && aboveLine < con_tdims.y + 1.0 && tf.x > 1.0 && tf.x < con_tdims.x + 2.0 )
+  if( aboveLine > 1.0 && aboveLine < con_tdims.y && tf.x > 1.0 && tf.x < con_tdims.x + 2.0 )
     text = vec4( 1.0 - cf( vec2( tf.x, aboveLine ) * 2.0 ).x );
 
   float l = blur + con_wadd.x;
   vec2 uv = tf * con_wmult;
 
-  vec2 d = con_wmult * exp2(blur) * 0.2; 
+  vec2 d = con_wmult * exp2(blur) * 0.4; 
 
   vec4 acc = bf(vec4(uv, 0.0, l)) * 0.38;
 
