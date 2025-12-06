@@ -1,5 +1,6 @@
 main.atl
 inc\stdlib.atl
+inc\con.atl
 inc\font.bmp
 inc\fire.atl
 inc\mandelbrot.atl
