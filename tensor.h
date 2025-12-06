@@ -22,6 +22,7 @@ typedef struct{
       GLuint texture;        // OpenGL texture for reading/writing operations
       GLuint framebuffer;    // Framebuffer for rendering into the texture
       GLuint depthbuffer;    // Depth buffer for depth testing.
+      bool mipmapped;        // No logic reuired; defaults to 0 and is set only by textureTensor.
       u32 width, height, layers, channels; // If channels is non-zero, its a texture.
     } tex;
   };

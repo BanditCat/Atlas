@@ -26,7 +26,7 @@ float hash( vec2 p, float time ){
 '
 vec2 uv = vec2( floor( hash( tf, timeSeed * 10.32213 ) * 3.0 ) - 1.0,
                 -1.0 - floor( hash( tf, timeSeed ) * 3.0 ) );
-float val = af( tf + uv ).r;
+float val = af( vec4( tf + uv, 0.0, 0.0 ) ).r;
 
 ret[0] = vec4( ( tf.y < 20.0 && tf.x > 50.0 && tf.x < wsize.x - 50.0 ) ? hash( tf, timeSeed * 100.12132 ) / 2.0 + 0.5 : val - 0.005725, 0.0, 0.0, 0.0 );
 ' 1 1 40 0;

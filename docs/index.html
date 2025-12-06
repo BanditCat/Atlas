@@ -199,6 +199,7 @@
       <li><a href="#cmd-backface">backface</a></li>
       <li><a href="#cmd-c">c (compute)</a></li>
       <li><a href="#cmd-cat">cat (concatenate)</a></li>
+      <li><a href="#cmd-continue">continue</a></li>
       <li><a href="#cmd-depth">depth</a></li>
       <li><a href="#cmd-dup">dup (duplicate)</a></li>
       <li><a href="#cmd-enclose">e (enclose)</a></li>
@@ -439,8 +440,8 @@ l'skip';
   </section>
 
   <section id="cmd-arith">
-    <h2>+ / - / * / / / ^ / sin / cos / floor / ciel </h2>
-    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, or ceiling them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
+    <h2>+ / - / * / / / ^ / sin / cos / floor / ciel / log </h2>
+    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, ceiling, or logarithm them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
     <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print
     <pre><code>tensor 0
 shape: 3
@@ -531,7 +532,7 @@ Following the quoted strings, you supply four numeric parameters:
         Tensor Mode (channels = 0):
         The shader produces one or more tensors as output.
         Texture Mode (channels = 1, 4, 10, or 40):
-        A 1 or 4 channel texture is created instead of a tensor. channels = 10 is like channels = 1 but with a normalized 8-bit component.  Likewise for 40 and 4. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.)
+        A 1 or 4 channel texture is created instead of a tensor. channels = 10 is like channels = 1 but with a normalized 8-bit component.  Likewise for 40 and 4. In texture mode, the texture can only be used by subsequent c commands through specialized texture sampling functions (af, bf, cf, and df) that take vec2 UV coordinates. (Also note that operations which modify tensor shape—like reverse or transpose—won’t work on textures.) The af, bf, cf and df functions are overloaded with three varieties: vec2 for nomral sampling, vec3 for texture2DArrays, and vec4 for texture2DArrays with level of detail.
 
     reuse:
     This parameter indicates whether the return values are going to be placed on top of already returned values. If this parameter is nonzero, then the return values are taken from the stack, and must match the channels and dimensions of the expected return values.                               
@@ -625,6 +626,11 @@ strides: 2 1
 | +-----------+ |
 +---------------+</code></pre>
     </p>
+  </section>
+
+  <section id="cmd-continue">
+    <h2>continue</h2>
+    <p>This command causes execution to flow to the top of the currently loaded program as if you had jumped to a label at the start of the executing program.</p>
   </section>
 
   <section id="cmd-depth">
@@ -747,7 +753,7 @@ strides:
 
   <section id="cmd-gltf">
     <h2>gltf</h2>
-    <p>The gltf command takes one immediate string parameter, like <pre><code>gltf'filename.glb'</code></pre>, and produces 4 tensors; the vertex data, the index data, the bones x keyframes x animations data, and the texture array.</p>
+    <p>The gltf command takes one immediate string parameter, like <pre><code>gltf'filename.glb'</code></pre>, and produces 5 tensors; the vertex data [vertexCount 22] (pos vec4, normal vec3, uv vec2, bones vec4, weights vec4, mat float, tangent vec4) , the index data [indexCount], the bones x keyframes x animations data [4 bones*anims frames 4], and the texture array [maxWidth maxHeight materialCount*2 4], which has rgba in one texture, and xy normal + 6bitsroughness+2bits metallness and baked AO in alpha in the other. The last tensor is a scalar, the animation count, so that the correct postion in the bones tensor can be deduced.</p>
   </section>
 
   <section id="cmd-if">

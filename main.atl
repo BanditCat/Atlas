@@ -1,6 +1,7 @@
-//'inc\\catlas.glb';gltf;print;'inc\\catlas.ktl';4;kettle;quit;
-include'inc\stdlib.atl'; // It's advisable to include this first.
 
+
+//'inc\\catlas.glb';gltf;print;'inc\\catlas.ktl';5;kettle;quit;
+include'inc\stdlib.atl'; // It's advisable to include this first.
 'inc\\triangle.atl';
 include'inc\nav.atl'; // Demo navigation boilerplate. It takes one argument, the next demo to run on double click
 
@@ -60,3 +61,5 @@ std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
 std.textToTexture;std.blitText;
 l'skipf2';
+
+

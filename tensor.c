@@ -320,6 +320,9 @@ compute* makeCompute( const char* filename,
     vec4 af( vec3 uv ){\n\
       return texture( _a_atex, vec3( uv.xy / vec2( _a_adims ), uv.z ) );\n\
     }\n\
+    vec4 af( vec4 uv ){\n\
+      return textureLod( _a_atex, vec3( uv.xy / vec2( _a_adims ), uv.z ), uv.w );\n\
+    }\n\
     uniform ivec4 _a_bstrides;\n\
     uniform int _a_btoffset;\n\
     uniform ivec2 _a_bdims;\n\
@@ -340,6 +343,9 @@ compute* makeCompute( const char* filename,
     }\n\
     vec4 bf( vec3 uv ){\n\
       return texture( _a_btex, vec3( uv.xy / vec2( _a_bdims ), uv.z ) );\n\
+    }\n\
+    vec4 bf( vec4 uv ){\n\
+      return textureLod( _a_btex, vec3( uv.xy / vec2( _a_bdims ), uv.z ), uv.w );\n\
     }\n\
     uniform ivec4 _a_cstrides;\n\
     uniform int _a_ctoffset;\n\
@@ -362,6 +368,9 @@ compute* makeCompute( const char* filename,
     vec4 cf( vec3 uv ){\n\
       return texture( _a_ctex, vec3( uv.xy / vec2( _a_cdims ), uv.z ) );\n\
     }\n\
+    vec4 cf( vec4 uv ){\n\
+      return textureLod( _a_ctex, vec3( uv.xy / vec2( _a_cdims ), uv.z ), uv.w );\n\
+    }\n\
     uniform ivec4 _a_dstrides;\n\
     uniform int _a_dtoffset;\n\
     uniform ivec2 _a_ddims;\n\
@@ -382,6 +391,9 @@ compute* makeCompute( const char* filename,
     }\n\
     vec4 df( vec3 uv ){\n\
       return texture( _a_dtex, vec3( uv.xy / vec2( _a_ddims ), uv.z ) );\n\
+    }\n\
+    vec4 df( vec4 uv ){\n\
+      return textureLod( _a_dtex, vec3( uv.xy / vec2( _a_ddims ), uv.z ), uv.w );\n\
     }\n";
   
   // Fragment shader template
@@ -631,8 +643,29 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
              ts->size );
   tensor** rets = mem( compute->retCount, tensor* );
   tensor* ret;
-  for( u32 i = 0; i < compute->argCount; ++i )
-    tensorToGPUMemory( ts->stack[ ( ts->size - 1 ) - i ] );
+  for( u32 i = 0; i < compute->argCount; ++i ){
+    tensor* cur = ts->stack[ ( ts->size - 1 ) - i ];
+    tensorToGPUMemory( cur );
+    // Set filtering here so its per tensor not per gl texture. NOTE THAT YES ITS BUGBUG IF YOU HAVE A VIEW both
+    // mipmapped and nonmipmapped, so dont do that.
+    glBindTexture( GL_TEXTURE_2D_ARRAY, cur->tex.texture );
+    if( cur->tex.mipmapped ){
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+      if( getMaxAnisotropy() > 1.0 ){
+        glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+      }
+    } else {
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+    }
+    glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+  }
   u32 size = 1;
   for( u32 i = 0; i < rank; ++i )
     size *= shape[ i ];
@@ -663,6 +696,14 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         }
       if( found != TENSOR_CACHE ){
         ret = ts->cache[ found ];
+        glBindTexture( GL_TEXTURE_2D_ARRAY, ret->tex.texture );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+        glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+        ret->tex.mipmapped = false;
         ret->tex.channels = compute->channels;
         ts->cache[ found ] = NULL;
         ret->rank = rank;
@@ -733,6 +774,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
         /* glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
         /* glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
         
@@ -1614,6 +1656,7 @@ void textureTensor( tensor* cur ){
   }
   glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
   glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+  cur->tex.mipmapped = true;
 }
 
 void kettle(tensorStack* ts, u32 count, const char* filename) {
@@ -1661,16 +1704,7 @@ void kettle(tensorStack* ts, u32 count, const char* filename) {
       meta.layers = t->tex.layers;
       meta.width = t->tex.width;
       meta.height = t->tex.height;
-      glBindTexture(GL_TEXTURE_2D_ARRAY, t->tex.texture);
-      GLint minFilter = 0;
-      glGetTexParameteriv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, &minFilter);
-            
-      meta.mipmapped = (minFilter == GL_LINEAR_MIPMAP_LINEAR || 
-                        minFilter == GL_LINEAR_MIPMAP_NEAREST ||
-                        minFilter == GL_NEAREST_MIPMAP_LINEAR ||
-                        minFilter == GL_NEAREST_MIPMAP_NEAREST);
-
-      glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+      meta.mipmapped = t->tex.mipmapped;
     }
 
     // 2. Fetch Data
@@ -1851,6 +1885,7 @@ void unkettle( tensorStack* ts, const char* filename ){
         if( getMaxAnisotropy() > 1.0 )
           glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
         glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+        t->tex.mipmapped = true;
       }else{
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );

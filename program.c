@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -709,6 +709,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = LENGTH;
     // dbg( "Linenum %u commandnum %u: length\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "continue" ) ){
+    curStep->type = CONTINUE;
+    // dbg( "Linenum %u commandnum %u: continue\n", linenum, commandnum );
+
   } else if( !strcmp( command, "kettle" ) ){
     curStep->type = KETTLE;
     // dbg( "Linenum %u commandnum %u: kettle\n", linenum, commandnum );
@@ -788,6 +792,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
   } else if( !strcmp( command, "ceil" ) ){
     curStep->type = CEIL;
     // dbg( "Linenum %u commandnum %u: ceil\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "log" ) ){
+    curStep->type = LOG;
+    // dbg( "Linenum %u commandnum %u: log\n", linenum, commandnum );
 
   } else if( !strcmp( command, "minmax" ) ){
     curStep->type = MINMAX;
@@ -1806,6 +1814,26 @@ bool runProgram( tensorStack* ts, program** progp ){
       // dbg( "%s", "ceil" );
       break;
     }
+    case LOG: {
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to call log without an argument." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              *offset1 = logf( *offset1 );
+            }
+
+      // dbg( "%s", "log" );
+      break;
+    }
     case MINMAX: {
       if( ts->size < 1 )
         error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
@@ -1861,6 +1889,7 @@ bool runProgram( tensorStack* ts, program** progp ){
 
       // Push results onto stack (Order: Material, Bones, Indices, Verts)
       // so that Verts ends up on top.
+      if( count > 4 && loaded[4] ) push( ts, loaded[4] ); // Animation count
       if( count > 3 && loaded[3] ) push( ts, loaded[3] ); // Material/Tex
       if( count > 2 && loaded[2] ) push( ts, loaded[2] ); // Bones
       if( count > 1 && loaded[1] ) push( ts, loaded[1] ); // Indices
@@ -2051,10 +2080,13 @@ bool runProgram( tensorStack* ts, program** progp ){
       break;
     }
     case TEXTURE: {
+      if( !ts->size )
+        error( "%s", "Attempt to texture an empty stack.9" );
       tensor* cur = ts->stack[ ts->size - 1 ];
       if( !cur->gpu || cur->tex.channels == 0 )
         error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
-      textureTensor( cur );
+      if( !cur->tex.mipmapped )
+        textureTensor( cur );
       break;
      
     }
@@ -2301,7 +2333,7 @@ bool runProgram( tensorStack* ts, program** progp ){
                      ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
       if( raise >= ts->size )
-        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to bury past the end of the stack." );
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to raise past the end of the stack." );
       tensor* tr = ts->stack[ ( ts->size - 1 ) - raise ];
       for( u32 i = ( ts->size - 1 ) - raise; i < ts->size - 1; ++i ){
         if( tr->ownsData && !ts->stack[ i + 1 ]->ownsData &&
@@ -2563,6 +2595,9 @@ bool runProgram( tensorStack* ts, program** progp ){
     case QUIT:
       // dbg( "%s", "exit" );
       return false;
+    case CONTINUE:
+      // dbg( "%s", "cont" );
+      return true;
     default:
       error( "%s", "Logic error in Atlas!" );
     }

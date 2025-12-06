@@ -525,3 +525,6 @@ return;
 
 
 l'stdlibend';
+
+// the console goes at the top, so it can circumvent the script, but after stdlib, so we can have input and textblit.
+include'inc\con.atl';

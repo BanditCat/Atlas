@@ -292,7 +292,8 @@ void resize_image(
 // --- MAIN LOADER ---
 // Returns [0]=Vertices, [1]=Indices, [2]=Animation, [3]=TextureArray
 tensor** loadGltfCooked( const char* filename, u32* outCount ){
-
+  f32 animCount;
+  
   // 1. FILE I/O (Manual to avoid fopen issues in some emscripten setups)
   FILE* file = fopen( filename, "rb" );
   if( !file )
@@ -407,7 +408,8 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
     cgltf_skin* skin = &data->skins[ 0 ];
     u32 bone_count = skin->joints_count;
     u32 anim_count = data->animations_count;
-    u32 fps = 30;
+    animCount = anim_count;
+    u32 fps = 24;
 
     f32 global_max_time = 0.0f;
     for( u32 a = 0; a < anim_count; ++a ){
@@ -811,7 +813,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
 
 
 
-// ==================================================================================
+      // ==================================================================================
       // === TANGENT GENERATOR (The "Anti-Void" Logic) ====================================
       // ==================================================================================
       
@@ -1010,18 +1012,21 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   cgltf_free( data );
   unmem( fileData );
 
-
-
+  
+  f32* tp = mem( 1, f32 );
+  *tp = animCount;
+  tensor* t_animCount = newTensor( 0, NULL, tp );
 
   printf("Total verts: %d, indices: %d\n", total_verts, total_indices);
   // Return 4 Tensors: Verts, Indices, Anim, Textures
-  tensor** result = mem( 4, tensor* );
+  tensor** result = mem( 5, tensor* );
   result[ 0 ] = t_verts;
   result[ 1 ] = t_indices;
   result[ 2 ] = t_anim;
   result[ 3 ] = t_tex; 
+  result[ 4 ] = t_animCount; 
 
   if( outCount )
-    *outCount = 4;
+    *outCount = 5;
   return result;
 }

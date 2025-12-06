@@ -15,11 +15,13 @@
 typedef struct{
   enum{
     COMPUTE, // documented
+    CONTINUE, // documented
     ADD, // documented
     SUB, // documented
     MUL, // documented
     DIV, // documented
     POW, // documented
+    LOG, // documented
     SIN, // documented
     COS, // documented
     FLOOR, // documented
