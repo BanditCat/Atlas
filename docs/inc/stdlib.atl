@@ -411,7 +411,7 @@ return;
 
 l'blitText';
 [10 10];toffset= 2;
-6;1;dup;shape;tsize= 3;2;dup;shape;0;dup;wsize= 3;
+6;1;dup;shape;tsize= 3;2;dup;shape;0;dup;wsize= 3;windowSize;wsize;[0 2 0];s;/;wmult= 2;
 c'
 vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -426,10 +426,12 @@ int index = gl_VertexID / 6;
 vec4 v = verts[ gl_VertexID % 6 ];
 v.xy *= std_tsize.xy / ( std_wsize.xy * 2.0 );
 v.xy += std_toffset.xy / std_wsize.xy;
+v.xy /= std_wmult;
 
 ret = v * 2.0 - 1.0;
+
 ''
-ret[0] = af( ( tf - std_toffset ) * 2.0 ).xxxx;
+ret[0] = af( ( tf * std_wmult - std_toffset ) * 2.0 ).xxxx;
 ' 1 1 40 1;
 return;
 

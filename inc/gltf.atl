@@ -168,7 +168,6 @@ depth;backface;
 
 3;dup;shape;0;dup;[0 1 0];s;boneCount= 1;[0 1 0];s;frameCount= 1;  //BUGBUG hardcoded 3
 4;dup;shape;[1 3 0];s;atlasSize= 2;
-time;runTime= 2;
 
 5;dup;shape;
 depth;backface;
@@ -214,7 +213,7 @@ vec4 weights = vec4( a( ivec4( index, 12, 0, 0 ) ), a( ivec4( index, 13, 0, 0 ) 
 mat = a( ivec4( index, 16, 0, 0 ) );
 
 // Animation Logic
-float playHead = mod(lrot.x / 30.0 + runTime.y * 24.0, frameCount);
+float playHead = mod(lrot.x / 30.0 + timer * 24.0, frameCount);
 int f0 = int(playHead);
 int f1 = (f0 + 1) % int( frameCount ); 
 float t = fract(playHead);
