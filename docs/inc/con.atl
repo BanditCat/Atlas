@@ -5,6 +5,7 @@ workspace'con';
 inited;if'initEnd';  // Do init
 1;inited=;
 [0.01];posCutoff=;
+'';buffer=;
 
 l'initEnd';
 
