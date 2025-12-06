@@ -6,14 +6,13 @@ inited;if'initEnd';  // Do init
 1;inited=;
 [0.01];posCutoff=;
 '';buffer=;
-
 l'initEnd';
 
 
 
 // Toggle console state 
 std.keyPresses;[53 54 0];s;first;ifn'noTilde';
-textInput;pop;
+textInput;pop;'';buffer=;
 1;visible;-;visible=;
 visible;ifn'noTilde';
 [0.1];pos= 1;
@@ -33,7 +32,7 @@ l'skipPrevSizeSetup';
 
 // Input
 textInput;0;dup;shape;unext;ifn'noa';
-buffer;shape;shape;unext;ifn'skipCat';
+buffer;shape;unext;ifn'skipCat';
 buffer;1;raise;0;cat;
 l'skipCat';
 buffer=;1;
@@ -47,7 +46,7 @@ l'skipEval';
 pop; // pop last display
 
 //Add a blank tex or the buffer.
-buffer;shape;shape;unext;ifn'skipTex';
+buffer;shape;unext;ifn'skipTex';
 buffer;e;std.textToTexture;
 1;if'skipConst';
 l'skipTex';

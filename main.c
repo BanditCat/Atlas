@@ -8,6 +8,8 @@
 #include "SDL2/SDL_syswm.h"
 #include <dwmapi.h>
 #include <windows.h>
+#include <fcntl.h>
+#include <io.h>
 #endif
 
 
@@ -737,18 +739,44 @@ int main( int argc, char* argv[] )
   workspace[ 0 ] = '\0';
   textInputBuffer = mem( TEXTINPUTBUFFERSIZE, char );
 #ifndef __EMSCRIPTEN__
-  // 1. Check if we already have a valid stdout handle (e.g. Pipe from Emacs)
+  // 1. Get the handle
   HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
+  DWORD fileType = GetFileType( hOut );
+
+  // 2. If no valid handle, try to attach to parent console
+  if( hOut == NULL || hOut == INVALID_HANDLE_VALUE || fileType == FILE_TYPE_UNKNOWN ){
+    if( AttachConsole( ATTACH_PARENT_PROCESS ) ){
+       // We successfully attached to a console (e.g. Bash/CMD).
+       // Use freopen, which is the most reliable way to write to a physical console window.
+       freopen( "CONOUT$", "w", stdout );
+       freopen( "CONOUT$", "w", stderr );
+    }
+    // If AttachConsole fails, we might be in a detached process or a pipe-only environment that hasn't initialized yet.
+  }
+  else if( fileType == FILE_TYPE_PIPE ) {
+    // 3. We have a valid PIPE handle (This is the Emacs case).
+    // We must ensure the C Runtime (printf) uses this OS handle.
+    int fd = _open_osfhandle( (intptr_t)hOut, _O_TEXT );
+    if( fd != -1 ){
+      _dup2( fd, 1 ); // Bind os-handle to stdout (fd 1)
+      setvbuf( stdout, NULL, _IONBF, 0 ); // Ensure it's unbuffered for immediate display in Emacs
+    }
     
-  // 2. Only if we DON'T have a handle, try to attach to the console
-  if( hOut == NULL || hOut == INVALID_HANDLE_VALUE ){
-    // ATTACH_PARENT_PROCESS is (DWORD)-1
-    if( AttachConsole( (DWORD)-1 ) ){
-      // Now redirect the streams because we are definitely detached
-      freopen( "CONOUT$", "w", stdout );
-      freopen( "CONOUT$", "w", stderr );
+    // Do the same for Stderr
+    HANDLE hErr = GetStdHandle( STD_ERROR_HANDLE );
+    if( hErr != NULL && hErr != INVALID_HANDLE_VALUE ){
+       int fdErr = _open_osfhandle( (intptr_t)hErr, _O_TEXT );
+       if( fdErr != -1 ) _dup2( fdErr, 2 );
+       setvbuf( stderr, NULL, _IONBF, 0 );
     }
   }
+  else {
+    // 4. We have a valid handle that isn't a pipe (likely a direct Console handle inherited).
+    // Fallback to the console method.
+    freopen( "CONOUT$", "w", stdout );
+    freopen( "CONOUT$", "w", stderr );
+  }
+
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );
   

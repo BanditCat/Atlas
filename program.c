@@ -895,11 +895,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
         ++endi;
       }    
       
-      if( endi == starti )
-        error( "%s:%u command %u: %s", filename,
-               linenum,
-               commandnum,
-               "Empty string statement." );
+
       if( *endi != '\'' )
         error( "%s:%u command %u: %s", filename,
                linenum,
@@ -2205,22 +2201,8 @@ bool runProgram( tensorStack* ts, program** progp ){
       pop( ts );
       
       program* tempProg = newProgramFromString( codeToRun );
-      f32* tempVarBlock = tempProg->varBlock;
-      tensor** tempBigVars = tempProg->bigvarts;
-      u32* tempVarOffsets = tempProg->varOffsets;
-      u32* tempVarSizes = tempProg->varSizes;
-
-      tempProg->varBlock = p->varBlock;
-      tempProg->bigvarts = p->bigvarts;
-      tempProg->varOffsets = p->varOffsets;
-      tempProg->varSizes = p->varSizes;
 
       runProgram( ts, &tempProg );
-      
-      tempProg->varBlock = tempVarBlock;
-      tempProg->bigvarts = tempBigVars;
-      tempProg->varOffsets = tempVarOffsets;
-      tempProg->varSizes = tempVarSizes;
       
       deleteProgram( tempProg );
     
