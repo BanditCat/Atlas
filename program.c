@@ -1121,7 +1121,7 @@ void addProgram( const char* filename, char* prog, program* program ){
       workspace = mem( 1, char );
       workspace[ 0 ] = 0;
       program->filenames[ program->numFilenames++ ] = inc;
-      if( program->numFilenames == NUM_FILENAMES )
+      if( program->numFilenames >= NUM_FILENAMES )
         error( "%s", "NUM_FILENAMES exceeded." );
       // ... handle 'include' ...
       // addProgramFromFile(...);
@@ -2219,12 +2219,16 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
                  "Attempt to load a string filename with a nonvector." );
         char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
         p = newProgramFromFile( fn );
+        if( p->numFilenames >= NUM_FILENAMES )
+          error( "%s", "Filename count exceeded, too many files opened in one session." );
         p->filenames[ p->numFilenames++ ] = fn;
       }else{
         u32 len = strlen( s->progName );
         char* nn = mem( len + 2, char );
         strncpy( nn, s->progName, len + 2 );
         p = newProgramFromFile( nn );
+        if( p->numFilenames >= NUM_FILENAMES )
+          error( "%s", "Filename count exceeded, too many files opened in one session." );
         p->filenames[ p->numFilenames++ ] = nn;
       }
       deleteProgram( *progp );
