@@ -70,8 +70,9 @@ u64 prevTime = 0;
 u64 startTime = 0;
 f64 runTime = 0.0;
 f64 timeDelta = 0.01;
-#define TEXTINPUTBUFFERSIZE 64
+#define TEXTINPUTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
+u32 textInputBufferPos = 0;
 
 
 u32 EVENT_PASTE = 0; // Will be initialized in main
@@ -268,8 +269,14 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       //SDL_LockMutex( data_mutex );
 #endif
-      u32 remaining = TEXTINPUTBUFFERSIZE - strlen( textInputBuffer ) - 2;
-      strncat( textInputBuffer, event.text.text, remaining );
+      s64 remaining = TEXTINPUTBUFFERSIZE - textInputBufferPos - 1;
+      if( remaining < 0 )
+        remaining = 0;
+      strncpy( textInputBuffer + textInputBufferPos, event.text.text, remaining );
+      textInputBufferPos += strlen( event.text.text );
+      textInputBuffer[ TEXTINPUTBUFFERSIZE - 1 ] = 0;
+        
+        
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
 #endif      
@@ -282,7 +289,7 @@ void mainPoll( void ){
       if( pastedText ) {
         // Safe concatenation into your text buffer
         u32 currentLen = strlen(textInputBuffer);
-        u32 available = TEXTINPUTBUFFERSIZE - currentLen - 1;
+        s64 available = TEXTINPUTBUFFERSIZE - currentLen - 1;
         if (available > 0) {
           strncat(textInputBuffer, pastedText, available);
         }

@@ -220,7 +220,6 @@
       <li><a href="#cmd-m">m (matrix multiply)</a></li>
       <li><a href="#cmd-minmax">minmax (minimum and maximum)</a></li>
       <li><a href="#cmd-ortho">ortho (orthographic)</a></li>
-      <li><a href="#cmd-paste">paste</a></li>
       <li><a href="#cmd-pop">pop</a></li>
       <li><a href="#cmd-projection">proj (projection)</a></li>
       <li><a href="#cmd-print">print</a></li>
@@ -862,11 +861,6 @@ strides: 1 1
     <p>This takes a 6-vector argument in the form <code>[left right bottom top near far]</code> and pushes a corresponding orthographic projection matrix onto the stack.</p>
   </section>
   
-  <section id="cmd-paste">
-    <h2>paste</h2>
-    <p>This places the clipboard, as a utf-8 string converted to a float tensor, onto the stack.</p>
-  </section>
-
   <section id="cmd-pop">
     <h2>pop</h2>
     <p>Pops the stack, resulting in a fatal error if it was empty.</p>

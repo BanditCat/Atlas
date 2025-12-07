@@ -137,7 +137,6 @@
               // 1. Try the Async Clipboard API
               navigator.clipboard.readText().then(text => {
                 if (!text) return;
-                console.log("Clipboard text:", text);
 
                 // 2. Send to C++
                 var lengthBytes = lengthBytesUTF8(text) + 1;
