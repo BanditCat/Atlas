@@ -288,11 +288,11 @@ void mainPoll( void ){
       char* pastedText = (char*)event.user.data1;
       if( pastedText ) {
         // Safe concatenation into your text buffer
-        u32 currentLen = strlen(textInputBuffer);
-        s64 available = TEXTINPUTBUFFERSIZE - currentLen - 1;
+        s64 available = TEXTINPUTBUFFERSIZE - textInputBufferPos - 1;
         if (available > 0) {
           strncat(textInputBuffer, pastedText, available);
         }
+        textInputBufferPos += strlen( pastedText );
         SDL_free(pastedText); // Clean up the duplicate we made
       }
 #ifndef __EMSCRIPTEN__
