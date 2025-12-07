@@ -343,6 +343,7 @@ float getMaxAnisotropy( void );
 
 // Globals
 extern char* textInputBuffer;
+extern u64 textInputBufferPos;
 extern SDL_Window* window;
 extern SDL_GLContext glContext;
 extern f32 mouseWheel;

@@ -1557,6 +1557,7 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
     case TEXTINPUT: {
       push( ts, tensorFromString( textInputBuffer ) );
       textInputBuffer[ 0 ] = '\0';
+      textInputBufferPos = 0;
       break;
     }
     case GETINPUT: {

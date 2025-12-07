@@ -72,7 +72,7 @@ f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 #define TEXTINPUTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
-u32 textInputBufferPos = 0;
+u64 textInputBufferPos = 0;
 
 
 u32 EVENT_PASTE = 0; // Will be initialized in main
@@ -184,7 +184,7 @@ EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *us
 EMSCRIPTEN_KEEPALIVE
 void resizeWindow( int width, int height ){
   // Optionally, you can print a message to verify this function is called:
-  printf( "Resizing SDL window to %d x %d\n", width, height );
+  //printf( "Resizing SDL window to %d x %d\n", width, height );
   jsWidth = width;
   jsHeight = height;
   // Update the SDL window's size.
