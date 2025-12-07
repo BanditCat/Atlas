@@ -91,25 +91,30 @@ void on_paste_received(char* text) {
   SDL_PushEvent(&event);
 }
 
-// 2. JS Injection: Call this to trigger the browser prompt
-EM_JS(void, trigger_web_paste, (), {
-    if (!navigator.clipboard || !navigator.clipboard.readText) return;
-    
-    navigator.clipboard.readText().then(function(clipText) {
-        var lengthBytes = lengthBytesUTF8(clipText) + 1;
+// 2. JS Event Listener (REPLACES trigger_web_paste)
+EM_JS(void, setup_browser_paste_listener, (), {
+    // Attach to the window so we catch paste events anywhere in the tab
+    window.addEventListener('paste', function(e) {
+        // 1. Get the data
+        var pasteText = (e.clipboardData || window.clipboardData).getData('text');
+        if (!pasteText) return;
+
+        // 2. Prevent the browser from double-handling it (optional, but safer)
+        e.preventDefault();
+
+        // 3. Send to C
+        var lengthBytes = lengthBytesUTF8(pasteText) + 1;
         var stringOnWasmHeap = _malloc(lengthBytes);
-        stringToUTF8(clipText, stringOnWasmHeap, lengthBytes);
+        stringToUTF8(pasteText, stringOnWasmHeap, lengthBytes);
         
-        // Call C function
         Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
         
         _free(stringOnWasmHeap);
-      }).catch(function(err) {
-          console.error("Paste blocked:", err);
-        });
-  });
+    });
+    
+    console.log("Paste listener attached.");
+});
 #endif
-// --- NEW PASTE LOGIC END ---
 
 
 
