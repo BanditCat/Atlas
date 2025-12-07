@@ -48,7 +48,7 @@ pop;cursor;tilen;e;+;cursor= 1;
 
 // DOING THE THING!!! :D :D :D
 std.keyPresses;[40 41 0];s;unext;ifn'skipEval';
-buffer;eval;'';buffer=;
+buffer;eval;'';buffer=;[0];cursor= 1;
 l'skipEval';
 
 // cursor
