@@ -7,6 +7,11 @@ inited;if'initEnd';  // Do init
 [0.01];posCutoff=;
 '';buffer=;
 [0];cursor= 1;
+320;commandHistorySize=;
+0;commandHistory=;
+'';commandHistorySizes=;
+[0];histPos=;
+
 l'initEnd';
 
 
@@ -48,8 +53,46 @@ pop;cursor;tilen;e;+;cursor= 1;
 
 // DOING THE THING!!! :D :D :D
 std.keyPresses;[40 41 0];s;unext;ifn'skipEval';
-buffer;eval;'';buffer=;[0];cursor= 1;
+buffer;eval;
+commandHistorySizes;buffer;shape;0;cat;commandHistorySizes=;
+buffer;
+  0;commandHistorySize;buffer;shape;unext;-;rep;0;cat;e;
+  commandHistory;shape;shape;unext;if'haveHistory';
+  commandHistory=;
+1;if'doneHistory';
+  l'haveHistory';
+  commandHistory;1;raise;0;cat;commandHistory=;
+l'doneHistory';
+commandHistorySizes;shape;histPos=;
+
+commandHistory;commandHistorySizes;pop;pop;
+'';buffer=;[0];cursor= 1;
 l'skipEval';
+
+
+std.keyPresses;[82 83 0];s;unext;ifn'skipUp';
+histPos;unext;ifn'skipUp'; // Stop if already at 0
+histPos;[1];-;histPos=; // Decrement index
+commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
+commandHistory;histPos;histPos;[1];+;0;cat;[0];0;cat;s;first;rawRow=;
+rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
+buffer;shape;cursor= 1;
+l'skipUp';
+
+std.keyPresses;[81 82 0];s;unext;ifn'skipDown';
+histPos;[1];+;histPos=;
+histPos;commandHistorySizes;shape;-;[1];+;unext;if'clearBuffer';
+commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
+commandHistory;histPos;histPos;[1];+;0;cat;[0];0;cat;s;first;rawRow=;
+rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
+buffer;shape;cursor= 1;
+1;if'skipDown';
+l'clearBuffer';
+commandHistorySizes;shape;histPos=;
+'';buffer=;
+[0];cursor= 1;
+l'skipDown';
+
 
 // cursor
 std.keyPresses;[79 80 0];s;unext;ifn'skipRight';
@@ -95,6 +138,16 @@ l'skipTex';
 l'skipConst';
 0;dup;shape;[0 2 0];s;[2 2];/;tdims= 2;
 
+// set scroll for long lines
+windowSize;[0 1 0];s;[12];/;floor;[1];-;charswid=;
+buffer;shape;charswid;-;0;dup;unext;ifn'shortLine';
+[12];*;scroll= 1;
+1;if'doneScroll';
+l'shortLine';pop;[0];scroll= 1;
+l'doneScroll';
+
+
+
 1;dup;texture; // texture the display tensor so we can blur it.
 0;dup;shape;[0 2 0];s;windowSize;0;dup;wdims= 2;/;0;dup;wmult= 2;log;wadd= 2;
 [[-1 -1][-1 1][1 1][1 1][1 -1][-1 -1]];6;windowSize;[4];0;cat;
@@ -107,9 +160,9 @@ if( (1.0 - tf.y / con_wdims.y) < ( con_pos * 0.8 ) ){
   vec4 text = vec4( 0.0 );
   if( aboveLine < 1.0 || ( aboveLine > con_tdims.y && aboveLine < con_tdims.y + 1.0 ) )
     text = vec4( 0.0, 1.0, 0.0, 0.0 );
-  if( aboveLine > 1.0 && aboveLine < con_tdims.y && tf.x > 1.0 && tf.x < con_tdims.x + 2.0 )
-    text = vec4( 1.0 - cf( vec2( tf.x, aboveLine ) * 2.0 ).x );
-  if( aboveLine > 1.0 && aboveLine < 3.0 && tf.x >= con_cursor * 12.0 && tf.x < ( con_cursor + 1.0 ) * 12.0 )
+  if( aboveLine > 1.0 && aboveLine < con_tdims.y && ( tf.x + con_scroll ) > 1.0 && ( tf.x + con_scroll ) < con_tdims.x + 2.0 )
+    text = vec4( 1.0 - cf( vec2( ( tf.x + con_scroll ), aboveLine ) * 2.0 ).x );
+  if( aboveLine > 1.0 && aboveLine < 3.0 && ( tf.x + con_scroll ) >= con_cursor * 12.0 && ( tf.x + con_scroll ) < ( con_cursor + 1.0 ) * 12.0 )
     text.r = 1.0;
 
 
