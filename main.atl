@@ -1,4 +1,3 @@
-
 //'inc\\catlas.glb';gltf;print;'inc\\catlas.ktl';5;kettle;quit;
 include'inc\stdlib.atl'; // It's advisable to include this first.
 'inc\\triangle.atl';
