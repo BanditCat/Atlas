@@ -124,6 +124,7 @@ typedef struct{
 
 #define NUM_FILENAMES 65536
 typedef struct{
+  char* mainFilename;
   compute** computes;
   u32 numComputes;
   u32 computeStackSize;
@@ -150,9 +151,9 @@ typedef struct{
 
 program* newProgramFromFile( const char* filename );
 // mutates but does not deallocate the string eval.
-program* newProgramFromString( char* eval );
+program* copyProgramWithEval( program* p, const char* eval, u32* startStep );
 // Return false to exit program.
-bool runProgram( tensorStack* ts, program** progp );
+bool runProgram( tensorStack* ts, program** progp, u32 startstep );
 void deleteProgram( program* p );
 
 #endif // PROGRAM_H_INCLUDED

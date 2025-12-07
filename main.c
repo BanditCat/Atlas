@@ -533,7 +533,7 @@ int renderThreadFunction( void* data ){
     timeDelta *= 0.9;
     timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
     runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    if( !runProgram( ts, &prog ) ){
+    if( !runProgram( ts, &prog, 0 ) ){
 #ifdef DBG
       check_memory_leaks();
 #endif      
@@ -642,7 +642,7 @@ void main_loop( void ){
   timeDelta *= 0.9;
   timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
   runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-  if( !runProgram( ts, &prog ) ){
+  if( !runProgram( ts, &prog, 0 ) ){
     running = 0;
     emscripten_cancel_main_loop();
     return;

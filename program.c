@@ -5,6 +5,37 @@
 #include "Atlas.h"
 #include "tensorGltf.h"
 
+
+void copyProgramState( program* src, program* dst ){
+  
+  // 1. Copy Small Variables (No changes needed here, just memcpy)
+  for( u32 i = 0; i < dst->numVars; ++i ){
+    char* name = dst->varNames[ i ];
+    u32 srcIndex;
+    if( trieSearch( src->vars, name, &srcIndex ) ){
+      if( src->varSizes[ srcIndex ] != dst->varSizes[ i ] ) continue;
+
+      u32 copySize = (dst->varSizes[i] <= 2) ? 2 : (dst->varSizes[i] <= 4 ? 4 : 16);
+      f32* srcPtr = src->varBlock + src->varOffsets[ srcIndex ];
+      f32* dstPtr = dst->varBlock + dst->varOffsets[ i ];
+      memcpy( dstPtr, srcPtr, copySize * sizeof( f32 ) );
+    }
+  }
+
+  // 2. Copy Big Variables (Tensors)
+  for( u32 i = 0; i < dst->numBigvars; ++i ){
+    char* name = dst->bigvarNames[ i ];
+    u32 srcIndex;
+
+    if( trieSearch( src->bigvars, name, &srcIndex ) ){
+      if( src->bigvarts[ srcIndex ] ){
+        deleteTensor( dst->bigvarts[ i ] );
+        dst->bigvarts[ i ] = copyTensor( src->bigvarts[ srcIndex ] );
+        takeOwnership( dst->bigvarts[ i ] );
+      }
+    }
+  }
+}
 void preprocessComputeCommands( char* prog ){
   char* ptr = prog;
   while( *ptr != '\0' ){
@@ -1427,7 +1458,10 @@ program* newProgramFromFile( const char* filename ){
   program* prog = newProgram();
   addProgramFromFile( filename, prog );
   finalize( prog );
-
+  
+  u32 len = strlen( filename );
+  prog->mainFilename = mem( len + 1, char );
+  strcpy( prog->mainFilename, filename );
 
   // Reset afterwards too.
   unmem( workspace );
@@ -1435,21 +1469,35 @@ program* newProgramFromFile( const char* filename ){
   workspace[ 0 ] = 0;
   return prog;
 }
-program* newProgramFromString( char* eval ){
-  // Always reset to workplace'' for a new program.
+program* copyProgramWithEval( program* p, const char* eval, u32* startStep ){
   char* tw = workspace;
   workspace = mem( 1, char );
   workspace[ 0 ] = 0;
 
-  program* prog = newProgram();
-  addProgram( "{EVAL}", eval, prog );
-  finalize( prog );
+  program* newProg = newProgram();
 
+
+  if( p->mainFilename ){
+    addProgramFromFile( p->mainFilename, newProg );
+  }
 
   unmem( workspace );
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
+  
+  *startStep = newProg->numSteps;
+
+  addProgram( "{EVAL}", (char*)eval, newProg );
+  
+  unmem( workspace );
+  workspace = mem( 1, char );
+  workspace[ 0 ] = 0;
+
+  finalize( newProg );
+  unmem( workspace );
   workspace = tw;
-  return prog;
-}  
+  return newProg;
+} 
 
 void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numComputes; ++i )
@@ -1484,13 +1532,15 @@ void deleteProgram( program* p ){
   unmem( p->returns );
   unmem( p->computes );
   unmem( p->steps );
+  if( p->mainFilename )
+    unmem( p->mainFilename );
   unmem( p );
 }
 // A pointer pointer because program might change during e.g. a load.
-bool runProgram( tensorStack* ts, program** progp ){
+bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
   program* p = *progp;
   CHECK_GL_ERROR();
-  for( u32 i = 0; i < p->numSteps; ++i ){
+  for( u32 i = startstep; i < p->numSteps; ++i ){
     // dbg( "Step %u", i );
     step* s = p->steps + i;
     switch( s->type ){
@@ -2199,11 +2249,17 @@ bool runProgram( tensorStack* ts, program** progp ){
       codeToRun = tensorToString( cur );
         
       pop( ts );
-      
-      program* tempProg = newProgramFromString( codeToRun );
 
-      runProgram( ts, &tempProg );
+      u32 start = 0;
+      program* tempProg = copyProgramWithEval( p, codeToRun, &start );
+
+      copyProgramState( p, tempProg );
+      runProgram( ts, &tempProg, start );
+      copyProgramState( tempProg, p );
       
+      for( u32 i = 0; i < ts->size; ++i )
+        takeOwnership( ts->stack[ i ] );
+
       deleteProgram( tempProg );
     
       unmem( codeToRun );
