@@ -145,7 +145,7 @@
                 stringToUTF8(text, stringOnWasmHeap, lengthBytes);
                 
                 Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
-                _free(stringOnWasmHeap);
+                Module._free(stringOnWasmHeap);
 
               }).catch(err => {
                 // If readText fails (permission denied), fall back to standard paste event
