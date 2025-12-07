@@ -132,8 +132,6 @@
             // Check for CTRL+V (or CMD+V on Mac)
             if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
               
-              console.log("Ctrl+V detected in Capture Phase");
-              
               // 1. Try the Async Clipboard API
               navigator.clipboard.readText().then(text => {
                 if (!text) return;

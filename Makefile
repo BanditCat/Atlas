@@ -17,7 +17,9 @@ LDFLAGS += -fuse-ld=lld
 
 LDFLAGS_DEBUG =
 
-EMCCFLAGS = --no-entry -s EXPORTED_RUNTIME_METHODS=["ccall"] -O3 \
+EMCCFLAGS = --no-entry -s EXPORTED_FUNCTIONS="['_malloc','_free','_on_paste_received']" \
+            -s EXPORTED_RUNTIME_METHODS="['ccall','stringToUTF8','lengthBytesUTF8']"\
+            -O3\
             -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB\
             -s WASM=1 -s USE_WEBGL2=1 -s USE_SDL=2 \
             -s MAX_WEBGL_VERSION=3 -s MIN_WEBGL_VERSION=2 \
