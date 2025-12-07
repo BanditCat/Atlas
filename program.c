@@ -2258,7 +2258,7 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
       program* tempProg = copyProgramWithEval( p, codeToRun, &start );
 
       copyProgramState( p, tempProg );
-      runProgram( ts, &tempProg, start );
+      bool ret = runProgram( ts, &tempProg, start );
       copyProgramState( tempProg, p );
       
       for( u32 i = 0; i < ts->size; ++i )
@@ -2267,7 +2267,8 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
       deleteProgram( tempProg );
     
       unmem( codeToRun );
-
+      if( !ret )
+        return false;
       break;
     }
     case FIRST: {
