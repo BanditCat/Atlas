@@ -36,6 +36,11 @@ u8 keys[ SDL_NUM_SCANCODES ] = { 0 };
 char* workspace = NULL;
 
 
+
+
+
+
+
 bool doubleClicks[ 3 ] = { 0 };
 bool touchClicks[ 3 ] = { 0 };
 float pinchZoom = 0.0;
@@ -67,6 +72,46 @@ f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 #define TEXTINPUTBUFFERSIZE 64
 char* textInputBuffer = NULL;
+
+
+u32 EVENT_PASTE = 0; // Will be initialized in main
+
+#ifdef __EMSCRIPTEN__
+
+// 1. C Callback: JS calls this when the promise resolves
+EMSCRIPTEN_KEEPALIVE
+void on_paste_received(char* text) {
+  if (!text || !EVENT_PASTE) return;
+        
+  SDL_Event event;
+  SDL_zero(event);
+  event.type = EVENT_PASTE;
+  // We must copy the string because Emscripten will free 'text' immediately after this returns
+  event.user.data1 = SDL_strdup(text); 
+  SDL_PushEvent(&event);
+}
+
+// 2. JS Injection: Call this to trigger the browser prompt
+EM_JS(void, trigger_web_paste, (), {
+    if (!navigator.clipboard || !navigator.clipboard.readText) return;
+    
+    navigator.clipboard.readText().then(function(clipText) {
+        var lengthBytes = lengthBytesUTF8(clipText) + 1;
+        var stringOnWasmHeap = _malloc(lengthBytes);
+        stringToUTF8(clipText, stringOnWasmHeap, lengthBytes);
+        
+        // Call C function
+        Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
+        
+        _free(stringOnWasmHeap);
+      }).catch(function(err) {
+          console.error("Paste blocked:", err);
+        });
+  });
+#endif
+// --- NEW PASTE LOGIC END ---
+
+
 
 
 // Structure to pass argc/argv to the render thread
@@ -746,10 +791,10 @@ int main( int argc, char* argv[] )
   // 2. If no valid handle, try to attach to parent console
   if( hOut == NULL || hOut == INVALID_HANDLE_VALUE || fileType == FILE_TYPE_UNKNOWN ){
     if( AttachConsole( ATTACH_PARENT_PROCESS ) ){
-       // We successfully attached to a console (e.g. Bash/CMD).
-       // Use freopen, which is the most reliable way to write to a physical console window.
-       freopen( "CONOUT$", "w", stdout );
-       freopen( "CONOUT$", "w", stderr );
+      // We successfully attached to a console (e.g. Bash/CMD).
+      // Use freopen, which is the most reliable way to write to a physical console window.
+      freopen( "CONOUT$", "w", stdout );
+      freopen( "CONOUT$", "w", stderr );
     }
     // If AttachConsole fails, we might be in a detached process or a pipe-only environment that hasn't initialized yet.
   }
@@ -765,9 +810,9 @@ int main( int argc, char* argv[] )
     // Do the same for Stderr
     HANDLE hErr = GetStdHandle( STD_ERROR_HANDLE );
     if( hErr != NULL && hErr != INVALID_HANDLE_VALUE ){
-       int fdErr = _open_osfhandle( (intptr_t)hErr, _O_TEXT );
-       if( fdErr != -1 ) _dup2( fdErr, 2 );
-       setvbuf( stderr, NULL, _IONBF, 0 );
+      int fdErr = _open_osfhandle( (intptr_t)hErr, _O_TEXT );
+      if( fdErr != -1 ) _dup2( fdErr, 2 );
+      setvbuf( stderr, NULL, _IONBF, 0 );
     }
   }
   else {
