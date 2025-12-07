@@ -111,10 +111,10 @@ EM_JS(void, setup_browser_paste_listener, (), {
         Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
         
         _free(stringOnWasmHeap);
-    });
+      });
     
     console.log("Paste listener attached.");
-});
+  });
 #endif
 
 
@@ -290,9 +290,10 @@ void mainPoll( void ){
         // Safe concatenation into your text buffer
         s64 available = TEXTINPUTBUFFERSIZE - textInputBufferPos - 1;
         if (available > 0) {
-          strncat(textInputBuffer, pastedText, available);
+          strncpy(textInputBuffer + textInputBufferPos, pastedText, available);
         }
         textInputBufferPos += strlen( pastedText );
+        textInputBuffer[ TEXTINPUTBUFFERSIZE - 1 ] = 0;
         SDL_free(pastedText); // Clean up the duplicate we made
       }
 #ifndef __EMSCRIPTEN__
