@@ -268,6 +268,24 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
 #endif      
+    } else if( event.type == EVENT_PASTE ){  
+#ifndef __EMSCRIPTEN__
+      //SDL_LockMutex( data_mutex );
+#endif
+
+      char* pastedText = (char*)event.user.data1;
+      if( pastedText ) {
+        // Safe concatenation into your text buffer
+        u32 currentLen = strlen(textInputBuffer);
+        u32 available = TEXTINPUTBUFFERSIZE - currentLen - 1;
+        if (available > 0) {
+          strncat(textInputBuffer, pastedText, available);
+        }
+        SDL_free(pastedText); // Clean up the duplicate we made
+      }
+#ifndef __EMSCRIPTEN__
+      //SDL_UnlockMutex( data_mutex );
+#endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
 #ifndef __EMSCRIPTEN__
       //SDL_LockMutex( data_mutex );
@@ -841,7 +859,7 @@ int main( int argc, char* argv[] )
   // Initialize SDL and create window in the main thread
   if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
-
+  EVENT_PASTE = SDL_RegisterEvents(1);
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
   //  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
