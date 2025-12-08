@@ -157,7 +157,7 @@ program* newProgramFromFile( const char* filename );
 // mutates but does not deallocate the string eval.
 program* copyProgramWithEval( program* p, const char* eval, u32* startStep );
 // Return false to exit program.
-bool runProgram( tensorStack* ts, program** progp, u32 startstep );
+char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret );
 void deleteProgram( program* p );
 
 #endif // PROGRAM_H_INCLUDED

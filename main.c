@@ -262,14 +262,12 @@ void SetDarkTitleBar( SDL_Window* sdlWindow ){
     BOOL enable = TRUE;
 
     // Apply dark mode attribute
-    HRESULT hr = DwmSetWindowAttribute(
-                                       hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof( enable ) );
+    HRESULT hr = DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof( enable ) );
     if( SUCCEEDED( hr ) ){
       ShowWindow( hwnd, SW_MINIMIZE );
       ShowWindow( hwnd, SW_RESTORE );
     } else {
-      MessageBoxA(
-                  NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR );
+      MessageBoxA( NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR );
     }
 
   } else {
@@ -746,7 +744,12 @@ int renderThreadFunction( void* data ){
       (f64)( SDL_GetPerformanceFrequency() );
     runTime =
       (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    if( !runProgram( ts, &prog, 0 ) ){
+    bool ret;
+    char* msg = runProgram( ts, &prog, 0, &ret );
+    printf( "\n%d\n", ret );
+    if( msg )
+      error( "%s", msg );
+    if( !ret ){
 
 #ifdef __EMSCRIPTEN__
       // 1. Force the screen to show the X immediately
@@ -870,7 +873,11 @@ void main_loop( void ){
     0.1 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
   runTime =
     (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-  if( !runProgram( ts, &prog, 0 ) ){
+  bool ret;
+  char* err = runProgram( ts, &prog, 0, &ret );
+  if( err )
+    error( "%s", err );
+  if( !ret ){
 
 #ifdef __EMSCRIPTEN__
     // 1. Force the screen to show the X immediately
@@ -1226,4 +1233,20 @@ void print( const char* format, ... ){
   va_end( stdout_args );
   vPrintToBuffer( format, args );
   va_end( args );
+}
+char* printToString( const char* format, ... ){
+  va_list args;
+  va_start( args, format );
+  va_list args_copy;
+  va_copy( args_copy, args );
+  int needed = vsnprintf( NULL, 0, format, args_copy );
+  va_end( args_copy );
+  if( needed < 0 ){
+    va_end( args );
+    return NULL; 
+  }
+  char* str = mem( needed + 1, char );
+  vsnprintf( str, needed + 1, format, args );
+  va_end( args );
+  return str;
 }
