@@ -308,7 +308,6 @@ void mainPoll( void ){
       ev.key.keysym.sym = SDLK_RSHIFT; ev.key.keysym.scancode = SDL_SCANCODE_RSHIFT; SDL_PushEvent(&ev);
       ev.key.keysym.sym = SDLK_v; ev.key.keysym.scancode = SDL_SCANCODE_V; SDL_PushEvent(&ev);
       ev.key.keysym.sym = SDLK_INSERT; ev.key.keysym.scancode = SDL_SCANCODE_INSERT; SDL_PushEvent(&ev);
-      printf("here\n");
 #endif
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
@@ -351,6 +350,19 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       //SDL_LockMutex( data_mutex );
 #endif
+      // Hard coded copy paste so we can 
+      if( ( event.key.keysym.sym == SDLK_v && (SDL_GetModState() & KMOD_CTRL) ) ||
+          ( event.key.keysym.sym == SDLK_INSERT && (SDL_GetModState() & KMOD_SHIFT) ) ){
+        if( SDL_HasClipboardText() ){
+          char* clipText = SDL_GetClipboardText();
+          if( clipText ){
+            u32 currentLen = strlen( textInputBuffer );
+            u32 available = TEXTINPUTBUFFERSIZE - currentLen - 1;
+            if( available > 0 ) strncat( textInputBuffer, clipText, available );
+            SDL_free( clipText );
+          }
+        }
+      }
       keys[ event.key.keysym.scancode ] = 1;
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );

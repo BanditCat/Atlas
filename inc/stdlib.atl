@@ -379,6 +379,31 @@ return;
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// textAreaToFlatTexture
+// This function takes 2 arguments, a string character matrix formed like so:
+// 'Hello';e;
+// 'world';e;0;cat;
+// 'more ';e;0;cat;
+// 'text ';e;0;cat;
+// and a 4 vector representing the offset and size to draw [xoffset yoffset
+// xsize ysize]. The function returns 1 tensor: the text texture itself.
+l'textAreaToFlatTexture';
+0;dup;[0 2 0];s;textOffset= 2;[2 4 0];s;textSize= 2;
+[0 1];t;1;r;
+img'inc\font.bmp';
+6;2;dup;shape;[6 8];*;[1 1];+;[1];0;cat;
+c''''
+float x = tf.x - 1.0;
+float y = tf.y;
+ret[0] =  ( mod( floor( x ), 6.0 ) != 5.0 ?
+          a( ivec4( mod( floor( x ), 6.0 ),
+          mod( y, 8.0 ) + 1328.0 - 8.0 * b( ivec4( floor( x / 6.0 ), floor( y / 8.0 ), 0.0, 0.0 ) )
+	  ,1.0, 0.0 ) ) : 1.0 );
+' 2 1 10 0;
+return;
+
+
+////////////////////////////////////////////////////////////////////////////////
 // textToTexure
 // This function takes 1 argument, a string character matrix formed like so:
 // 'Hello';e;
@@ -401,6 +426,7 @@ ret[0] =  ( mod( floor( x ), 6.0 ) != 5.0 ?
 	  ,1.0, 0.0 ) ) : 1.0 );
 ' 2 1 10 0;texture;
 return;
+
 
 
 

@@ -32,6 +32,7 @@ pos;posCutoff;-;unext;ifn'end';   // Skip if pos < 0.05;
 prevSize;if'skipPrevSizeSetup';
 // console init here, its visible and were setting stack size
 size;prevSize=;
+textInput;pop;
 1; // place a dummy because were now drawing;
 l'skipPrevSizeSetup';
 
@@ -131,12 +132,12 @@ l'skipDel';
 
 //Add a blank tex or the buffer.
 buffer;shape;unext;ifn'skipTex';
-buffer;e;std.textToTexture;
+buffer;e;[0 0 100 100];std.textAreaToFlatTexture;
 1;if'skipConst';
 l'skipTex';
-' ';e;std.textToTexture;
+' ';e;[0 0 100 100];std.textAreaToFlatTexture;
 l'skipConst';
-0;dup;shape;[0 2 0];s;[2 2];/;tdims= 2;
+0;dup;shape;[0 2 0];s;tdims= 2;
 
 // set scroll for long lines
 windowSize;[0 1 0];s;[12];/;floor;[1];-;charswid=;
@@ -150,18 +151,27 @@ l'doneScroll';
 
 1;dup;texture; // texture the display tensor so we can blur it.
 0;dup;shape;[0 2 0];s;windowSize;0;dup;wdims= 2;/;0;dup;wmult= 2;log;wadd= 2;
-[[-1 -1][-1 1][1 1][1 1][1 -1][-1 -1]];6;windowSize;[4];0;cat;
-c''
-ret = vec4( a( ivec4( i, 0, 0, 0 ) ), a( ivec4( i, 1, 0, 0 ) ), 0.0, 1.0 );
+6;windowSize;[4];0;cat;
+c'
+vec4 verts[] = vec4[](
+vec4( -1.0, -1.0,0.0,1.0 ),
+vec4(  1.0, -1.0,0.0,1.0 ), 
+vec4( -1.0,  1.0,0.0,1.0 ), 
+vec4(  1.0,  1.0,0.0,1.0 ),
+vec4( -1.0,  1.0,0.0,1.0 ),
+vec4(  1.0, -1.0,0.0,1.0 ) 
+);
+'
+ret = verts[ i ];
 ''
 float blur = con_pos * 5.0 - 2.5;
 if( (1.0 - tf.y / con_wdims.y) < ( con_pos * 0.8 ) ){
   float aboveLine = ( con_pos * 0.8 * con_wdims.y ) - ( con_wdims.y - tf.y );
   vec4 text = vec4( 0.0 );
-  if( aboveLine < 1.0 || ( aboveLine > con_tdims.y && aboveLine < con_tdims.y + 1.0 ) )
+  if( aboveLine < 1.0 || ( aboveLine > con_tdims.y * 2.0 && aboveLine < con_tdims.y * 2.0 + 1.0 ) )
     text = vec4( 0.0, 1.0, 0.0, 0.0 );
-  if( aboveLine > 1.0 && aboveLine < con_tdims.y && ( tf.x + con_scroll ) > 1.0 && ( tf.x + con_scroll ) < con_tdims.x + 2.0 )
-    text = vec4( 1.0 - cf( vec2( ( tf.x + con_scroll ), aboveLine ) * 2.0 ).x );
+  if( aboveLine > 1.0 && aboveLine < con_tdims.y * 2.0 && ( tf.x + con_scroll ) > 1.0 && ( tf.x + con_scroll ) < con_tdims.x * 2.0 + 2.0 )
+    text = vec4( 1.0 - bf( vec2( ( tf.x + con_scroll ) / 2.0, aboveLine / 2.0 ) ).x );
   if( aboveLine > 1.0 && aboveLine < 3.0 && ( tf.x + con_scroll ) >= con_cursor * 12.0 && ( tf.x + con_scroll ) < ( con_cursor + 1.0 ) * 12.0 )
     text.r = 1.0;
 
@@ -172,18 +182,18 @@ if( (1.0 - tf.y / con_wdims.y) < ( con_pos * 0.8 ) ){
 
   vec2 d = con_wmult * exp2(blur) * 0.4; 
 
-  vec4 acc = bf(vec4(uv, 0.0, l)) * 0.38;
+  vec4 acc = af(vec4(uv, 0.0, l)) * 0.38;
 
-  acc += bf(vec4(uv + d, 0.0, l)) * 0.155;
-  acc += bf(vec4(uv - d, 0.0, l)) * 0.155;
-  acc += bf(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
-  acc += bf(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
+  acc += af(vec4(uv + d, 0.0, l)) * 0.155;
+  acc += af(vec4(uv - d, 0.0, l)) * 0.155;
+  acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
+  acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
 
   ret[ 0 ] = acc * 0.5 + text;
 } else
-  ret[ 0 ] = bf( vec4( tf * con_wmult, 0.0, 0.0 ) );
+  ret[ 0 ] = af( vec4( tf * con_wmult, 0.0, 0.0 ) );
 
-' 3 1 40 0;
+' 2 1 40 0;
 
 
 
