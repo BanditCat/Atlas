@@ -44,7 +44,9 @@
 "          @@@      :-  -:      @@@          \n"\
 "            @@@@            @@@@            \n"\
 "               :@@@@@@@@@@@@-               \n"\
-"                                            \n"
+"                                            \n"\
+"\n"\
+"WARNING: Making mistakes here will leak memory, this is expected behavior."
 
 
 ////////////////////////////////////////////////////////////////////
@@ -164,7 +166,9 @@ void loadProg( program** prog, tensorStack** ts, const char* fileName ){
     error( "File %s does not exist. Either provide a filename argument, or "
            "provide a main.atl",
            realName );
-  *prog = newProgramFromFile( realName );
+  char* err = newProgramFromFile( realName, prog );
+  if( err )
+    error( "%s", err );
   *ts = newStack();
 }
 
@@ -746,7 +750,6 @@ int renderThreadFunction( void* data ){
       (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
     bool ret;
     char* msg = runProgram( ts, &prog, 0, &ret );
-    printf( "\n%d\n", ret );
     if( msg )
       error( "%s", msg );
     if( !ret ){

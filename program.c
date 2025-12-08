@@ -5,7 +5,17 @@
 #include "Atlas.h"
 #include "tensorGltf.h"
 
+#define err( ... ) do {                         \
+    char* msg = printToString( __VA_ARGS__ );   \
+    return msg;                                 \
+  }  while( 0 )
 
+#define err2( ... ) do {                        \
+    if( glslUniformBlock )                      \
+      unmem( glslUniformBlock );                \
+    char* msg = printToString( __VA_ARGS__ );   \
+    return msg;                                 \
+  } while( 0 )
 void copyProgramState( program* src, program* dst ){
   
   // 1. Copy Small Variables (No changes needed here, just memcpy)
@@ -301,12 +311,13 @@ void trimWhitespace( char** str ){
 
   *str = start;
 }
-void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, char* command ){
+
+char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, char* command ){
   if( !command )
-    return;
+    return NULL;
   trimWhitespace( &command );
   if( !*command )
-    return;
+    return NULL;
   if( p->numSteps >= p->stepStackSize ){
     p->stepStackSize *= 2;
     step* tp = mem( p->stepStackSize, step );
@@ -326,18 +337,18 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in workspace command." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in workspace command." );
     char* work = mem( 2 + endi - starti, char );
     memcpy( work, starti, endi - starti );
     work[ endi - starti ] = '\0';
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after workspace command." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after workspace command." );
     unmem( workspace );
     workspace = work;
     --p->numSteps;
@@ -347,12 +358,12 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty label." );
+      err( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty label." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in label." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in label." );
     u32 worklen = strlen( workspace );
     char* label = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -364,15 +375,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     label[ worklen + endi - starti ] = '\0';
     --p->numSteps;
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after label." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after label." );
     if( trieSearch( p->labels, label, NULL ) )
-      error( "%s:%u command %u: duplicate label '%s'", filename,
-             linenum,
-             commandnum,
-             label );
+      err( "%s:%u command %u: duplicate label '%s'", filename,
+           linenum,
+           commandnum,
+           label );
     
     trieInsert( p->labels, label, p->numSteps );
     // dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label
@@ -385,15 +396,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty name in set statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Empty name in set statement." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in set statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in set statement." );
     u32 worklen = strlen( workspace );
     char* varName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -414,14 +425,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
               !sizep[ charsread ] ){
       curStep->var.size = varSize;
       if( !varSize || ( varSize > 4 && varSize != 16 ) )
-        error( "%s", "Invalid var size in set statement." );
+        err( "%s", "Invalid var size in set statement." );
       // dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n",
       // linenum, commandnum, varName, varSize );
     } else
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Malformed set statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Malformed set statement." );
     // dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum,
     // varName );
     if( worklen )
@@ -433,15 +444,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty name in get statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Empty name in get statement." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in get statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in get statement." );
     u32 worklen = strlen( workspace );
     char* varName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -452,10 +463,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     memcpy( varName + worklen, starti, endi - starti );
     varName[ worklen + endi - starti ] = '\0';
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after get statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after get statement." );
     curStep->type = GET;
     curStep->var.name = varName;
     if( worklen )
@@ -469,13 +480,13 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error(
-            "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
+      err(
+          "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in if statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in if statement." );
     u32 worklen = strlen( workspace );
     char* branchName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -488,10 +499,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = IF;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after if statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after if statement." );
     // dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum,
     // branchName );
     if( worklen )
@@ -503,15 +514,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty ifn statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Empty ifn statement." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in ifn statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in ifn statement." );
     u32 worklen = strlen( workspace );
     char* branchName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -524,10 +535,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = IFN;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after ifn statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after ifn statement." );
     // dbg( "Linenum %u commandnum %u: ifn to %s\n", linenum, commandnum,
     // branchName );
     if( worklen )
@@ -539,15 +550,15 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty img statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Empty img statement." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in img statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in img statement." );
     char* imgName = mem( 1 + endi - starti, char );
     memcpy( imgName, starti, endi - starti );
     imgName[ endi - starti ] = '\0';
@@ -555,10 +566,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->tensor = tensorFromImageFile( imgName );
     unmem( imgName );
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after img statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after img statement." );
     // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
     // imgName );
     
@@ -572,25 +583,25 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty load statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Empty load statement." );
     if( *endi != '\'' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in load statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in load statement." );
     char* progName = mem( 1 + endi - starti, char );
     memcpy( progName, starti, endi - starti );
     progName[ endi - starti ] = '\0';
     curStep->type = LOAD;
     curStep->progName = progName;
     if( *( endi + 1 ) )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after load statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Extra characters after load statement." );
     // dbg( "Linenum %u commandnum %u: load %s\n", linenum, commandnum,
     // progName );
 
@@ -600,10 +611,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\252' )
       endi++;
     if( *endi != '\252' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in compute statement vertex pre block." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in compute statement vertex pre block." );
     char* vpre = mem( 1 + endi - starti, char );
     memcpy( vpre, starti, endi - starti );
     // Replace \ with ;
@@ -616,10 +627,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\252' )
       endi++;
     if( *endi != '\252' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in compute statement vertex block." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in compute statement vertex block." );
     char* vcomp = mem( 1 + endi - starti, char );
     memcpy( vcomp, starti, endi - starti );
     // Replace \ with ;
@@ -632,10 +643,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\252' )
       endi++;
     if( *endi != '\252' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in compute statement pre block." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in compute statement pre block." );
     char* pre = mem( 1 + endi - starti, char );
     memcpy( pre, starti, endi - starti );
     // Replace \ with ;
@@ -648,10 +659,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi && *endi != '\252' )
       endi++;
     if( *endi != '\252' )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in compute statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Unmatched quote in compute statement." );
     char* comp = mem( 1 + endi - starti, char );
     memcpy( comp, starti, endi - starti );
     // Replace \ with ;
@@ -675,18 +686,18 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->toCompute.channels = channels;
       curStep->toCompute.reuse = reuse;
       if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 )
-        error( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
+        err( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
       if( argCount > 4 )
-        error( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
+        err( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
       if( retCount > 4 || !retCount )
-        error( "%s", "Compute created with a bad return count, must be 1-4." );
+        err( "%s", "Compute created with a bad return count, must be 1-4." );
       // dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
       // linenum, commandnum, comp, argCount );
     } else
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Malformed compute statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Malformed compute statement." );
 
   } else if( !strcmp( command, "cls" ) ){
     curStep->type = CLS;
@@ -779,10 +790,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     if( sscanf( sizep, "%u%n", &channels, &charsread ) == 1 && !sizep[ charsread ] ){
       curStep->type = TEXTUREARRAY;
       if( channels != 1 && channels != 10 && channels != 4 && channels != 40 )
-        error( "%s:%u command %u: %s", filename, linenum, commandnum, "textureArray statement with a bad channel count." );
+        err( "%s:%u command %u: %s", filename, linenum, commandnum, "textureArray statement with a bad channel count." );
       curStep->var.size = channels; // Storing channel count in var.size
     } else
-      error( "%s:%u command %u: %s", filename, linenum, commandnum, "Malformed textureArray statement." );
+      err( "%s:%u command %u: %s", filename, linenum, commandnum, "Malformed textureArray statement." );
     
   } else if( !strcmp( command, "m" ) ){
     curStep->type = MULTM;
@@ -936,10 +947,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       
 
       if( *endi != '\'' )
-        error( "%s:%u command %u: %s", filename,
-               linenum,
-               commandnum,
-               "Unmatched quote in string statement." );
+        err( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Unmatched quote in string statement." );
       char* str = mem( 2 + endi - starti, char );
       memcpy( str, starti, endi - starti );
       u32 back = endi - starti;
@@ -956,10 +967,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
       curStep->tensor = tensorFromString( str );
       unmem( str );
       if( *( endi + 1 ) )
-        error( "%s:%u command %u: %s", filename,
-               linenum,
-               commandnum,
-               "Extra characters after string statement." );
+        err( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Extra characters after string statement." );
       // dbg( "Linenum %u commandnum %u: string %s\n", linenum, commandnum,
       // string );
     } else{
@@ -1001,10 +1012,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     while( *endi )
       endi++;
     if( endi == starti )
-      error( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty call statement." );
+      err( "%s:%u command %u: %s", filename,
+           linenum,
+           commandnum,
+           "Empty call statement." );
     u32 worklen = strlen( workspace );
     char* branchName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -1021,6 +1032,7 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     if( worklen )
       curStep->branchBaseName = branchName + worklen;
   }
+  return NULL;
 }
 program* newProgram( void ){
   program* ret = mem( 1, program );
@@ -1039,9 +1051,9 @@ program* newProgram( void ){
   ret->filenames = mem( NUM_FILENAMES, char* );
   return ret;
 }
-void addProgramFromFile( const char* filename, program* program );
+char* addProgramFromFile( const char* filename, program* program );
 // Modifies prog, adds all steps in prog to program.
-void addProgram( const char* filename, char* prog, program* program ){
+char* addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
   preprocessComputeCommands( prog );
   
@@ -1131,7 +1143,9 @@ void addProgram( const char* filename, char* prog, program* program ){
       char* inc = mem( 1 + endi - starti, char );
       memcpy( inc, starti, endi - starti );
       inc[ endi - starti ] = '\0';
-      addProgramFromFile( inc, program );
+      char* ret = addProgramFromFile( inc, program );
+      if( ret )
+        return ret;
       // reset workspace.
       unmem( workspace );
       workspace = mem( 1, char );
@@ -1144,16 +1158,19 @@ void addProgram( const char* filename, char* prog, program* program ){
       unmem( buf );
     } else {
       // ... handle everything else ...
-      addStep( program, filename, linenum, commandnum, command );
+      char* ret = addStep( program, filename, linenum, commandnum, command );
       unmem( buf );
+      if( ret )
+        return ret;
     }
   }
+  return NULL;
 }
 
 
-void finalize( program* program ){
+char* finalize( program* program ){
   // Collect variables and craft the uniform block and the program vars.
-  char* glslUniformBlock;
+  char* glslUniformBlock = NULL;
   {
     program->numVars = 0;
     u32 nameslen = 0;
@@ -1178,11 +1195,11 @@ void finalize( program* program ){
             int charsread;
             if( sscanf( program->steps[ i ].branchName + argloc, "%u%n",
                         &sz, &charsread ) != 1 )
-              error( "%s", "sscanf failed!" );
+              err2( "%s", "sscanf failed!" );
           }
 
           if( sz > 4 && sz != 16 )
-            error( "%s", "Invalid var size in short form set statement." );
+            err2( "%s", "Invalid var size in short form set statement." );
 
           char* ns = mem( back + 2, char );
           memcpy( ns, program->steps[ i ].branchName, back );
@@ -1231,10 +1248,10 @@ void finalize( program* program ){
           u32 val;
           if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
             if( program->steps[ i ].var.size != program->varSizes[ val ] )
-              error( "%s:%u command %u: %s", program->steps[ i ].filename,
-                     program->steps[ i ].linenum,
-                     program->steps[ i ].commandnum,
-                     "Incorrect size setting already set value. Size is static." );
+              err2( "%s:%u command %u: %s", program->steps[ i ].filename,
+                   program->steps[ i ].linenum,
+                   program->steps[ i ].commandnum,
+                   "Incorrect size setting already set value. Size is static." );
             unmem( program->steps[ i ].var.name );
             program->steps[ i ].var.index = val;
           } else {
@@ -1277,7 +1294,7 @@ void finalize( program* program ){
                              safeName );
               break;
             default:
-              error( "%s", "Logic error in Atlas!" );
+              err2( "%s", "Logic error in Atlas!" );
             }
             unmem( safeName );
             program->varNames[ program->numVars ] = program->steps[ i ].var.name;
@@ -1330,12 +1347,12 @@ void finalize( program* program ){
             if( !trieSearch( program->bigvars, program->steps[ i ].branchName, &vi ) ){
               if( !trieSearch( program->vars, program->steps[ i ].branchBaseName, &vi ) ){
                 if( !trieSearch( program->bigvars, program->steps[ i ].branchBaseName, &vi ) )
-                  error( "%s:%u command %u: Statement with unknown label or variable %s",
-                         program->steps[ i ].filename, program->steps[ i ].linenum,
-                         program->steps[ i ].commandnum,
-                         program->steps[ i ].branchBaseName?
-                         program->steps[ i ].branchBaseName:
-                         program->steps[ i ].branchName );
+                  err2( "%s:%u command %u: Statement with unknown label or variable %s",
+                       program->steps[ i ].filename, program->steps[ i ].linenum,
+                       program->steps[ i ].commandnum,
+                       program->steps[ i ].branchBaseName?
+                       program->steps[ i ].branchBaseName:
+                       program->steps[ i ].branchName );
                 program->steps[ i ].type = GET;
                 program->steps[ i ].var.index = vi;
                 program->steps[ i ].var.size = 0;
@@ -1359,12 +1376,12 @@ void finalize( program* program ){
             unmem( tp );
           }
         } else{
-          error( "%s:%u command %u: Statement with unknown label %s",
-                 program->steps[ i ].filename, program->steps[ i ].linenum,
-                 program->steps[ i ].commandnum,
-                 program->steps[ i ].branchBaseName?
-                 program->steps[ i ].branchBaseName:
-                 program->steps[ i ].branchName );
+          err2( "%s:%u command %u: Statement with unknown label %s",
+               program->steps[ i ].filename, program->steps[ i ].linenum,
+               program->steps[ i ].commandnum,
+               program->steps[ i ].branchBaseName?
+               program->steps[ i ].branchBaseName:
+               program->steps[ i ].branchName );
         }
                 
       } else {
@@ -1377,11 +1394,11 @@ void finalize( program* program ){
         if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) ){
           if( !trieSearch( program->vars, program->steps[ i ].var.baseName, &vi ) ){
             if( !trieSearch( program->bigvars, program->steps[ i ].var.baseName, &vi ) )
-              error( "%s:%u command %u: Attempt to get an an unknown variable %s",
-                     program->steps[ i ].filename,
-                     program->steps[ i ].linenum,
-                     program->steps[ i ].commandnum,
-                     program->steps[ i ].var.name );
+              err2( "%s:%u command %u: Attempt to get an an unknown variable %s",
+                   program->steps[ i ].filename,
+                   program->steps[ i ].linenum,
+                   program->steps[ i ].commandnum,
+                   program->steps[ i ].var.name );
             char* varName = program->steps[ i ].var.name;
             program->steps[ i ].var.index = vi;
             unmem( varName );
@@ -1426,6 +1443,7 @@ void finalize( program* program ){
       unmem( vglslpre );
     }
   unmem( glslUniformBlock );
+  return NULL;
 }
 bool fileExists( const char *filename ){
   FILE *file = fopen( filename, "rb" );
@@ -1435,20 +1453,20 @@ bool fileExists( const char *filename ){
   }
   return 0;
 }
-void addProgramFromFile( const char* filename, program* program ){
+char* addProgramFromFile( const char* filename, program* program ){
   FILE* file = fopen( filename, "rb" );
 
   if( !file )
-    error( "%s %s.", "Failed to open file", filename );
+    err( "%s %s.", "Failed to open file", filename );
   // Seek to the end of the file to determine its size
   if( fseek( file, 0, SEEK_END ) ){
     fclose( file );
-    error( "%s", "Failed to seek file." );
+    err( "%s", "Failed to seek file." );
   }
   long fileSize = ftell( file );
   if( fileSize == -1 ){
     fclose( file );
-    error( "%s", "Failed to get file size." );
+    err( "%s", "Failed to get file size." );
   }
   fseek( file, 0, SEEK_SET );
   char* buffer = mem( fileSize + 10, char );
@@ -1457,23 +1475,32 @@ void addProgramFromFile( const char* filename, program* program ){
   if( bytesRead != fileSize ){
     unmem( buffer );
     fclose( file );
-    error( "%s", "Failed to read file." );
+    err( "%s", "Failed to read file." );
   }
 
   buffer[ fileSize ] = '\0';
   fclose( file );
-  addProgram( filename, buffer, program );
+  char* ret = addProgram( filename, buffer, program );
   unmem( buffer );
+  return ret;
 }
-program* newProgramFromFile( const char* filename ){
+char* newProgramFromFile( const char* filename, program** ret ){
   // Always reset to workplace'' for a new program.
   unmem( workspace );
   workspace = mem( 1, char );
   workspace[ 0 ] = 0;
 
   program* prog = newProgram();
-  addProgramFromFile( filename, prog );
-  finalize( prog );
+  char* err = addProgramFromFile( filename, prog );
+  if( err ){
+    deleteProgram( prog );
+    return err;
+  }
+  err = finalize( prog );
+  if( err ){
+    deleteProgram( prog );
+    return err;
+  }
   
   u32 len = strlen( filename );
   prog->mainFilename = mem( len + 1, char );
@@ -1483,9 +1510,9 @@ program* newProgramFromFile( const char* filename ){
   unmem( workspace );
   workspace = mem( 1, char );
   workspace[ 0 ] = 0;
-  return prog;
+  *ret = prog; return NULL;
 }
-program* copyProgramWithEval( program* p, const char* eval, u32* startStep ){
+char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program** ret ){
   char* tw = workspace;
   workspace = mem( 1, char );
   workspace[ 0 ] = 0;
@@ -1503,16 +1530,20 @@ program* copyProgramWithEval( program* p, const char* eval, u32* startStep ){
   
   *startStep = newProg->numSteps;
 
-  addProgram( "{EVAL}", (char*)eval, newProg );
+  char* err = addProgram( "{EVAL}", (char*)eval, newProg );
+  if( err )
+    return err;
   
   unmem( workspace );
   workspace = mem( 1, char );
   workspace[ 0 ] = 0;
 
-  finalize( newProg );
+  err = finalize( newProg );
+  if( err )
+    return err;
   unmem( workspace );
   workspace = tw;
-  return newProg;
+  *ret = newProg; return NULL;
 } 
 
 void deleteProgram( program* p ){
@@ -1553,10 +1584,6 @@ void deleteProgram( program* p ){
   unmem( p );
 }
 
-#define err( ... ) do {                         \
-    char* msg = printToString( __VA_ARGS__ );   \
-    return msg;                                 \
-  }  while( 0 )
 // A pointer pointer because program might change during e.g. a load.
 char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
   program* p = *progp;
@@ -1833,7 +1860,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case SIN: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call sin without an argument." );
+             "Attempt to call sin without an argument." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
@@ -1853,7 +1880,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case COS: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call cos without an argument." );
+             "Attempt to call cos without an argument." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
@@ -1873,7 +1900,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case FLOOR: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call floor without an argument." );
+             "Attempt to call floor without an argument." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
@@ -1893,7 +1920,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case CEIL: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call ceil without an argument." );
+             "Attempt to call ceil without an argument." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
@@ -1913,7 +1940,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case LOG: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call log without an argument." );
+             "Attempt to call log without an argument." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       tensor* t1 = ts->stack[ ts->size - 1 ];
@@ -1933,10 +1960,10 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case MINMAX: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call minmax without an argument." );
+             "Attempt to call minmax without an argument." );
       if( !ts->stack[ ts->size - 1 ]->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to call minmax on an empty tensor." );
+             "Attempt to call minmax on an empty tensor." );
         
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       float min = FLT_MAX;
@@ -1969,13 +1996,13 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case GLTF: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, 
-               "Attempt to gltf load with no filename on the stack." );
+             "Attempt to gltf load with no filename on the stack." );
       
       tensor* tName = ts->stack[ ts->size - 1 ];
       char* fn = tensorToString( tName );
       if( !fn )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, 
-               "Top of stack was not a valid string tensor." );
+             "Top of stack was not a valid string tensor." );
       
       pop( ts ); // Remove filename
       
@@ -2006,7 +2033,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case PRINTLINE:{
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to printLine without a parameter on the stack." );
+             "Attempt to printLine without a parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The printLine argument was not a rank 1 tensor." );
       
@@ -2020,7 +2047,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case PRINTSTRING:{
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to printString without a parameter on the stack." );
+             "Attempt to printString without a parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The printString argument was not a rank 1 tensor." );
       
@@ -2056,8 +2083,8 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case COMPUTE:{
       if( ts->size < 2 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to run a compute statement without both a shape parameter and a vertex count on "
-               "the stack." );
+             "Attempt to run a compute statement without both a shape parameter and a vertex count on "
+             "the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for a compute was not a rank 1 tensor." );
       if( ts->stack[ ts->size - 1 ]->size > 4 )
@@ -2079,10 +2106,10 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         channels /= 10;
       if( channels && rank != 3 )
         err( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
-               "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
+             "Attempt to run a compute statement into texture not of rank 3 but of rank", rank );
       if( channels && ( rank != 3 || shape[ 2 ] != channels ) )
         err( "%s:%u command %u: %s %u.", s->filename, s->linenum, s->commandnum,
-               "Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
+             "Attempt to run a compute statement into a texture with a bad number of components ", shape[ 2 ] );
       
       pop( ts );
       pop( ts );
@@ -2099,10 +2126,10 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case CAT: {
       if( ts->size < 3 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to concatenate without enough arguments on the stack." );
+             "Attempt to concatenate without enough arguments on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to concatenate with a nonscalar axis parameter." );
+             "Attempt to concatenate with a nonscalar axis parameter." );
 
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
       u32 axis = *( ts->stack[ ts->size - 1 ]->data +
@@ -2110,9 +2137,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       pop( ts );
       if( ts->stack[ ts->size - 2 ]->rank != ts->stack[ ts->size - 1 ]->rank )
         err( "%s:%u command %u: %s: %u vs %u.", s->filename, s->linenum, s->commandnum,
-               "Attempt to concatenate tensors of different rank",
-               ts->stack[ ts->size - 1 ]->rank,
-               ts->stack[ ts->size - 2 ]->rank );
+             "Attempt to concatenate tensors of different rank",
+             ts->stack[ ts->size - 1 ]->rank,
+             ts->stack[ ts->size - 2 ]->rank );
       
       tensorCat( ts, ts->size - 2, ts->size - 1, axis );
       pop( ts );
@@ -2122,30 +2149,30 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case MULTM: {
       if( ts->size < 2 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to multiply matrices with not enough parameters on the stack." );
+             "Attempt to multiply matrices with not enough parameters on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( !t1 || t1->rank > 2 || !t2 || t2->rank > 2 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Bad tensor or tensor rank in matrix multiplication." );
+             "Bad tensor or tensor rank in matrix multiplication." );
       while( t1->rank < 2 )
         tensorExtrude( t1 );
       while( t2->rank < 2 )
         tensorEnclose( t2 );
       if( t1->shape[ 0 ] != t2->shape[ 1 ] )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Incompatible shapes in matrix multiplication." );
+             "Incompatible shapes in matrix multiplication." );
       tensorMultiply( ts );
       break;
     }
     case TOSTRING: {
       if( ts->size < 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to create a string without a parameter on the stack." );
+             "Attempt to create a string without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 0 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Expected a scalar for toString." );
+             "Expected a scalar for toString." );
       char* fd = formatTensorData( t1 );
       pop( ts );
       tensor* nt = tensorFromString( fd );
@@ -2156,49 +2183,49 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case ROT: {
       if( ts->size < 2 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to create a rotation matrix without enough parameters on the stack." );
+             "Attempt to create a rotation matrix without enough parameters on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       tensor* t2 = ts->stack[ ts->size - 2 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 3 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Expected a rank 1 length 3 vector for rotation." );
+             "Expected a rank 1 length 3 vector for rotation." );
 	
       if( t2->rank )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Expected a scalar angle for rotation." );
+             "Expected a scalar angle for rotation." );
       tensorRotate( ts, ts->size - 1, ts->size - 2 );
       break;
     }
     case PROJ: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to create a projection matrix without a parameter on the stack." );
+             "Attempt to create a projection matrix without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 5 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Expected a rank 1 length 5 vector (fov, width, height, near, far) for projection." );
+             "Expected a rank 1 length 5 vector (fov, width, height, near, far) for projection." );
       tensorProject( ts, ts->size - 1 );
       break;
     }
     case ORTHO: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to create a orthographic projection matrix without a parameter on the stack." );
+             "Attempt to create a orthographic projection matrix without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 6 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Expected a rank 1 length 6 vector (left, right, bottom, top, near, far) for orthographic projection." );
+             "Expected a rank 1 length 6 vector (left, right, bottom, top, near, far) for orthographic projection." );
       tensorOrtho( ts, ts->size - 1 );
       break;
     }
     case TRANS: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to create a translation matrix without a parameter on the stack." );
+             "Attempt to create a translation matrix without a parameter on the stack." );
       tensor* t1 = ts->stack[ ts->size - 1 ];
       if( t1->rank != 1 || t1->shape[ 0 ] != 3 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Expected a rank 1 length 3 vector for translation." );
+             "Expected a rank 1 length 3 vector for translation." );
       tensorTranslate( ts, ts->size - 1 );
       break;
     }
@@ -2222,7 +2249,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case REVERSE: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to reverse with no axis parameter on the stack." );
+             "Attempt to reverse with no axis parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to reverse a nonscalar axis parameter." );
 
@@ -2237,7 +2264,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case SHAPE: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to get the shape of a tensor with nothing on the stack." );
+             "Attempt to get the shape of a tensor with nothing on the stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
       f32* newData = mem( cur->rank, f32 );
       for( u32 i = 0; i < cur->rank; ++i )
@@ -2251,11 +2278,11 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case LENGTH: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to get the length of a tensor with nothing on the stack." );
+             "Attempt to get the length of a tensor with nothing on the stack." );
       const tensor* top = ts->stack[ ts->size - 1 ];
       if( top->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to get the length of a tensor with rank not equal 1." );
+             "Attempt to get the length of a tensor with rank not equal 1." );
       f32 sumsquares = 0;
       for( u32 i = 0; i < top->shape[ 0 ]; ++i )
         sumsquares += top->data[ top->offset + top->strides[ 0 ] * i ] *
@@ -2284,27 +2311,29 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       break;
     }
     case LOAD: {
+      if( p->numFilenames >= NUM_FILENAMES )
+        err( "%s", "Filename count exceeded, too many files opened in one session." );
       if( !s->progName ){
         if( !ts->size )
           err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-                 "Attempt to load a string filename with no string on the stack." );
+               "Attempt to load a string filename with no string on the stack." );
         tensor* cur = ts->stack[ ts->size - 1 ];
         if( cur->rank != 1 )
           err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-                 "Attempt to load a string filename with a nonvector." );
+               "Attempt to load a string filename with a nonvector." );
         char* fn = tensorToString( ts->stack[ ts->size - 1 ] );
-        p = newProgramFromFile( fn );
-        if( p->numFilenames >= NUM_FILENAMES )
-          err( "%s", "Filename count exceeded, too many files opened in one session." );
         p->filenames[ p->numFilenames++ ] = fn;
+        char* err = newProgramFromFile( fn, &p );
+        if( err )
+          return err;
       }else{
         u32 len = strlen( s->progName );
         char* nn = mem( len + 2, char );
-        strncpy( nn, s->progName, len + 2 );
-        p = newProgramFromFile( nn );
-        if( p->numFilenames >= NUM_FILENAMES )
-          err( "%s", "Filename count exceeded, too many files opened in one session." );
         p->filenames[ p->numFilenames++ ] = nn;
+        strncpy( nn, s->progName, len + 2 );
+        char* err = newProgramFromFile( nn, &p );
+        if( err )
+          return err;
       }
       deleteProgram( *progp );
       *progp = p;
@@ -2318,45 +2347,51 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
 
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to eval with no string on the stack." );
+             "Attempt to eval with no string on the stack." );
         
       tensor* cur = ts->stack[ ts->size - 1 ];
       if( cur->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to eval a non-string tensor." );
+             "Attempt to eval a non-string tensor." );
         
       codeToRun = tensorToString( cur );
         
       pop( ts );
 
       u32 start = 0;
-      program* tempProg = copyProgramWithEval( p, codeToRun, &start );
-
-      copyProgramState( p, tempProg );
-      bool iret = true;
-      char* err = runProgram( ts, &tempProg, start, &iret );
-      if( !err ){
-        copyProgramState( tempProg, p );
-        
-        for( u32 i = 0; i < ts->size; ++i )
-          takeOwnership( ts->stack[ i ] );
-      } else{
-        print( "%s", err );
+      program* tempProg;
+      char* err = copyProgramWithEval( p, codeToRun, &start, &tempProg );
+      if( err ){
+        print( "%s\n", err );
         unmem( err );
-      }
-      deleteProgram( tempProg );
-    
-      unmem( codeToRun );
-      if( !iret ){
-        *ret = false;
-        return NULL;
+        unmem( codeToRun );
+      } else{
+        copyProgramState( p, tempProg );
+        bool iret = true;
+        char* err = runProgram( ts, &tempProg, start, &iret );
+        if( !err ){
+          copyProgramState( tempProg, p );
+          
+          for( u32 i = 0; i < ts->size; ++i )
+            takeOwnership( ts->stack[ i ] );
+        } else{
+          print( "%s\n", err );
+          unmem( err );
+        }
+        deleteProgram( tempProg );
+        
+        unmem( codeToRun );
+        if( !iret ){
+          *ret = false;
+          return NULL;
+        }
       }
       break;
     }
     case FIRST: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to take the first element with no parameter on the stack." );
+             "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeFirst( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -2365,7 +2400,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case LAST: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to take the first element with no parameter on the stack." );
+             "Attempt to take the first element with no parameter on the stack." );
 
       tensorTakeLast( ts, ts->size - 1 );
       // dbg( "%s", "first" );
@@ -2518,10 +2553,10 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case TRANSPOSE:
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to transpose with no axes parameter on the stack." );
+             "Attempt to transpose with no axes parameter on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
-               "Attempt to transpose with a axes parameter not of rank 1." );
+             "Attempt to transpose with a axes parameter not of rank 1." );
 
       u32 axis1 = *( ts->stack[ ts->size - 1 ]->data +
                      ts->stack[ ts->size - 1 ]->offset );
@@ -2626,7 +2661,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         if( s->var.size != ts->stack[ ts->size - 1 ]->size ){
           // dbg( "%u %u", s->var.size, ts->stack[ ts->size - 1 ]->size );
           err( "Incorrect size %u during set statement. Expecting %u.",
-                 s->var.size, ts->stack[ ts->size - 1 ]->size );
+               s->var.size, ts->stack[ ts->size - 1 ]->size );
         }
 	
         tensorToHostMemory( ts->stack[ ts->size - 1 ] );
@@ -2714,8 +2749,8 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
           break;
         default:
           err( "%s %u.",
-                 "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
-                 p->varSizes[ s->var.index ] );
+               "Logic error in atlas! Bad p->varSizes[ s->var.index ]",
+               p->varSizes[ s->var.index ] );
         }
         tensor* t =
           newTensor( rank, shape, p->varBlock + p->varOffsets[ s->var.index ] );

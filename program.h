@@ -153,9 +153,9 @@ typedef struct{
   u32 numFilenames;
 } program;
 
-program* newProgramFromFile( const char* filename );
+char* newProgramFromFile( const char* filename, program** ret );
 // mutates but does not deallocate the string eval.
-program* copyProgramWithEval( program* p, const char* eval, u32* startStep );
+char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program** ret );
 // Return false to exit program.
 char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret );
 void deleteProgram( program* p );
