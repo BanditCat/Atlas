@@ -16,51 +16,51 @@ html, body {
 }
 
 /* The main Emscripten canvas */
-#canvas {
-  display: block; /* Removes the small gap below the canvas */
-    -ms-touch-action: none; 
-}
+    #canvas {
+      display: block; /* Removes the small gap below the canvas */
+        -ms-touch-action: none; 
+    }
 
 /* 
    Loading Overlay covers the entire screen until loading is done.
    Positioned absolutely on top of the Emscripten canvas.
 */
-#loadingOverlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;  /* Make sure this is on top */
-}
+    #loadingOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;  /* Make sure this is on top */
+    }
 
-#loadingText {
-  color: #fff;
-  font-family: sans-serif;
-  margin-bottom: 1em;
-}
+    #loadingText {
+      color: #fff;
+      font-family: sans-serif;
+      margin-bottom: 1em;
+    }
 
 /* Outer container for the progress bar */
-#progressBarContainer {
-  width: 300px;
-  height: 20px;
-  background-color: #333;
-  border-radius: 10px;
-  overflow: hidden;
-}
+    #progressBarContainer {
+      width: 300px;
+      height: 20px;
+      background-color: #333;
+      border-radius: 10px;
+      overflow: hidden;
+    }
 
 /* The fill portion of the progress bar */
-#progressBarFill {
-  width: 0%;
-  height: 100%;
-  background-color: #fff;
-  transition: width 0.2s ease;
-}
+    #progressBarFill {
+      width: 0%;
+      height: 100%;
+      background-color: #fff;
+      transition: width 0.2s ease;
+    }
 </style>
   <script>
   document.addEventListener('contextmenu', function(event) {
@@ -79,10 +79,10 @@ html, body {
 
   <!-- Canvas where the Emscripten program will render -->
   <canvas id="canvas"></canvas>
-<div id="crashScreen" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); z-index:2147483647; justify-content:center; align-items:center;">
+  <div id="crashScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); z-index:2147483647; justify-content:center; align-items:center;">
   <div style="color:red; font-family:Arial, sans-serif; font-size:150px; font-weight:bold;">X</div>
-</div>
-{{{ SCRIPT }}}
+  </div>
+  {{{ SCRIPT }}}
 
   <script>
   // Utility function to update the width of the progress bar fill
@@ -126,7 +126,15 @@ var Module = {
     canvas.height = window.innerHeight;
     return canvas;
   })(),
+  showCrash: function() {
+    var el = document.getElementById('crashScreen');
+    if(el) el.style.display = 'flex'; // Use flex to center the X
+  },
 
+  // 1. Catch generic crashes (memory access, assertions)
+  onAbort: function(what) {
+    this.showCrash();
+  },
   onRuntimeInitialized: async function() {
     // --- 1. THE "NUCLEAR" PASTE TRIGGER ---
     // 'true' at the end enables "Capture Phase" - we catch the event BEFORE SDL does.

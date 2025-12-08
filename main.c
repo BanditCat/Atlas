@@ -635,11 +635,22 @@ int renderThreadFunction( void* data ){
     timeDelta *= 0.9;
     timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
     runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    if( !runProgram( ts, &prog, 0 ) ){
+    if ( !runProgram(ts, &prog, 0) ) {
+    
+#ifdef __EMSCRIPTEN__
+      // 1. Force the screen to show the X immediately
+      emscripten_run_script("Module.showCrash();");
+        
+      // 2. Kill the loop (SimulateInfiniteLoop exception)
+      emscripten_cancel_main_loop();
+      return;
+#else
+      // Native quit
+      SDL_AtomicSet(&running, 0);
+#endif
 #ifdef DBG
       check_memory_leaks();
 #endif      
-      SDL_AtomicSet( &running, 0 );
       break;
     }
 
@@ -744,7 +755,20 @@ void main_loop( void ){
   timeDelta *= 0.9;
   timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
   runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-  if( !runProgram( ts, &prog, 0 ) ){
+  if ( !runProgram(ts, &prog, 0) ) {
+    
+#ifdef __EMSCRIPTEN__
+    // 1. Force the screen to show the X immediately
+    emscripten_run_script("Module.showCrash();");
+        
+    // 2. Kill the loop (SimulateInfiniteLoop exception)
+    emscripten_cancel_main_loop();
+    return;
+#else
+    // Native quit
+    SDL_AtomicSet(&running, 0);
+#endif
+
     running = 0;
     emscripten_cancel_main_loop();
     return;
