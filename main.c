@@ -1014,6 +1014,17 @@ int main( int argc, char* argv[] )
     dbg( "mem count %llu", memc );
 #endif  
 
+
+#ifdef __EMSCRIPTEN__
+  // Show the Big Red X immediately
+  EM_ASM({ document.getElementById('quitOverlay').style.display = 'flex'; });
+    
+  // Stop the loop
+  emscripten_cancel_main_loop();
+#else
+  SDL_AtomicSet(&running, 0);
+#endif
+    
 #ifndef __EMSCRIPTEN__ 
   return 0;
 #endif  

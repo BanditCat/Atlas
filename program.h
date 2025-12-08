@@ -14,7 +14,6 @@
 // Also add it to the documentation, docs/index.html.
 typedef struct{
   enum{
-    PASTE, // documented
     COMPUTE, // documented
     CONTINUE, // documented
     ADD, // documented
