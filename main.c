@@ -243,16 +243,11 @@ void mainPoll( void ){
   while( SDL_PollEvent( &event ) ){
     if( event.type == SDL_QUIT ||
         ( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
-#ifdef __EMSCRIPTEN__
-    // Show the Big Red X immediately
-    EM_ASM({ document.getElementById('quitOverlay').style.display = 'flex'; });
-    
-    // Stop the loop
-    emscripten_cancel_main_loop();
-#else
-    SDL_AtomicSet(&running, 0);
-#endif 
-
+#ifndef __EMSCRIPTEN__
+      SDL_AtomicSet( &running, 0 );
+#else      
+      emscripten_cancel_main_loop();
+#endif      
     } else if( event.type == SDL_MOUSEWHEEL ){
 #ifndef __EMSCRIPTEN__
       //SDL_LockMutex( data_mutex );
@@ -644,15 +639,7 @@ int renderThreadFunction( void* data ){
 #ifdef DBG
       check_memory_leaks();
 #endif      
-#ifdef __EMSCRIPTEN__
-    // Show the Big Red X immediately
-    EM_ASM({ document.getElementById('quitOverlay').style.display = 'flex'; });
-    
-    // Stop the loop
-    emscripten_cancel_main_loop();
-#else
-    SDL_AtomicSet(&running, 0);
-#endif 
+      SDL_AtomicSet( &running, 0 );
       break;
     }
 
@@ -1027,8 +1014,6 @@ int main( int argc, char* argv[] )
     dbg( "mem count %llu", memc );
 #endif  
 
-
-  
 #ifndef __EMSCRIPTEN__ 
   return 0;
 #endif  
