@@ -1029,8 +1029,6 @@ int main( int argc, char* argv[] )
 
   SDL_AtomicSet( &running, 1 );
 
-  // Set splash text
-  printToBuffer( "%s", STARTTEXT );
   
 #else
   running = 1;
@@ -1039,6 +1037,9 @@ int main( int argc, char* argv[] )
   emscripten_set_touchmove_callback( "#canvas", NULL, EM_TRUE, onTouch );
   emscripten_set_touchcancel_callback( "#canvas", NULL, EM_TRUE, onTouch );
 #endif
+
+  // Set splash text
+  printToBuffer( "%s", STARTTEXT );
 
   setvbuf( stdout, NULL, _IONBF, 0 );  // Unbuffer stdout
   setvbuf( stderr, NULL, _IONBF, 0 );  // Unbuffer stderr
