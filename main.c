@@ -44,10 +44,7 @@
 "          @@@      :-  -:      @@@          \n"\
 "            @@@@            @@@@            \n"\
 "               :@@@@@@@@@@@@-               \n"\
-"                                            \n"\
-"\n"\
-"WARNING: Making mistakes here will leak memory, this is expected behavior."
-
+"                                            \n"
 
 ////////////////////////////////////////////////////////////////////
 // Global state

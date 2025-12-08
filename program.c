@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Copyright © 2025 Jon DuBois. Written with the assistance of GPT-4 et al.   //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -10,12 +10,6 @@
     return msg;                                 \
   }  while( 0 )
 
-#define err2( ... ) do {                        \
-    if( glslUniformBlock )                      \
-      unmem( glslUniformBlock );                \
-    char* msg = printToString( __VA_ARGS__ );   \
-    return msg;                                 \
-  } while( 0 )
 void copyProgramState( program* src, program* dst ){
   
   // 1. Copy Small Variables (No changes needed here, just memcpy)
@@ -1168,6 +1162,117 @@ char* addProgram( const char* filename, char* prog, program* program ){
 }
 
 
+char* finalizeCleanup( program* program, char* block, char* msg ) {
+  if( program->filenames ){
+    for( u32 i = 0; i < program->numFilenames; ++i )
+      unmem( program->filenames[ i ] );
+    unmem( program->filenames );
+  }
+  if( program->returns )
+    unmem( program->returns );
+  
+  if( program->varNames )   { 
+    // Only iterate up to numVars, which tracks how many valid entries we added
+    for( u32 i = 0; i < program->numVars; ++i ){
+      if( program->varNames[ i ] ) unmem( program->varNames[ i ] );
+    }
+    unmem( program->varNames );   
+    program->varNames = NULL; 
+  }
+
+  // [FIX] Free the STRINGS in bigvarNames before freeing the array
+  if( program->bigvarNames ){ 
+    for( u32 i = 0; i < program->numBigvars; ++i ){
+      if( program->bigvarNames[ i ] ) unmem( program->bigvarNames[ i ] );
+    }
+    unmem( program->bigvarNames );
+    program->bigvarNames = NULL; 
+  }
+  
+  if( block ) unmem( block );
+
+  // Cleanup dynamic arrays
+  if( program->varOffsets ) { unmem( program->varOffsets ); program->varOffsets = NULL; }
+  if( program->varSizes )   { unmem( program->varSizes );   program->varSizes = NULL; }
+  if( program->varNames )   { unmem( program->varNames );   program->varNames = NULL; }
+  if( program->bigvarNames ){ unmem( program->bigvarNames );program->bigvarNames = NULL; }
+  if( program->varBlock )   { unmem( program->varBlock );   program->varBlock = NULL; }
+
+  // Cleanup Tensors
+  if( program->bigvarts ) {
+    for( u32 i = 0; i < program->numBigvars; ++i ) {
+      if( program->bigvarts[ i ] ) {
+        deleteTensor( program->bigvarts[ i ] );
+      }
+    }
+    unmem( program->bigvarts );
+    program->bigvarts = NULL;
+  }
+
+  // Cleanup Strings for COMPUTE steps
+  // We scan ALL steps. Thanks to the NULL fix in the main loop, 
+  // we only unmem strings that haven't been processed yet.
+  if( program->steps ) {
+    for( u32 i = 0; i < program->numSteps; ++i ){      
+      if( program->steps[ i ].type == COMPUTE ){
+        if( program->steps[ i ].toCompute.glsl ) 
+          unmem( program->steps[ i ].toCompute.glsl );
+        if( program->steps[ i ].toCompute.glslpre ) 
+          unmem( program->steps[ i ].toCompute.glslpre );
+        if( program->steps[ i ].toCompute.vglsl ) 
+          unmem( program->steps[ i ].toCompute.vglsl );
+        if( program->steps[ i ].toCompute.vglslpre ) 
+          unmem( program->steps[ i ].toCompute.vglslpre );
+          
+        // Zero them out to prevent double-free if cleanup is called twice
+        program->steps[ i ].toCompute.glsl = NULL;
+        program->steps[ i ].toCompute.glslpre = NULL;
+        program->steps[ i ].toCompute.vglsl = NULL;
+        program->steps[ i ].toCompute.vglslpre = NULL;
+      }else if( program->steps[ i ].type == CALL ){
+        if( program->steps[ i ].branchName )
+          unmem( program->steps[ i ].branchName );
+      } else if( program->steps[ i ].type == LOAD && program->steps[ i ].progName ){
+        unmem( program->steps[ i ].progName );
+      }else if( program->steps[ i ].type == TENSOR ){
+        deleteTensor( program->steps[ i ].tensor );
+        program->steps[ i ].tensor = NULL;
+      }
+    }
+  }
+  
+  for( u32 i = 0; i < program->numComputes; ++i )
+    if( program->computes[ i ] )
+      deleteCompute( program->computes[ i ] );
+  
+  
+  if( program->vars ) {
+    deleteTrieNode( program->vars ); 
+  }
+
+  if( program->bigvars ) {
+    deleteTrieNode( program->bigvars );
+  }
+  if( program->labels ) {
+    deleteTrieNode( program->labels );
+  }
+  if( program->computes )
+    unmem( program->computes );
+  
+  program->numVars = 0;
+  program->numBigvars = 0;
+
+  if( program->steps )
+    unmem( program->steps );
+
+  unmem( program );
+  return msg;
+}
+#define err2( ... ) do {                                      \
+    char* msg = printToString( __VA_ARGS__ );                 \
+    return finalizeCleanup( program, glslUniformBlock, msg ); \
+  } while( 0 )
+
 char* finalize( program* program ){
   // Collect variables and craft the uniform block and the program vars.
   char* glslUniformBlock = NULL;
@@ -1237,6 +1342,7 @@ char* finalize( program* program ){
           u32 val;
           if( trieSearch( program->bigvars, program->steps[ i ].var.name, &val ) ){
             unmem( program->steps[ i ].var.name );
+            program->steps[ i ].var.name = NULL;
             program->steps[ i ].var.index = val;
           }else{
             trieInsert( program->bigvars, program->steps[ i ].var.name, program->numBigvars );
@@ -1249,10 +1355,11 @@ char* finalize( program* program ){
           if( trieSearch( program->vars, program->steps[ i ].var.name, &val ) ){
             if( program->steps[ i ].var.size != program->varSizes[ val ] )
               err2( "%s:%u command %u: %s", program->steps[ i ].filename,
-                   program->steps[ i ].linenum,
-                   program->steps[ i ].commandnum,
-                   "Incorrect size setting already set value. Size is static." );
+                    program->steps[ i ].linenum,
+                    program->steps[ i ].commandnum,
+                    "Incorrect size setting already set value. Size is static." );
             unmem( program->steps[ i ].var.name );
+            program->steps[ i ].var.name = NULL;
             program->steps[ i ].var.index = val;
           } else {
             u32 varlen = strlen( program->steps[ i ].var.name );
@@ -1348,11 +1455,11 @@ char* finalize( program* program ){
               if( !trieSearch( program->vars, program->steps[ i ].branchBaseName, &vi ) ){
                 if( !trieSearch( program->bigvars, program->steps[ i ].branchBaseName, &vi ) )
                   err2( "%s:%u command %u: Statement with unknown label or variable %s",
-                       program->steps[ i ].filename, program->steps[ i ].linenum,
-                       program->steps[ i ].commandnum,
-                       program->steps[ i ].branchBaseName?
-                       program->steps[ i ].branchBaseName:
-                       program->steps[ i ].branchName );
+                        program->steps[ i ].filename, program->steps[ i ].linenum,
+                        program->steps[ i ].commandnum,
+                        program->steps[ i ].branchBaseName?
+                        program->steps[ i ].branchBaseName:
+                        program->steps[ i ].branchName );
                 program->steps[ i ].type = GET;
                 program->steps[ i ].var.index = vi;
                 program->steps[ i ].var.size = 0;
@@ -1377,15 +1484,16 @@ char* finalize( program* program ){
           }
         } else{
           err2( "%s:%u command %u: Statement with unknown label %s",
-               program->steps[ i ].filename, program->steps[ i ].linenum,
-               program->steps[ i ].commandnum,
-               program->steps[ i ].branchBaseName?
-               program->steps[ i ].branchBaseName:
-               program->steps[ i ].branchName );
+                program->steps[ i ].filename, program->steps[ i ].linenum,
+                program->steps[ i ].commandnum,
+                program->steps[ i ].branchBaseName?
+                program->steps[ i ].branchBaseName:
+                program->steps[ i ].branchName );
         }
                 
       } else {
         unmem( program->steps[ i ].branchName );
+        program->steps[ i ].branchName = NULL;
         program->steps[ i ].branch = jumpTo;
       }
     } else if( program->steps[ i ].type == GET ){
@@ -1395,10 +1503,10 @@ char* finalize( program* program ){
           if( !trieSearch( program->vars, program->steps[ i ].var.baseName, &vi ) ){
             if( !trieSearch( program->bigvars, program->steps[ i ].var.baseName, &vi ) )
               err2( "%s:%u command %u: Attempt to get an an unknown variable %s",
-                   program->steps[ i ].filename,
-                   program->steps[ i ].linenum,
-                   program->steps[ i ].commandnum,
-                   program->steps[ i ].var.name );
+                    program->steps[ i ].filename,
+                    program->steps[ i ].linenum,
+                    program->steps[ i ].commandnum,
+                    program->steps[ i ].var.name );
             char* varName = program->steps[ i ].var.name;
             program->steps[ i ].var.index = vi;
             unmem( varName );
@@ -1441,6 +1549,10 @@ char* finalize( program* program ){
       unmem( glslpre );
       unmem( vglsl );
       unmem( vglslpre );
+      program->steps[ i ].toCompute.glsl = NULL;
+      program->steps[ i ].toCompute.glslpre = NULL;
+      program->steps[ i ].toCompute.vglsl = NULL;
+      program->steps[ i ].toCompute.vglslpre = NULL;
     }
   unmem( glslUniformBlock );
   return NULL;
@@ -1539,10 +1651,10 @@ char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program
   workspace[ 0 ] = 0;
 
   err = finalize( newProg );
-  if( err )
-    return err;
   unmem( workspace );
   workspace = tw;
+  if( err )
+    return err;
   *ret = newProg; return NULL;
 } 
 

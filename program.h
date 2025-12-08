@@ -103,18 +103,16 @@ typedef struct{
       bool reuse;
     } toCompute;
     struct{
-      union{
-        struct{
-          char* name;
-          char* baseName;
-        };
-        u32 index;
+      struct{
+        char* name;
+        char* baseName;
       };
+      u32 index;
       u32 size;
     } var;
     u32 compute;
-    u32 branch;
     struct{
+      u32 branch;
       char* branchName;
       char* branchBaseName;
     };
