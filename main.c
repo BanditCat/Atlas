@@ -12,8 +12,8 @@
 #include <windows.h>
 #endif
 
-#define STARTTEXT\
-"                                            \n"\                                            
+#define STARTTEXT \
+"                                            \n"\
 "               +@@@@@@@@@@@@=               \n"\
 "            @@@@            @@@@            \n"\
 "          @@@      @@  @@  .   @@@          \n"\
