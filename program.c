@@ -688,6 +688,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
              commandnum,
              "Malformed compute statement." );
 
+  } else if( !strcmp( command, "cls" ) ){
+    curStep->type = CLS;
+    // dbg( "Linenum %u commandnum %u: cls\n", linenum, commandnum );
+
   } else if( !strcmp( command, "eval" ) ){
     curStep->type = EVAL;
     // dbg( "Linenum %u commandnum %u: eval\n", linenum, commandnum );
@@ -1985,6 +1989,11 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
       unmem( loaded );
       break;      
     }      
+    case CLS:{
+      textBuffer[ 0 ] = '\0';
+      textBufferPos = 0;
+      break;
+    }
     case PRINT:
       printStack( ts );
       // dbg( "%s", "print" );

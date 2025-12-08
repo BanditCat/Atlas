@@ -375,6 +375,7 @@ extern f32 joysticks[ MAX_CONTROLLERS * 21 ];
 
 bool fileExists( const char* filename );
 void print( const char* format, ... );
+void printToBuffer( const char* format, ... );
 
 
 #endif  // ATLAS_H_INCLUDED

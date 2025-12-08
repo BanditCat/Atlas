@@ -12,6 +12,41 @@
 #include <windows.h>
 #endif
 
+#define STARTTEXT\
+"                                            \n"\                                            
+"               +@@@@@@@@@@@@=               \n"\
+"            @@@@            @@@@            \n"\
+"          @@@      @@  @@  .   @@@          \n"\
+"        @@@    @@@ @@  @@ @@@    @@@        \n"\
+"       @@   @@@ @@@@ .  @@@@ @@@   @@       \n"\
+"      @@  :@ @@@   . =%     @@@ @   @@      \n"\
+"     @%    @@.  @@%  @@  %@@  :@@ .  @@     \n"\
+"   .@@  @@%   ## @@  @@  =@ %%   %@@  @@    \n"\
+"   @@  =@@@ .     @  @@  @       @@@=  @@   \n"\
+"  @@   @@@ .  @    . @@      @  : @@@   @@  \n"\
+"  @@ .@@@ .*   @@   :@@+   @@   *  @@@  @@  \n"\
+"  @  %:%  @@@   @@@      @@@   @@@ .@=%  @  \n"\
+" @@  . % .+ -@  :% @@@@@@ *#  @: =. @    @@ \n"\
+" @@  *%%         .@  ..  @          %#*  @@ \n"\
+" @@       .@@@@@ @@ @@@@ @@ @@@@@.       @@ \n"\
+" @@     @@@@@@@@ @@ @@@@ @@ @@@@@@@@     @@            Welcome to Atlas!\n"\
+" @@  *##          @  *+  @          ##*  @@ \n"\
+" @@   .# .=  *  .  @@..@@     + .=..#    @@ \n"\
+" :@ .**#. #%%*  @@*      +@@  #%%# .*** .@: \n"\
+"  @=  *** .=  .@@*  -=@@  =@@   =. ***  +@  \n"\
+"  @@   *** := @%     %@     %@ -: ***   @@  \n"\
+" . @@   +**  @   .# .@@  %    @  *++  .@@   \n"\
+"    @. ..++   == #=  @@  .# ==   ++.  :@    \n"\
+"    =@     :+:  @@=  @@  =@@  :+:     @.    \n"\
+"     :@@  .= +++     -@     +++ =.  @@      \n"\
+"       @@   =.= ++++:  .+++= =.=   @@       \n"\
+"        @@@    =:= ==  == =:=    @@@        \n"\
+"          @@@      :-  -:      @@@          \n"\
+"            @@@@            @@@@            \n"\
+"               :@@@@@@@@@@@@-               \n"\
+"                                            \n"
+
+
 ////////////////////////////////////////////////////////////////////
 // Global state
 
@@ -934,8 +969,8 @@ void main_loop( void ){
 #ifndef __EMSCRIPTEN__
 int main( int argc, char* argv[] )
 #else
-EMSCRIPTEN_KEEPALIVE
-void start( void )
+  EMSCRIPTEN_KEEPALIVE
+  void start( void )
 #endif
 {
   curTime = SDL_GetPerformanceCounter();
@@ -994,6 +1029,9 @@ void start( void )
 
   SDL_AtomicSet( &running, 1 );
 
+  // Set splash text
+  printToBuffer( "%s", STARTTEXT );
+  
 #else
   running = 1;
   emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
@@ -1145,49 +1183,46 @@ float getMaxAnisotropy( void ){
   }
   return ret;
 }
+void vPrintToBuffer( const char* format, va_list args ){
+  va_list len_args;
+  va_copy( len_args, args );
+  int needed = vsnprintf( NULL, 0, format, len_args );
+  va_end( len_args );
+
+  if( needed < 0 ) return;
+
+  int available = TEXTBUFFERSIZE - textBufferPos - 1;
+  if( needed > available ){
+    size_t discard_amount = textBufferPos / 2;
+    if( needed > (int)( TEXTBUFFERSIZE - ( textBufferPos - discard_amount ) ) ){
+      size_t keep = ( TEXTBUFFERSIZE - 1 ) - needed;
+      if( keep > textBufferPos ) keep = 0;
+      discard_amount = textBufferPos - keep;
+    }
+    memmove( textBuffer, textBuffer + discard_amount, textBufferPos - discard_amount );
+    textBufferPos -= discard_amount;
+  }
+  vsnprintf( textBuffer + textBufferPos, TEXTBUFFERSIZE - textBufferPos, format, args );
+  
+  textBufferPos += needed;
+  if( textBufferPos >= TEXTBUFFERSIZE ) textBufferPos = TEXTBUFFERSIZE - 1;
+  textBuffer[ textBufferPos ] = '\0';
+}
+
+void printToBuffer( const char* format, ... ){
+  va_list args;
+  va_start( args, format );
+  vPrintToBuffer( format, args );
+  va_end( args );
+}
 
 void print( const char* format, ... ){
   va_list args;
-
-  // 1. Measure the string length needed
   va_start( args, format );
-  va_list args_copy;
-  va_copy( args_copy, args );
-  int needed = vsnprintf( NULL, 0, format, args_copy );
-  va_end( args_copy );
-  if( needed < 0 ){
-    va_end( args );
-    return;
-  }
-  va_copy( args_copy, args );
-  vprintf( format, args_copy );
-  va_end( args_copy );
-
-  int available = TEXTBUFFERSIZE - textBufferPos - 1;
-
-  if( needed > available ){
-    size_t discard_amount = textBufferPos / 2;
-
-    if( needed >
-        (int)( TEXTBUFFERSIZE - ( textBufferPos - discard_amount ) ) ){
-      size_t keep = ( TEXTBUFFERSIZE - 1 ) - needed;
-      if( keep > textBufferPos )
-        keep = 0;  // Should be impossible if logic holds
-      discard_amount = textBufferPos - keep;
-    }
-
-    memmove( textBuffer, textBuffer + discard_amount, textBufferPos - discard_amount );
-
-    textBufferPos -= discard_amount;
-  }
-
-  vsnprintf( textBuffer + textBufferPos, TEXTBUFFERSIZE - textBufferPos, format, args );
-  textBufferPos += needed;
-
-  if( textBufferPos >= TEXTBUFFERSIZE ){
-    textBufferPos = TEXTBUFFERSIZE - 1;
-  }
-  textBuffer[ textBufferPos ] = '\0';
-
+  va_list stdout_args;
+  va_copy( stdout_args, args );
+  vprintf( format, stdout_args );
+  va_end( stdout_args );
+  vPrintToBuffer( format, args );
   va_end( args );
 }

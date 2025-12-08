@@ -14,6 +14,7 @@
 // Also add it to the documentation, docs/index.html.
 typedef struct{
   enum{
+    CLS, // documented
     COMPUTE, // documented
     CONTINUE, // documented
     ADD, // documented
