@@ -297,6 +297,17 @@ void mainPoll( void ){
         SDL_free(pastedText); // Clean up the duplicate we made
       }
 #ifndef __EMSCRIPTEN__
+      // A kludge to deal with firefox
+      SDL_Event ev;
+      SDL_zero(ev);
+      ev.type = SDL_KEYUP; ev.key.state = SDL_RELEASED; ev.key.repeat = 0;
+      ev.key.keysym.mod = KMOD_NONE; 
+      ev.key.keysym.sym = SDLK_LCTRL; ev.key.keysym.scancode = SDL_SCANCODE_LCTRL; SDL_PushEvent(&ev);
+      ev.key.keysym.sym = SDLK_RCTRL; ev.key.keysym.scancode = SDL_SCANCODE_RCTRL; SDL_PushEvent(&ev);
+      ev.key.keysym.sym = SDLK_LSHIFT; ev.key.keysym.scancode = SDL_SCANCODE_LSHIFT; SDL_PushEvent(&ev);
+      ev.key.keysym.sym = SDLK_RSHIFT; ev.key.keysym.scancode = SDL_SCANCODE_RSHIFT; SDL_PushEvent(&ev);
+      ev.key.keysym.sym = SDLK_v; ev.key.keysym.scancode = SDL_SCANCODE_V; SDL_PushEvent(&ev);
+      ev.key.keysym.sym = SDLK_INSERT; ev.key.keysym.scancode = SDL_SCANCODE_INSERT; SDL_PushEvent(&ev);
       //SDL_UnlockMutex( data_mutex );
 #endif      
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
