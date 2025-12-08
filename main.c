@@ -308,6 +308,7 @@ void mainPoll( void ){
       ev.key.keysym.sym = SDLK_RSHIFT; ev.key.keysym.scancode = SDL_SCANCODE_RSHIFT; SDL_PushEvent(&ev);
       ev.key.keysym.sym = SDLK_v; ev.key.keysym.scancode = SDL_SCANCODE_V; SDL_PushEvent(&ev);
       ev.key.keysym.sym = SDLK_INSERT; ev.key.keysym.scancode = SDL_SCANCODE_INSERT; SDL_PushEvent(&ev);
+      printf("here\n");
 #endif
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
