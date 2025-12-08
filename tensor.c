@@ -942,7 +942,9 @@ void deleteStack( tensorStack* ts ){
 void printStack( tensorStack* ts ){
   for( u32 i = ts->size - 1; i < ts->size; --i ){
     tensor* t = ts->stack[ i ];
-    print( "tensor %u\n", i );
+    print( "%s tensor %u\n", t->gpu ? "GPU" : "CPU", i );
+    if( t->gpu )
+      print( "channels: %u\n", t->tex.channels );
     print( "shape:" );
     for( u32 j = 0; j < t->rank; ++j )
       print( " %u", t->shape[ j ] );
