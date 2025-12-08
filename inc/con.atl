@@ -55,7 +55,7 @@ pop;cursor;tilen;e;+;cursor= 1;
 
 // DOING THE THING!!! :D :D :D
 std.keyPresses;[40 41 0];s;unext;ifn'skipEval';
-buffer;eval;
+buffer;printLine;buffer;eval;
 commandHistorySizes;buffer;shape;0;cat;commandHistorySizes=;
 buffer;
   0;commandHistorySize;buffer;shape;unext;-;rep;0;cat;e;
@@ -154,6 +154,13 @@ l'skipConst';
 tdims;[0 1 0];s;[6];buffer;shape;*;[1];+;-;unext;ifn'noRedim';
 [6];buffer;shape;*;tdims;[1 2 0];s;0;cat;tdims= 2;
 l'noRedim';
+
+
+// Create output view.
+input;[2 3 0];s;[4];*;scrollUp;+;scrollUp=;
+std.keyPresses;[75 76 0];s;unext;ifn'nopgUp';scrollUp;[4];+;scrollUp=;l'nopgUp';
+std.keyPresses;[78 79 0];s;unext;ifn'nopgDown';scrollUp;[4];-;scrollUp=;l'nopgDown';
+scrollUp;unext;if'nonneg';[0];scrollUp=;l'nonneg';
 
 charswid;scrollUp;0;cat;textBufferView;
 [0 0];charswid;0;cat;[1 1 6 8];*;[0 0 1 1];+;std.textAreaToFlatTexture;

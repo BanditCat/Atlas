@@ -979,6 +979,14 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = PRINT;
     // dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "printLine" ) ){
+    curStep->type = PRINTLINE;
+    // dbg( "Linenum %u commandnum %u: printLine\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "printString" ) ){
+    curStep->type = PRINTSTRING;
+    // dbg( "Linenum %u commandnum %u: printString\n", linenum, commandnum );
+
   } else if( !strcmp( command, "quit" ) ){
     curStep->type = QUIT;
     // dbg( "Linenum %u commandnum %u: quit\n", linenum, commandnum );
@@ -1981,6 +1989,34 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
       printStack( ts );
       // dbg( "%s", "print" );
       break;
+    case PRINTLINE:{
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to printLine without a parameter on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The printLine argument was not a rank 1 tensor." );
+      
+      char* toprint = tensorToString( ts->stack[ ts->size - 1 ] );
+      pop( ts );
+      print( "%s\n", toprint );
+      unmem( toprint );
+      // dbg( "%s", "printLine" );
+      break;
+    }
+    case PRINTSTRING:{
+      if( ts->size < 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to printString without a parameter on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The printString argument was not a rank 1 tensor." );
+      
+      char* toprint = tensorToString( ts->stack[ ts->size - 1 ] );
+      pop( ts );
+      print( "%s", toprint );
+      unmem( toprint );
+      // dbg( "%s", "printString" );
+      break;
+    }
     case POP:
       pop( ts );
       // dbg( "%s %u", "pop", ts->size );

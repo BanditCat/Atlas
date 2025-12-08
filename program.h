@@ -51,6 +51,8 @@ typedef struct{
     UNEXTRUDE, // documented
     KEYS, // documented
     PRINT, // documented
+    PRINTLINE, // documented
+    PRINTSTRING, // documented
     KETTLE, // documented
     UNKETTLE, // documented
     TENSOR, // documented
