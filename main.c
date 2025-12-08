@@ -243,11 +243,16 @@ void mainPoll( void ){
   while( SDL_PollEvent( &event ) ){
     if( event.type == SDL_QUIT ||
         ( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
-#ifndef __EMSCRIPTEN__
-      SDL_AtomicSet( &running, 0 );
-#else      
-      emscripten_cancel_main_loop();
-#endif      
+#ifdef __EMSCRIPTEN__
+    // Show the Big Red X immediately
+    EM_ASM({ document.getElementById('quitOverlay').style.display = 'flex'; });
+    
+    // Stop the loop
+    emscripten_cancel_main_loop();
+#else
+    SDL_AtomicSet(&running, 0);
+#endif 
+
     } else if( event.type == SDL_MOUSEWHEEL ){
 #ifndef __EMSCRIPTEN__
       //SDL_LockMutex( data_mutex );
@@ -639,7 +644,15 @@ int renderThreadFunction( void* data ){
 #ifdef DBG
       check_memory_leaks();
 #endif      
-      SDL_AtomicSet( &running, 0 );
+#ifdef __EMSCRIPTEN__
+    // Show the Big Red X immediately
+    EM_ASM({ document.getElementById('quitOverlay').style.display = 'flex'; });
+    
+    // Stop the loop
+    emscripten_cancel_main_loop();
+#else
+    SDL_AtomicSet(&running, 0);
+#endif 
       break;
     }
 
@@ -1015,16 +1028,7 @@ int main( int argc, char* argv[] )
 #endif  
 
 
-#ifdef __EMSCRIPTEN__
-  // Show the Big Red X immediately
-  EM_ASM({ document.getElementById('quitOverlay').style.display = 'flex'; });
-    
-  // Stop the loop
-  emscripten_cancel_main_loop();
-#else
-  SDL_AtomicSet(&running, 0);
-#endif
-    
+  
 #ifndef __EMSCRIPTEN__ 
   return 0;
 #endif  
