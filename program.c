@@ -10,6 +10,121 @@
     return msg;                                 \
   }  while( 0 )
 
+char* finalizeCleanup( program* program, char* block, char* msg ) {
+  if( program->filenames ){
+    for( u32 i = 0; i < program->numFilenames; ++i )
+      unmem( program->filenames[ i ] );
+    unmem( program->filenames );
+  }
+  if( program->returns )
+    unmem( program->returns );
+  
+  if( program->varNames )   { 
+    // Only iterate up to numVars, which tracks how many valid entries we added
+    for( u32 i = 0; i < program->numVars; ++i ){
+      if( program->varNames[ i ] ) unmem( program->varNames[ i ] );
+    }
+    unmem( program->varNames );   
+    program->varNames = NULL; 
+  }
+
+  // [FIX] Free the STRINGS in bigvarNames before freeing the array
+  if( program->bigvarNames ){ 
+    for( u32 i = 0; i < program->numBigvars; ++i ){
+      if( program->bigvarNames[ i ] ) unmem( program->bigvarNames[ i ] );
+    }
+    unmem( program->bigvarNames );
+    program->bigvarNames = NULL; 
+  }
+  
+  if( block ) unmem( block );
+
+  // Cleanup dynamic arrays
+  if( program->varOffsets ) { unmem( program->varOffsets ); program->varOffsets = NULL; }
+  if( program->varSizes )   { unmem( program->varSizes );   program->varSizes = NULL; }
+  if( program->varNames )   { unmem( program->varNames );   program->varNames = NULL; }
+  if( program->bigvarNames ){ unmem( program->bigvarNames );program->bigvarNames = NULL; }
+  if( program->varBlock )   { unmem( program->varBlock );   program->varBlock = NULL; }
+
+  // Cleanup Tensors
+  if( program->bigvarts ) {
+    for( u32 i = 0; i < program->numBigvars; ++i ) {
+      if( program->bigvarts[ i ] ) {
+        deleteTensor( program->bigvarts[ i ] );
+      }
+    }
+    unmem( program->bigvarts );
+    program->bigvarts = NULL;
+  }
+
+  // Cleanup Strings for COMPUTE steps
+  // We scan ALL steps. Thanks to the NULL fix in the main loop, 
+  // we only unmem strings that haven't been processed yet.
+  if( program->steps ) {
+    for( u32 i = 0; i < program->numSteps; ++i ){      
+      if( program->steps[ i ].type == COMPUTE ){
+        if( program->steps[ i ].toCompute.glsl ) 
+          unmem( program->steps[ i ].toCompute.glsl );
+        if( program->steps[ i ].toCompute.glslpre ) 
+          unmem( program->steps[ i ].toCompute.glslpre );
+        if( program->steps[ i ].toCompute.vglsl ) 
+          unmem( program->steps[ i ].toCompute.vglsl );
+        if( program->steps[ i ].toCompute.vglslpre ) 
+          unmem( program->steps[ i ].toCompute.vglslpre );
+          
+        // Zero them out to prevent double-free if cleanup is called twice
+        program->steps[ i ].toCompute.glsl = NULL;
+        program->steps[ i ].toCompute.glslpre = NULL;
+        program->steps[ i ].toCompute.vglsl = NULL;
+        program->steps[ i ].toCompute.vglslpre = NULL;
+      }else if( program->steps[ i ].type == CALL || program->steps[ i ].type == IF || program->steps[ i ].type == IFN ){
+        if( program->steps[ i ].branchName )
+          unmem( program->steps[ i ].branchName );
+      } else if( program->steps[ i ].type == LOAD && program->steps[ i ].progName ){
+        unmem( program->steps[ i ].progName );
+      }else if( program->steps[ i ].type == TENSOR ){
+        deleteTensor( program->steps[ i ].tensor );
+        program->steps[ i ].tensor = NULL;
+      }
+    }
+  }
+  
+  for( u32 i = 0; i < program->numComputes; ++i )
+    if( program->computes[ i ] )
+      deleteCompute( program->computes[ i ] );
+  
+  
+  if( program->vars ) {
+    deleteTrieNode( program->vars ); 
+  }
+
+  if( program->bigvars ) {
+    deleteTrieNode( program->bigvars );
+  }
+  if( program->labels ) {
+    deleteTrieNode( program->labels );
+  }
+  if( program->computes )
+    unmem( program->computes );
+  
+  program->numVars = 0;
+  program->numBigvars = 0;
+
+  if( program->steps )
+    unmem( program->steps );
+
+  unmem( program );
+  return msg;
+}
+#define err2( ... ) do {                                      \
+    char* msg = printToString( __VA_ARGS__ );                 \
+    return finalizeCleanup( program, glslUniformBlock, msg ); \
+  } while( 0 )
+#define err3( ... ) do {                        \
+    char* msg = printToString( __VA_ARGS__ );   \
+    return finalizeCleanup( p, NULL, msg );     \
+  } while( 0 )
+
 void copyProgramState( program* src, program* dst ){
   
   // 1. Copy Small Variables (No changes needed here, just memcpy)
@@ -331,18 +446,18 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in workspace command." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in workspace command." );
     char* work = mem( 2 + endi - starti, char );
     memcpy( work, starti, endi - starti );
     work[ endi - starti ] = '\0';
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after workspace command." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after workspace command." );
     unmem( workspace );
     workspace = work;
     --p->numSteps;
@@ -352,12 +467,12 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty label." );
+      err3( "%s:%u command %u: %s", filename, linenum, commandnum, "Empty label." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in label." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in label." );
     u32 worklen = strlen( workspace );
     char* label = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -369,15 +484,15 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     label[ worklen + endi - starti ] = '\0';
     --p->numSteps;
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after label." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after label." );
     if( trieSearch( p->labels, label, NULL ) )
-      err( "%s:%u command %u: duplicate label '%s'", filename,
-           linenum,
-           commandnum,
-           label );
+      err3( "%s:%u command %u: duplicate label '%s'", filename,
+            linenum,
+            commandnum,
+            label );
     
     trieInsert( p->labels, label, p->numSteps );
     // dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label
@@ -390,15 +505,15 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Empty name in set statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty name in set statement." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in set statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in set statement." );
     u32 worklen = strlen( workspace );
     char* varName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -419,14 +534,14 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
               !sizep[ charsread ] ){
       curStep->var.size = varSize;
       if( !varSize || ( varSize > 4 && varSize != 16 ) )
-        err( "%s", "Invalid var size in set statement." );
+        err3( "%s", "Invalid var size in set statement." );
       // dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n",
       // linenum, commandnum, varName, varSize );
     } else
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Malformed set statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Malformed set statement." );
     // dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum,
     // varName );
     if( worklen )
@@ -438,15 +553,15 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Empty name in get statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty name in get statement." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in get statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in get statement." );
     u32 worklen = strlen( workspace );
     char* varName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -457,10 +572,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     memcpy( varName + worklen, starti, endi - starti );
     varName[ worklen + endi - starti ] = '\0';
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after get statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after get statement." );
     curStep->type = GET;
     curStep->var.name = varName;
     if( worklen )
@@ -474,13 +589,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err(
-          "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
+      err3(
+           "%s:%u command %u: %s", filename, linenum, commandnum, "Empty if statement." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in if statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in if statement." );
     u32 worklen = strlen( workspace );
     char* branchName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -493,10 +608,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = IF;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after if statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after if statement." );
     // dbg( "Linenum %u commandnum %u: if to %s\n", linenum, commandnum,
     // branchName );
     if( worklen )
@@ -508,15 +623,15 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Empty ifn statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty ifn statement." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in ifn statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in ifn statement." );
     u32 worklen = strlen( workspace );
     char* branchName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -529,10 +644,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = IFN;
     curStep->branchName = branchName;
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after ifn statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after ifn statement." );
     // dbg( "Linenum %u commandnum %u: ifn to %s\n", linenum, commandnum,
     // branchName );
     if( worklen )
@@ -544,15 +659,15 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Empty img statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty img statement." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in img statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in img statement." );
     char* imgName = mem( 1 + endi - starti, char );
     memcpy( imgName, starti, endi - starti );
     imgName[ endi - starti ] = '\0';
@@ -560,10 +675,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->tensor = tensorFromImageFile( imgName );
     unmem( imgName );
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after img statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after img statement." );
     // dbg( "Linenum %u commandnum %u: img %s\n", linenum, commandnum,
     // imgName );
     
@@ -577,25 +692,25 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\'' )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Empty load statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty load statement." );
     if( *endi != '\'' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in load statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in load statement." );
     char* progName = mem( 1 + endi - starti, char );
     memcpy( progName, starti, endi - starti );
     progName[ endi - starti ] = '\0';
     curStep->type = LOAD;
     curStep->progName = progName;
     if( *( endi + 1 ) )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Extra characters after load statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after load statement." );
     // dbg( "Linenum %u commandnum %u: load %s\n", linenum, commandnum,
     // progName );
 
@@ -605,10 +720,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi && *endi != '\252' )
       endi++;
     if( *endi != '\252' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in compute statement vertex pre block." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in compute statement vertex pre block." );
     char* vpre = mem( 1 + endi - starti, char );
     memcpy( vpre, starti, endi - starti );
     // Replace \ with ;
@@ -620,11 +735,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     ++endi; // now get compute statements
     while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\252' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in compute statement vertex block." );
+    if( *endi != '\252' ){
+      unmem( vpre );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in compute statement vertex block." );
+    }
     char* vcomp = mem( 1 + endi - starti, char );
     memcpy( vcomp, starti, endi - starti );
     // Replace \ with ;
@@ -636,11 +753,14 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     ++endi; // now get compute statements
     while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\252' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in compute statement pre block." );
+    if( *endi != '\252' ){
+      unmem( vcomp );
+      unmem( vpre );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in compute statement pre block." );
+    }
     char* pre = mem( 1 + endi - starti, char );
     memcpy( pre, starti, endi - starti );
     // Replace \ with ;
@@ -652,11 +772,15 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     ++endi; // now get compute statements
     while( *endi && *endi != '\252' )
       endi++;
-    if( *endi != '\252' )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Unmatched quote in compute statement." );
+    if( *endi != '\252' ){
+      unmem( pre );
+      unmem( vcomp );
+      unmem( vpre );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in compute statement." );
+    }
     char* comp = mem( 1 + endi - starti, char );
     memcpy( comp, starti, endi - starti );
     // Replace \ with ;
@@ -679,19 +803,35 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
       curStep->toCompute.reuse = reuse;
-      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 )
-        err( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
-      if( argCount > 4 )
-        err( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
-      if( retCount > 4 || !retCount )
-        err( "%s", "Compute created with a bad return count, must be 1-4." );
+      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 ){
+        unmem( pre );
+        unmem( vcomp );
+        unmem( vpre );
+        err3( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
+      }
+      if( argCount > 4 ){
+        unmem( pre );
+        unmem( vcomp );
+        unmem( vpre );
+        err3( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
+      }
+      if( retCount > 4 || !retCount ){
+        unmem( pre );
+        unmem( vcomp );
+        unmem( vpre );
+        err3( "%s", "Compute created with a bad return count, must be 1-4." );
+      }
       // dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
       // linenum, commandnum, comp, argCount );
-    } else
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Malformed compute statement." );
+    } else{
+      unmem( pre );
+      unmem( vcomp );
+      unmem( vpre );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Malformed compute statement." );
+    }
 
   } else if( !strcmp( command, "cls" ) ){
     curStep->type = CLS;
@@ -784,10 +924,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     if( sscanf( sizep, "%u%n", &channels, &charsread ) == 1 && !sizep[ charsread ] ){
       curStep->type = TEXTUREARRAY;
       if( channels != 1 && channels != 10 && channels != 4 && channels != 40 )
-        err( "%s:%u command %u: %s", filename, linenum, commandnum, "textureArray statement with a bad channel count." );
+        err3( "%s:%u command %u: %s", filename, linenum, commandnum, "textureArray statement with a bad channel count." );
       curStep->var.size = channels; // Storing channel count in var.size
     } else
-      err( "%s:%u command %u: %s", filename, linenum, commandnum, "Malformed textureArray statement." );
+      err3( "%s:%u command %u: %s", filename, linenum, commandnum, "Malformed textureArray statement." );
     
   } else if( !strcmp( command, "m" ) ){
     curStep->type = MULTM;
@@ -941,10 +1081,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
       
 
       if( *endi != '\'' )
-        err( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in string statement." );
+        err3( "%s:%u command %u: %s", filename,
+              linenum,
+              commandnum,
+              "Unmatched quote in string statement." );
       char* str = mem( 2 + endi - starti, char );
       memcpy( str, starti, endi - starti );
       u32 back = endi - starti;
@@ -961,10 +1101,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
       curStep->tensor = tensorFromString( str );
       unmem( str );
       if( *( endi + 1 ) )
-        err( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Extra characters after string statement." );
+        err3( "%s:%u command %u: %s", filename,
+              linenum,
+              commandnum,
+              "Extra characters after string statement." );
       // dbg( "Linenum %u commandnum %u: string %s\n", linenum, commandnum,
       // string );
     } else{
@@ -1006,10 +1146,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     while( *endi )
       endi++;
     if( endi == starti )
-      err( "%s:%u command %u: %s", filename,
-           linenum,
-           commandnum,
-           "Empty call statement." );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty call statement." );
     u32 worklen = strlen( workspace );
     char* branchName = mem( worklen + 2 + endi - starti, char );
     if( worklen ){
@@ -1161,117 +1301,6 @@ char* addProgram( const char* filename, char* prog, program* program ){
   return NULL;
 }
 
-
-char* finalizeCleanup( program* program, char* block, char* msg ) {
-  if( program->filenames ){
-    for( u32 i = 0; i < program->numFilenames; ++i )
-      unmem( program->filenames[ i ] );
-    unmem( program->filenames );
-  }
-  if( program->returns )
-    unmem( program->returns );
-  
-  if( program->varNames )   { 
-    // Only iterate up to numVars, which tracks how many valid entries we added
-    for( u32 i = 0; i < program->numVars; ++i ){
-      if( program->varNames[ i ] ) unmem( program->varNames[ i ] );
-    }
-    unmem( program->varNames );   
-    program->varNames = NULL; 
-  }
-
-  // [FIX] Free the STRINGS in bigvarNames before freeing the array
-  if( program->bigvarNames ){ 
-    for( u32 i = 0; i < program->numBigvars; ++i ){
-      if( program->bigvarNames[ i ] ) unmem( program->bigvarNames[ i ] );
-    }
-    unmem( program->bigvarNames );
-    program->bigvarNames = NULL; 
-  }
-  
-  if( block ) unmem( block );
-
-  // Cleanup dynamic arrays
-  if( program->varOffsets ) { unmem( program->varOffsets ); program->varOffsets = NULL; }
-  if( program->varSizes )   { unmem( program->varSizes );   program->varSizes = NULL; }
-  if( program->varNames )   { unmem( program->varNames );   program->varNames = NULL; }
-  if( program->bigvarNames ){ unmem( program->bigvarNames );program->bigvarNames = NULL; }
-  if( program->varBlock )   { unmem( program->varBlock );   program->varBlock = NULL; }
-
-  // Cleanup Tensors
-  if( program->bigvarts ) {
-    for( u32 i = 0; i < program->numBigvars; ++i ) {
-      if( program->bigvarts[ i ] ) {
-        deleteTensor( program->bigvarts[ i ] );
-      }
-    }
-    unmem( program->bigvarts );
-    program->bigvarts = NULL;
-  }
-
-  // Cleanup Strings for COMPUTE steps
-  // We scan ALL steps. Thanks to the NULL fix in the main loop, 
-  // we only unmem strings that haven't been processed yet.
-  if( program->steps ) {
-    for( u32 i = 0; i < program->numSteps; ++i ){      
-      if( program->steps[ i ].type == COMPUTE ){
-        if( program->steps[ i ].toCompute.glsl ) 
-          unmem( program->steps[ i ].toCompute.glsl );
-        if( program->steps[ i ].toCompute.glslpre ) 
-          unmem( program->steps[ i ].toCompute.glslpre );
-        if( program->steps[ i ].toCompute.vglsl ) 
-          unmem( program->steps[ i ].toCompute.vglsl );
-        if( program->steps[ i ].toCompute.vglslpre ) 
-          unmem( program->steps[ i ].toCompute.vglslpre );
-          
-        // Zero them out to prevent double-free if cleanup is called twice
-        program->steps[ i ].toCompute.glsl = NULL;
-        program->steps[ i ].toCompute.glslpre = NULL;
-        program->steps[ i ].toCompute.vglsl = NULL;
-        program->steps[ i ].toCompute.vglslpre = NULL;
-      }else if( program->steps[ i ].type == CALL ){
-        if( program->steps[ i ].branchName )
-          unmem( program->steps[ i ].branchName );
-      } else if( program->steps[ i ].type == LOAD && program->steps[ i ].progName ){
-        unmem( program->steps[ i ].progName );
-      }else if( program->steps[ i ].type == TENSOR ){
-        deleteTensor( program->steps[ i ].tensor );
-        program->steps[ i ].tensor = NULL;
-      }
-    }
-  }
-  
-  for( u32 i = 0; i < program->numComputes; ++i )
-    if( program->computes[ i ] )
-      deleteCompute( program->computes[ i ] );
-  
-  
-  if( program->vars ) {
-    deleteTrieNode( program->vars ); 
-  }
-
-  if( program->bigvars ) {
-    deleteTrieNode( program->bigvars );
-  }
-  if( program->labels ) {
-    deleteTrieNode( program->labels );
-  }
-  if( program->computes )
-    unmem( program->computes );
-  
-  program->numVars = 0;
-  program->numBigvars = 0;
-
-  if( program->steps )
-    unmem( program->steps );
-
-  unmem( program );
-  return msg;
-}
-#define err2( ... ) do {                                      \
-    char* msg = printToString( __VA_ARGS__ );                 \
-    return finalizeCleanup( program, glslUniformBlock, msg ); \
-  } while( 0 )
 
 char* finalize( program* program ){
   // Collect variables and craft the uniform block and the program vars.
@@ -1643,8 +1672,11 @@ char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program
   *startStep = newProg->numSteps;
 
   char* err = addProgram( "{EVAL}", (char*)eval, newProg );
-  if( err )
+  if( err ){
+    unmem( workspace );
+    workspace = tw;
     return err;
+  }
   
   unmem( workspace );
   workspace = mem( 1, char );
