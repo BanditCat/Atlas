@@ -21,10 +21,9 @@
         -ms-touch-action: none; 
       }
 
-      /* 
-      Loading Overlay covers the entire screen until loading is done.
-      Positioned absolutely on top of the Emscripten canvas.
-     */
+      /* Loading Overlay covers the entire screen until loading is done.
+       Positioned absolutely on top of the Emscripten canvas.
+      */
       #loadingOverlay {
         position: absolute;
         top: 0;
@@ -62,14 +61,8 @@
         transition: width 0.2s ease;
       }
     </style>
-    <script>
-      document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
-      });
-    </script>
   </head>
   <body>
-    <!-- Loading overlay with progress bar -->
     <div id="loadingOverlay">
       <div id="loadingText">Loading files, please wait...</div>
       <div id="progressBarContainer">
@@ -77,7 +70,6 @@
       </div>
     </div>
 
-    <!-- Canvas where the Emscripten program will render -->
     <canvas id="canvas"></canvas>
 
     {{{ SCRIPT }}}
@@ -96,13 +88,6 @@
           overlay.style.display = 'none';
         }
       }
-
-      // If you want a small delay to visually confirm the bar hits 100% before vanish:
-      // function hideLoadingOverlay() {
-      //   setTimeout(() => {
-      //     document.getElementById('loadingOverlay').style.display = 'none';
-      //   }, 500);
-      // }
 
       async function fetchAndStoreInFS(filename) {
         // Fetch the file as binary data
@@ -126,39 +111,47 @@
         })(),
 
         onRuntimeInitialized: async function() {
-          // --- 1. THE "NUCLEAR" PASTE TRIGGER ---
-          // 'true' at the end enables "Capture Phase" - we catch the event BEFORE SDL does.
-          window.addEventListener('keydown', function(e) {
-            // Check for CTRL+V (or CMD+V on Mac)
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
-              
-              // 1. Try the Async Clipboard API
-              navigator.clipboard.readText().then(text => {
-                if (!text) return;
+          
+          // --- 1. SILENT PASTE LISTENER ---
+          // Catches the native 'paste' event (triggered by Ctrl+V).
+          // Because it comes from a trusted hardware event, it needs no popup.
+          window.addEventListener('paste', function(e) {
+             // Prevent default to ensure browser doesn't try to handle it
+             e.preventDefault();
 
-                // 2. Send to C++
-                var lengthBytes = lengthBytesUTF8(text) + 1;
-                var stringOnWasmHeap = _malloc(lengthBytes);
-                stringToUTF8(text, stringOnWasmHeap, lengthBytes);
-                
-                Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
-                Module._free(stringOnWasmHeap);
+             // Extract text directly from the event object
+             var pasteText = (e.clipboardData || window.clipboardData).getData('text');
+             if (!pasteText) return;
 
-              }).catch(err => {
-                // If readText fails (permission denied), fall back to standard paste event
-                console.error("Async read failed, waiting for standard paste event", err);
-              });
-            }
-          }, true); // <--- IMPORTANT: 'true' means "Capture Phase"
+             console.log("Paste detected (Silent Mode)");
 
-          // 1. Fetch filelist.txt
+             // Send to C++
+             var lengthBytes = lengthBytesUTF8(pasteText) + 1;
+             var stringOnWasmHeap = Module._malloc(lengthBytes);
+             stringToUTF8(pasteText, stringOnWasmHeap, lengthBytes);
+             
+             Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
+             
+             Module._free(stringOnWasmHeap);
+          });
+
+          // --- 2. FOCUS FIX ---
+          // Ensure clicking the canvas gives focus to the window so Paste works
+          Module.canvas.addEventListener('click', function() {
+              window.focus();
+              Module.canvas.focus();
+          });
+
+
+          // --- 3. LOADING LOGIC ---
+          // Fetch filelist.txt
           const listResponse = await fetch('filelist.txt');
           if (!listResponse.ok) {
             alert("Failed to load filelist.txt");
             return;
           }
 
-          // 2. Split filelist into an array of filenames
+          // Split filelist into an array of filenames
           const fileList = await listResponse.text();
           const filenames = fileList
                 .split(/\r?\n/)
@@ -169,8 +162,7 @@
           let loadedCount = 0;
           const totalCount = filenames.length;
 
-          // 3. Build array of Promises
-          //    Each time a file finishes loading, update the bar
+          // Build array of Promises
           const fetchPromises = filenames.map(fname =>
             fetchAndStoreInFS(fname)
               .then(() => {
@@ -180,16 +172,17 @@
               .catch(err => console.error("Failed to load file: ", fname, err))
           );
 
-          // 4. Wait until all fetches complete
+          // Wait until all fetches complete
           await Promise.all(fetchPromises);
 
-          // 5. All files are loaded, hide the loading overlay
+          // All files are loaded, hide the loading overlay
           hideLoadingOverlay();
+          
           // Set up window resize
           window.addEventListener('resize', function() {
             Module.canvas.width = window.innerWidth;
             Module.canvas.height = window.innerHeight;
-	          Module.ccall('resizeWindow', null, ['number', 'number'], [ window.innerWidth, window.innerHeight]);
+            Module.ccall('resizeWindow', null, ['number', 'number'], [ window.innerWidth, window.innerHeight]);
           });
 
           // Prevent default browser actions on touch to allow multi-touch in C
