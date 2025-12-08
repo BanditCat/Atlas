@@ -25,6 +25,7 @@
 
 //#include <GL/gl.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 
 // The current workspace, this will be prefixed onto all variables and labels in program.c:addStep.  This may be the empty string "" but must not be null, as no checks are performed.
@@ -342,6 +343,8 @@ static inline void* mem_check(void* ptr, size_t bytes, const char* file, int lin
 float getMaxAnisotropy( void );
 
 // Globals
+extern char* textBuffer;
+extern u64 textBufferPos;
 extern char* textInputBuffer;
 extern u64 textInputBufferPos;
 extern SDL_Window* window;
@@ -365,15 +368,13 @@ extern f32 joysticks[ MAX_CONTROLLERS * 21 ];
 //extern SDL_mutex* data_mutex;
 #endif
 
+
 #include "tensor.h"
 #include "program.h"
 #include "trie.h"
 
 bool fileExists( const char* filename );
+void print( const char* format, ... );
 
-#ifndef __EMSCRIPTEN__
-void reqSwitchToWorkerW( void );
-void reqReturnToNormalWindow( void );
-#endif  // __EMSCRIPTEN__
 
 #endif  // ATLAS_H_INCLUDED

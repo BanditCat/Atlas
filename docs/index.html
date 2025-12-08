@@ -234,6 +234,7 @@
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
+      <li><a href="#cmd-textBufferView">textBufferView</a></li>
       <li><a href="#cmd-textInput">textInput</a></li>
       <li><a href="#cmd-texture">texture</a></li>
       <li><a href="#cmd-textureArray">textureArray</a></li>
@@ -1122,9 +1123,14 @@ strides: 1 2
 </code></pre></p>
   </section>
 
+  <section id="cmd-textBufferView">
+    <h2>textBufferView</h2>
+    <p>This command creates a view of the standard output buffer.  It takes one argument, a 3 vector like [width height scrollUp] where scrollUp casues that many visible lines to be skipped, scrolling the buffer up.  Words are wrapped to width.  This command produces a tensor suitable for use with std.textAreaToFlatTexture or std.textToTexture.</p>
+  </section>
+    
   <section id="cmd-textInput">
     <h2>textInput</h2>
-    <p>This command pushes the text input since the last call to this command onto the stack as ascii.  This makes it easy to gather text from the keyboard.  Up to 64 characters are buffered.</p>
+    <p>This command pushes the text input since the last call to this command onto the stack as ascii.  This makes it easy to gather text from the keyboard.  Up to 65536 characters are buffered.</p>
   </section>
 
   <section id="cmd-texture">

@@ -7,11 +7,10 @@
 #ifndef __EMSCRIPTEN__
 #include "SDL2/SDL_syswm.h"
 #include <dwmapi.h>
-#include <windows.h>
 #include <fcntl.h>
 #include <io.h>
+#include <windows.h>
 #endif
-
 
 ////////////////////////////////////////////////////////////////////
 // Global state
@@ -32,14 +31,9 @@ f32 posy = 0;
 f32 mouseWheel = 0;
 f32 mouseWheelPos = 0.0;
 u8 keys[ SDL_NUM_SCANCODES ] = { 0 };
-// We set this in main to a mallocd empty string then also deallocate it in main.
+// We set this in main to a mallocd empty string then also deallocate it in
+// main.
 char* workspace = NULL;
-
-
-
-
-
-
 
 bool doubleClicks[ 3 ] = { 0 };
 bool touchClicks[ 3 ] = { 0 };
@@ -49,11 +43,10 @@ float pinchZoom = 0.0;
 
 #ifdef DEBUG
 MemAlloc* mem_list = NULL;
-SDL_mutex* mem_list_mutex = NULL; // Use SDL mutex
+SDL_mutex* mem_list_mutex = NULL;  // Use SDL mutex
 #else
 u64 memc = 0;
 #endif
-
 
 SDL_Window* window = NULL;
 SDL_GLContext glContext;
@@ -71,54 +64,58 @@ u64 startTime = 0;
 f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 #define TEXTINPUTBUFFERSIZE 1048576
+#define TEXTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
 u64 textInputBufferPos = 0;
+char* textBuffer = NULL;
+u64 textBufferPos = 0;
 
-
-u32 EVENT_PASTE = 0; // Will be initialized in main
+u32 EVENT_PASTE = 0;  // Will be initialized in main
 
 #ifdef __EMSCRIPTEN__
 
 // 1. C Callback: JS calls this when the promise resolves
 EMSCRIPTEN_KEEPALIVE
-void on_paste_received(char* text) {
-  if (!text || !EVENT_PASTE) return;
-        
+void on_paste_received( char* text ){
+  if( !text || !EVENT_PASTE )
+    return;
+
   SDL_Event event;
-  SDL_zero(event);
+  SDL_zero( event );
   event.type = EVENT_PASTE;
-  // We must copy the string because Emscripten will free 'text' immediately after this returns
-  event.user.data1 = SDL_strdup(text); 
-  SDL_PushEvent(&event);
+  // We must copy the string because Emscripten will free 'text' immediately
+  // after this returns
+  event.user.data1 = SDL_strdup( text );
+  SDL_PushEvent( &event );
 }
 
 // 2. JS Event Listener (REPLACES trigger_web_paste)
-EM_JS(void, setup_browser_paste_listener, (), {
+EM_JS( void, setup_browser_paste_listener, (), {
     // Attach to the window so we catch paste events anywhere in the tab
-    window.addEventListener('paste', function(e) {
-        // 1. Get the data
-        var pasteText = (e.clipboardData || window.clipboardData).getData('text');
-        if (!pasteText) return;
+    window.addEventListener(
+                            'paste', function( e ){
+                              // 1. Get the data
+                              var pasteText =
+                                ( e.clipboardData || window.clipboardData ).getData( 'text' );
+                              if( !pasteText )
+                                return;
 
-        // 2. Prevent the browser from double-handling it (optional, but safer)
-        e.preventDefault();
+                              // 2. Prevent the browser from double-handling it (optional, but safer)
+                              e.preventDefault();
 
-        // 3. Send to C
-        var lengthBytes = lengthBytesUTF8(pasteText) + 1;
-        var stringOnWasmHeap = _malloc(lengthBytes);
-        stringToUTF8(pasteText, stringOnWasmHeap, lengthBytes);
-        
-        Module.ccall('on_paste_received', null, ['number'], [stringOnWasmHeap]);
-        
-        _free(stringOnWasmHeap);
-      });
-    
-    console.log("Paste listener attached.");
-  });
+                              // 3. Send to C
+                              var lengthBytes = lengthBytesUTF8( pasteText ) + 1;
+                              var stringOnWasmHeap = _malloc( lengthBytes );
+                              stringToUTF8( pasteText, stringOnWasmHeap, lengthBytes );
+
+                              Module.ccall( 'on_paste_received', null, ['number'], [stringOnWasmHeap] );
+
+                              _free( stringOnWasmHeap );
+                            } );
+
+    console.log( "Paste listener attached." );
+  } );
 #endif
-
-
-
 
 // Structure to pass argc/argv to the render thread
 typedef struct {
@@ -126,65 +123,68 @@ typedef struct {
   char** argv;
 } LaunchArgs;
 
-
 void loadProg( program** prog, tensorStack** ts, const char* fileName ){
   const char* realName = fileName ? fileName : "main.atl";
   if( !fileExists( realName ) )
-    error( "File %s does not exist. Either provide a filename argument, or provide a main.atl", realName );
+    error( "File %s does not exist. Either provide a filename argument, or "
+           "provide a main.atl",
+           realName );
   *prog = newProgramFromFile( realName );
   *ts = newStack();
 }
-
 
 // Here we define the touch interface.
 #ifdef __EMSCRIPTEN__
 #include <emscripten/html5.h>
 
-
 EMSCRIPTEN_KEEPALIVE
-EM_BOOL onTouch( int eventType, const EmscriptenTouchEvent *touchEvent, void *userData ){
+EM_BOOL onTouch( int eventType,
+                 const EmscriptenTouchEvent* touchEvent,
+                 void* userData ){
   static float oldPinchZoom = 0.0;
   static float newPinchZoom = 0.0;
-  if( eventType == EMSCRIPTEN_EVENT_TOUCHEND || eventType == EMSCRIPTEN_EVENT_TOUCHCANCEL ){
+  if( eventType == EMSCRIPTEN_EVENT_TOUCHEND ||
+      eventType == EMSCRIPTEN_EVENT_TOUCHCANCEL ){
     for( int i = 0; i < 3; ++i ){
-      touchClicks[i] = 0;
+      touchClicks[ i ] = 0;
     }
     oldPinchZoom = 0.0;
-  } else{
+  } else {
     if( touchEvent->numTouches == 1 ){
       touchClicks[ 0 ] = 1;
       oldPinchZoom = 0.0;
     } else
       touchClicks[ 0 ] = 0;
     if( touchEvent->numTouches == 2 ){
-      float x1 = touchEvent->touches[0].clientX;
-      float y1 = touchEvent->touches[0].clientY;
-      float x2 = touchEvent->touches[1].clientX;
-      float y2 = touchEvent->touches[1].clientY;
-      newPinchZoom = sqrtf((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+      float x1 = touchEvent->touches[ 0 ].clientX;
+      float y1 = touchEvent->touches[ 0 ].clientY;
+      float x2 = touchEvent->touches[ 1 ].clientX;
+      float y2 = touchEvent->touches[ 1 ].clientY;
+      newPinchZoom =
+        sqrtf( ( x2 - x1 ) * ( x2 - x1 ) + ( y2 - y1 ) * ( y2 - y1 ) );
       if( oldPinchZoom != 0.0 ){
         pinchZoom += ( newPinchZoom - oldPinchZoom ) / 20.0;
       }
       oldPinchZoom = newPinchZoom;
       touchClicks[ 1 ] = 1;
-    }else
+    } else
       touchClicks[ 1 ] = 0;
     if( touchEvent->numTouches == 3 ){
       touchClicks[ 2 ] = 1;
       oldPinchZoom = 0.0;
-    }else
+    } else
       touchClicks[ 2 ] = 0;
   }
   return EM_TRUE;
 }
 
-#endif // touch interface
+#endif  // touch interface
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 void resizeWindow( int width, int height ){
   // Optionally, you can print a message to verify this function is called:
-  //printf( "Resizing SDL window to %d x %d\n", width, height );
+  // printf( "Resizing SDL window to %d x %d\n", width, height );
   jsWidth = width;
   jsHeight = height;
   // Update the SDL window's size.
@@ -193,24 +193,31 @@ void resizeWindow( int width, int height ){
 #endif
 
 #ifndef __EMSCRIPTEN__
-void APIENTRY openglDebugCallback( GLenum source, GLenum type, GLuint id,
-                                   GLenum severity, GLsizei length,
-                                   const GLchar* message, const void* userParam ){
+void APIENTRY openglDebugCallback( GLenum source,
+                                   GLenum type,
+                                   GLuint id,
+                                   GLenum severity,
+                                   GLsizei length,
+                                   const GLchar* message,
+                                   const void* userParam ){
   dbg( "OpenGL Debug Message:%s", "\n" );
-  dbg( "Source: %d, Type: %d, ID: %d, Severity: %d\n", source, type, id, severity );
+  dbg( "Source: %d, Type: %d, ID: %d, Severity: %d\n",
+       source,
+       type,
+       id,
+       severity );
   dbg( "Message: %s\n", message );
 }
 
-void enableDebugCallback() {
+void enableDebugCallback(){
   glEnable( GL_DEBUG_OUTPUT );
   glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
   glDebugMessageCallback( openglDebugCallback, NULL );
 }
 
-
 // Thread synchronization variables
 SDL_atomic_t running;
-//SDL_mutex* data_mutex = NULL;
+// SDL_mutex* data_mutex = NULL;
 void SetDarkTitleBar( SDL_Window* sdlWindow ){
   SDL_SysWMinfo wmInfo;
   SDL_VERSION( &wmInfo.version );
@@ -220,18 +227,19 @@ void SetDarkTitleBar( SDL_Window* sdlWindow ){
     BOOL enable = TRUE;
 
     // Apply dark mode attribute
-    HRESULT hr = DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
-    if (SUCCEEDED(hr)) {
-      ShowWindow(hwnd, SW_MINIMIZE);
-      ShowWindow(hwnd, SW_RESTORE);
+    HRESULT hr = DwmSetWindowAttribute(
+                                       hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof( enable ) );
+    if( SUCCEEDED( hr ) ){
+      ShowWindow( hwnd, SW_MINIMIZE );
+      ShowWindow( hwnd, SW_RESTORE );
     } else {
-      MessageBoxA(NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR);
+      MessageBoxA(
+                  NULL, "Failed to set dark title bar!", "Error", MB_ICONERROR );
     }
-    
+
   } else {
     SDL_Log( "Unable to get window handle: %s", SDL_GetError() );
   }
-  
 }
 #else
 int running;  // Simple integer for the running flag in single-threaded mode
@@ -239,82 +247,101 @@ int running;  // Simple integer for the running flag in single-threaded mode
 
 void mainPoll( void ){
   SDL_Event event;
-  //SDL_Delay( 1 ); // Without this delay, the render to desktop code can deadlock for unknown reason.
+  // SDL_Delay( 1 ); // Without this delay, the render to desktop code can
+  // deadlock for unknown reason.
   while( SDL_PollEvent( &event ) ){
     if( event.type == SDL_QUIT ||
-        ( event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
+        ( event.type == SDL_WINDOWEVENT &&
+          event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
 #ifndef __EMSCRIPTEN__
       SDL_AtomicSet( &running, 0 );
-#else      
+#else
       emscripten_cancel_main_loop();
-#endif      
+#endif
     } else if( event.type == SDL_MOUSEWHEEL ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
       mouseWheel += event.wheel.y;
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_MOUSEMOTION ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
-      posx = event.motion.x; posy = event.motion.y;
-      dx += event.motion.xrel; dy += event.motion.yrel;
+      posx = event.motion.x;
+      posy = event.motion.y;
+      dx += event.motion.xrel;
+      dy += event.motion.yrel;
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_TEXTINPUT ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
       s64 remaining = TEXTINPUTBUFFERSIZE - textInputBufferPos - 1;
       if( remaining < 0 )
         remaining = 0;
-      strncpy( textInputBuffer + textInputBufferPos, event.text.text, remaining );
+      strncpy(
+              textInputBuffer + textInputBufferPos, event.text.text, remaining );
       textInputBufferPos += strlen( event.text.text );
       textInputBuffer[ TEXTINPUTBUFFERSIZE - 1 ] = 0;
-        
-        
+
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
-    } else if( event.type == EVENT_PASTE ){  
+      // SDL_UnlockMutex( data_mutex );
+#endif
+    } else if( event.type == EVENT_PASTE ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
 
       char* pastedText = (char*)event.user.data1;
-      if( pastedText ) {
+      if( pastedText ){
         // Safe concatenation into your text buffer
         s64 available = TEXTINPUTBUFFERSIZE - textInputBufferPos - 1;
-        if (available > 0) {
-          strncpy(textInputBuffer + textInputBufferPos, pastedText, available);
+        if( available > 0 ){
+          strncpy(
+                  textInputBuffer + textInputBufferPos, pastedText, available );
         }
         textInputBufferPos += strlen( pastedText );
         textInputBuffer[ TEXTINPUTBUFFERSIZE - 1 ] = 0;
-        SDL_free(pastedText); // Clean up the duplicate we made
+        SDL_free( pastedText );  // Clean up the duplicate we made
       }
       // A kludge to deal with firefox
 #ifdef __EMSCRIPTEN__
       SDL_Event ev;
-      SDL_zero(ev);
-      ev.type = SDL_KEYUP; ev.key.state = SDL_RELEASED; ev.key.repeat = 0;
-      ev.key.keysym.mod = KMOD_NONE; 
-      ev.key.keysym.sym = SDLK_LCTRL; ev.key.keysym.scancode = SDL_SCANCODE_LCTRL; SDL_PushEvent(&ev);
-      ev.key.keysym.sym = SDLK_RCTRL; ev.key.keysym.scancode = SDL_SCANCODE_RCTRL; SDL_PushEvent(&ev);
-      ev.key.keysym.sym = SDLK_LSHIFT; ev.key.keysym.scancode = SDL_SCANCODE_LSHIFT; SDL_PushEvent(&ev);
-      ev.key.keysym.sym = SDLK_RSHIFT; ev.key.keysym.scancode = SDL_SCANCODE_RSHIFT; SDL_PushEvent(&ev);
-      ev.key.keysym.sym = SDLK_v; ev.key.keysym.scancode = SDL_SCANCODE_V; SDL_PushEvent(&ev);
-      ev.key.keysym.sym = SDLK_INSERT; ev.key.keysym.scancode = SDL_SCANCODE_INSERT; SDL_PushEvent(&ev);
+      SDL_zero( ev );
+      ev.type = SDL_KEYUP;
+      ev.key.state = SDL_RELEASED;
+      ev.key.repeat = 0;
+      ev.key.keysym.mod = KMOD_NONE;
+      ev.key.keysym.sym = SDLK_LCTRL;
+      ev.key.keysym.scancode = SDL_SCANCODE_LCTRL;
+      SDL_PushEvent( &ev );
+      ev.key.keysym.sym = SDLK_RCTRL;
+      ev.key.keysym.scancode = SDL_SCANCODE_RCTRL;
+      SDL_PushEvent( &ev );
+      ev.key.keysym.sym = SDLK_LSHIFT;
+      ev.key.keysym.scancode = SDL_SCANCODE_LSHIFT;
+      SDL_PushEvent( &ev );
+      ev.key.keysym.sym = SDLK_RSHIFT;
+      ev.key.keysym.scancode = SDL_SCANCODE_RSHIFT;
+      SDL_PushEvent( &ev );
+      ev.key.keysym.sym = SDLK_v;
+      ev.key.keysym.scancode = SDL_SCANCODE_V;
+      SDL_PushEvent( &ev );
+      ev.key.keysym.sym = SDLK_INSERT;
+      ev.key.keysym.scancode = SDL_SCANCODE_INSERT;
+      SDL_PushEvent( &ev );
 #endif
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_MOUSEBUTTONDOWN ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
       if( event.button.clicks == 2 ){
         if( event.button.button == SDL_BUTTON_LEFT )
@@ -331,11 +358,11 @@ void mainPoll( void ){
       if( event.button.button == SDL_BUTTON_MIDDLE )
         buttons |= SDL_BUTTON( SDL_BUTTON_MIDDLE );
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_MOUSEBUTTONUP ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
       if( event.button.button == SDL_BUTTON_LEFT )
         buttons &= ~SDL_BUTTON( SDL_BUTTON_LEFT );
@@ -344,37 +371,40 @@ void mainPoll( void ){
       if( event.button.button == SDL_BUTTON_MIDDLE )
         buttons &= ~SDL_BUTTON( SDL_BUTTON_MIDDLE );
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_KEYDOWN ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
-      // Hard coded copy paste so we can 
-      if( ( event.key.keysym.sym == SDLK_v && (SDL_GetModState() & KMOD_CTRL) ) ||
-          ( event.key.keysym.sym == SDLK_INSERT && (SDL_GetModState() & KMOD_SHIFT) ) ){
+      // Hard coded copy paste so we can
+      if( ( event.key.keysym.sym == SDLK_v &&
+            ( SDL_GetModState() & KMOD_CTRL ) ) ||
+          ( event.key.keysym.sym == SDLK_INSERT &&
+            ( SDL_GetModState() & KMOD_SHIFT ) ) ){
         if( SDL_HasClipboardText() ){
           char* clipText = SDL_GetClipboardText();
           if( clipText ){
             u32 currentLen = strlen( textInputBuffer );
             u32 available = TEXTINPUTBUFFERSIZE - currentLen - 1;
-            if( available > 0 ) strncat( textInputBuffer, clipText, available );
+            if( available > 0 )
+              strncat( textInputBuffer, clipText, available );
             SDL_free( clipText );
           }
         }
       }
       keys[ event.key.keysym.scancode ] = 1;
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_KEYUP ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
       keys[ event.key.keysym.scancode ] = 0;
 #ifndef __EMSCRIPTEN__
-      //SDL_UnlockMutex( data_mutex );
-#endif      
+      // SDL_UnlockMutex( data_mutex );
+#endif
     } else if( event.type == SDL_CONTROLLERDEVICEADDED ){
 #ifndef __EMSCRIPTEN__
       //      SDL_LockMutex( data_mutex );
@@ -390,25 +420,26 @@ void mainPoll( void ){
       if( !found ){
         for( int i = 0; i < MAX_CONTROLLERS; ++i ){
           if( controllers[ i ] == NULL ){
-            if( SDL_IsGameController(event.cdevice.which ) ){
+            if( SDL_IsGameController( event.cdevice.which ) ){
               controllers[ i ] = SDL_GameControllerOpen( event.cdevice.which );
               if( controllers[ i ] ){
-                joystickIDs[ i ] = SDL_JoystickInstanceID( SDL_GameControllerGetJoystick( controllers[ i ] ) );
+                joystickIDs[ i ] = SDL_JoystickInstanceID(
+                                                          SDL_GameControllerGetJoystick( controllers[ i ] ) );
               }
             }
-            break; // Stop after adding to one slot
+            break;  // Stop after adding to one slot
           }
         }
       }
 #ifndef __EMSCRIPTEN__
       //      SDL_UnlockMutex( data_mutex );
-#endif      
+#endif
 
     } else if( event.type == SDL_CONTROLLERDEVICEREMOVED ){
 #ifndef __EMSCRIPTEN__
       //      SDL_LockMutex( data_mutex );
 #endif
-      
+
       // Identify which controller was removed
       for( int i = 0; i < MAX_CONTROLLERS; ++i ){
         if( controllers[ i ] && joystickIDs[ i ] == event.cdevice.which ){
@@ -419,28 +450,40 @@ void mainPoll( void ){
       }
 #ifndef __EMSCRIPTEN__
       //      SDL_UnlockMutex( data_mutex );
-#endif      
+#endif
     } else if( event.type == SDL_CONTROLLERAXISMOTION ){
 #ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
+      // SDL_LockMutex( data_mutex );
 #endif
       // Handle axis motion
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i ){
         if( controllers[ i ] && joystickIDs[ i ] == event.caxis.which ){
           f32 axisValue = ( (f32)( event.caxis.value ) / 32767.0 );
           switch( event.caxis.axis ){
-          case SDL_CONTROLLER_AXIS_TRIGGERLEFT: joysticks[ i * 21 + 0 ] = axisValue; break;
-          case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: joysticks[ i * 21 + 1 ] = axisValue; break;
-          case SDL_CONTROLLER_AXIS_LEFTX: joysticks[ i * 21 + 2 ] = axisValue; break;
-          case SDL_CONTROLLER_AXIS_LEFTY: joysticks[ i * 21 + 3 ] = axisValue; break;
-          case SDL_CONTROLLER_AXIS_RIGHTX: joysticks[ i * 21 + 4 ] = axisValue; break;
-          case SDL_CONTROLLER_AXIS_RIGHTY: joysticks[ i * 21 + 5 ] = axisValue; break;
+          case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+            joysticks[ i * 21 + 0 ] = axisValue;
+            break;
+          case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+            joysticks[ i * 21 + 1 ] = axisValue;
+            break;
+          case SDL_CONTROLLER_AXIS_LEFTX:
+            joysticks[ i * 21 + 2 ] = axisValue;
+            break;
+          case SDL_CONTROLLER_AXIS_LEFTY:
+            joysticks[ i * 21 + 3 ] = axisValue;
+            break;
+          case SDL_CONTROLLER_AXIS_RIGHTX:
+            joysticks[ i * 21 + 4 ] = axisValue;
+            break;
+          case SDL_CONTROLLER_AXIS_RIGHTY:
+            joysticks[ i * 21 + 5 ] = axisValue;
+            break;
           }
         }
       }
 #ifndef __EMSCRIPTEN__
       //      SDL_UnlockMutex( data_mutex );
-#endif      
+#endif
     } else if( event.type == SDL_CONTROLLERBUTTONDOWN ||
                event.type == SDL_CONTROLLERBUTTONUP ){
 #ifndef __EMSCRIPTEN__
@@ -453,27 +496,57 @@ void mainPoll( void ){
       for( u32 i = 0; i < MAX_CONTROLLERS; ++i ){
         if( controllers[ i ] && joystickIDs[ i ] == event.cbutton.which ){
           switch( event.cbutton.button ){
-          case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: joysticks[ i * 21 + 6 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: joysticks[ i * 21 + 7 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_GUIDE: joysticks[ i * 21 + 8 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_DPAD_UP: joysticks[ i * 21 + 9 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joysticks[ i * 21 + 10 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_DPAD_DOWN: joysticks[ i * 21 + 11 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_DPAD_LEFT: joysticks[ i * 21 + 12 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_BACK: joysticks[ i * 21 + 13 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_START: joysticks[ i * 21 + 14 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_A: joysticks[ i * 21 + 15 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_B: joysticks[ i * 21 + 16 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_X: joysticks[ i * 21 + 17 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_Y: joysticks[ i * 21 + 18 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_LEFTSTICK: joysticks[ i * 21 + 19 ] = upordown; break;
-          case SDL_CONTROLLER_BUTTON_RIGHTSTICK: joysticks[ i * 21 + 20 ] = upordown; break;
+          case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+            joysticks[ i * 21 + 6 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+            joysticks[ i * 21 + 7 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_GUIDE:
+            joysticks[ i * 21 + 8 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_DPAD_UP:
+            joysticks[ i * 21 + 9 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            joysticks[ i * 21 + 10 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+            joysticks[ i * 21 + 11 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            joysticks[ i * 21 + 12 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_BACK:
+            joysticks[ i * 21 + 13 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_START:
+            joysticks[ i * 21 + 14 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_A:
+            joysticks[ i * 21 + 15 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_B:
+            joysticks[ i * 21 + 16 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_X:
+            joysticks[ i * 21 + 17 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_Y:
+            joysticks[ i * 21 + 18 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_LEFTSTICK:
+            joysticks[ i * 21 + 19 ] = upordown;
+            break;
+          case SDL_CONTROLLER_BUTTON_RIGHTSTICK:
+            joysticks[ i * 21 + 20 ] = upordown;
+            break;
           }
         }
       }
 #ifndef __EMSCRIPTEN__
       //      SDL_UnlockMutex( data_mutex );
-#endif      
+#endif
     }
   }
 }
@@ -514,7 +587,8 @@ const GLchar* fragmentSource =
   "  return texel[ int( channel ) ];\n"
   "}\n"
   "void main(){\n"
-  "  fragColor = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), 0.0 );\n"
+  "  fragColor = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), "
+  "0.0 );\n"
   "}\n";
 
 // Function to compile shaders
@@ -582,16 +656,16 @@ int renderThreadFunction( void* data ){
     SDL_AtomicSet( &running, 0 );
     return 1;
   }
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
+  glGenVertexArrays( 1, &vao );
+  glBindVertexArray( vao );
 
-  //enableDebugCallback();
-  // Initialize OpenGL
+  // enableDebugCallback();
+  //  Initialize OpenGL
   int windowWidth, windowHeight;
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
   glViewport( 0, 0, windowWidth, windowHeight );
   glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-  SDL_GL_SetSwapInterval( 1 ); // VRR
+  SDL_GL_SetSwapInterval( 1 );  // VRR
   SDL_SetHint( SDL_HINT_RENDER_VSYNC, "1" );
   /* SDL_GL_SetSwapInterval( 0 ); */
   /* SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0"); */
@@ -623,40 +697,42 @@ int renderThreadFunction( void* data ){
       push( ts, tensorFromString( args->argv[ i ] ) );
     }
   }
-  
+
   // Main loop
   while( SDL_AtomicGet( &running ) ){
-    //SDL_PumpEvents();
-    //mainPoll();
-    // Run the program
+    // SDL_PumpEvents();
+    // mainPoll();
+    //  Run the program
     CHECK_GL_ERROR();
     prevTime = curTime;
     curTime = SDL_GetPerformanceCounter();
     timeDelta *= 0.9;
-    timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    if ( !runProgram(ts, &prog, 0) ) {
-    
+    timeDelta += 0.1 * (f64)( curTime - prevTime ) /
+      (f64)( SDL_GetPerformanceFrequency() );
+    runTime =
+      (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
+    if( !runProgram( ts, &prog, 0 ) ){
+
 #ifdef __EMSCRIPTEN__
       // 1. Force the screen to show the X immediately
-      emscripten_run_script("Module.showCrash();");
-        
+      emscripten_run_script( "Module.showCrash();" );
+
       // 2. Kill the loop (SimulateInfiniteLoop exception)
       emscripten_cancel_main_loop();
       return;
 #else
       // Native quit
-      SDL_AtomicSet(&running, 0);
+      SDL_AtomicSet( &running, 0 );
 #endif
 #ifdef DBG
       check_memory_leaks();
-#endif      
+#endif
       break;
     }
 
     // Get current window size
     SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-    
+
     // Adjust the viewport
     glViewport( 0, 0, windowWidth, windowHeight );
 
@@ -669,7 +745,8 @@ int renderThreadFunction( void* data ){
       error( "%s", "Display tensor not of rank 3" );
     if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 4 )
       error( "%s", "Display tensor not a 4 component tensor of rank 3." );
-    if( ts->stack[ ts->size - 1 ]->tex.channels != 4 && ts->stack[ ts->size - 1 ]->tex.channels != 40 )
+    if( ts->stack[ ts->size - 1 ]->tex.channels != 4 &&
+        ts->stack[ ts->size - 1 ]->tex.channels != 40 )
       error( "%s", "Display tensor not a 4 channel tensor of rank 3." );
 
     glClear( GL_COLOR_BUFFER_BIT );
@@ -682,7 +759,8 @@ int renderThreadFunction( void* data ){
 
     // Bind the texture to texture unit 0
     glActiveTexture( GL_TEXTURE0 );
-    glBindTexture( GL_TEXTURE_2D_ARRAY, ts->stack[ ts->size - 1 ]->tex.texture );
+    glBindTexture( GL_TEXTURE_2D_ARRAY,
+                   ts->stack[ ts->size - 1 ]->tex.texture );
 
     // Set uniforms
     GLint dimsLoc = glGetUniformLocation( shaderProgram, "dims" );
@@ -723,8 +801,8 @@ int renderThreadFunction( void* data ){
     glDisableVertexAttribArray( posAttrib );
 
     SDL_GL_SwapWindow( window );
-      
-    //DwmFlush();
+
+    // DwmFlush();
   }
 
   // Cleanup
@@ -747,26 +825,28 @@ void main_loop( void ){
   // Process events
   SDL_Event event;
   mainPoll();
-  
+
   // Run the program
   CHECK_GL_ERROR();
   prevTime = curTime;
   curTime = SDL_GetPerformanceCounter();
   timeDelta *= 0.9;
-  timeDelta += 0.1*(f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
-  runTime = (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
-  if ( !runProgram(ts, &prog, 0) ) {
-    
+  timeDelta +=
+    0.1 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+  runTime =
+    (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
+  if( !runProgram( ts, &prog, 0 ) ){
+
 #ifdef __EMSCRIPTEN__
     // 1. Force the screen to show the X immediately
-    emscripten_run_script("Module.showCrash();");
-        
+    emscripten_run_script( "Module.showCrash();" );
+
     // 2. Kill the loop (SimulateInfiniteLoop exception)
     emscripten_cancel_main_loop();
     return;
 #else
     // Native quit
-    SDL_AtomicSet(&running, 0);
+    SDL_AtomicSet( &running, 0 );
 #endif
 
     running = 0;
@@ -778,7 +858,6 @@ void main_loop( void ){
   // Get current window size
   int windowWidth, windowHeight;
   SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-  
 
   // Adjust the viewport
   glViewport( 0, 0, windowWidth, windowHeight );
@@ -792,7 +871,8 @@ void main_loop( void ){
     error( "%s", "Display tensor not of rank 3" );
   if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 4 )
     error( "%s", "Display tensor not a 4 component tensor of rank 3." );
-  if( ts->stack[ ts->size - 1 ]->tex.channels != 4 && ts->stack[ ts->size - 1 ]->tex.channels != 40 )
+  if( ts->stack[ ts->size - 1 ]->tex.channels != 4 &&
+      ts->stack[ ts->size - 1 ]->tex.channels != 40 )
     error( "%s", "Display tensor not a 4 channel tensor of rank 3." );
 
   glClear( GL_COLOR_BUFFER_BIT );
@@ -830,7 +910,7 @@ void main_loop( void ){
                ts->stack[ ts->size - 1 ]->shape[ 3 ] );
 
   GLint toffsetLoc = glGetUniformLocation( shaderProgram, "toffset" );
-  
+
   glUniform1f( toffsetLoc, ts->stack[ ts->size - 1 ]->offset );
 
   // Bind VBO and set vertex attributes
@@ -854,8 +934,8 @@ void main_loop( void ){
 #ifndef __EMSCRIPTEN__
 int main( int argc, char* argv[] )
 #else
-  EMSCRIPTEN_KEEPALIVE 
-  void start( void )
+EMSCRIPTEN_KEEPALIVE
+void start( void )
 #endif
 {
   curTime = SDL_GetPerformanceCounter();
@@ -864,50 +944,56 @@ int main( int argc, char* argv[] )
   workspace = mem( 1, char );
   workspace[ 0 ] = '\0';
   textInputBuffer = mem( TEXTINPUTBUFFERSIZE, char );
+  textBuffer = mem( TEXTBUFFERSIZE, char );
 #ifndef __EMSCRIPTEN__
   // 1. Get the handle
   HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
   DWORD fileType = GetFileType( hOut );
 
   // 2. If no valid handle, try to attach to parent console
-  if( hOut == NULL || hOut == INVALID_HANDLE_VALUE || fileType == FILE_TYPE_UNKNOWN ){
+  if( hOut == NULL || hOut == INVALID_HANDLE_VALUE ||
+      fileType == FILE_TYPE_UNKNOWN ){
     if( AttachConsole( ATTACH_PARENT_PROCESS ) ){
       // We successfully attached to a console (e.g. Bash/CMD).
-      // Use freopen, which is the most reliable way to write to a physical console window.
+      // Use freopen, which is the most reliable way to write to a physical
+      // console window.
       freopen( "CONOUT$", "w", stdout );
       freopen( "CONOUT$", "w", stderr );
     }
-    // If AttachConsole fails, we might be in a detached process or a pipe-only environment that hasn't initialized yet.
-  }
-  else if( fileType == FILE_TYPE_PIPE ) {
+    // If AttachConsole fails, we might be in a detached process or a pipe-only
+    // environment that hasn't initialized yet.
+  } else if( fileType == FILE_TYPE_PIPE ){
     // 3. We have a valid PIPE handle (This is the Emacs case).
     // We must ensure the C Runtime (printf) uses this OS handle.
     int fd = _open_osfhandle( (intptr_t)hOut, _O_TEXT );
     if( fd != -1 ){
-      _dup2( fd, 1 ); // Bind os-handle to stdout (fd 1)
-      setvbuf( stdout, NULL, _IONBF, 0 ); // Ensure it's unbuffered for immediate display in Emacs
+      _dup2( fd, 1 );  // Bind os-handle to stdout (fd 1)
+      setvbuf( stdout,
+               NULL,
+               _IONBF,
+               0 );  // Ensure it's unbuffered for immediate display in Emacs
     }
-    
+
     // Do the same for Stderr
     HANDLE hErr = GetStdHandle( STD_ERROR_HANDLE );
     if( hErr != NULL && hErr != INVALID_HANDLE_VALUE ){
       int fdErr = _open_osfhandle( (intptr_t)hErr, _O_TEXT );
-      if( fdErr != -1 ) _dup2( fdErr, 2 );
+      if( fdErr != -1 )
+        _dup2( fdErr, 2 );
       setvbuf( stderr, NULL, _IONBF, 0 );
     }
-  }
-  else {
-    // 4. We have a valid handle that isn't a pipe (likely a direct Console handle inherited).
-    // Fallback to the console method.
+  } else {
+    // 4. We have a valid handle that isn't a pipe (likely a direct Console
+    // handle inherited). Fallback to the console method.
     freopen( "CONOUT$", "w", stdout );
     freopen( "CONOUT$", "w", stderr );
   }
 
   // Set the output code page to UTF-8
   SetConsoleOutputCP( CP_UTF8 );
-  
+
   SDL_AtomicSet( &running, 1 );
-  
+
 #else
   running = 1;
   emscripten_set_touchstart_callback( "#canvas", NULL, EM_TRUE, onTouch );
@@ -916,24 +1002,25 @@ int main( int argc, char* argv[] )
   emscripten_set_touchcancel_callback( "#canvas", NULL, EM_TRUE, onTouch );
 #endif
 
-  setvbuf( stdout, NULL, _IONBF, 0 ); // Unbuffer stdout
-  setvbuf( stderr, NULL, _IONBF, 0 ); // Unbuffer stderr
+  setvbuf( stdout, NULL, _IONBF, 0 );  // Unbuffer stdout
+  setvbuf( stderr, NULL, _IONBF, 0 );  // Unbuffer stderr
 
   // Initialize SDL and create window in the main thread
   if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER ) != 0 )
     error( "SDL_Init Error: %s\n", SDL_GetError() );
-  EVENT_PASTE = SDL_RegisterEvents(1);
+  EVENT_PASTE = SDL_RegisterEvents( 1 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
   SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
-  //  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+  //  SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK,
+  //  SDL_GL_CONTEXT_PROFILE_CORE );
   SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
   // Add SDL_WINDOW_RESIZABLE flag
   window = SDL_CreateWindow( "Atlas",
                              SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED,
-                             768,
-                             512,  // Initial window size
+                             1024,
+                             768,  // Initial window size
                              SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN |
                              SDL_WINDOW_RESIZABLE );
   if( !window )
@@ -943,7 +1030,7 @@ int main( int argc, char* argv[] )
 #endif
 
 #ifndef __EMSCRIPTEN__
-  
+
   // Do not create the OpenGL context here for non-Emscripten builds
 #else
   // Emscripten code (single-threaded), create the context here
@@ -952,7 +1039,7 @@ int main( int argc, char* argv[] )
     error( "SDL_GL_CreateContext Error: %s\n", SDL_GetError() );
 
   // Initialize OpenGL
-  //int windowWidth, windowHeight;
+  // int windowWidth, windowHeight;
   SDL_SetWindowSize( window, jsWidth, jsHeight );
   glViewport( 0, 0, jsWidth, jsHeight );
   //  glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
@@ -980,12 +1067,11 @@ int main( int argc, char* argv[] )
   loadProg( &prog, &ts, NULL );
 #endif
 
-
 #ifndef __EMSCRIPTEN__
   LaunchArgs args;
   args.argc = argc;
   args.argv = argv;
-  
+
   SDL_Thread* renderThread =
     SDL_CreateThread( renderThreadFunction, "RenderThread", &args );
   if( renderThread == NULL ){
@@ -995,7 +1081,7 @@ int main( int argc, char* argv[] )
   // Main thread handles SDL event loop
   while( SDL_AtomicGet( &running ) ){
     mainPoll();
-    SDL_Delay(0); // Yield but don't actually sleep
+    SDL_Delay( 0 );  // Yield but don't actually sleep
   }
   // Cleanup controllers
   for( int i = 0; i < MAX_CONTROLLERS; ++i ){
@@ -1005,12 +1091,11 @@ int main( int argc, char* argv[] )
       joystickIDs[ i ] = -1;
     }
   }
-  
+
   // Wait for rendering thread to finish
   SDL_WaitThread( renderThread, NULL );
 
-
-  //SDL_DestroyMutex( data_mutex );
+  // SDL_DestroyMutex( data_mutex );
 #else
   // Set up the main loop for Emscripten
   emscripten_set_main_loop( main_loop, 0, 0 );
@@ -1020,6 +1105,7 @@ int main( int argc, char* argv[] )
   // Cleanup
   unmem( workspace );
   unmem( textInputBuffer );
+  unmem( textBuffer );
   glDeleteProgram( shaderProgram );
   glDeleteBuffers( 1, &vbo );
 #ifdef __EMSCRIPTEN__
@@ -1027,7 +1113,7 @@ int main( int argc, char* argv[] )
   deleteStack( ts );
   SDL_GL_DeleteContext( glContext );
 #endif
-  
+
   SDL_DestroyWindow( window );
   SDL_Quit();
 
@@ -1036,30 +1122,72 @@ int main( int argc, char* argv[] )
 #else
   if( memc )
     dbg( "mem count %llu", memc );
-#endif  
+#endif
 
-#ifndef __EMSCRIPTEN__ 
+#ifndef __EMSCRIPTEN__
   return 0;
-#endif  
+#endif
 }
- 
+
 float getMaxAnisotropy( void ){
   static float ret = 0.0;
   if( ret )
     return ret;
   // Check if the anisotropic filtering extension is supported
-  const char* extensions = (const char*)glGetString(GL_EXTENSIONS);
-  if (extensions && strstr(extensions, "EXT_texture_filter_anisotropic")) {
+  const char* extensions = (const char*)glGetString( GL_EXTENSIONS );
+  if( extensions && strstr( extensions, "EXT_texture_filter_anisotropic" ) ){
     // Retrieve the extension
     GLfloat maxAnisotropy = 1.0f;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+    glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy );
     ret = maxAnisotropy;
   } else {
-    ret = 1.0f; // Default value (no anisotropic filtering)
+    ret = 1.0f;  // Default value (no anisotropic filtering)
   }
   return ret;
 }
 
+void print( const char* format, ... ){
+  va_list args;
 
+  // 1. Measure the string length needed
+  va_start( args, format );
+  va_list args_copy;
+  va_copy( args_copy, args );
+  int needed = vsnprintf( NULL, 0, format, args_copy );
+  va_end( args_copy );
+  if( needed < 0 ){
+    va_end( args );
+    return;
+  }
+  va_copy( args_copy, args );
+  vprintf( format, args_copy );
+  va_end( args_copy );
 
+  int available = TEXTBUFFERSIZE - textBufferPos - 1;
 
+  if( needed > available ){
+    size_t discard_amount = textBufferPos / 2;
+
+    if( needed >
+        (int)( TEXTBUFFERSIZE - ( textBufferPos - discard_amount ) ) ){
+      size_t keep = ( TEXTBUFFERSIZE - 1 ) - needed;
+      if( keep > textBufferPos )
+        keep = 0;  // Should be impossible if logic holds
+      discard_amount = textBufferPos - keep;
+    }
+
+    memmove( textBuffer, textBuffer + discard_amount, textBufferPos - discard_amount );
+
+    textBufferPos -= discard_amount;
+  }
+
+  vsnprintf( textBuffer + textBufferPos, TEXTBUFFERSIZE - textBufferPos, format, args );
+  textBufferPos += needed;
+
+  if( textBufferPos >= TEXTBUFFERSIZE ){
+    textBufferPos = TEXTBUFFERSIZE - 1;
+  }
+  textBuffer[ textBufferPos ] = '\0';
+
+  va_end( args );
+}

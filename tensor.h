@@ -101,3 +101,4 @@ void textureTensor( tensor* t );
 // New Kettling functions
 void kettle( tensorStack* ts, u32 count, const char* filename );
 void unkettle( tensorStack* ts, const char* filename );
+tensor* textBufferView( u32 width, u32 height, u32 scrollUp );

@@ -840,6 +840,10 @@ void addStep( program* p, const char* filename, u32 linenum, u32 commandnum, cha
     curStep->type = TEXTINPUT;
     // dbg( "Linenum %u commandnum %u: textInput\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "textBufferView" ) ){
+    curStep->type = TEXTBUFFERVIEW;
+    // dbg( "Linenum %u commandnum %u: textInput\n", linenum, commandnum );
+
   } else if( !strcmp( command, "timeDelta" ) ){
     curStep->type = TIMEDELTA;
     // dbg( "Linenum %u commandnum %u: timeDelta\n", linenum, commandnum );
@@ -1558,6 +1562,26 @@ bool runProgram( tensorStack* ts, program** progp, u32 startstep ){
       push( ts, tensorFromString( textInputBuffer ) );
       textInputBuffer[ 0 ] = '\0';
       textInputBufferPos = 0;
+      break;
+    }
+    case TEXTBUFFERVIEW: {
+      if( !ts->size )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to textBufferView without enough elements on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to textBufferView with a parameter not of rank 1." );
+      if( ts->stack[ ts->size - 1 ]->size != 3 )
+        error( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to textBufferView with a parameter not a vector of length 3." );
+
+      u32 width = *( ts->stack[ ts->size - 1 ]->data +
+                     ts->stack[ ts->size - 1 ]->offset );
+      u32 height =
+        *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
+           ts->stack[ ts->size - 1 ]->strides[ 0 ] );
+      u32 scrollUp =
+        *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
+           ts->stack[ ts->size - 1 ]->strides[ 0 ] * 2 );
+      pop( ts );
+      push( ts, textBufferView( width, height, scrollUp ) );
       break;
     }
     case GETINPUT: {

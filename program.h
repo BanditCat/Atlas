@@ -54,6 +54,7 @@ typedef struct{
     KETTLE, // documented
     UNKETTLE, // documented
     TENSOR, // documented
+    TEXTBUFFERVIEW, // documented
     TOP, // documented
     DUP, // documented
     ROT, // documented

@@ -942,22 +942,22 @@ void deleteStack( tensorStack* ts ){
 void printStack( tensorStack* ts ){
   for( u32 i = ts->size - 1; i < ts->size; --i ){
     tensor* t = ts->stack[ i ];
-    printf( "tensor %u\n", i );
-    printf( "shape:" );
+    print( "tensor %u\n", i );
+    print( "shape:" );
     for( u32 j = 0; j < t->rank; ++j )
-      printf( " %u", t->shape[ j ] );
-    printf( "\nstrides:" );
+      print( " %u", t->shape[ j ] );
+    print( "\nstrides:" );
     for( u32 j = 0; j < t->rank; ++j )
-      printf( " %i", t->strides[ j ] );
+      print( " %i", t->strides[ j ] );
     if( t->size < MAX_TENSOR_DIPLAY_SIZE ){
       char* fd = formatTensorData( t );
-      printf( "\n%s\n\n", fd );
+      print( "\n%s\n\n", fd );
       unmem( fd );
     } else {
       if( t->tex.channels )
-        printf( "\n[large texture]\n\n" );        
+        print( "\n[large texture]\n\n" );        
       else
-        printf( "\n[large tensor]\n\n" );
+        print( "\n[large tensor]\n\n" );
     }
   }
 }
@@ -1921,6 +1921,69 @@ void unkettle( tensorStack* ts, const char* filename ){
     push( ts, t );
   }
 
-  // FIXED: Removed the second fclose(f) here
   unmem( decompressedBuffer );
+}
+tensor* textBufferView( u32 width, u32 height, u32 scrollUp ){
+  u32 shape[ 2 ] = { height, width };
+  u32 totalCells = width * height;
+  f32* view = mem( totalCells, f32 ); 
+
+  for( u32 i = 0; i < totalCells; ++i ){
+    view[ i ] = 32.0f; 
+  }
+
+  s64 bufIdx = textBufferPos - 1;
+  s64 row = height - 1;           
+  
+  char* lineCache = mem( width, char ); 
+  u32 lineLen = 0;
+
+  u32 linesSkipped = 0; 
+
+  while( bufIdx >= 0 && row >= 0 ){ 
+    char c = textBuffer[ bufIdx-- ];
+
+    if( c == '\n' ){
+      if( linesSkipped >= scrollUp ){
+        if( row < height ){
+          for( u32 k = 0; k < lineLen; ++k ){
+            view[ row * width + k ] = (f32)lineCache[ lineLen - 1 - k ];
+          }
+        }
+        row--; 
+      } else {
+        linesSkipped++;
+      }
+      
+      lineLen = 0;
+      continue;
+    }
+
+    if( lineLen >= width ){
+      if( linesSkipped >= scrollUp ){
+        if( row < height ){
+          for( u32 k = 0; k < lineLen; ++k ){
+            view[ row * width + k ] = (f32)lineCache[ lineLen - 1 - k ];
+          }
+        }
+        row--;
+      } else {
+        linesSkipped++;
+      }
+      lineLen = 0;
+    }
+
+    lineCache[ lineLen++ ] = c;
+  }
+
+  if( lineLen > 0 ){
+    if( linesSkipped >= scrollUp && row >= 0 && row < height ){
+      for( u32 k = 0; k < lineLen; ++k ){
+        view[ row * width + k ] = (f32)lineCache[ lineLen - 1 - k ];
+      }
+    }
+  }
+
+  unmem( lineCache );
+  return newTensor( 2, shape, view );
 }
