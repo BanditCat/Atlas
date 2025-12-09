@@ -980,14 +980,14 @@ void printStack( tensorStack* ts ){
   }
 }
 
-void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
+char* tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   if( !t || !newShape || !newRank || !t->rank )
-    error( "%s", "Invalid tensor or shape." );
+    err( "%s", "Invalid tensor or shape." );
   u32 newSize = 1;
   for( u32 i = 0; i < newRank; ++i )
     newSize *= newShape[ i ];
   if( newSize != t->size )
-    error( "%s", "New shape size does not match tensor size." );
+    err( "%s", "New shape size does not match tensor size." );
 
   memcpy( t->shape, newShape, sizeof( u32 ) * newRank );
   u32 size = 1;
@@ -997,35 +997,38 @@ void tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   }
 
   t->rank = newRank;
+  return NULL;
 }
-void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape ){
-  tensorReshapeHelper( ts->stack[ index ], newRank, newShape );
+char* tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape ){
+  return tensorReshapeHelper( ts->stack[ index ], newRank, newShape );
 }
 
-void tensorTransposeHelper( tensor* t, u32 axis1, u32 axis2 ){
+char* tensorTransposeHelper( tensor* t, u32 axis1, u32 axis2 ){
   if( axis1 >= t->rank || axis2 >= t->rank )
-    error( "%s", "Invalid axes in transpose." );
+    err( "%s", "Invalid axes in transpose." );
   u32 tmp = t->shape[ axis1 ];
   t->shape[ axis1 ] = t->shape[ axis2 ];
   t->shape[ axis2 ] = tmp;
   tmp = t->strides[ axis1 ];
   t->strides[ axis1 ] = t->strides[ axis2 ];
   t->strides[ axis2 ] = tmp;
+  return NULL;
 }
-void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 ){
-  tensorTransposeHelper( ts->stack[ index ], axis1, axis2 );
+char* tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 ){
+  return tensorTransposeHelper( ts->stack[ index ], axis1, axis2 );
 }
 
-void tensorReverseHelper( tensor* t, u32 axis ){
+char* tensorReverseHelper( tensor* t, u32 axis ){
   if( axis > 3 )
-    error( "%s", "Invalid axis in reverse." );
+    err( "%s", "Invalid axis in reverse." );
   t->offset += t->strides[ axis ] * ( t->shape[ axis ] - 1 );
   t->strides[ axis ] = -t->strides[ axis ];
+  return NULL;
 }
-void tensorReverse( tensorStack* ts, u32 index, u32 axis ){
-  tensorReverseHelper( ts->stack[ index ], axis );
+char* tensorReverse( tensorStack* ts, u32 index, u32 axis ){
+  return tensorReverseHelper( ts->stack[ index ], axis );
 }
-void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
+char* tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
   tensorToHostMemory( t );
   tensorToHostMemory( t2 );
 
@@ -1040,7 +1043,7 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
       new_shape[ i ] = t->shape[ i ] + t2->shape[ i ];
     } else {
       if( t->shape[ i ] != t2->shape[ i ] )
-        error( "Shapes are not compatible for concatenation along axis %u.",
+        err( "Shapes are not compatible for concatenation along axis %u.",
                axis );
       new_shape[ i ] = t->shape[ i ];
     }
@@ -1119,9 +1122,10 @@ void tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
   }
 
   t->size = total_elements;
+  return NULL;
 }
-void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
-  tensorCatHelper( ts->stack[ index1 ], ts->stack[ index2 ], axis );
+char* tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis ){
+  return tensorCatHelper( ts->stack[ index1 ], ts->stack[ index2 ], axis );
 }
 // Returns a fresh tensor which must later be deallocated.
 tensor*  tensorMultiplyHelper( tensor* t1, tensor* t2 ){
@@ -1157,11 +1161,11 @@ void tensorMultiply( tensorStack* ts ){
   pop( ts );
   push( ts, ret );
 }
-void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
+char* tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
   if( t == NULL )
-    error( "%s", "Tensor is NULL in tensorSliceHelper." );
+    err( "%s", "Tensor is NULL in tensorSliceHelper." );
   if( axis >= t->rank )
-    error( "Axis %u is out of bounds for tensor of rank %u in slice.", axis, t->rank );
+    err( "Axis %u is out of bounds for tensor of rank %u in slice.", axis, t->rank );
 
   s32 len = t->shape[ axis ];
 
@@ -1173,7 +1177,7 @@ void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
 
   // Ensure indices are within bounds
   if( start < 0 || end > len || start > end )
-    error( "Slice indices out of range: start=%d, end=%d, length=%d",
+    err( "Slice indices out of range: start=%d, end=%d, length=%d",
            start,
            end,
            len );
@@ -1189,18 +1193,19 @@ void tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
   t->size = 1;
   for( u32 i = 0; i < t->rank; ++i )
     t->size *= t->shape[ i ];
+  return NULL;
 }
 
-void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end ){
-  tensorSliceHelper( ts->stack[ index ], axis, start, end );
+char* tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end ){
+  return tensorSliceHelper( ts->stack[ index ], axis, start, end );
 }
 
 // Function to take the first item of a tensor, reducing its rank by one
-void tensorTakeFirstHelper( tensor* t ){
+char* tensorTakeFirstHelper( tensor* t ){
   if( t == NULL )
-    error( "%s", "Tensor is NULL in tensorTakeFirstHelper." );
+    err( "%s", "Tensor is NULL in tensorTakeFirstHelper." );
   if( t->rank == 0 )
-    error( "%s", "Cannot reduce rank of a tensor with rank 0." );
+    err( "%s", "Cannot reduce rank of a tensor with rank 0." );
 
   // Adjust the offset to point to the first element along axis 0
   t->offset += 0 * t->strides[ 0 ];
@@ -1218,18 +1223,19 @@ void tensorTakeFirstHelper( tensor* t ){
   t->size = 1;
   for( u32 i = 0; i < t->rank; ++i )
     t->size *= t->shape[ i ];
+  return NULL;
 }
 
 // Function to apply tensorTakeFirstHelper on a tensor in the stack
-void tensorTakeFirst( tensorStack* ts, u32 index ){
-  tensorTakeFirstHelper( ts->stack[ index ] );
+char* tensorTakeFirst( tensorStack* ts, u32 index ){
+  return tensorTakeFirstHelper( ts->stack[ index ] );
 }
 // Function to take the last item of a tensor, reducing its rank by one
-void tensorTakeLastHelper( tensor* t ){
+char* tensorTakeLastHelper( tensor* t ){
   if( t == NULL )
-    error( "%s", "Tensor is NULL in tensorTakeLastHelper." );
+    err( "%s", "Tensor is NULL in tensorTakeLastHelper." );
   if( t->rank == 0 )
-    error( "%s", "Cannot reduce rank of a tensor with rank 0." );
+    err( "%s", "Cannot reduce rank of a tensor with rank 0." );
 
   // Adjust the offset to point to the last element along axis 0
   t->offset += ( t->shape[ 0 ] - 1 ) * t->strides[ 0 ];
@@ -1247,10 +1253,11 @@ void tensorTakeLastHelper( tensor* t ){
   t->size = 1;
   for( u32 i = 0; i < t->rank; ++i )
     t->size *= t->shape[ i ];
+  return NULL;
 }
 // Function to apply tensorTakeLastHelper on a tensor in the stack
-void tensorTakeLast( tensorStack* ts, u32 index ){
-  tensorTakeLastHelper( ts->stack[ index ] );
+char* tensorTakeLast( tensorStack* ts, u32 index ){
+  return tensorTakeLastHelper( ts->stack[ index ] );
 }
 Uint32 getPixel( SDL_Surface* surface, int x, int y ){
   int bpp = surface->format->BytesPerPixel;
@@ -1348,13 +1355,13 @@ tensor* tensorFromString( const char* string ){
     ret->data[ i ] = string[ i ];
   return ret;
 }
-void tensorRepeatHelper( tensor* t, u32 count ){
+char* tensorRepeatHelper( tensor* t, u32 count ){
   if( !t )
-    error( "%s", "Tensor is NULL in tensorRepeatHelper." );
+    err( "%s", "Tensor is NULL in tensorRepeatHelper." );
   if( count == 0 )
-    error( "%s", "Repeat count must be greater than 0." );
+    err( "%s", "Repeat count must be greater than 0." );
   if( t->rank == 4 )
-    error( "%s", "Cannot increase rank of a tensor with rank 4." );
+    err( "%s", "Cannot increase rank of a tensor with rank 4." );
 
   // Ensure data is on CPU and owned
   tensorToHostMemory( t );
@@ -1391,9 +1398,10 @@ void tensorRepeatHelper( tensor* t, u32 count ){
     t->strides[ i ] = sz;
     sz *= t->shape[ i ];
   }
+  return NULL;
 }
-void tensorRepeat( tensorStack* ts, u32 index, u32 count ){
-  tensorRepeatHelper( ts->stack[ index ], count );
+char* tensorRepeat( tensorStack* ts, u32 index, u32 count ){
+  return tensorRepeatHelper( ts->stack[ index ], count );
 }
 void tensorEnclose( tensor* t ){
   for( int i = t->rank; i >= 1; --i ){
@@ -1425,9 +1433,6 @@ bool tensorIsContiguous( const tensor* t ){
   return true;
 }
 void tensorEnsureContiguous( tensor* t ){
-  if( t == NULL )
-    error( "%s", "Tensor is NULL in tensorEnsureContiguous." );
-
   if( t->gpu )
     tensorToHostMemory( t );
 
@@ -1572,17 +1577,17 @@ void tensorOrtho( tensorStack* ts, u32 index ){
   u32 shape[ 2 ] = { 4, 4 };
   push( ts, newTensor( 2, shape, ret ) );
 }
-void tensorToTextureArray( tensor* t, u32 channels ){
-  if( !t ) error( "%s", "Tensor is NULL in tensorToTextureArray." );
+char* tensorToTextureArray( tensor* t, u32 channels ){
+  if( !t ) err( "%s", "Tensor is NULL in tensorToTextureArray." );
   tensorToHostMemory( t );
   tensorEnsureContiguous( t );
   // MUST CACHE DATA BECAUSE WERE MUCKING WITH THE TEXTURES, which are in a union with t->data
   float* data = t->data + t->offset;
   float* dataBase = t->data;
   
-  if( t->rank != 4 ) error( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
+  if( t->rank != 4 ) err( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
   if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] != channels / 10 ) )
-    error( "%s", "tensorToTextureArray called with a bad channel count." );
+    err( "%s", "tensorToTextureArray called with a bad channel count." );
   u32 layers = t->shape[ 0 ]; 
   u32 height = t->shape[ 1 ];
   u32 width  = t->shape[ 2 ];
@@ -1593,7 +1598,7 @@ void tensorToTextureArray( tensor* t, u32 channels ){
   case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
   case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
   case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
-  default: error( "%s", "Unsupported channel format for textureArray." );
+  default: err( "%s", "Unsupported channel format for textureArray." );
   }
 
   // 4. Create Texture Array
@@ -1629,7 +1634,8 @@ void tensorToTextureArray( tensor* t, u32 channels ){
   t->tex.width = width;
   t->tex.height = height;
   t->tex.layers = layers;
-  t->tex.channels = channels; 
+  t->tex.channels = channels;
+  return NULL;
 }
 
 
@@ -1661,9 +1667,9 @@ void memWrite(u8* base, u64* offset, void* data, u32 size) {
   *offset += size;
 }
 
-void textureTensor( tensor* cur ){
+char* textureTensor( tensor* cur ){
   if( !cur->gpu || cur->tex.channels == 0 )
-    error( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
+    err( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
   glBindTexture( GL_TEXTURE_2D_ARRAY, cur->tex.texture );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
@@ -1675,6 +1681,7 @@ void textureTensor( tensor* cur ){
   glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
   glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
   cur->tex.mipmapped = true;
+  return NULL;
 }
 
 void kettle(tensorStack* ts, u32 count, const char* filename) {
@@ -1777,170 +1784,445 @@ void kettle(tensorStack* ts, u32 count, const char* filename) {
   printf("Cooked %u tensors into %s (Ratio: %.2f%%)\n", count, filename, (float)cSize/uSize * 100.0f);
 }
 
-void unkettle( tensorStack* ts, const char* filename ){
-  FILE* f = fopen( filename, "rb" );
-  if( !f ) error( "Unkettle: Could not open %s.", filename );
-  u32 uSize, cSize;
-  fread( &uSize, sizeof( u32 ), 1, f );
-  fread( &cSize, sizeof( u32 ), 1, f );
+typedef struct{
+  enum{ 
+    UNKETTLE_START,
+    UNKETTLE_LOAD,   // Reading file & Decompressing
+    UNKETTLE_UPLOAD, // Uploading textures (sliced)
+    UNKETTLE_DONE,
+  } stage;
+  FILE* f;
+  char* filename;
+  u64 uSize, cSize;
+  u8* compressedData;
+  u8* decompressedBuffer;
+  u64 readHead;
   
-  // 1. Read Compressed Data from File
-  u8* compressedData = mem( cSize, u8 );
-  if( fread( compressedData, 1, cSize, f ) != cSize ){
-    fclose( f );
-    error( "%s", "Unkettle: File truncated." );
-  }
-  fclose( f ); // File is closed here. Do not close again at bottom.
-
-  // 2. Decompress
-  u8* decompressedBuffer = mem( uSize, u8 ); // Renamed for clarity vs macro
-  mz_ulong destLen = uSize;
-  int status = mz_uncompress( decompressedBuffer, &destLen, compressedData, cSize );
-    
-  if( status != MZ_OK ) error( "Unkettle: Decompression failed %d", status );
-    
-  unmem( compressedData );
-  
-  // 3. Setup a pointer for the parsing loop
-  u64 readHead = 0;
-
-  // Macro uses 'decompressedBuffer' specifically now
-#define READ_MEM( dest, size ) { memcpy( dest, decompressedBuffer + readHead, size ); readHead += size; }
-    
+  // Persistence for reentrancy
   KettleHeader h;
-  READ_MEM( &h, sizeof(KettleHeader) );
-  if( h.magic != 0x4B544C31 ){
-    error( "Unkettle: Invalid file format in %s.", filename );
+  u32 currentTensorIndex;
+} unkettleState;
+
+void resetUnkettleState( unkettleState* s ){
+  if( s->f ){
+    fclose( s->f );
+    s->f = NULL;
   }
-  
-  for( u32 i = 0; i < h.count; ++i ){
-    KettleMeta meta;
-    READ_MEM( &meta, sizeof( KettleMeta ) );
-
-    tensor* t = mem( 1, tensor );
-    t->rank = meta.rank;
-    t->size = meta.size;
-    memcpy( t->shape, meta.shape, sizeof(u32)*4 );
-    
-    // Reconstruct strides
-    u32 stride = 1;
-    for( int k = t->rank - 1; k >= 0; --k ){
-      t->strides[ k ] = stride;
-      stride *= t->shape[ k ];
-    }
-    for( u32 k = t->rank; k < 4; ++k ){
-      t->shape[k] = 1;
-      t->strides[k] = 1;
-    }
-
-    t->offset = 0;
-    t->ownsData = true;
-    t->gpu = ( meta.isGpu != 0 );
-
-    if( t->gpu ){
-      // --- GPU UPLOAD PATH ---
-      t->tex.channels = meta.channels;
-      t->tex.layers = meta.layers;
-      t->tex.height = meta.height;
-      t->tex.width  = meta.width;
-
-      GLenum internalFormat = GL_RGBA32F;
-      GLenum format = GL_RGBA;
-      GLenum type = GL_FLOAT;
-      
-      // FIXED: Rename this so it doesn't shadow 'decompressedBuffer' 
-      // or confuse the macro logic
-      void* texData = NULL; 
-      
-      u32 bytesToRead = 0;
-      bool isU8 = false;
-
-      // Determine GL formats based on Atlas Channel Logic
-      if( meta.channels == 40 ){
-        internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true;
-      } else if( meta.channels == 30 ){
-        internalFormat = GL_RGB8;  format = GL_RGB;  type = GL_UNSIGNED_BYTE; isU8 = true;
-      } else if( meta.channels == 20 ){
-        internalFormat = GL_RG8;   format = GL_RG;   type = GL_UNSIGNED_BYTE; isU8 = true;
-      } else if( meta.channels == 10 ){
-        internalFormat = GL_R8;    format = GL_RED;  type = GL_UNSIGNED_BYTE; isU8 = true;
-      } else if( meta.channels == 4 ){
-        internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT;
-      } else if( meta.channels == 3 ){
-        internalFormat = GL_RGB32F;  format = GL_RGB;  type = GL_FLOAT;
-      } else if( meta.channels == 2 ){
-        internalFormat = GL_RG32F;   format = GL_RG;   type = GL_FLOAT;
-      } else if( meta.channels == 1 ){
-        internalFormat = GL_R32F;    format = GL_RED;  type = GL_FLOAT;
-      }
-
-      bytesToRead = meta.size * ( isU8 ? 1 : 4 );
-      u32 channelMult = 4;
-      if( meta.channels > 10 )
-        channelMult = meta.channels / 10;
-      else if( meta.channels )
-        channelMult = meta.channels;
-      
-      // Allocate temp buffer for upload
-      texData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 );
-      
-      // FIXED: Read from the global decompressedBuffer INTO texData
-      READ_MEM( texData, bytesToRead );
-
-      glGenTextures( 1, &t->tex.texture );
-      glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
-      
-      glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-      glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
-                    t->tex.width, t->tex.height, t->tex.layers, 
-                    0, format, type, texData );
-
-      if( meta.mipmapped ){
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-        if( getMaxAnisotropy() > 1.0 )
-          glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
-        glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
-        t->tex.mipmapped = true;
-      }else{
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-      }
-
-      glGenFramebuffers( 1, &t->tex.framebuffer );
-      glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
-      glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
-      
-      if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
-        error( "%s", "Unkettle: Framebuffer incomplete." );
-          
-      glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-      glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
-
-      unmem( texData ); // Free the temp buffer
-
-    } else {
-      // CPU
-      t->data = mem( meta.size, f32 );
-      
-      if( meta.channels >= 10 ) {
-        u8* tmp = mem( meta.size, u8 );
-        READ_MEM( tmp, meta.size );
-        for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f;
-        unmem( tmp );
-      } else {
-        READ_MEM( t->data, sizeof(f32) * meta.size );
-      }
-    }
-    push( ts, t );
+  if( s->compressedData ){
+    unmem( s->compressedData );
+    s->compressedData = NULL;
   }
-
-  unmem( decompressedBuffer );
+  if( s->decompressedBuffer ){
+    unmem( s->decompressedBuffer );
+    s->decompressedBuffer = NULL;
+  }
+  if( s->filename ){
+    unmem( s->filename );
+    s->filename = NULL;
+  }
+  s->stage = UNKETTLE_START;
+  s->uSize = 0;
+  s->cSize = 0;
+  s->readHead = 0;
+  s->currentTensorIndex = 0;
 }
+// Returns NULL on success/continue. Returns error string on failure.
+// progress: Output 1.0 (start) -> 0.0 (done). 
+char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
+  static unkettleState s = {0}; // Zero-initialized by default
+  
+  // Initialize progress output
+  if( progress ) *progress = 1.0f;
+
+  // Setup Timer for this slice
+  u64 startTime = SDL_GetPerformanceCounter();
+  f64 freq = (f64)SDL_GetPerformanceFrequency();
+  f64 timeLimitMs = 6.0;
+
+  // --- STAGE 1: START / RESTART ---
+  if( s.stage == UNKETTLE_DONE ){
+    resetUnkettleState( &s ); // Auto-reset if called again after completion
+  }
+
+  if( s.stage == UNKETTLE_START ){
+    s.stage = UNKETTLE_LOAD;
+    // Fallthrough to LOAD immediately
+  }
+
+  // --- STAGE 2: LOAD & DECOMPRESS (Atomic) ---
+  if( s.stage == UNKETTLE_LOAD ){
+    if( filename == NULL )
+      err( "NULL filename in load mode for unkettle" );
+    u32 len = strlen( filename );
+    s.filename = mem( len + 1, char );
+    strcpy( s.filename, filename );
+    s.f = fopen( s.filename, "rb" );
+    if( !s.f ){
+      resetUnkettleState( &s );
+      err( "Unkettle: Could not open %s.", s.filename );
+    }
+    
+    if( fread( &s.uSize, sizeof( u32 ), 1, s.f ) != 1 || 
+        fread( &s.cSize, sizeof( u32 ), 1, s.f ) != 1 ){
+      resetUnkettleState( &s );
+      err( "%s", "Unkettle: Failed reading headers." );
+    }
+    
+    // 1. Read Compressed Data
+    s.compressedData = mem( s.cSize, u8 );
+    if( fread( s.compressedData, 1, s.cSize, s.f ) != s.cSize ){
+      resetUnkettleState( &s );
+      err( "%s", "Unkettle: File truncated." );
+    }
+    fclose( s.f ); 
+    s.f = NULL;
+
+    // 2. Decompress
+    s.decompressedBuffer = mem( s.uSize, u8 );
+    mz_ulong destLen = s.uSize;
+    int status = mz_uncompress( s.decompressedBuffer, &destLen, s.compressedData, s.cSize );
+    
+    // Always free compressed data now
+    unmem( s.compressedData );
+    s.compressedData = NULL;
+
+    if( status != MZ_OK ){
+      resetUnkettleState( &s );
+      err( "Unkettle: Decompression failed %d", status );
+    }
+    
+    // 3. Parse Header
+    s.readHead = 0;
+    // Local macro relying on 's'
+    #define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; }
+    
+    READ_MEM( &s.h, sizeof(KettleHeader) );
+    if( s.h.magic != 0x4B544C31 ){
+      resetUnkettleState( &s );
+      err( "Unkettle: Invalid file format in %s.", s.filename );
+    }
+    
+    s.currentTensorIndex = 0;
+    s.stage = UNKETTLE_UPLOAD;
+    #undef READ_MEM
+  }
+
+  // --- STAGE 3: UPLOAD TENSORS (Time Sliced) ---
+  if( s.stage == UNKETTLE_UPLOAD ){
+    
+    // Re-define macro for this scope
+    #define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; }
+
+    while( s.currentTensorIndex < s.h.count ){
+      
+      // Check Time Budget
+      u64 now = SDL_GetPerformanceCounter();
+      f64 elapsed = ( (f64)(now - startTime) / freq ) * 1000.0;
+      if( elapsed >= timeLimitMs ){
+        // Update progress and return control
+        if( progress && s.h.count > 0 ){
+           *progress = 1.0f - ( (f32)s.currentTensorIndex / (f32)s.h.count );
+        }
+        return NULL; // Return NULL (no error) to continue next frame
+      }
+
+      // ... Perform Load ...
+      KettleMeta meta;
+      READ_MEM( &meta, sizeof( KettleMeta ) );
+
+      tensor* t = mem( 1, tensor );
+      t->rank = meta.rank;
+      t->size = meta.size;
+      memcpy( t->shape, meta.shape, sizeof(u32)*4 );
+      
+      u32 stride = 1;
+      for( int k = t->rank - 1; k >= 0; --k ){
+        t->strides[ k ] = stride;
+        stride *= t->shape[ k ];
+      }
+      for( u32 k = t->rank; k < 4; ++k ){
+        t->shape[k] = 1;
+        t->strides[k] = 1;
+      }
+
+      t->offset = 0;
+      t->ownsData = true;
+      t->gpu = ( meta.isGpu != 0 );
+
+      if( t->gpu ){
+        t->tex.channels = meta.channels;
+        t->tex.layers = meta.layers;
+        t->tex.height = meta.height;
+        t->tex.width  = meta.width;
+
+        GLenum internalFormat = GL_RGBA32F;
+        GLenum format = GL_RGBA;
+        GLenum type = GL_FLOAT;
+        void* texData = NULL; 
+        u32 bytesToRead = 0;
+        bool isU8 = false;
+
+        if( meta.channels == 40 ){ internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( meta.channels == 30 ){ internalFormat = GL_RGB8; format = GL_RGB; type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( meta.channels == 20 ){ internalFormat = GL_RG8; format = GL_RG; type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( meta.channels == 10 ){ internalFormat = GL_R8; format = GL_RED; type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( meta.channels == 4 ){ internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; }
+        else if( meta.channels == 3 ){ internalFormat = GL_RGB32F; format = GL_RGB; type = GL_FLOAT; }
+        else if( meta.channels == 2 ){ internalFormat = GL_RG32F; format = GL_RG; type = GL_FLOAT; }
+        else if( meta.channels == 1 ){ internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; }
+
+        bytesToRead = meta.size * ( isU8 ? 1 : 4 );
+        u32 channelMult = 4;
+        if( meta.channels > 10 ) channelMult = meta.channels / 10;
+        else if( meta.channels ) channelMult = meta.channels;
+        
+        texData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 );
+        
+        READ_MEM( texData, bytesToRead );
+
+        glGenTextures( 1, &t->tex.texture );
+        glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+        
+        glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+        glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
+                      t->tex.width, t->tex.height, t->tex.layers, 
+                      0, format, type, texData );
+
+        if( meta.mipmapped ){
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+          if( getMaxAnisotropy() > 1.0 )
+            glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+          glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+          t->tex.mipmapped = true;
+        }else{
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+        }
+
+        glGenFramebuffers( 1, &t->tex.framebuffer );
+        glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+        glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
+        
+        if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ){
+          unmem( texData );
+          // Clean up partial tensor
+          if( t->tex.texture ) glDeleteTextures( 1, &t->tex.texture );
+          if( t->tex.framebuffer ) glDeleteFramebuffers( 1, &t->tex.framebuffer );
+          unmem( t );
+          resetUnkettleState( &s ); // Full cleanup
+          err( "%s", "Unkettle: Framebuffer incomplete." );
+        }
+            
+        glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+        glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+
+        unmem( texData ); 
+
+      } else {
+        // CPU
+        t->data = mem( meta.size, f32 );
+        if( meta.channels >= 10 ) {
+          u8* tmp = mem( meta.size, u8 );
+          READ_MEM( tmp, meta.size );
+          for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f;
+          unmem( tmp );
+        } else {
+          READ_MEM( t->data, sizeof(f32) * meta.size );
+        }
+      }
+      
+      push( ts, t );
+      s.currentTensorIndex++;
+    }
+    #undef READ_MEM
+    
+    // If we exit loop naturally, we are done
+    s.stage = UNKETTLE_DONE;
+  }
+
+  if( s.stage == UNKETTLE_DONE ){
+    resetUnkettleState( &s );
+    if( progress ) *progress = 0.0f;
+  }
+
+  return NULL;
+}
+/* char* unkettle( tensorStack* ts, const char* filename ){ */
+/*   static unkettleState s; */
+/*   s.f = fopen( filename, "rb" ); */
+/*   if( !s.f ){ */
+/*     resetUnkettleState( &s ); */
+/*     err( "Unkettle: Could not open %s.", filename ); */
+/*   } */
+/*   fread( &s.uSize, sizeof( u32 ), 1, s.f ); */
+/*   fread( &s.cSize, sizeof( u32 ), 1, s.f ); */
+  
+/*   // 1. Read Compressed Data from File */
+/*   s.compressedData = mem( s.cSize, u8 ); */
+/*   if( fread( s.compressedData, 1, s.cSize, s.f ) != s.cSize ){ */
+/*     resetUnkettleState( &s ); */
+/*     err( "%s", "Unkettle: File truncated." ); */
+/*   } */
+/*   fclose( s.f ); // File is closed here. Do not close again at bottom. */
+/*   s.f = NULL; */
+
+/*   // 2. Decompress */
+/*   s.decompressedBuffer = mem( s.uSize, u8 ); // Renamed for clarity vs macro */
+/*   mz_ulong destLen = s.uSize; */
+/*   int status = mz_uncompress( s.decompressedBuffer, &destLen, s.compressedData, s.cSize ); */
+    
+/*   if( status != MZ_OK ) err( "Unkettle: Decompression failed %d", status ); */
+    
+/*   unmem( s.compressedData ); */
+  
+/*   // 3. Setup a pointer for the parsing loop */
+/*   s.readHead = 0; */
+
+/*   // Macro uses 'decompressedBuffer' specifically now */
+/* #define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; } */
+    
+/*   KettleHeader h; */
+/*   READ_MEM( &h, sizeof(KettleHeader) ); */
+/*   if( h.magic != 0x4B544C31 ){ */
+/*     resetUnkettleState( &s ); */
+/*     err( "Unkettle: Invalid file format in %s.", filename ); */
+/*   } */
+  
+/*   for( u32 i = 0; i < h.count; ++i ){ */
+/*     KettleMeta meta; */
+/*     READ_MEM( &meta, sizeof( KettleMeta ) ); */
+
+/*     tensor* t = mem( 1, tensor ); */
+/*     t->rank = meta.rank; */
+/*     t->size = meta.size; */
+/*     memcpy( t->shape, meta.shape, sizeof(u32)*4 ); */
+    
+/*     // Reconstruct strides */
+/*     u32 stride = 1; */
+/*     for( int k = t->rank - 1; k >= 0; --k ){ */
+/*       t->strides[ k ] = stride; */
+/*       stride *= t->shape[ k ]; */
+/*     } */
+/*     for( u32 k = t->rank; k < 4; ++k ){ */
+/*       t->shape[k] = 1; */
+/*       t->strides[k] = 1; */
+/*     } */
+
+/*     t->offset = 0; */
+/*     t->ownsData = true; */
+/*     t->gpu = ( meta.isGpu != 0 ); */
+
+/*     if( t->gpu ){ */
+/*       // --- GPU UPLOAD PATH --- */
+/*       t->tex.channels = meta.channels; */
+/*       t->tex.layers = meta.layers; */
+/*       t->tex.height = meta.height; */
+/*       t->tex.width  = meta.width; */
+
+/*       GLenum internalFormat = GL_RGBA32F; */
+/*       GLenum format = GL_RGBA; */
+/*       GLenum type = GL_FLOAT; */
+      
+/*       // FIXED: Rename this so it doesn't shadow 'decompressedBuffer'  */
+/*       // or confuse the macro logic */
+/*       void* texData = NULL;  */
+      
+/*       u32 bytesToRead = 0; */
+/*       bool isU8 = false; */
+
+/*       // Determine GL formats based on Atlas Channel Logic */
+/*       if( meta.channels == 40 ){ */
+/*         internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true; */
+/*       } else if( meta.channels == 30 ){ */
+/*         internalFormat = GL_RGB8;  format = GL_RGB;  type = GL_UNSIGNED_BYTE; isU8 = true; */
+/*       } else if( meta.channels == 20 ){ */
+/*         internalFormat = GL_RG8;   format = GL_RG;   type = GL_UNSIGNED_BYTE; isU8 = true; */
+/*       } else if( meta.channels == 10 ){ */
+/*         internalFormat = GL_R8;    format = GL_RED;  type = GL_UNSIGNED_BYTE; isU8 = true; */
+/*       } else if( meta.channels == 4 ){ */
+/*         internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; */
+/*       } else if( meta.channels == 3 ){ */
+/*         internalFormat = GL_RGB32F;  format = GL_RGB;  type = GL_FLOAT; */
+/*       } else if( meta.channels == 2 ){ */
+/*         internalFormat = GL_RG32F;   format = GL_RG;   type = GL_FLOAT; */
+/*       } else if( meta.channels == 1 ){ */
+/*         internalFormat = GL_R32F;    format = GL_RED;  type = GL_FLOAT; */
+/*       } */
+
+/*       bytesToRead = meta.size * ( isU8 ? 1 : 4 ); */
+/*       u32 channelMult = 4; */
+/*       if( meta.channels > 10 ) */
+/*         channelMult = meta.channels / 10; */
+/*       else if( meta.channels ) */
+/*         channelMult = meta.channels; */
+      
+/*       // Allocate temp buffer for upload */
+/*       texData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 ); */
+      
+/*       // FIXED: Read from the global decompressedBuffer INTO texData */
+/*       READ_MEM( texData, bytesToRead ); */
+
+/*       glGenTextures( 1, &t->tex.texture ); */
+/*       glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture ); */
+      
+/*       glPixelStorei( GL_UNPACK_ALIGNMENT, 1 ); */
+/*       glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat,  */
+/*                     t->tex.width, t->tex.height, t->tex.layers,  */
+/*                     0, format, type, texData ); */
+
+/*       if( meta.mipmapped ){ */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR ); */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
+/*         if( getMaxAnisotropy() > 1.0 ) */
+/*           glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() ); */
+/*         glGenerateMipmap( GL_TEXTURE_2D_ARRAY ); */
+/*         t->tex.mipmapped = true; */
+/*       }else{ */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST ); */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE ); */
+/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE ); */
+/*       } */
+
+/*       glGenFramebuffers( 1, &t->tex.framebuffer ); */
+/*       glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer ); */
+/*       glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 ); */
+      
+/*       if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) */
+/*         error( "%s", "Unkettle: Framebuffer incomplete." ); */
+          
+/*       glBindFramebuffer( GL_FRAMEBUFFER, 0 ); */
+/*       glBindTexture( GL_TEXTURE_2D_ARRAY, 0 ); */
+
+/*       unmem( texData ); // Free the temp buffer */
+
+/*     } else { */
+/*       // CPU */
+/*       t->data = mem( meta.size, f32 ); */
+      
+/*       if( meta.channels >= 10 ) { */
+/*         u8* tmp = mem( meta.size, u8 ); */
+/*         READ_MEM( tmp, meta.size ); */
+/*         for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f; */
+/*         unmem( tmp ); */
+/*       } else { */
+/*         READ_MEM( t->data, sizeof(f32) * meta.size ); */
+/*       } */
+/*     } */
+/*     push( ts, t ); */
+/*   } */
+
+/*   unmem( s.decompressedBuffer ); */
+/*   s.decompressedBuffer = NULL; */
+/*   return NULL; */
+/* } */
 tensor* textBufferView( u32 width, u32 height, u32 scrollUp ){
   u32 shape[ 2 ] = { height, width };
   u32 totalCells = width * height;

@@ -1188,7 +1188,7 @@ strides: 1 2
 
   <section id="cmd-unkettle">
     <h2>unkettle</h2>
-    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it.</p>
+    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been push onto the stack.  The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.</p>
   </section>
 
   <section id="cmd-while">

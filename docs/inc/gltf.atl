@@ -3,9 +3,8 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 size;if'started'; // init code goes here
 
-
-'inc\\catlas.ktl';unkettle;4;raise;e;animCount= 1;
-
+'inc\\catlas.ktl';unkettle;pop;
+[1.0];progress= 1;
 
 [1024];dim= 1; // constants
 [0.2];hscale= 1;
@@ -43,8 +42,21 @@ std.nav3d;
 6;windowSize;[2 2];*;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
 
-
+1;
 l'started'; // init code complete
+loadedKettle;if'kettled';
+pop;
+progress;unext;ifn'loop4';
+unkettle;e;progress= 1;
+windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > progress.x ? vec4( 1.0 ) : vec4( 0.0 );' 0 1 40 0;
+continue;
+l'loop4';
+1;loadedKettle=;
+4;raise;e;animCount= 1;6;raise;6;raise;6;raise;
+l'kettled';
+
+
+
 timer;timeDelta;e;+;timer= 1;
 // Stack here: prevFrame, heightMap, gradient
 

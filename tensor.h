@@ -72,14 +72,14 @@ tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );
-void tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  // BUGBUG
-void tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
-void tensorReverse( tensorStack* ts, u32 index, u32 axis );
-void tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis );
-void tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end );
-void tensorTakeFirst( tensorStack* ts, u32 index );
-void tensorTakeLast( tensorStack* ts, u32 index );
-void tensorRepeat( tensorStack* ts, u32 index, u32 count );
+char* tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  // BUGBUG
+char* tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
+char* tensorReverse( tensorStack* ts, u32 index, u32 axis );
+char* tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis );
+char* tensorSlice( tensorStack* ts, u32 index, u32 axis, s32 start, s32 end );
+char* tensorTakeFirst( tensorStack* ts, u32 index );
+char* tensorTakeLast( tensorStack* ts, u32 index );
+char* tensorRepeat( tensorStack* ts, u32 index, u32 count );
 void tensorEnclose( tensor* t );
 void tensorExtrude( tensor* t );
 void tensorUnextrude( tensor* t );
@@ -97,9 +97,9 @@ void tensorRotate( tensorStack* ts, u32 index, u32 angleIndex );
 void tensorTranslate( tensorStack* ts, u32 index );
 void tensorProject( tensorStack* ts, u32 index );
 void tensorOrtho( tensorStack* ts, u32 index );
-void tensorToTextureArray( tensor* t, u32 channels );
-void textureTensor( tensor* t );
+char* tensorToTextureArray( tensor* t, u32 channels );
+char* textureTensor( tensor* t );
 // New Kettling functions
 void kettle( tensorStack* ts, u32 count, const char* filename );
-void unkettle( tensorStack* ts, const char* filename );
+char* unkettle( tensorStack* ts, const char* filename, f32* progress );
 tensor* textBufferView( u32 width, u32 height, u32 scrollUp );

@@ -12,27 +12,35 @@
 
 char* finalizeCleanup( program* program, char* block, char* msg ) {
   if( program->filenames ){
-    for( u32 i = 0; i < program->numFilenames; ++i )
+    for( u32 i = 0; i < program->numFilenames; ++i ){
       unmem( program->filenames[ i ] );
+      program->filenames[ i ] = NULL;
+    }
     unmem( program->filenames );
+    program->filenames = NULL;
+    program->numFilenames = 0;
   }
-  if( program->returns )
+  if( program->returns ){
     unmem( program->returns );
+    program->returns = NULL;
+  }
   
   if( program->varNames )   { 
     // Only iterate up to numVars, which tracks how many valid entries we added
     for( u32 i = 0; i < program->numVars; ++i ){
-      if( program->varNames[ i ] ) unmem( program->varNames[ i ] );
+      if( program->varNames[ i ] ){
+        unmem( program->varNames[ i ] );
+        program->varNames[ i ] = NULL;
+      }
     }
     unmem( program->varNames );   
     program->varNames = NULL; 
   }
 
-  // [FIX] Free the STRINGS in bigvarNames before freeing the array
   if( program->bigvarNames ){ 
-    for( u32 i = 0; i < program->numBigvars; ++i ){
-      if( program->bigvarNames[ i ] ) unmem( program->bigvarNames[ i ] );
-    }
+    for( u32 i = 0; i < program->numBigvars; ++i )
+      if( program->bigvarNames[ i ] )
+        unmem( program->bigvarNames[ i ] );
     unmem( program->bigvarNames );
     program->bigvarNames = NULL; 
   }
@@ -92,28 +100,35 @@ char* finalizeCleanup( program* program, char* block, char* msg ) {
   for( u32 i = 0; i < program->numComputes; ++i )
     if( program->computes[ i ] )
       deleteCompute( program->computes[ i ] );
-  
+  program->numComputes = 0;
   
   if( program->vars ) {
-    deleteTrieNode( program->vars ); 
+    deleteTrieNode( program->vars );
+    program->vars = NULL;
   }
 
   if( program->bigvars ) {
     deleteTrieNode( program->bigvars );
+    program->bigvars = NULL;
   }
   if( program->labels ) {
     deleteTrieNode( program->labels );
+    program->labels = NULL;
   }
-  if( program->computes )
+  if( program->computes ){
     unmem( program->computes );
+    program->computes = NULL;
+  }
   
   program->numVars = 0;
   program->numBigvars = 0;
+  program->numSteps = 0;
 
-  if( program->steps )
+  if( program->steps ){
     unmem( program->steps );
+    program->steps = NULL;
+  }
 
-    unmem( program );
   return msg;
 }
 #define err2( ... ) do {                                      \
@@ -1550,13 +1565,14 @@ char* finalize( program* program ){
           if( !trieSearch( program->vars, program->steps[ i ].branchName, &vi ) ){
             if( !trieSearch( program->bigvars, program->steps[ i ].branchName, &vi ) ){
               if( !trieSearch( program->vars, program->steps[ i ].branchBaseName, &vi ) ){
-                if( !trieSearch( program->bigvars, program->steps[ i ].branchBaseName, &vi ) )
+                if( !trieSearch( program->bigvars, program->steps[ i ].branchBaseName, &vi ) ){
                   err2( "%s:%u command %u: Statement with unknown label or variable %s",
                         program->steps[ i ].filename, program->steps[ i ].linenum,
                         program->steps[ i ].commandnum,
                         program->steps[ i ].branchBaseName?
                         program->steps[ i ].branchBaseName:
                         program->steps[ i ].branchName );
+                }
                 program->steps[ i ].type = GET;
                 program->steps[ i ].var.index = vi;
                 program->steps[ i ].var.size = 0;
@@ -1732,9 +1748,13 @@ char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program
 
   program* newProg = newProgram();
 
-
   if( p->mainFilename ){
-    addProgramFromFile( p->mainFilename, newProg );
+    char* emsg = addProgramFromFile( p->mainFilename, newProg );
+    if( emsg ){
+      unmem( workspace );
+      workspace = tw;
+      return emsg;
+    }
   }
 
   unmem( workspace );
@@ -1747,6 +1767,7 @@ char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program
   if( err ){
     unmem( workspace );
     workspace = tw;
+    deleteProgram( newProg );
     return err;
   }
   
@@ -1757,8 +1778,10 @@ char* copyProgramWithEval( program* p, const char* eval, u32* startStep, program
   err = finalize( newProg );
   unmem( workspace );
   workspace = tw;
-  if( err )
+  if( err ){
+    deleteProgram( newProg );
     return err;
+  }
   *ret = newProg; return NULL;
 } 
 
@@ -1773,10 +1796,13 @@ void deleteProgram( program* p ){
       p->steps[ i ].tensor = NULL;
     }
   }
-  deleteTrieNode( p->labels );
+
+  if( p->labels )
+    deleteTrieNode( p->labels );
   for( u32 i = 0; i < p->numFilenames; ++i )
     unmem( p->filenames[ i ] );
-  unmem( p->filenames );
+  if( p->filenames )
+    unmem( p->filenames );
   for( u32 i = 0; i < p->numVars; ++i )
     unmem( p->varNames[ i ] );
   for( u32 i = 0; i < p->numBigvars; ++i )
@@ -1784,17 +1810,28 @@ void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numBigvars; ++i )
     if( p->bigvarts[ i ] )
       deleteTensor( p->bigvarts[ i ] );
-  unmem( p->bigvarts );
-  unmem( p->varNames );
-  unmem( p->bigvarNames );
-  deleteTrieNode( p->vars );
-  deleteTrieNode( p->bigvars );
-  unmem( p->varBlock );
-  unmem( p->varSizes );
-  unmem( p->varOffsets );
-  unmem( p->returns );
-  unmem( p->computes );
-  unmem( p->steps );
+  if( p->bigvarts )
+    unmem( p->bigvarts );
+  if( p->varNames )
+    unmem( p->varNames );
+  if( p->bigvarNames )
+    unmem( p->bigvarNames );
+  if( p->vars )
+    deleteTrieNode( p->vars );
+  if( p->bigvars )
+    deleteTrieNode( p->bigvars );
+  if( p->varBlock )
+    unmem( p->varBlock );
+  if( p->varSizes )
+    unmem( p->varSizes );
+  if( p->varOffsets )
+    unmem( p->varOffsets );
+  if( p->returns )
+    unmem( p->returns );
+  if( p->computes )
+    unmem( p->computes );
+  if( p->steps )
+    unmem( p->steps );
   if( p->mainFilename )
     unmem( p->mainFilename );
   unmem( p );
@@ -2360,7 +2397,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
              ts->stack[ ts->size - 1 ]->rank,
              ts->stack[ ts->size - 2 ]->rank );
       
-      tensorCat( ts, ts->size - 2, ts->size - 1, axis );
+      char* emsg = tensorCat( ts, ts->size - 2, ts->size - 1, axis );
+      if( emsg )
+        return emsg;
       pop( ts );
       // dbg( "%s %u", "cat", axis );
       break;
@@ -2451,7 +2490,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case TEXTUREARRAY: {
       if( !ts->size )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to create texture array with empty stack." );
-      tensorToTextureArray( ts->stack[ ts->size - 1 ], s->var.size ); // var.size holds channels
+      char* emsg = tensorToTextureArray( ts->stack[ ts->size - 1 ], s->var.size ); // var.size holds channels
+      if( emsg )
+        return emsg;
       break;
     }
     case TEXTURE: {
@@ -2460,8 +2501,11 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       tensor* cur = ts->stack[ ts->size - 1 ];
       if( !cur->gpu || cur->tex.channels == 0 )
         err( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
-      if( !cur->tex.mipmapped )
-        textureTensor( cur );
+      if( !cur->tex.mipmapped ){
+        char* emsg = textureTensor( cur );
+        if( emsg )
+          return emsg;
+      }
       break;
      
     }
@@ -2476,7 +2520,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       u32 axis = *( ts->stack[ ts->size - 1 ]->data +
                     ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      tensorReverse( ts, ts->size - 1, axis );
+      char* emsg = tensorReverse( ts, ts->size - 1, axis );
+      if( emsg )
+        return emsg;
       // dbg( "%s %u", "reverse", axis );
       break;
     }
@@ -2612,7 +2658,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
              "Attempt to take the first element with no parameter on the stack." );
 
-      tensorTakeFirst( ts, ts->size - 1 );
+      char* emsg = tensorTakeFirst( ts, ts->size - 1 );
+      if( emsg )
+        return emsg;
       // dbg( "%s", "first" );
       break;
     }
@@ -2621,7 +2669,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
              "Attempt to take the first element with no parameter on the stack." );
 
-      tensorTakeLast( ts, ts->size - 1 );
+      char* emsg = tensorTakeLast( ts, ts->size - 1 );
+      if( emsg )
+        return emsg;
       // dbg( "%s", "first" );
       break;
     }
@@ -2646,16 +2696,34 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       break;
     }
     case UNKETTLE: {
-      if( ts->size < 1 )
-        err( "%s:%u command %u: Unkettle requires [filename] on stack.", s->filename, s->linenum, s->commandnum );
-      
-      tensor* tName = ts->stack[ ts->size - 1 ];
-      char* fn = tensorToString( tName );
-      if( !fn ) err( "%s:%u command %u: Unkettle filename must be a string.", s->filename, s->linenum, s->commandnum );
-      pop( ts );
-
-      unkettle( ts, fn );
-      unmem( fn );
+      static f32 progress = 2.0;
+      if( progress == 2.0 ){       
+        if( ts->size < 1 )
+          err( "%s:%u command %u: Unkettle requires [filename] on stack.", s->filename, s->linenum, s->commandnum );
+        tensor* tName = ts->stack[ ts->size - 1 ];
+        char* fn = tensorToString( tName );
+        if( !fn ) err( "%s:%u command %u: Unkettle filename must be a string.", s->filename, s->linenum, s->commandnum );
+        pop( ts );
+        char* emsg = unkettle( ts, fn, &progress );
+        unmem( fn );
+        if( emsg ){
+          return emsg;
+        }
+        f32* ndata = mem( 1, f32 );
+        *ndata = progress;
+        push( ts, newTensor( 0, NULL, ndata ) );
+      } else{ 
+        char* emsg = unkettle( ts, NULL, &progress );
+        if( emsg ){
+          progress = 2.0;
+          return emsg;
+        }
+        f32* ndata = mem( 1, f32 );
+        *ndata = progress;
+        push( ts, newTensor( 0, NULL, ndata ) );
+        if( progress == 0.0 )
+          progress = 2.0;
+      }
       break;
     }
     case DUP:
@@ -2682,7 +2750,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       u32 count = *( ts->stack[ ts->size - 1 ]->data +
                      ts->stack[ ts->size - 1 ]->offset );
       pop( ts );
-      tensorRepeat( ts, ts->size - 1, count );
+      char* emsg = tensorRepeat( ts, ts->size - 1, count );
+      if( emsg )
+        return emsg;
       // dbg( "%s %u", "rep", count );
       break;
     }
@@ -2783,7 +2853,9 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
            ts->stack[ ts->size - 1 ]->strides[ 0 ] );
       pop( ts );
-      tensorTranspose( ts, ts->size - 1, axis1, axis2 );
+      char* emsg = tensorTranspose( ts, ts->size - 1, axis1, axis2 );
+      if( emsg )
+        return emsg;
       // dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
     case DEPTH: {
@@ -2819,7 +2891,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       tensorUnextrude( t );
       break;
     }
-    case SLICE:
+    case SLICE:{
       if( ts->size < 2 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to slice without enough elements on the stack." );
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
@@ -2836,9 +2908,12 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
            ts->stack[ ts->size - 1 ]->strides[ 0 ] * 2 );
       pop( ts );
-      tensorSlice( ts, ts->size - 1, axis, start, end );
+      char* emsg = tensorSlice( ts, ts->size - 1, axis, start, end );
+      if( emsg )
+        return emsg;
       // dbg( "%s %u %u", "transpose", axis1, axis2 );
       break;
+    }
     case TOP: {
       f32* ssize = mem( 1, f32 );
       *ssize = ts->size;
