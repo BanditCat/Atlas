@@ -1,5 +1,5 @@
-console
-reentrancy
+console has backwords word wrap
+
 make unkettling reentrant
 write gltfToKtl and make it display runtime info instead of printfing.
 introduce atlas to pipeline

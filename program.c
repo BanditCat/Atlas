@@ -113,7 +113,7 @@ char* finalizeCleanup( program* program, char* block, char* msg ) {
   if( program->steps )
     unmem( program->steps );
 
-  unmem( program );
+    unmem( program );
   return msg;
 }
 #define err2( ... ) do {                                      \
@@ -155,7 +155,7 @@ void copyProgramState( program* src, program* dst ){
     }
   }
 }
-void preprocessComputeCommands( char* prog ){
+char* preprocessComputeCommands( char* prog ){
   char* ptr = prog;
   while( *ptr != '\0' ){
     if( ptr[ 0 ] == 'c' && ptr[ 1 ] == '\'' &&
@@ -168,7 +168,7 @@ void preprocessComputeCommands( char* prog ){
         // Replace all ; with \ in this section (until we hit the closing ')
         while( *ptr != '\0' && *ptr != '\'' ){
           if( *ptr == '\\' )
-            error( "%s", "Backslash in shader! This is almost certainly an error!" );
+            err( "%s", "Backslash in shader! This is almost certainly an error!" );
           if( *ptr == ';' )
             *ptr = '\251';
           ptr++;
@@ -184,15 +184,16 @@ void preprocessComputeCommands( char* prog ){
       ptr++;
     }
   }
+  return NULL;
 }
 void skipWhitespace( const char** str ){
   while( isspace( **str ) )
     ( *str )++;
 }
-void parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
+char* parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* data, u32* dataIndex ){
   skipWhitespace( str );
   if( **str != '[' )
-    error( "%s", "Expected '[' to start tensor definition." );
+    err( "%s", "Expected '[' to start tensor definition." );
   ( *str )++;
   skipWhitespace( str );
 
@@ -200,14 +201,16 @@ void parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* 
   while( **str != ']' && **str != '\0' ){
     if( **str == '[' ){
       if( currentDim + 1 >= 4 )
-        error( "%s", "Tensor exceeds maximum supported dimensions (4D)." );
-      parseTensorRecursive( str, currentDim + 1, shape, data, dataIndex );
+        err( "%s", "Tensor exceeds maximum supported dimensions (4D)." );
+      char* iret = parseTensorRecursive( str, currentDim + 1, shape, data, dataIndex );
+      if( iret )
+        return iret;
       dim_size++;
     } else {
       float num;
       int charsread;
       if( sscanf( *str, "%f%n", &num, &charsread ) != 1 )
-        error( "%s", "Failed to parse number in tensor." );
+        err( "%s", "Failed to parse number in tensor." );
       *str += charsread;
       data[ *dataIndex ] = num;
       ( *dataIndex )++;
@@ -218,7 +221,7 @@ void parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* 
   }
 
   if( **str != ']' )
-    error( "%s", "Expected ']' to close tensor definition." );
+    err( "%s", "Expected ']' to close tensor definition." );
 
   ( *str )++;
   skipWhitespace( str );
@@ -227,13 +230,14 @@ void parseTensorRecursive( const char** str, u32 currentDim, u32* shape, float* 
   if( !shape[ currentDim ] )
     shape[ currentDim ] = dim_size;
   else if( shape[ currentDim ] != dim_size )
-    error( "%s", "Inconsistent tensor shape detected." );
+    err( "%s", "Inconsistent tensor shape detected." );
+  return NULL;
 }
 // Function to determine shape
-void determineShape( const char** s, u32 currentDim, u32* tempShape ){
+char* determineShape( const char** s, u32 currentDim, u32* tempShape ){
   skipWhitespace( s );
   if( **s != '[' )
-    error( "%s", "Expected '[' to start tensor definition." );
+    err( "%s", "Expected '[' to start tensor definition." );
   ( *s )++;
   skipWhitespace( s );
 
@@ -242,14 +246,18 @@ void determineShape( const char** s, u32 currentDim, u32* tempShape ){
   while( **s != ']' && **s != '\0' ){
     if( **s == '[' ){
       // Nested tensor
-      determineShape( s, currentDim + 1, tempShape );
+      if( currentDim + 1 >= 4 )
+        err( "%s", "Tensor exceeds maximum supported dimensions (4D)." );
+      char* iret = determineShape( s, currentDim + 1, tempShape );
+      if( iret )
+        return iret;
       dim_size++;
     } else {
       // Parse a number
       float num;
       int charsread;
       if( sscanf( *s, "%f%n", &num, &charsread ) != 1 )
-        error( "%s", "Failed to parse number in tensor." );
+        err( "%s", "Failed to parse number in tensor." );
       *s += charsread;
       dim_size++;
     }
@@ -258,7 +266,7 @@ void determineShape( const char** s, u32 currentDim, u32* tempShape ){
   }
 
   if( **s != ']' )
-    error( "%s", "Expected ']' to close tensor definition." );
+    err( "%s", "Expected ']' to close tensor definition." );
   ( *s )++;  // Skip ']'
   skipWhitespace( s );
 
@@ -266,10 +274,11 @@ void determineShape( const char** s, u32 currentDim, u32* tempShape ){
   if( !tempShape[ currentDim ] )
     tempShape[ currentDim ] = dim_size;
   else if( tempShape[ currentDim ] != dim_size )
-    error( "%s", "Inconsistent tensor shape detected." );
+    err( "%s", "Inconsistent tensor shape detected." );
+  return NULL;
 }
 
-static tensor* parseTensor( const char* command ){
+static char* parseTensor( const char* command, tensor** ret ){
   u32 shape[ 4 ] = { 0, 0, 0, 0 };  // Initialize shape to zero
   float* tempData = NULL;
   u32 dataCount = 0;
@@ -284,7 +293,13 @@ static tensor* parseTensor( const char* command ){
 
   u32 tempShape[ 4 ] = { 0, 0, 0, 0 };
 
-  determineShape( &parsePtr, 0, tempShape );
+  {
+    char* iret = determineShape( &parsePtr, 0, tempShape );
+    if( iret ){
+      unmem( clone );
+      return iret;
+    }
+  }
 
   // Now, determine the rank by finding the deepest non-zero dimension
   u32 rank = 0;
@@ -295,8 +310,10 @@ static tensor* parseTensor( const char* command ){
 
   // Validate that all deeper dimensions are set
   for( u32 i = 0; i < rank; ++i ){
-    if( tempShape[ i ] == 0 )
-      error( "%s", "Incomplete tensor shape definition." );
+    if( tempShape[ i ] == 0 ){
+      unmem( clone );
+      err( "%s", "Incomplete tensor shape definition." );
+    }
   }
 
   u32 totalElements = 1;
@@ -306,14 +323,25 @@ static tensor* parseTensor( const char* command ){
   tempData = mem( totalElements, f32 );
 
   parsePtr = clone;
-  parseTensorRecursive( &parsePtr, 0, tempShape, tempData, &dataCount );
+  char* iret = parseTensorRecursive( &parsePtr, 0, tempShape, tempData, &dataCount );
+  if( iret ){
+    unmem( tempData );
+    unmem( clone );
+    return iret;
+  }
 
   skipWhitespace( &parsePtr );
-  if( *parsePtr != '\0' )
-    error( "%s", "Unexpected characters after tensor definition." );
+  if( *parsePtr != '\0' ){
+    unmem( tempData );
+    unmem( clone );
+    err( "%s", "Unexpected characters after tensor definition." );
+  }
 
-  if( dataCount != totalElements )
-    error( "%s", "Mismatch in expected and actual number of tensor elements." );
+  if( dataCount != totalElements ){
+    unmem( tempData );
+    unmem( clone );
+    err( "%s", "Mismatch in expected and actual number of tensor elements." );
+  }
 
   memcpy( shape, tempShape, sizeof( shape ) );
 
@@ -334,7 +362,7 @@ static tensor* parseTensor( const char* command ){
   t->ownsData = true;
   t->data = tempData;
 
-  return t;
+  *ret = t; return NULL;
 }
 // Function to remove all '//' comments from the program string
 void removeComments( char* prog ){
@@ -355,19 +383,20 @@ void removeComments( char* prog ){
   *dst = '\0';  // Null-terminate the modified string
 }
 // This adds a compute statement to p and returns its index.
-u32 addCompute( const char* filename,
-                u32 linenum,
-                u32 commandnum,
-                program* p,
-                const char* uniforms,
-                const char* vglslpre,
-                const char* glslpre,
-                const char* vglsl,
-                const char* glsl,
-                u32 argCount,
-                u32 retCount,
-                u32 channels,
-                bool reuse ){
+char* addCompute( const char* filename,
+                  u32 linenum,
+                  u32 commandnum,
+                  program* p,
+                  const char* uniforms,
+                  const char* vglslpre,
+                  const char* glslpre,
+                  const char* vglsl,
+                  const char* glsl,
+                  u32 argCount,
+                  u32 retCount,
+                  u32 channels,
+                  bool reuse,
+                  u32* indexRet ){
   if( p->numComputes >= p->computeStackSize ){
     p->computeStackSize *= 2;
     compute** tp = mem( p->computeStackSize, compute* );
@@ -375,13 +404,18 @@ u32 addCompute( const char* filename,
     unmem( p->computes );
     p->computes = tp;
   }
-  p->computes[ p->numComputes ] =
-    makeCompute( filename,
-                 linenum,
-                 commandnum,
-                 p,
-                 uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount, channels, reuse );
-  return p->numComputes++;
+  compute* ret;
+  char* emsg = makeCompute( filename,
+                            linenum,
+                            commandnum,
+                            p,
+                            uniforms, vglslpre, glslpre, vglsl, glsl, argCount, retCount,
+                            channels, reuse, &ret );
+  if( emsg )
+    return emsg;
+  
+  p->computes[ p->numComputes ] = ret;
+  *indexRet = p->numComputes++;return NULL;
 }
 char* getNextLine( char** str ){
   if( *str == NULL || **str == '\0' )
@@ -453,11 +487,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     char* work = mem( 2 + endi - starti, char );
     memcpy( work, starti, endi - starti );
     work[ endi - starti ] = '\0';
-    if( *( endi + 1 ) )
+    if( *( endi + 1 ) ){
+      unmem( work );
       err3( "%s:%u command %u: %s", filename,
             linenum,
             commandnum,
             "Extra characters after workspace command." );
+    }
     unmem( workspace );
     workspace = work;
     --p->numSteps;
@@ -482,18 +518,22 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     }
     memcpy( label + worklen, starti, endi - starti );
     label[ worklen + endi - starti ] = '\0';
-    --p->numSteps;
-    if( *( endi + 1 ) )
+    if( *( endi + 1 ) ){
+      unmem( label );
       err3( "%s:%u command %u: %s", filename,
             linenum,
             commandnum,
             "Extra characters after label." );
-    if( trieSearch( p->labels, label, NULL ) )
+    }
+    if( trieSearch( p->labels, label, NULL ) ){
+      unmem( label );
       err3( "%s:%u command %u: duplicate label '%s'", filename,
             linenum,
             commandnum,
             label );
-    
+    }
+    --p->numSteps;
+   
     trieInsert( p->labels, label, p->numSteps );
     // dbg( "Linenum %u commandnum %u: label: %s\n", linenum, commandnum, label
     // );
@@ -533,15 +573,19 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     }else if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
               !sizep[ charsread ] ){
       curStep->var.size = varSize;
-      if( !varSize || ( varSize > 4 && varSize != 16 ) )
+      if( !varSize || ( varSize > 4 && varSize != 16 ) ){
+        unmem( varName );
         err3( "%s", "Invalid var size in set statement." );
+      }
       // dbg( "Linenum %u commandnum %u: set '%s' of size %u.\n",
       // linenum, commandnum, varName, varSize );
-    } else
+    } else{
+      unmem( varName );
       err3( "%s:%u command %u: %s", filename,
             linenum,
             commandnum,
             "Malformed set statement." );
+    }
     // dbg( "Linenum %u commandnum %u: set var %s\n", linenum, commandnum,
     // varName );
     if( worklen )
@@ -571,11 +615,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     }
     memcpy( varName + worklen, starti, endi - starti );
     varName[ worklen + endi - starti ] = '\0';
-    if( *( endi + 1 ) )
+    if( *( endi + 1 ) ){
+      unmem( varName );
       err3( "%s:%u command %u: %s", filename,
             linenum,
             commandnum,
             "Extra characters after get statement." );
+    }
     curStep->type = GET;
     curStep->var.name = varName;
     if( worklen )
@@ -795,6 +841,27 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     if( sscanf( sizep, "%u%u%u%u%n", &argCount, &retCount, &channels, &reuse, &charsread ) == 4 &&
         !sizep[ charsread ] ){
       curStep->type = COMPUTE;
+      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 ){
+        unmem( pre );
+        unmem( vcomp );
+        unmem( vpre );
+        unmem( comp );
+        err3( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
+      }
+      if( argCount > 4 ){
+        unmem( pre );
+        unmem( vcomp );
+        unmem( vpre );
+        unmem( comp );
+        err3( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
+      }
+      if( retCount > 4 || !retCount ){
+        unmem( pre );
+        unmem( vcomp );
+        unmem( vpre );
+        unmem( comp );
+        err3( "%s", "Compute created with a bad return count, must be 1-4." );
+      }
       curStep->toCompute.glslpre = pre;
       curStep->toCompute.glsl = comp;
       curStep->toCompute.vglslpre = vpre;
@@ -803,30 +870,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
       curStep->toCompute.argCount = argCount;
       curStep->toCompute.channels = channels;
       curStep->toCompute.reuse = reuse;
-      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 ){
-        unmem( pre );
-        unmem( vcomp );
-        unmem( vpre );
-        err3( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
-      }
-      if( argCount > 4 ){
-        unmem( pre );
-        unmem( vcomp );
-        unmem( vpre );
-        err3( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
-      }
-      if( retCount > 4 || !retCount ){
-        unmem( pre );
-        unmem( vcomp );
-        unmem( vpre );
-        err3( "%s", "Compute created with a bad return count, must be 1-4." );
-      }
       // dbg( "Linenum %u commandnum %u: compute '%s' on %u arguments.\n",
       // linenum, commandnum, comp, argCount );
     } else{
       unmem( pre );
       unmem( vcomp );
       unmem( vpre );
+      unmem( comp );
       err3( "%s:%u command %u: %s", filename,
             linenum,
             commandnum,
@@ -1119,8 +1169,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
         curStep->tensor->data = mem( 1, f32 );
         *curStep->tensor->data = scalar;
         curStep->tensor->ownsData = true;
-      } else
-        curStep->tensor = parseTensor( command );
+      } else{
+        tensor* ret;
+        char* imsg = parseTensor( command, &ret );
+        if( imsg )
+          return finalizeCleanup( p, NULL, imsg );
+        curStep->tensor = ret;
+      }
     }
     // dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
 
@@ -1189,7 +1244,11 @@ char* addProgramFromFile( const char* filename, program* program );
 // Modifies prog, adds all steps in prog to program.
 char* addProgram( const char* filename, char* prog, program* program ){
   removeComments( prog );
-  preprocessComputeCommands( prog );
+  char* ret = preprocessComputeCommands( prog );
+  if( ret ){
+    finalizeCleanup( program, NULL, ret );
+    return ret;
+  }
   
   char* ptr = prog;
   u32 linenum = 1;
@@ -1264,16 +1323,22 @@ char* addProgram( const char* filename, char* prog, program* program ){
       char* endi = starti;
       while( *endi && *endi != '\'' )
         endi++;
-      if( endi == starti )
-        error( "%s:%u command %u: %s", filename,
-               linenum,
-               commandnum,
-               "Empty include statement." );
-      if( *endi != '\'' )
-        error( "%s:%u command %u: %s", filename,
-               linenum,
-               commandnum,
-               "Unmatched quote in include statement." );
+      if( endi == starti ){
+        unmem( buf );
+        finalizeCleanup( program, NULL, NULL );
+        err( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Empty include statement." );
+      }
+      if( *endi != '\'' ){
+        unmem( buf );
+        finalizeCleanup( program, NULL, NULL );
+        err( "%s:%u command %u: %s", filename,
+             linenum,
+             commandnum,
+             "Unmatched quote in include statement." );
+      }
       char* inc = mem( 1 + endi - starti, char );
       memcpy( inc, starti, endi - starti );
       inc[ endi - starti ] = '\0';
@@ -1285,8 +1350,11 @@ char* addProgram( const char* filename, char* prog, program* program ){
       workspace = mem( 1, char );
       workspace[ 0 ] = 0;
       program->filenames[ program->numFilenames++ ] = inc;
-      if( program->numFilenames >= NUM_FILENAMES )
-        error( "%s", "NUM_FILENAMES exceeded." );
+      if( program->numFilenames >= NUM_FILENAMES ){
+        unmem( buf );
+        finalizeCleanup( program, NULL, NULL );
+        err( "%s", "NUM_FILENAMES exceeded." );
+      }
       // ... handle 'include' ...
       // addProgramFromFile(...);
       unmem( buf );
@@ -1563,17 +1631,21 @@ char* finalize( program* program ){
       char* glslpre = program->steps[ i ].toCompute.glslpre;
       char* glsl = program->steps[ i ].toCompute.glsl;
       char* vglsl = program->steps[ i ].toCompute.vglsl;
-      program->steps[ i ].compute =
-        addCompute( program->steps[ i ].filename,
-                    program->steps[ i ].linenum,
-                    program->steps[ i ].commandnum,
-                    program,
-                    glslUniformBlock,
-                    vglslpre, glslpre, vglsl, glsl,
-                    program->steps[ i ].toCompute.argCount,
-                    program->steps[ i ].toCompute.retCount,
-                    program->steps[ i ].toCompute.channels,
-                    program->steps[ i ].toCompute.reuse );
+      u32 ind;
+      char* emsg = addCompute( program->steps[ i ].filename,
+                               program->steps[ i ].linenum,
+                               program->steps[ i ].commandnum,
+                               program,
+                               glslUniformBlock,
+                               vglslpre, glslpre, vglsl, glsl,
+                               program->steps[ i ].toCompute.argCount,
+                               program->steps[ i ].toCompute.retCount,
+                               program->steps[ i ].toCompute.channels,
+                               program->steps[ i ].toCompute.reuse, &ind );
+
+      if( emsg )
+        return finalizeCleanup( program, glslUniformBlock, emsg );
+      program->steps[ i ].compute = ind;
       unmem( glsl );
       unmem( glslpre );
       unmem( vglsl );
@@ -2257,8 +2329,11 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       
       pop( ts );
       pop( ts );
-      tensor** rets =
-        newTensorsInitialized( p, ts, rank, shape, p->computes[ s->compute ], vertCount );
+      
+      tensor** rets;
+      char* emsg = newTensorsInitialized( p, ts, rank, shape, p->computes[ s->compute ], vertCount, &rets );
+      if( emsg )
+        return emsg;
       if( rets ){
         for( u32 i = 0; i < p->computes[ s->compute ]->retCount; ++i )
           push( ts, rets[ p->computes[ s->compute ]->retCount - i - 1 ] );

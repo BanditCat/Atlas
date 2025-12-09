@@ -60,12 +60,13 @@ void tensorToGPUMemory( tensor* t );
 tensorStack* newStack( void );
 // Warning! this takes ownership of data and will deallocate it.
 tensor* newTensor( u32 rank, const u32* shape, f32* data );
-compute* makeCompute( const char* filename, u32 linenum, u32 commandnum, 
-                     const program* prog, const char* uniforms, const char* vglslpre, const char* glslpre,
-                      const char* vglsl, const char* glsl, u32 argCount, u32 retCount, u32 channels, bool reuse );
+char* makeCompute( const char* filename, u32 linenum, u32 commandnum, 
+                   const program* prog, const char* uniforms, const char* vglslpre, const char* glslpre,
+                   const char* vglsl, const char* glsl, u32 argCount, u32 retCount, u32 channels,
+                   bool reuse, compute** ret );
 void deleteCompute( compute* i );
-tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
-				const compute* initializer, u32 vertCount );
+char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
+                             const compute* initializer, u32 vertCount, tensor*** rets );
 tensor* tensorFromImageFile( const char* fileName );
 tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );

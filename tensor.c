@@ -8,11 +8,12 @@
 #include "stb_image.h"
 
 #include "miniz.h"
+#define err( ... ) do {                         \
+    char* msg = printToString( __VA_ARGS__ );   \
+    return msg;                                 \
+  }  while( 0 )
 
 void takeOwnership( tensor* t ){
-  if( t == NULL )
-    error( "%s", "Tensor is NULL in takeOwnership." );
-
   if( t->ownsData )
     return;  // Already owns data, nothing to do
 
@@ -48,8 +49,6 @@ tensor* copyTensor( const tensor* t ){
 }
 // This converts a tensor to cpu memory.
 void tensorToHostMemory( tensor* t ){
-  if( t == NULL )
-    error( "%s", "Tensor is NULL in tensorToHostMemory." );
   if( !t->gpu )
     return;
 
@@ -118,8 +117,6 @@ void tensorToHostMemory( tensor* t ){
   }
 }
 void tensorToGPUMemory( tensor* t ){
-  if( t == NULL )
-    error( "%s", "Tensor is NULL in tensorToGPUMemory." );
   if( t->gpu )
     return;
   tensorEnsureContiguous( t );
@@ -194,9 +191,6 @@ void tensorToGPUMemory( tensor* t ){
 tensor* newTensor( u32 rank, const u32* shape, f32* data ){
   tensor* ret = mem( 1, tensor );
 
-  if( rank > 4 )
-    error( "%s", "Rank exceeds maximum of 4." );
-
   // Initialize basic properties
   ret->rank = rank;
   ret->size = 1;
@@ -214,8 +208,6 @@ tensor* newTensor( u32 rank, const u32* shape, f32* data ){
 
   ret->gpu = false;
 
-  if( !data )
-    error( "%s", "Null data!" );
   ret->data = data;
 
   return ret;
@@ -243,19 +235,20 @@ void deleteTensor( tensor* t ){
   }
   unmem( t );
 }
-compute* makeCompute( const char* filename,
-                      u32 linenum,
-                      u32 commandnum,
-                      const program* prog,
-                      const char* uniforms,
-                      const char* vglslpre,
-                      const char* glslpre,
-                      const char* vglsl,
-                      const char* glsl,
-                      u32 argCount,
-                      u32 retCount,
-                      u32 channels,
-                      bool reuse ){
+char* makeCompute( const char* filename,
+                   u32 linenum,
+                   u32 commandnum,
+                   const program* prog,
+                   const char* uniforms,
+                   const char* vglslpre,
+                   const char* glslpre,
+                   const char* vglsl,
+                   const char* glsl,
+                   u32 argCount,
+                   u32 retCount,
+                   u32 channels,
+                   bool reuse,
+                   compute** returnCompute ){
   const char* channelsString;
   switch( channels ){
   case 0:
@@ -528,12 +521,17 @@ compute* makeCompute( const char* filename,
   glGetShaderiv( vertexShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
     static const u32 bufsize = 65536;
-    char* msg = mem( bufsize, char );
+    char* emsg = mem( bufsize, char );
     char* log = mem( bufsize, char );
     glGetShaderInfoLog( vertexShader, bufsize, NULL, log );
-    snprintf( msg, bufsize, "%s:%u command %u:\nVertex shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", filename, linenum, commandnum, vheaderLineCount, vheaderIncPreambleLineCount, log );
+    snprintf( emsg, bufsize, "%s:%u command %u:\nVertex shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", filename, linenum, commandnum, vheaderLineCount, vheaderIncPreambleLineCount, log );
     glDeleteShader( vertexShader );
-    error( "%s", msg );
+    unmem( log );
+    unmem( vertexShaderSource );
+    unmem( fragmentShaderSource );
+    unmem( footerSource );
+    unmem( ret );
+    return emsg;
   }
 
   // Compile the fragment shader
@@ -547,13 +545,18 @@ compute* makeCompute( const char* filename,
   glGetShaderiv( fragmentShader, GL_COMPILE_STATUS, &status );
   if( status != GL_TRUE ){
     static const u32 bufsize = 65536;
-    char* msg = mem( bufsize, char );
+    char* emsg = mem( bufsize, char );
     char* log = mem( bufsize, char );
     glGetShaderInfoLog( fragmentShader, bufsize, NULL, log );
-    snprintf( msg, bufsize, "%s:%u command %u:\nFragment shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", filename, linenum, commandnum, headerLineCount, headerIncPreambleLineCount, log );
+    snprintf( emsg, bufsize, "%s:%u command %u:\nFragment shader compilation failed, error line numbers offset by %u for preamble and %u for main body:\n\n %s", filename, linenum, commandnum, headerLineCount, headerIncPreambleLineCount, log );
     glDeleteShader( fragmentShader );
     glDeleteShader( vertexShader );
-    error( "%s", msg );
+    unmem( log );
+    unmem( vertexShaderSource );
+    unmem( fragmentShaderSource );
+    unmem( footerSource );
+    unmem( ret );
+    return emsg;
   }
 
   unmem( vertexShaderSource );
@@ -574,14 +577,20 @@ compute* makeCompute( const char* filename,
   // Check for linking errors
   glGetProgramiv( ret->program, GL_LINK_STATUS, &status );
   if( status != GL_TRUE ){
-    static char msg[ 512 ];
-    char log[ 512 ];
+    static const u32 bufsize = 65536;
+    char* emsg = mem( bufsize, char );
+    char* log = mem( bufsize, char );
     glGetProgramInfoLog( ret->program, sizeof( log ), NULL, log );
-    snprintf( msg, sizeof( msg ), "Program linking failed: %s", log );
+    snprintf( emsg, bufsize, "Program linking failed: %s", log );
     glDeleteProgram( ret->program );
     glDeleteShader( vertexShader );
     glDeleteShader( fragmentShader );
-    error( "%s", msg );
+    unmem( log );
+    unmem( vertexShaderSource );
+    unmem( fragmentShaderSource );
+    unmem( footerSource );
+    unmem( ret );
+    return emsg;;
   }
 
   // Get uniforms.
@@ -622,23 +631,23 @@ compute* makeCompute( const char* filename,
   glDeleteShader( vertexShader );
   glDeleteShader( fragmentShader );
 
-  return ret;
+  *returnCompute = ret; return NULL;
 }
 void deleteCompute( compute* i ){
   glDeleteProgram( i->program );
   unmem( i->uniformLocs );
   unmem( i );
 }
-tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute, u32 vertCount ){
+char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, const compute* compute, u32 vertCount, tensor*** returns ){
   CHECK_GL_ERROR();
   glUseProgram( compute->program );
   if( compute->reuse ){
     if( compute->argCount + compute->retCount > ts->size )
-      error( "A compute was called with %u arguments and %u returns, but the stack size is only %u.",
+      err( "A compute was called with %u arguments and %u returns, but the stack size is only %u.",
              compute->argCount, compute->retCount, ts->size );
   } else
     if( compute->argCount > ts->size )
-      error( "A compute was called with %u arguments, but the stack size is only %u.",
+      err( "A compute was called with %u arguments, but the stack size is only %u.",
              compute->argCount,
              ts->size );
   tensor** rets = mem( compute->retCount, tensor* );
@@ -682,10 +691,14 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
   for( u32 reti = 0; reti < compute->retCount; ++reti ){
     if( compute->reuse ){
       tensor* t = ts->stack[ ( ( ts->size - 1 ) - compute->argCount ) - reti ];
-      if( !t->gpu || ( t->tex.channels != compute->channels ) )
-        error( "%s", "Attempt to return on top of a incompatible tensor (wrong channel count)." );
-      if( t->tex.width != width || t->tex.height != height )
-        error( "%s", "Attempt to return on top of a incompatible tensor (bad size)." );
+      if( !t->gpu || ( t->tex.channels != compute->channels ) ){
+        unmem( rets );
+        err( "%s", "Attempt to return on top of a incompatible tensor (wrong channel count)." );
+      }
+      if( t->tex.width != width || t->tex.height != height ){
+        unmem( rets );
+        err( "%s", "Attempt to return on top of a incompatible tensor (bad size)." );
+      }
       ret = t;
     } else {
       u32 found = TENSOR_CACHE;
@@ -724,7 +737,7 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
         ret = mem( 1, tensor );
         ret->tex.channels = compute->channels;
         if( rank > 4 )
-          error( "%s", "Rank exceeds maximum of 4." );
+          err( "%s", "Rank exceeds maximum of 4." );
         
         // Initialize basic properties
         ret->rank = rank;
@@ -888,9 +901,12 @@ tensor** newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shap
 
   if( compute->reuse ){
     unmem( rets );
+    *returns = NULL;
     return NULL;
-  } else
-    return rets;
+  } else{
+    *returns = rets;
+    return NULL;
+  }
 }
 
 void push( tensorStack* ts, tensor* t ){
@@ -907,7 +923,7 @@ void push( tensorStack* ts, tensor* t ){
 
 void pop( tensorStack* ts ){
   if( !ts->size )
-    error( "%s", "Attempt to pop an empty stack!" );
+    return;
   --ts->size;
   if( !ts->stack[ ts->size ]->gpu || !ts->stack[ ts->size ]->ownsData )
     deleteTensor( ts->stack[ ts->size ] );
