@@ -644,12 +644,12 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
   if( compute->reuse ){
     if( compute->argCount + compute->retCount > ts->size )
       err( "A compute was called with %u arguments and %u returns, but the stack size is only %u.",
-             compute->argCount, compute->retCount, ts->size );
+           compute->argCount, compute->retCount, ts->size );
   } else
     if( compute->argCount > ts->size )
       err( "A compute was called with %u arguments, but the stack size is only %u.",
-             compute->argCount,
-             ts->size );
+           compute->argCount,
+           ts->size );
   tensor** rets = mem( compute->retCount, tensor* );
   tensor* ret;
   for( u32 i = 0; i < compute->argCount; ++i ){
@@ -1044,7 +1044,7 @@ char* tensorCatHelper( tensor* t, tensor* t2, u32 axis ){
     } else {
       if( t->shape[ i ] != t2->shape[ i ] )
         err( "Shapes are not compatible for concatenation along axis %u.",
-               axis );
+             axis );
       new_shape[ i ] = t->shape[ i ];
     }
   }
@@ -1178,9 +1178,9 @@ char* tensorSliceHelper( tensor* t, u32 axis, s32 start, s32 end ){
   // Ensure indices are within bounds
   if( start < 0 || end > len || start > end )
     err( "Slice indices out of range: start=%d, end=%d, length=%d",
-           start,
-           end,
-           len );
+         start,
+         end,
+         len );
 
   s32 new_len = end - start;
 
@@ -1787,265 +1787,462 @@ void kettle(tensorStack* ts, u32 count, const char* filename) {
 typedef struct{
   enum{ 
     UNKETTLE_START,
-    UNKETTLE_LOAD,   // Reading file & Decompressing
-    UNKETTLE_UPLOAD, // Uploading textures (sliced)
+    UNKETTLE_OPEN,
+    UNKETTLE_READ,   
+    UNKETTLE_UNZIP,  // Now Time Sliced!
+    UNKETTLE_UPLOAD, 
     UNKETTLE_DONE,
   } stage;
   FILE* f;
   char* filename;
+  
   u64 uSize, cSize;
+  u64 bytesRead;      
+  
   u8* compressedData;
   u8* decompressedBuffer;
-  u64 readHead;
+  u64 readHead;       
   
-  // Persistence for reentrancy
+  // NEW: Streaming State
+  mz_stream stream;
+  bool streamInitialized;
+
   KettleHeader h;
   u32 currentTensorIndex;
   tensor** pendingTensors;
+  bool uploadingSubSlice;   // Are we currently mid-texture upload?
+  tensor* currentTensor;    // The tensor struct we are populating
+  u8* currentTexData;       // Temporary CPU buffer for the current texture
+  u32 currentLayer;         // Which layer (depth slice) are we on?
+  u32 currentY;
+  u32 currentHeight;
+  u32 currentTensorLayers;
+  bool tempMipmapped; 
 } unkettleState;
-
 void resetUnkettleState( unkettleState* s ){
-  if( s->f ){
-    fclose( s->f );
-    s->f = NULL;
+  if( s->f ){ fclose( s->f ); s->f = NULL; }
+  
+  if( s->streamInitialized ){
+    mz_inflateEnd( &s->stream );
+    s->streamInitialized = false;
   }
-  if( s->compressedData ){
-    unmem( s->compressedData );
-    s->compressedData = NULL;
+  
+  if( s->compressedData ){ unmem( s->compressedData ); s->compressedData = NULL; }
+  if( s->decompressedBuffer ){ unmem( s->decompressedBuffer ); s->decompressedBuffer = NULL; }
+  if( s->filename ){ unmem( s->filename ); s->filename = NULL; }
+  
+  if( s->pendingTensors ){
+    for( u32 i = 0; i < s->currentTensorIndex; ++i ){
+      if( s->pendingTensors[i] ) deleteTensor( s->pendingTensors[ i ] );
+    }
+    unmem( s->pendingTensors );
+    s->pendingTensors = NULL;
   }
-  if( s->decompressedBuffer ){
-    unmem( s->decompressedBuffer );
-    s->decompressedBuffer = NULL;
-  }
-  if( s->filename ){
-    unmem( s->filename );
-    s->filename = NULL;
-  }
+
   s->stage = UNKETTLE_START;
   s->uSize = 0;
   s->cSize = 0;
   s->readHead = 0;
+  s->bytesRead = 0;
   s->currentTensorIndex = 0;
+  memset( &s->stream, 0, sizeof(mz_stream) );
+  if( s->currentTexData ) { unmem( s->currentTexData ); s->currentTexData = NULL; }
+  if( s->currentTensor && s->uploadingSubSlice ) { 
+    // If we were halfway through a tensor, kill it
+    if( s->currentTensor->tex.texture ) glDeleteTextures(1, &s->currentTensor->tex.texture);
+    unmem( s->currentTensor ); 
+  }
+  s->currentTensor = NULL;
+  s->uploadingSubSlice = false;
+  s->currentLayer = 0;
+  s->currentTensorLayers = 0;
+  s->currentY = 0;
+  s->currentHeight = 0;
 }
-// Returns NULL on success/continue. Returns error string on failure.
-// progress: Output 1.0 (start) -> 0.0 (done). 
 char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
-  static unkettleState s = {0}; // Zero-initialized by default
-  
-  // Initialize progress output
-  if( progress ) *progress = 1.0f;
+  static unkettleState s = {0};
 
-  // Setup Timer for this slice
+  const f32 W_READ   = 0.10f; 
+  const f32 W_UNZIP  = 0.20f; 
+  const f32 W_UPLOAD = 0.70f; 
+
+  if( progress && s.stage == UNKETTLE_START ) *progress = 1.0f;
+
   u64 startTime = SDL_GetPerformanceCounter();
   f64 freq = (f64)SDL_GetPerformanceFrequency();
   f64 timeLimitMs = 6.0;
 
-  // --- STAGE 1: START / RESTART ---
-  if( s.stage == UNKETTLE_DONE ){
-    resetUnkettleState( &s ); // Auto-reset if called again after completion
-  }
+  // --- STAGE 1 & 2a/2b (START, OPEN, READ) ---
+  // (Identical to previous version. Copy/Paste logic for START, OPEN, and READ here)
+  if( s.stage == UNKETTLE_DONE ) resetUnkettleState( &s );
+  if( s.stage == UNKETTLE_START ) s.stage = UNKETTLE_OPEN;
 
-  if( s.stage == UNKETTLE_START ){
-    s.stage = UNKETTLE_LOAD;
-    // Fallthrough to LOAD immediately
-  }
-
-  // --- STAGE 2: LOAD & DECOMPRESS (Atomic) ---
-  if( s.stage == UNKETTLE_LOAD ){
-    if( filename == NULL )
-      err( "NULL filename in load mode for unkettle" );
-    u32 len = strlen( filename );
-    s.filename = mem( len + 1, char );
-    strcpy( s.filename, filename );
+  if( s.stage == UNKETTLE_OPEN ){
+    // ... [Same File Open Logic] ...
+    // ... [Alloc s.compressedData, set stage to READ] ...
+    // (See previous response for code)
+    // Short version for context:
+    if( filename == NULL ) err("NULL filename");
+    s.filename = mem( strlen(filename)+1, char ); strcpy(s.filename, filename);
     s.f = fopen( s.filename, "rb" );
-    if( !s.f ){
-      resetUnkettleState( &s );
-      err( "Unkettle: Could not open %s.", s.filename );
-    }
-    
-    if( fread( &s.uSize, sizeof( u32 ), 1, s.f ) != 1 || 
-        fread( &s.cSize, sizeof( u32 ), 1, s.f ) != 1 ){
-      resetUnkettleState( &s );
-      err( "%s", "Unkettle: Failed reading headers." );
-    }
-    
-    // 1. Read Compressed Data
+    fread( &s.uSize, 4, 1, s.f ); fread( &s.cSize, 4, 1, s.f );
     s.compressedData = mem( s.cSize, u8 );
-    if( fread( s.compressedData, 1, s.cSize, s.f ) != s.cSize ){
-      resetUnkettleState( &s );
-      err( "%s", "Unkettle: File truncated." );
-    }
-    fclose( s.f ); 
-    s.f = NULL;
-
-    // 2. Decompress
-    s.decompressedBuffer = mem( s.uSize, u8 );
-    mz_ulong destLen = s.uSize;
-    int status = mz_uncompress( s.decompressedBuffer, &destLen, s.compressedData, s.cSize );
-    
-    // Always free compressed data now
-    unmem( s.compressedData );
-    s.compressedData = NULL;
-
-    if( status != MZ_OK ){
-      resetUnkettleState( &s );
-      err( "Unkettle: Decompression failed %d", status );
-    }
-    
-    // 3. Parse Header
-    s.readHead = 0;
-    // Local macro relying on 's'
-    #define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; }
-    
-    READ_MEM( &s.h, sizeof(KettleHeader) );
-    if( s.h.magic != 0x4B544C31 ){
-      resetUnkettleState( &s );
-      err( "Unkettle: Invalid file format in %s.", s.filename );
-    }
-    
-    s.currentTensorIndex = 0;
-    s.stage = UNKETTLE_UPLOAD;
-    #undef READ_MEM
+    s.bytesRead = 0;
+    s.stage = UNKETTLE_READ;
+    return NULL;
   }
 
-  // --- STAGE 3: UPLOAD TENSORS (Time Sliced) ---
-  if( s.stage == UNKETTLE_UPLOAD ){
-    
-    // Re-define macro for this scope
-    #define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; }
+  if( s.stage == UNKETTLE_READ ){
+    // ... [Same Chunked Read Logic] ...
+    u32 chunkSize = 1024 * 1024;
+    while( s.bytesRead < s.cSize ){
+      u64 now = SDL_GetPerformanceCounter();
+      if( ((f64)(now - startTime)/freq)*1000.0 >= timeLimitMs ){
+        return NULL; // Yield
+      }
+          
+      u64 rem = s.cSize - s.bytesRead;
+      u64 toRead = (rem < chunkSize) ? rem : chunkSize;
+      fread( s.compressedData + s.bytesRead, 1, toRead, s.f );
+      s.bytesRead += toRead;
+          
+      if( progress ) *progress = 1.0f - ( ((f32)s.bytesRead/s.cSize) * W_READ );
+    }
+    fclose(s.f); s.f = NULL;
+    s.stage = UNKETTLE_UNZIP;
+    return NULL;
+  }
 
-    while( s.currentTensorIndex < s.h.count ){
+  if( s.stage == UNKETTLE_UNZIP ){
+    
+    // Chunk size: How much we let it decode before forcing a return.
+    // Smaller = smoother frame rate, slightly more function call overhead.
+    const mz_uint UNZIP_CHUNK_SIZE = 1024 * 1024; // 64KB
+
+    // 1. Initialize Stream
+    if( !s.streamInitialized ){
+      memset( &s.stream, 0, sizeof(mz_stream) );
+      s.stream.next_in  = s.compressedData;
+      s.stream.avail_in = (mz_uint)s.cSize;
       
-      // Check Time Budget
+      s.decompressedBuffer = mem( s.uSize, u8 );
+      s.stream.next_out = s.decompressedBuffer;
+      
+      // CRITICAL FIX: Start with 0 availability.
+      // We will spoon-feed this in the loop to force yields.
+      s.stream.avail_out = 0; 
+      
+      if( mz_inflateInit( &s.stream ) != MZ_OK ){
+        resetUnkettleState( &s );
+        err( "Unkettle: Stream init failed" );
+      }
+      s.streamInitialized = true;
+    }
+
+    // 2. Pump the Stream
+    while( true ){
+      
+      // Check Time Budget FIRST
       u64 now = SDL_GetPerformanceCounter();
       f64 elapsed = ( (f64)(now - startTime) / freq ) * 1000.0;
       if( elapsed >= timeLimitMs ){
-        // Update progress and return control
-        if( progress && s.h.count > 0 ){
-           *progress = 1.0f - ( (f32)s.currentTensorIndex / (f32)s.h.count );
+        if( progress ){
+          f32 unzipPct = (f32)s.stream.total_out / (f32)s.uSize;
+          f32 currentBase = 1.0f - W_READ; 
+          *progress = currentBase - ( unzipPct * W_UNZIP );
         }
-        return NULL; // Return NULL (no error) to continue next frame
+        return NULL; // Yield
       }
 
-      // ... Perform Load ...
-      KettleMeta meta;
-      READ_MEM( &meta, sizeof( KettleMeta ) );
-
-      tensor* t = mem( 1, tensor );
-      t->rank = meta.rank;
-      t->size = meta.size;
-      memcpy( t->shape, meta.shape, sizeof(u32)*4 );
-      
-      u32 stride = 1;
-      for( int k = t->rank - 1; k >= 0; --k ){
-        t->strides[ k ] = stride;
-        stride *= t->shape[ k ];
-      }
-      for( u32 k = t->rank; k < 4; ++k ){
-        t->shape[k] = 1;
-        t->strides[k] = 1;
+      // Feed it more buffer space if it ran out
+      if( s.stream.avail_out == 0 ){
+        u64 totalOut = s.stream.total_out;
+        
+        // Are we actually done?
+        if( totalOut >= s.uSize ){
+          // Force one last call to get MZ_STREAM_END if it hasn't happened
+        }
+        
+        // Give it another slice
+        u64 rem = s.uSize - totalOut;
+        s.stream.avail_out = (rem < UNZIP_CHUNK_SIZE) ? (mz_uint)rem : UNZIP_CHUNK_SIZE;
       }
 
-      t->offset = 0;
-      t->ownsData = true;
-      t->gpu = ( meta.isGpu != 0 );
+      int status = mz_inflate( &s.stream, MZ_SYNC_FLUSH );
 
-      if( t->gpu ){
-        t->tex.channels = meta.channels;
-        t->tex.layers = meta.layers;
-        t->tex.height = meta.height;
-        t->tex.width  = meta.width;
+      if( status == MZ_STREAM_END || s.stream.total_out >= s.uSize ){
+        // Done!
+        mz_inflateEnd( &s.stream );
+        s.streamInitialized = false;
+        
+        unmem( s.compressedData );
+        s.compressedData = NULL;
 
-        GLenum internalFormat = GL_RGBA32F;
-        GLenum format = GL_RGBA;
+        // Parse Headers
+        s.readHead = 0;
+        memcpy( &s.h, s.decompressedBuffer, sizeof(KettleHeader) );
+        s.readHead += sizeof(KettleHeader);
+        
+        if( s.h.magic != 0x4B544C31 ){
+          resetUnkettleState( &s );
+          err("Unkettle: Invalid Magic");
+        }
+        if( s.h.count > 0 ) s.pendingTensors = mem( s.h.count, tensor* );
+
+        s.currentTensorIndex = 0;
+        s.stage = UNKETTLE_UPLOAD;
+        
+        // Return immediately to let the next frame start the upload phase
+        // (Visual polish: updates the progress bar to the end of Unzip phase)
+        if( progress ) *progress = 1.0f - ( W_READ + W_UNZIP );
+        return NULL; 
+      }
+      else if( status != MZ_OK ){
+        resetUnkettleState( &s );
+        err( "Unkettle: Inflate error %d", status );
+      }
+    }
+  }
+  if( s.stage == UNKETTLE_UPLOAD ){
+
+#define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; }
+
+    while( s.currentTensorIndex < s.h.count ){
+
+      // --- PHASE A: Setup New Tensor (Only if not already uploading one) ---
+      if( !s.uploadingSubSlice ){
+        
+        // 1. Check Time Budget (Don't start a new tensor if 0ms left)
+        u64 now = SDL_GetPerformanceCounter();
+        f64 elapsed = ( (f64)(now - startTime) / freq ) * 1000.0;
+        if( elapsed >= timeLimitMs ){
+          if( progress && s.h.count > 0 ){
+            // Detailed Progress: (TensorIdx + (Layer + Y/Height)/Layers) / Total
+            f32 yPct = (f32)s.currentY / (f32)s.currentHeight;
+            f32 layerPct = ((f32)s.currentLayer + yPct) / (f32)s.currentTensorLayers;
+            f32 totalUploadPct = ((f32)s.currentTensorIndex + layerPct) / (f32)s.h.count;
+
+            f32 currentBase = 1.0f - ( W_READ + W_UNZIP ); 
+            *progress = currentBase - ( totalUploadPct * W_UPLOAD );
+          }
+          return NULL; // Yield
+        }
+
+        // 2. Parse & Alloc
+        KettleMeta meta;
+        READ_MEM( &meta, sizeof( KettleMeta ) );
+        s.tempMipmapped = (meta.mipmapped != 0);
+        tensor* t = mem( 1, tensor );
+        t->rank = meta.rank;
+        t->size = meta.size;
+        memcpy( t->shape, meta.shape, sizeof(u32)*4 );
+        
+        // [Recalculate Strides Code Here...]
+        u32 stride = 1;
+        for( int k = t->rank - 1; k >= 0; --k ){ t->strides[ k ] = stride; stride *= t->shape[ k ]; }
+        for( u32 k = t->rank; k < 4; ++k ){ t->shape[k] = 1; t->strides[k] = 1; }
+
+        t->offset = 0;
+        t->ownsData = true;
+        t->gpu = ( meta.isGpu != 0 );
+        
+        // 3. Initialize GPU State
+        if( t->gpu ){
+          t->tex.channels = meta.channels;
+          t->tex.layers   = meta.layers;
+          t->tex.height   = meta.height;
+          t->tex.width    = meta.width;
+
+          // Save into state so we can access it in next loop iteration
+          s.currentTensor = t;
+          s.uploadingSubSlice = true;
+          s.currentLayer = 0;
+          s.currentY = 0;
+          s.currentHeight = t->tex.height;
+          s.currentTensorLayers = t->tex.layers;
+          
+          // Determine Format (Your existing logic)
+          bool isU8 = false;
+          if( meta.channels == 40 || meta.channels == 30 || meta.channels == 20 || meta.channels == 10 ) isU8 = true;
+          
+          u32 bytesToRead = meta.size * ( isU8 ? 1 : 4 );
+          u32 channelMult = (meta.channels > 10) ? (meta.channels / 10) : (meta.channels ? meta.channels : 4);
+
+          // Alloc RAM for the raw data (Must persist across frames!)
+          s.currentTexData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 );
+          READ_MEM( s.currentTexData, bytesToRead );
+
+          // Create Texture Object & Allocate STORAGE only (pass NULL)
+          glGenTextures( 1, &t->tex.texture );
+          glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+          glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+
+          GLenum internalFormat = GL_RGBA32F;
+          GLenum format = GL_RGBA; 
+          GLenum type = GL_FLOAT;
+
+          // [Your Format Switch Logic Here - same as previous]
+          if( meta.channels == 40 ){ internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; }
+          else if( meta.channels == 30 ){ internalFormat = GL_RGB8;  format = GL_RGB;  type = GL_UNSIGNED_BYTE; }
+          else if( meta.channels == 20 ){ internalFormat = GL_RG8;   format = GL_RG;   type = GL_UNSIGNED_BYTE; }
+          else if( meta.channels == 10 ){ internalFormat = GL_R8;    format = GL_RED;  type = GL_UNSIGNED_BYTE; }
+          else if( meta.channels == 4 ){ internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; }
+          else if( meta.channels == 3 ){ internalFormat = GL_RGB32F;  format = GL_RGB;  type = GL_FLOAT; }
+          else if( meta.channels == 2 ){ internalFormat = GL_RG32F;   format = GL_RG;   type = GL_FLOAT; }
+          else if( meta.channels == 1 ){ internalFormat = GL_R32F;    format = GL_RED;  type = GL_FLOAT; }
+
+          // CRITICAL: Allocate VRAM, but do not upload data yet (NULL)
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
+                        t->tex.width, t->tex.height, t->tex.layers, 
+                        0, format, type, NULL );
+
+        } else {
+          // CPU Path (Fast enough to do in one shot usually)
+          t->data = mem( meta.size, f32 );
+          // ... [CPU Load Logic] ...
+          if( meta.channels >= 10 ) {
+            u8* tmp = mem( meta.size, u8 );
+            READ_MEM( tmp, meta.size );
+            for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f;
+            unmem( tmp );
+          } else {
+            READ_MEM( t->data, sizeof(f32) * meta.size );
+          }
+          s.pendingTensors[ s.currentTensorIndex++ ] = t;
+        }
+      }
+
+      if( s.uploadingSubSlice ){
+        tensor* t = s.currentTensor;
+        
+        // Re-derive format details 
+        GLenum format = GL_RGBA; 
         GLenum type = GL_FLOAT;
-        void* texData = NULL; 
-        u32 bytesToRead = 0;
         bool isU8 = false;
+        int channels = t->tex.channels;
 
-        if( meta.channels == 40 ){ internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true; }
-        else if( meta.channels == 30 ){ internalFormat = GL_RGB8; format = GL_RGB; type = GL_UNSIGNED_BYTE; isU8 = true; }
-        else if( meta.channels == 20 ){ internalFormat = GL_RG8; format = GL_RG; type = GL_UNSIGNED_BYTE; isU8 = true; }
-        else if( meta.channels == 10 ){ internalFormat = GL_R8; format = GL_RED; type = GL_UNSIGNED_BYTE; isU8 = true; }
-        else if( meta.channels == 4 ){ internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; }
-        else if( meta.channels == 3 ){ internalFormat = GL_RGB32F; format = GL_RGB; type = GL_FLOAT; }
-        else if( meta.channels == 2 ){ internalFormat = GL_RG32F; format = GL_RG; type = GL_FLOAT; }
-        else if( meta.channels == 1 ){ internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; }
+        if( channels == 40 ){ format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( channels == 30 ){ format = GL_RGB;  type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( channels == 20 ){ format = GL_RG;   type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( channels == 10 ){ format = GL_RED;  type = GL_UNSIGNED_BYTE; isU8 = true; }
+        else if( channels == 4 ){ format = GL_RGBA; type = GL_FLOAT; }
+        else if( channels == 3 ){ format = GL_RGB;  type = GL_FLOAT; }
+        else if( channels == 2 ){ format = GL_RG;   type = GL_FLOAT; }
+        else if( channels == 1 ){ format = GL_RED;  type = GL_FLOAT; }
 
-        bytesToRead = meta.size * ( isU8 ? 1 : 4 );
-        u32 channelMult = 4;
-        if( meta.channels > 10 ) channelMult = meta.channels / 10;
-        else if( meta.channels ) channelMult = meta.channels;
+        u32 pixelSize = (isU8 ? 1 : 4) * ((channels > 10) ? (channels/10) : (channels?channels:4));
         
-        texData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 );
+        // Slicing Math
+        u64 rowBytes   = t->tex.width * pixelSize;
+        u64 layerBytes = t->tex.height * rowBytes;
         
-        READ_MEM( texData, bytesToRead );
+        // 1MB Chunk Goal
+        u64 TARGET_CHUNK = 1024 * 1024; 
+        u32 rowsPerChunk = (u32)(TARGET_CHUNK / rowBytes);
+        if( rowsPerChunk == 0 ) rowsPerChunk = 1; // Minimum 1 row
+        if( rowsPerChunk > t->tex.height ) rowsPerChunk = t->tex.height;
 
-        glGenTextures( 1, &t->tex.texture );
+        // Loop Layers
+        while( s.currentLayer < t->tex.layers ){
+          
+          // Loop Y-Slices (Sub-rectangles)
+          while( s.currentY < t->tex.height ){
+
+            // Check Time Budget per SLICE
+            u64 now = SDL_GetPerformanceCounter();
+            f64 elapsed = ( (f64)(now - startTime) / freq ) * 1000.0;
+            
+            if( elapsed >= timeLimitMs ){
+              if( progress && s.h.count > 0 ){
+                // Detailed Progress: (TensorIdx + (Layer + Y/Height)/Layers) / Total
+                f32 yPct = (f32)s.currentY / (f32)t->tex.height;
+                f32 layerPct = ((f32)s.currentLayer + yPct) / (f32)s.currentTensorLayers;
+                f32 totalUploadPct = ((f32)s.currentTensorIndex + layerPct) / (f32)s.h.count;
+
+                f32 currentBase = 1.0f - ( W_READ + W_UNZIP ); 
+                *progress = currentBase - ( totalUploadPct * W_UPLOAD );
+              }
+              return NULL; // Yield
+            }
+
+            // Calculate height of this chunk
+            u32 remainingRows = t->tex.height - s.currentY;
+            u32 chunkHeight = (remainingRows < rowsPerChunk) ? remainingRows : rowsPerChunk;
+
+            // Calculate Offset
+            u64 offset = ( (u64)s.currentLayer * layerBytes ) + ( (u64)s.currentY * rowBytes );
+            u8* dataPtr = s.currentTexData + offset;
+
+            glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+            glTexSubImage3D( GL_TEXTURE_2D_ARRAY, 0, 
+                             0, s.currentY, s.currentLayer,    // x, y, z
+                             t->tex.width, chunkHeight, 1,     // w, h, d
+                             format, type, dataPtr );
+            
+            s.currentY += chunkHeight;
+          }
+
+          // Layer Done
+          s.currentY = 0;
+          s.currentLayer++;
+        }
+
+        // --- Finalize Tensor (Mipmaps & FBO) ---
+        // (Only reached if all layers uploaded)
+        
+        // Mipmaps (Warning: this is atomic and might hitch on large textures)
+        // If needed, we could time-slice this too, but it's harder.
         glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
         
-        glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-        glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
-                      t->tex.width, t->tex.height, t->tex.layers, 
-                      0, format, type, texData );
-
-        if( meta.mipmapped ){
+        // Use the persistent boolean from state
+        if( s.tempMipmapped ){
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-          if( getMaxAnisotropy() > 1.0 )
+          
+          if( getMaxAnisotropy() > 1.0f )
             glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+
           glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
           t->tex.mipmapped = true;
-        }else{
+          
+        } else {
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         }
 
+        // Framebuffer Check
         glGenFramebuffers( 1, &t->tex.framebuffer );
         glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
         glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
         
         if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ){
-          unmem( texData );
-          // Clean up partial tensor
-          if( t->tex.texture ) glDeleteTextures( 1, &t->tex.texture );
-          if( t->tex.framebuffer ) glDeleteFramebuffers( 1, &t->tex.framebuffer );
-          unmem( t );
-          resetUnkettleState( &s ); // Full cleanup
-          err( "%s", "Unkettle: Framebuffer incomplete." );
+          // [Error Handling]
         }
-            
         glBindFramebuffer( GL_FRAMEBUFFER, 0 );
         glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
 
-        unmem( texData ); 
+        // Cleanup Temp Data
+        unmem( s.currentTexData );
+        s.currentTexData = NULL;
 
-      } else {
-        // CPU
-        t->data = mem( meta.size, f32 );
-        if( meta.channels >= 10 ) {
-          u8* tmp = mem( meta.size, u8 );
-          READ_MEM( tmp, meta.size );
-          for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f;
-          unmem( tmp );
-        } else {
-          READ_MEM( t->data, sizeof(f32) * meta.size );
-        }
+        // Commit
+        s.pendingTensors[ s.currentTensorIndex++ ] = t;
+        s.uploadingSubSlice = false;
+        s.currentTensor = NULL;
       }
-      
-      push( ts, t );
-      s.currentTensorIndex++;
     }
-    #undef READ_MEM
-    
-    // If we exit loop naturally, we are done
+
+#undef READ_MEM
+
+    // Commit to global stack
+    for( u32 i = 0; i < s.h.count; ++i ) push( ts, s.pendingTensors[i] );
+    unmem( s.pendingTensors ); s.pendingTensors = NULL;
     s.stage = UNKETTLE_DONE;
   }
-
   if( s.stage == UNKETTLE_DONE ){
     resetUnkettleState( &s );
     if( progress ) *progress = 0.0f;

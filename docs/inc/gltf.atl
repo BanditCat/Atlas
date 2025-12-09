@@ -37,7 +37,7 @@ set'lightRotation' 16;
 
 std.nav3d;
 [0.5 1.0 2.0];std.origin= 3;
-[150 400];std.3dnavParam=;
+[171 134];std.3dnavParam=;
 
 6;windowSize;[2 2];*;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
@@ -48,7 +48,8 @@ loadedKettle;if'kettled';
 pop;
 progress;unext;ifn'loop4';
 unkettle;e;progress= 1;
-windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > progress ? vec4( 1.0 ) : vec4( 0.0 );' 0 1 40 0;
+// load bar
+windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 1.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
 continue;
 l'loop4';
 1;loadedKettle=;
