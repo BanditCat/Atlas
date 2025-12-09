@@ -1801,6 +1801,7 @@ typedef struct{
   // Persistence for reentrancy
   KettleHeader h;
   u32 currentTensorIndex;
+  tensor** pendingTensors;
 } unkettleState;
 
 void resetUnkettleState( unkettleState* s ){
