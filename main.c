@@ -85,6 +85,7 @@ u32 EVENT_PASTE = 0;  // Will be initialized in main
 
 #ifdef __EMSCRIPTEN__
 
+
 // 1. C Callback: JS calls this when the promise resolves
 EMSCRIPTEN_KEEPALIVE
 void on_paste_received( char* text ){
