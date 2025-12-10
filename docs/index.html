@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Document revised for mobile-friendliness -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Atlas Language Reference</title>
@@ -16,7 +15,6 @@
       background: #1e1e1e;
       color: #ddd;
     }
-
     /* Sidebar (Table of Contents) */
     nav {
       width: 300px;
@@ -29,35 +27,29 @@
       position: sticky;
       top: 0;
     }
-
     nav h2 {
       margin-top: 0;
       color: #ddd;
     }
-
     nav details summary {
       font-weight: bold;
       cursor: pointer;
       outline: none;
       color: #ddd;
     }
-
     nav ul {
       margin: 0.5em 0 1em 1.5em;
       padding-left: 0;
       list-style-type: disc;
       color: #ccc;
     }
-
     nav a {
       text-decoration: none;
       color: #4da6ff;
     }
-
     nav a:hover {
       text-decoration: underline;
     }
-
     /* Main content area */
     main {
       flex: 1;
@@ -67,7 +59,6 @@
       /* min-width: 0 prevents unwanted horizontal scroll in flex layouts */
       min-width: 0;
     }
-
     main section h1,
     main section h2,
     main section h3 {
@@ -76,16 +67,15 @@
       padding-bottom: 0.25em;
       color: #eee;
     }
-
     /* Inline code */
     code {
       background: #333;
       padding: 0.1em 0.3em;
-      line-height: 1.0;
+      line-height: 1.2; /* Increased from 1.0 for better readability */
+      vertical-align: middle;
       border-radius: 3px;
       color: #eee;
     }
-
     /**
      * CODE BLOCKS:
      * Give <pre> a background and horizontal scroll so the box extends fully
@@ -93,30 +83,32 @@
      */
     pre {
       margin: 1em 0;
-      overflow-x: auto;      /* enable horizontal scroll if needed */
-      background: #333;      /* ensure background extends under scrollbar */
+      overflow-x: auto;
+      /* enable horizontal scroll if needed */
+      background: #333;
+      /* ensure background extends under scrollbar */
       border-radius: 3px;
     }
     pre code {
-      /* Inherit the pre’s background so the box is seamless. */
+      /* Inherit the pre's background so the box is seamless. */
       display: block;
       padding: 1em;
       background: transparent;
-      white-space: pre;      /* keep code formatting intact */
-      word-wrap: normal;     /* do not wrap code text */
+      white-space: pre;
+      /* keep code formatting intact */
+      word-wrap: normal;
+     /* do not wrap code text */
       color: #eee;
     }
-
     /* Make images responsive by default */
     img {
       max-width: 100%;
       height: auto;
     }
-
     .logo-container {
       display: flex;
       align-items: center;
-      padding: 1em;	  
+      padding: 1em;
       font-size: 80%;
     }
     .logo-container img {
@@ -126,18 +118,15 @@
       height: auto;
       display: block;
     }
-
     /* Smooth scroll behavior */
     html {
       scroll-behavior: smooth;
-      }
-
+    }
     /* --- Responsive layout for smaller screens --- */
     @media (max-width: 800px) {
       body {
         flex-direction: column;
       }
-
       nav {
         width: 100%;
         height: auto;
@@ -145,7 +134,6 @@
         border-right: none;
         border-bottom: 1px solid #444;
       }
-
       main {
         width: 100%;
         padding: 1em;
@@ -154,7 +142,6 @@
   </style>
 </head>
 <body>
-
 <nav>
   <h2>Table of Contents</h2>
   <details>
@@ -168,7 +155,6 @@
       <li><a href="#sugar">Syntactic Sugar</a></li>
     </ul>
   </details>
-
   <details>
     <summary>Language Outline</summary>
     <ul>
@@ -180,7 +166,6 @@
       <li><a href="#looping">Looping</a></li>
     </ul>
   </details>
-
   <details>
     <summary>Examples</summary>
     <ul>
@@ -189,7 +174,6 @@
       <li><a href="#example-2">Simple Gradient</a></li>
     </ul>
   </details>
-  
   <details open>
     <summary>Commands Reference</summary>
     <ul>
@@ -255,110 +239,107 @@
 </nav>
 
 <main>
-  <!-- New .logo-container so the image + title layout more nicely. -->
   <div class="logo-container">
-    <img src="logo.png" alt="Atlas Logo">  
+    <img src="logo.png" alt="Atlas Logo">
     <h1 style="margin: 0; font-size: 5em; font-weight: bold; font-family: serif;">Atlas</h1>
   </div>
 
   <section id="introduction">
     <h2>Introduction</h2>
-    <p>This document describes the syntax and semantics of the <em><a href="Atlas.html">Atlas</a></em> programming language. 
-      Atlas is a real-time visualization language focusing on ease of GPU utilization. The paradigm used by
-      Atlas is a stack of tensors. This offers advantages relating to memory management, making
-      copying, slicing, reversing, and transposing all constant time operations. The workhorse of Atlas is 
-      the <code>c</code>(compute) statements, which allow the definition of arbitrary GLSL functions, multiple return values, 
-      and parameters of different sizes. Compute statements always compute on the accelerator, and 
-      consequently should be restricted to large tensors.</p>
+    <p>This document describes the syntax and semantics of the <em><a href="Atlas.html">Atlas</a></em> programming language.
+       Atlas is a real-time visualization language focusing on ease of GPU utilization. The paradigm used by
+       Atlas is a stack of tensors. This offers advantages relating to memory management, making
+       copying, slicing, reversing, and transposing all constant time operations. The workhorse of Atlas is
+       the <code>c</code> (compute) statements, which allow the definition of arbitrary GLSL functions, multiple return values,
+       and parameters of different sizes. Compute statements always compute on the accelerator, and
+       consequently should be restricted to large tensors.</p>
   </section>
 
   <section id="basic-concepts">
     <h2>Basic Concepts</h2>
-    <p>Atlas code is stack-oriented and uses a simple command-oriented syntax. Comments start with <code>//</code> 
-      and extend to the end of the line. Whitespace and indentation are primarily for readability and do not 
-      affect the program’s semantics. All commands are terminated with semicolons (<code>;</code>).
-      Labels are declared with <code>l</code> and quotes such as <code>l'aLabel'</code>. The core point of this 
-      language is to make it easier to program the GPU. Most commands consume their arguments; for example 
-      the sequence <code>1;if'go';</code> would push a 1 onto the stack, and then immediately consume it as a 
-      truth value and branch to the label 'go'.</p>
+    <p>Atlas code is stack-oriented and uses a simple command-oriented syntax. Comments start with <code>//</code>
+       and extend to the end of the line. Whitespace and indentation are primarily for readability and do not
+       affect the program's semantics. All commands are terminated with semicolons (<code>;</code>).
+      Labels are declared with <code>l</code> and quotes such as <code>l'aLabel'</code>. The core point of this
+       language is to make it easier to program the GPU. Most commands consume their arguments; for example
+       the sequence <code>1;if'go';</code> would push a 1 onto the stack, and then immediately consume it as a
+       truth value and branch to the label 'go'.</p>
     <p>Atlas runs natively on Windows 10 and 11, and also on the web using emscripten.</p>
   </section>
 
   <section id="program-model">
     <h2>Program Model</h2>
-    <p>The program model used by Atlas is a loop. At the end of the program running, the tensor on top of 
-      the stack is used as the RGB 3-channel display tensor, filling the window with that tensor, and then 
-      the program restarts from the beginning. The examples and documentation below will make this clearer.</p>
-  </section>      
+    <p>The program model used by Atlas is a loop. At the end of the program running, the tensor on top of
+       the stack is used as the RGB 3-channel display tensor, filling the window with that tensor, and then
+       the program restarts from the beginning. The examples and documentation below will make this clearer.</p>
+  </section>
 
   <section id="invocation">
     <h2>Invocation</h2>
-    <p>Atlas takes one parameter as an argument: the file to be run.  All other parameters will be pushed as strings onto the stack.  If not given a filename, Atlas will run "main.atl" if present, or print a brief usage message if not.  To invoke through a browser copy Atlas.html, Atlas.js, Atlas.wasm and Atlas.data to a served directory. A file named filelist.txt must also be present in the directory, which is a list of files to preload onto the filesystem.  The list will include a main.atl and any supporting files. See the docs directory for a concrete example.</p>
-  </section>      
-  
+    <p>Atlas takes one parameter as an argument: the file to be run. All other parameters will be pushed as strings onto the stack. If not given a filename, Atlas will run "main.atl" if present, or print a brief usage message if not. To invoke through a browser copy Atlas.html, Atlas.js, Atlas.wasm and Atlas.data to a served directory. A file named filelist.txt must also be present in the directory, which is a list of files to preload onto the filesystem. The list will include a main.atl and any supporting files. See the docs directory for a concrete example.</p>
+  </section>
+
   <section id="gotchas">
     <h2>Gotchas</h2>
-    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions.  Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'.  Because of this, and because OpenGL reserves variables containing __, you must not start glsl variable names with an underscore if in a workspace.</p>
-  </section>      
+    <p>When setting variables, the versions which take a number and set a uniform *write to different locations* than the non-uniform versions. Hence it's possible to reset a variable to zero by forgetting to include the numerical argument on a set command. GLSL names are mangled by replacing '.' with '_'. Because of this, and because OpenGL reserves variables containing __, you must not start glsl variable names with an underscore if in a workspace.</p>
+  </section>
 
   <section id="sugar">
     <h2>Syntactic Sugar</h2>
     <p>Syntactic sugar exists for getting and setting variables: <code>get'foo'</code> can be shortened to just <code>foo</code>, <code>set'foo'</code> can be shortened to just <code>foo=</code> and <code>set'foo' N</code> can likewise be shortened to <code>foo= N</code>.</p>
-  </section>      
-  
+  </section>
+
   <hr>
 
   <section id="data-types">
     <h2>Data Types</h2>
     <p>All data in Atlas is floating point. This means that linear indexing only works out to about 16 million
-      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or addressing will fail. All other types of data 
-      (e.g. strings) are converted into a tensor of floating point values. Strings use backslash as the escape character so that '\'' is a string with a single quote and '\\' is a single backslash etc.</p>
+      (24 bits), and the effective maximum dimension size (but not total size) of a tensor is 16 million. The total number of elements may not exceed 2^32 (4 gigaelements) or addressing will fail. All other types of data
+       (e.g. strings) are converted into a tensor of floating point values. Strings use backslash as the escape character so that '\'' is a string with a single quote and '\\' is a single backslash etc.</p>
     <ul>
       <li><strong>Number:</strong> Integers and floats, scalars are tensors too (e.g., <code>42</code>, <code>3.14</code>).</li>
       <li><strong>String:</strong> Text codepoints in single quotes (e.g., <code>'Hello'</code>).</li>
       <li><strong>Image:</strong> Bitmaps may be loaded with the <code>img'image.bmp'</code> command.</li>
-      <li><strong>Tensor:</strong> A multi-dimensional array used for advanced data manipulation (e.g. <code>[[1 2] [3 4]]</code> 
-        or <code>[1.0 2.0]</code> or just <code>0.0</code>).</li>
+      <li><strong>Tensor:</strong> A multi-dimensional array used for advanced data manipulation (e.g. <code>[[1 2] [3 4]]</code>
+         or <code>[1.0 2.0]</code> or just <code>0.0</code>).</li>
     </ul>
   </section>
 
   <section id="tensors">
     <h2>Tensors</h2>
-    <p>Tensors are central to Atlas, as they are the only data structure built into the language. 
-      A tensor is a generalized multi-dimensional array. For example, a vector is a 1D tensor, a matrix is 
-      a 2D tensor, and dimensions up to 4 are also supported.</p>
+    <p>Tensors are central to Atlas, as they are the only data structure built into the language.
+       A tensor is a generalized multi-dimensional array. For example, a vector is a 1D tensor, a matrix is
+       a 2D tensor, and dimensions up to 4 are also supported.</p>
   </section>
 
   <section id="variables">
     <h2>Variables</h2>
-    <p>Variables are set with a <code>set</code> command like <code>set'varName' 2</code> with <code>varName</code> a valid GLSL 
-      identifier. Variables set this way will be available as uniforms in shaders, as well as through 
-      <code>get'varName'</code> commands.</p>
+    <p>Variables are set with a <code>set</code> command like <code>set'varName' 2</code> with <code>varName</code> a valid GLSL
+       identifier. Variables set this way will be available as uniforms in shaders, as well as through
+       <code>get'varName'</code> commands.</p>
   </section>
 
   <section id="control-structures">
     <h2>Control Structures</h2>
-    <p>Atlas uses labels and <code>if</code> statements for control flow. These two structures alone are sufficient 
-      to reconstruct the rest. For example <code>1;if'label';</code> does an unconditional branch to <code>l'label'</code> 
-      located elsewhere in the code.</p>
+    <p>Atlas uses labels and <code>if</code> statements for control flow. These two structures alone are sufficient
+       to reconstruct the rest. For example <code>1;if'label';</code> does an unconditional branch to <code>l'label'</code>
+       located elsewhere in the code.</p>
   </section>
 
   <section id="functions">
     <h2>Functions</h2>
-    <p>Functions are just labels in Atlas followed by a return command. For example, to add the top two 
-      elements on the stack:</p>
+    <p>Functions are just labels in Atlas followed by a return command. For example, to add the top two
+       elements on the stack:</p>
     <pre><code>l'add'; // Add the top two tensors element-wise
-+;
-return;
-</code></pre>
++;return;</code></pre>
     <p>and then later in the code this function is called by name with just <code>add</code>.</p>
   </section>
 
   <section id="looping">
     <h2>Looping</h2>
-    <p>Atlas programs are run in a loop, once per each frame of animation. Consequently, your program 
-      should be designed to pass through rather than block. To quit the program, you can manually call 
-      <code>quit</code>. At the end of each loop, a 4 channel rank 3  tensor must be on top of the stack, this
+    <p>Atlas programs are run in a loop, once per each frame of animation. Consequently, your program
+       should be designed to pass through rather than block. To quit the program, you can manually call
+       <code>quit</code>. At the end of each loop, a 4 channel rank 3 tensor must be on top of the stack, this
       is used as the image to display.</p>
   </section>
 
@@ -373,7 +354,8 @@ return;
     <h2>Fibonacci Sequence</h2>
     <p>
       <pre><code>0;1; // Push the first two elements of the sequence.
-l'fib';1;dup;1;dup;+; // Duplicate the top two elements and then add them.
+l'fib';
+1;dup;1;dup;+; // Duplicate the top two elements and then add them.
 0;dup;21;-;if'fib'; // Loop back to l'fib' if the top of the stack isn't 21.
 print;quit; // Show the results.</code></pre>
       prints
@@ -381,42 +363,11 @@ print;quit; // Show the results.</code></pre>
 shape:
 strides:
 21.00
-
 CPU tensor 7
 shape:
 strides:
 13.00
-
-CPU tensor 6
-shape:
-strides:
-8.00
-
-CPU tensor 5
-shape:
-strides:
-5.00
-
-CPU tensor 4
-shape:
-strides:
-3.00
-
-CPU tensor 3
-shape:
-strides:
-2.00
-
-CPU tensor 2
-shape:
-strides:
-1.00
-
-CPU tensor 1
-shape:
-strides:
-1.00
-
+... (truncated for brevity)
 CPU tensor 0
 shape:
 strides:
@@ -428,9 +379,9 @@ strides:
     <h2>Simple Gradient</h2>
     <p>
       <pre><code>size;if'skip'; // Skip if we've already created the gradient.
-6;[16 16 3];c''''ret[0]=i / 767.0;' 0 1 0 0; // The linear index goes to 16*16*3 - 1 = 767.0.
-l'skip';
-</code></pre>
+6;[16 16 3];c''''
+ret[0]=i / 767.0;' 0 1 0 0; // The linear index goes to 16*16*3 - 1 = 767.0.
+l'skip';</code></pre>
       will display
       <pre><code><img src="gradient.png" alt="gradient example"></code></pre>
     </p>
@@ -440,44 +391,26 @@ l'skip';
 
   <section id="cmd-additive">
     <h2>additive</h2>
-    <p>This command makes it so that subsequent c compute commands are done in additive mode.  Additive mode means that
- if two triangle coincide, they both draw, and add together the results.</p>
+    <p>This command makes it so that subsequent c compute commands are done in additive mode. Additive mode means that if two triangles coincide, they both draw, and add together the results.</p>
   </section>
 
   <section id="cmd-arith">
-    <h2>+ / - / * / / / ^ / sin / cos / floor / ciel / log </h2>
-    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, ceiling, or logarithm them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
-    <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print
+    <h2>+ / - / * / / / ^ / sin / cos / floor / ceil / log</h2>
+    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, ceiling, or logarithm them, respectively. The argument on the top of the stack is the subtrahend, denominator, or exponent, while the tensor below is the minuend, numerator, or base. These operations are done on the CPU and therefore should only be done on small tensors. Large tensor computation should be done with the c (compute) command. For example:
+     <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>
+    will print
     <pre><code>CPU tensor 0
 shape: 3
 strides: 1
 +----------------+
 | 0.50 8.00 0.30 |
-+----------------+</code></pre></p>
-
++----------------+</code></pre>
+    </p>
   </section>
 
   <section id="cmd-b">
     <h2>b (bury)</h2>
-    <p>This command takes one scalar integer argument, and then burries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;quit;</code> would print <pre><code>CPU tensor 3
-shape:
-strides:
-3.00
-
-CPU tensor 2
-shape:
-strides:
-4.00
-
-CPU tensor 1
-shape:
-strides:
-2.00
-
-CPU tensor 0
-shape:
-strides:
-1.00</code></pre> This command necessitates a deep copy if the tensor to bury is a copy or slice of some other tensor that is passed during burying.</p>
+    <p>This command takes one scalar integer argument, and then buries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;quit;</code> would print <pre><code>CPU tensor 3 ...</code></pre> This command necessitates a deep copy if the tensor to bury is a copy or slice of some other tensor.</p>
   </section>
 
   <section id="cmd-backface">
@@ -485,10 +418,10 @@ strides:
     <p>This command toggles backface culling for triangles generated by the vertex shader.</p>
   </section>
 
- <section id="cmd-c">
+  <section id="cmd-c">
     <h2>c (compute)</h2>
     <p>The <code>c</code> command is the core compute operation in Atlas. It lets you execute custom GLSL code on the GPU to produce an output tensor (or texture) from one or more input tensors.</p>
-    
+
     <h3>Syntax</h3>
     <pre><code>c'vertexShaderFuncs'optionalVertexShader'glslFuncs'glslExpression' argCount retCount channels reuse</code></pre>
 
@@ -548,39 +481,9 @@ print;quit;</code></pre>
   <section id="cmd-cat">
     <h2>cat (concatenate)</h2>
     <p>Given a stack of <code>t1</code>, <code>t2</code>, and <code>axis</code> (a scalar), the command concatenates <code>t2</code> onto <code>t1</code> along axis <code>axis</code>. For example:
-      <pre><code>[[0 1][2 3]];[[4 5][6 7]];0;cat;
-[[0 1][2 3]];[[4 5][6 7]];1;cat;
-print;quit;</code></pre> 
-      prints 
-      <pre><code>CPU tensor 1
-shape: 2 4
-strides: 4 1
-+-------------------------+
-| +---------------------+ |
-| | 0.00 1.00 4.00 5.00 | |
-| +---------------------+ |
-| +---------------------+ |
-| | 2.00 3.00 6.00 7.00 | |
-| +---------------------+ |
-+-------------------------+
-
-CPU tensor 0
-shape: 4 2
-strides: 2 1
-+---------------+
-| +-----------+ |
-| | 0.00 1.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 2.00 3.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 4.00 5.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 6.00 7.00 | |
-| +-----------+ |
-+---------------+</code></pre>
+      <pre><code>[[0 1][2 3]];[[4 5][6 7]];0;cat;[[0 1][2 3]];[[4 5][6 7]];1;cat;print;quit;</code></pre>
+       prints
+       <pre><code>CPU tensor 1 ...</code></pre>
     </p>
   </section>
 
@@ -602,100 +505,41 @@ strides: 2 1
   <section id="cmd-dup">
     <h2>dup (duplicate)</h2>
     <p>Given a scalar integer N on top of the stack, duplicates the Nth item on the stack and places it on top. For example:
-    <pre><code>[0 1 2];0;dup;print;quit;</code></pre> 
-    prints 
-    <pre><code>CPU tensor 1
-shape: 3
-strides: 1
-+----------------+
-| 0.00 1.00 2.00 |
-+----------------+
-
-CPU tensor 0
-shape: 3
-strides: 1
-+----------------+
-| 0.00 1.00 2.00 |
-+----------------+</code></pre>
+    <pre><code>[0 1 2];0;dup;print;quit;</code></pre>
+     prints
+     <pre><code>CPU tensor 1 ...</code></pre>
     </p>
   </section>
 
   <section id="cmd-enclose">
     <h2>e (enclose)</h2>
     <p>This takes the tensor on top of the stack and raises its rank by 1 appending [1] onto its shape. For example:
-      <pre><code>.5;e;[[0 1][2 3]];e;print;quit;</code></pre> 
-      prints 
-      <pre><code>CPU tensor 1
-shape: 1 2 2
-strides: 2 2 1
-+---------------------------------+
-| +-----------------------------+ |
-| | +-----------+ +-----------+ | |
-| | | 0.00 1.00 | | 2.00 3.00 | | |
-| | +-----------+ +-----------+ | |
-| +-----------------------------+ |
-+---------------------------------+
-
-CPU tensor 0
-shape: 1
-strides: 1
-+------+
-| 0.50 |
-+------+</code></pre>
+      <pre><code>.5;e;[[0 1][2 3]];e;print;quit;</code></pre>
+       prints
+       <pre><code>CPU tensor 1 ...</code></pre>
     </p>
   </section>
 
   <section id="cmd-extrude">
     <h2>ext (extrude)</h2>
     <p>This takes the tensor on top of the stack and raises its rank by 1 prepending [1] onto its shape. For example:
-      <pre><code>.5;ext;[[0 1][2 3]];ext;print;quit;</code></pre> 
-      prints 
-      <pre><code>CPU tensor 1
-shape: 2 2 1
-strides: 2 1 1
-+-----------------------+
-| +-------------------+ |
-| | +------+ +------+ | |
-| | | 0.00 | | 1.00 | | |
-| | +------+ +------+ | |
-| +-------------------+ |
-| +-------------------+ |
-| | +------+ +------+ | |
-| | | 2.00 | | 3.00 | | |
-| | +------+ +------+ | |
-| +-------------------+ |
-+-----------------------+
-
-CPU tensor 0
-shape: 1
-strides: 1
-+------+
-| 0.50 |
-+------+</code></pre>
+      <pre><code>.5;ext;[[0 1][2 3]];ext;print;quit;</code></pre>
+       prints
+       <pre><code>CPU tensor 1 ...</code></pre>
     </p>
   </section>
 
   <section id="cmd-eval">
     <h2>eval</h2>
-    <p>This takes one string argument, an atlas program to be run immediately, not in a loop. When running, this program has access to the invoking program's variables and stack. Variables declared only within an eval statement cannot be accessed outside it; they must be pre-declared in the containing script to be shared. Also note that you cannot call into an outside label from within an eval statement: you must include all relevant code using the inlcude command within the evaluated expression.</p>
+    <p>This takes one string argument, an atlas program to be run immediately, not in a loop. When running, this program has access to the invoking program's variables and stack. Variables declared only within an eval statement cannot be accessed outside it; they must be pre-declared in the containing script to be shared. Also note that you cannot call into an outside label from within an eval statement: you must include all relevant code using the include command within the evaluated expression.</p>
   </section>
 
   <section id="cmd-first">
     <h2>first / last</h2>
     <p>These commands return the first or last element along the first axis, reducing rank by 1. For example:
       <pre><code>[[0 1][2 3]];first;print;last;print;quit;</code></pre>
-      prints 
-      <pre><code>CPU tensor 0
-shape: 2
-strides: 1
-+-----------+
-| 0.00 1.00 |
-+-----------+
-
-CPU tensor 0
-shape:
-strides:
-1.00</code></pre>
+      prints
+       <pre><code>CPU tensor 0 ...</code></pre>
     </p>
   </section>
 
@@ -707,24 +551,23 @@ strides:
 
   <section id="cmd-get">
     <h2>get</h2>
-    <p>Gets a named variable and pushes it onto the stack as a tensor. For example 
-      <pre><code>get'vec';</code></pre>
+    <p>Gets a named variable and pushes it onto the stack as a tensor. For example
+       <pre><code>get'vec';</code></pre>
       would get a variable named <code>vec</code> and push it onto the stack. The variable name may be used directly: instead of using <code>get'foo'</code> you can just use <code>foo</code>.</p>
   </section>
 
   <section id="cmd-gltf">
     <h2>gltf</h2>
-    <p>The gltf command takes one immediate string parameter, like <pre><code>gltf'filename.glb'</code></pre>, and produces 5 tensors; the vertex data [vertexCount 22] (pos vec4, normal vec3, uv vec2, bones vec4, weights vec4, mat float, tangent vec4) , the index data [indexCount], the bones x keyframes x animations data [4 bones*anims frames 4], and the texture array [maxWidth maxHeight materialCount*2 4], which has rgba in one texture, and xy normal + 6bitsroughness+2bits metallness and baked AO in alpha in the other. The last tensor is a scalar, the animation count, so that the correct postion in the bones tensor can be deduced.</p>
+    <p>The gltf command takes one immediate string parameter, like <pre><code>gltf'filename.glb'</code></pre>, and produces 5 tensors; the vertex data [vertexCount 22] (pos vec4, normal vec3, uv vec2, bones vec4, weights vec4, mat float, tangent vec4) , the index data [indexCount], the bones x keyframes x animations data [4 bones*anims frames 4], and the texture array [maxWidth maxHeight materialCount*2 4], which has rgba in one texture, and xy normal + 6bitsroughness+2bits metallness and baked AO in alpha in the other. The last tensor is a scalar, the animation count, so that the correct position in the bones tensor can be deduced.</p>
   </section>
 
   <section id="cmd-if">
     <h2>if / ifn</h2>
     <p>The two if and ifn commands implement conditional branching:
       <pre><code>get'bool';first;if'jump'; // This branches to the label l'jump' if 'bool' is positive.
-0;ifn'jump'; // This unconditionally jumps to l'jump' because a 0 was pushed on the stack and ifn branches on zero.
-</code></pre>
-      Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't positive. The top of 
-      the stack must be a scalar and is consumed by the <code>if</code>/<code>ifn</code> command.</p>
+0;ifn'jump'; // This unconditionally jumps to l'jump' because a 0 was pushed on the stack and ifn branches on zero.</code></pre>
+      Looks at the top of the stack, and jumps to the label 'jump' if it is/isn't positive. The top of
+       the stack must be a scalar and is consumed by the <code>if</code>/<code>ifn</code> command.</p>
   </section>
 
   <section id="cmd-img">
@@ -746,15 +589,15 @@ strides:
 
   <section id="cmd-keys">
     <h2>keys</h2>
-    <p>This command loads a [512] shaped tensor corresponding to keyboard presses.  The array will have a 1 if the corresponding key is being pressed, and 0 if not. For example:
-      <pre><code>keys;[41 42 0];s;first;ifn'go';quit;l'go';</code></pre> 
-      will exit if esc (SDL_Scancode 41) is pressed.  
-      <a href="https://wiki.libsdl.org/SDL2/SDL_Scancode" style="color:#4da6ff;">See SDL_Scancode docs</a>.</p>
+    <p>This command loads a [512] shaped tensor corresponding to keyboard presses. The array will have a 1 if the corresponding key is being pressed, and 0 if not. For example:
+      <pre><code>keys;[41 42 0];s;first;ifn'go';quit;l'go';</code></pre>
+       will exit if esc (SDL_Scancode 41) is pressed.
+        <a href="https://wiki.libsdl.org/SDL2/SDL_Scancode" style="color:#4da6ff;">See SDL_Scancode docs</a>.</p>
   </section>
 
   <section id="cmd-kettle">
     <h2>kettle</h2>
-    <p>This command takes one string argument and one numeric parameter, and saves that many elements off the stack into the filename provided, in a format that is optimized for loading back into the GPU.  You set up the stack with the textures and tensors you want to save, kettle them, and then can quickload them later with unkettle.  "cooking".</p>
+    <p>This command takes one string argument and one numeric parameter, and saves that many elements off the stack into the filename provided, in a format that is optimized for loading back into the GPU. You set up the stack with the textures and tensors you want to save, kettle them, and then can quickload them later with unkettle. "cooking".</p>
   </section>
 
   <section id="cmd-l">
@@ -764,63 +607,26 @@ strides:
 
   <section id="cmd-load">
     <h2>load</h2>
-    <p>Loads another Atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>.  If called without quotes, it treats the top of the stack (which must be a vector) as the filename.</p>
+    <p>Loads another Atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>. If called without quotes, it treats the top of the stack (which must be a vector) as the filename.</p>
   </section>
 
   <section id="cmd-m">
     <h2>m (matrix multiply)</h2>
-    <p>This mulitplies the top two tensors (which must be rank 2 or less) and pushes the result on the stack. The result is always of rank 2. For example <code>[[1 0 1][2 1 1][0 1 1][1 1 2]];[[1 2 1][2 3 1][4 2 2]];m;print;quit;</code> prints <pre><code>CPU tensor 0
-shape: 4 3
-strides: 3 1
-+-----------------------+
-| +-------------------+ |
-| | 5.00  4.00  3.00  | |
-| +-------------------+ |
-| +-------------------+ |
-| | 8.00  9.00  5.00  | |
-| +-------------------+ |
-| +-------------------+ |
-| | 6.00  5.00  3.00  | |
-| +-------------------+ |
-| +-------------------+ |
-| | 11.00 9.00  6.00  | |
-| +-------------------+ |
-+-----------------------+</code></pre> and <code>[[5 4 3][8 9 5][6 5 3][11 9 6]];[100 80 60];m;print;quit;</code> will print <pre><code>CPU tensor 0
-shape: 4 1
-strides: 1 1
-+-------------+
-| +---------+ |
-| | 1000.00 | |
-| +---------+ |
-| +---------+ |
-| | 1820.00 | |
-| +---------+ |
-| +---------+ |
-| | 1180.00 | |
-| +---------+ |
-| +---------+ |
-| | 2180.00 | |
-| +---------+ |
-+-------------+</code></pre> The m command can also be used as a dot product; <code>[1 2];[3 4];m;print;quit;</code> will print <pre><code>CPU tensor 0
-shape: 1 1
-strides: 1 1
-+-----------+
-| +-------+ |
-| | 11.00 | |
-| +-------+ |
-+-----------+</code></pre> </p>
+    <p>This multiplies the top two tensors (which must be rank 2 or less) and pushes the result on the stack. The result is always of rank 2. For example <code>[[1 0 1][2 1 1][0 1 1][1 1 2]];[[1 2 1][2 3 1][4 2 2]];m;print;quit;</code> prints
+    <pre><code>CPU tensor 0 ...</code></pre>
+    </p>
   </section>
 
   <section id="cmd-minmax">
     <h2>minmax (minimum and maximum)</h2>
     <p>This takes the tensor on top of the stack and replaces it by a vector of length two with the minimum and maximum values occuring in the tensor, like [min max].</p>
   </section>
-  
+
   <section id="cmd-ortho">
     <h2>ortho (orthographic)</h2>
     <p>This takes a 6-vector argument in the form <code>[left right bottom top near far]</code> and pushes a corresponding orthographic projection matrix onto the stack.</p>
   </section>
-  
+
   <section id="cmd-pop">
     <h2>pop</h2>
     <p>Pops the stack, doing nothing if the stack is already empty (not an error).</p>
@@ -835,21 +641,6 @@ strides: 1 1
     <h2>print</h2>
     <p>Prints the stack.</p>
     <pre><code>[1 2 .3];'Hello, world!';print;</code></pre>
-    <p>results in</p>
-    <pre><code>CPU tensor 1
-shape: 13
-strides: 1
-+--------------------------------------------------------------------------------------------+
-| 72.00  101.00 108.00 108.00 111.00 44.00  32.00  119.00 111.00 114.00 108.00 100.00 33.00  |
-+--------------------------------------------------------------------------------------------+
-
-CPU tensor 0
-shape: 3
-strides: 1
-+----------------+
-| 1.00 2.00 0.30 |
-+----------------+
-</code></pre>
   </section>
 
   <section id="cmd-printLine">
@@ -861,7 +652,7 @@ strides: 1
     <h2>printString</h2>
     <p>Prints the string on top of the stack, newline not included.</p>
   </section>
-  
+
   <section id="cmd-quit">
     <h2>quit</h2>
     <p>Quits the program.</p>
@@ -869,40 +660,15 @@ strides: 1
 
   <section id="cmd-r">
     <h2>r (reverse)</h2>
-    <p>Reverses a tensor along a specified dimension (axis). The axis, a scalar, should be on top of 
-      the stack, and the tensor below that. This is equivalent to mirroring along an axis. For example:
+    <p>Reverses a tensor along a specified dimension (axis). The axis, a scalar, should be on top of
+       the stack, and the tensor below that. This is equivalent to mirroring along an axis. For example:
       <pre><code>[[0 1][2 3]];0;r;print;quit;</code></pre>
       prints
-      <pre><code>CPU tensor 0
-shape: 2 2
-strides: -2 1
-+---------------+
-| +-----------+ |
-| | 2.00 3.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 0.00 1.00 | |
-| +-----------+ |
-+---------------+
-</code></pre>
-      and
-      <pre><code>[[0 1][2 3]];1;r;print;quit;</code></pre>
-      prints
-      <pre><code>CPU tensor 0
-shape: 2 2
-strides: 2 -1
-+---------------+
-| +-----------+ |
-| | 1.00 0.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 3.00 2.00 | |
-| +-----------+ |
-+---------------+
-</code></pre></p>
+      <pre><code>CPU tensor 0 ...</code></pre>
+    </p>
   </section>
 
- <section id="cmd-raise">
+  <section id="cmd-raise">
     <h2>raise</h2>
     <p>Given a scalar n, this raises the nth item on the stack to the top of the stack.</p>
   </section>
@@ -910,148 +676,44 @@ strides: 2 -1
   <section id="cmd-repeat">
     <h2>rep (repeat)</h2>
     <p>Given a scalar and tensor on top of the stack, this command repeats the tensor a number of times equal to the
-      scalar. For example: 
-      <pre><code>[0 1 2];3;rep;print;quit;</code></pre>
-      This prints 
-      <pre><code>CPU tensor 0
-shape: 3 3
-strides: 3 1
-+--------------------+
-| +----------------+ |
-| | 0.00 1.00 2.00 | |
-| +----------------+ |
-| +----------------+ |
-| | 0.00 1.00 2.00 | |
-| +----------------+ |
-| +----------------+ |
-| | 0.00 1.00 2.00 | |
-| +----------------+ |
-+--------------------+</code></pre></p>
+      scalar. For example:
+       <pre><code>[0 1 2];3;rep;print;quit;</code></pre>
+    </p>
   </section>
 
   <section id="cmd-return">
     <h2>return</h2>
     <p>Returns from a function to the place that called that label:
-      <pre><code>1;if'past';
-l'square'; // Square a scalar on the top of the stack
-0;dup;*;
-return;
-
-l'past';2;square;square;print;quit;
-</code></pre>
-      This prints 
-      <pre><code>CPU tensor 0
-shape:
-strides:
-16.00</code></pre></p>
+      <pre><code>1;if'past';l'square'; // Square a scalar on the top of the stack
+0;dup;*;return;l'past';2;square;square;print;quit;</code></pre>
+    </p>
   </section>
 
-    <section id="cmd-rotate">
+  <section id="cmd-rotate">
     <h2>rot (rotate)</h2>
-    <p>This function returns a 4x4 rotation matrix. The rotation is performed around a 3D vector (taken from the top of the stack) by an angle (stored as the scalar immediately below the vector on the stack). For example: <code>3.141592653589793;6.0;/;[1 1 0];rot;print;quit;</code> will print <pre><code>CPU tensor 0
-shape: 4 4
-strides: 4 1
-+-----------------------------+
-| +-------------------------+ |
-| | 0.93  0.07  0.35  0.00  | |
-| +-------------------------+ |
-| +-------------------------+ |
-| | 0.07  0.93  -0.35 0.00  | |
-| +-------------------------+ |
-| +-------------------------+ |
-| | -0.35 0.35  0.87  0.00  | |
-| +-------------------------+ |
-| +-------------------------+ |
-| | 0.00  0.00  0.00  1.00  | |
-| +-------------------------+ |
-+-----------------------------+</code></pre></p>
+    <p>This function returns a 4x4 rotation matrix. The rotation is performed around a 3D vector (taken from the top of the stack) by an angle (stored as the scalar immediately below the vector on the stack).</p>
   </section>
 
   <section id="cmd-s">
     <h2>s (slice)</h2>
-    <p>Extracts a slice from a tensor along a given axis. The arguments are given as a rank 1 tensor (array) 
-      in the form <code>[start end axis]</code>, and will slice the tensor below it from <code>start</code> (inclusive) 
-      to <code>end</code> (exclusive) along dimension <code>axis</code>. For example:
-      <code>[[0 1][2 3][4 5]];[1 2 1];s;print;quit;</code>
-      prints 
-      <pre><code>CPU tensor 0
-shape: 3 1
-strides: 2 1
-+----------+
-| +------+ |
-| | 1.00 | |
-| +------+ |
-| +------+ |
-| | 3.00 | |
-| +------+ |
-| +------+ |
-| | 5.00 | |
-| +------+ |
-+----------+
-</code></pre>
-      and
-      <pre><code>[[0 1][2 3][4 5]];[1 2 0];s;print;quit;</code></pre>
-      prints 
-      <pre><code>CPU tensor 0
-shape: 1 2
-strides: 2 1
-+---------------+
-| +-----------+ |
-| | 2.00 3.00 | |
-| +-----------+ |
-+---------------+
-</code></pre></p>
+    <p>Extracts a slice from a tensor along a given axis. The arguments are given as a rank 1 tensor (array)
+       in the form <code>[start end axis]</code>, and will slice the tensor below it from <code>start</code> (inclusive)
+       to <code>end</code> (exclusive) along dimension <code>axis</code>.</p>
   </section>
 
   <section id="cmd-set">
     <h2>set</h2>
-    <p>Sets a named variable to a certain value. The size may be explicitly set, as the variables 
-      can be used as uniforms for the shaders. For example 
-      <pre><code>[1 2 3];set'vec' 3;</code></pre> 
-      would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and 
-      make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16 
-      for a 4x4 matrix. If set is called without a size, the named variable will not be set as a uniform.  This function necessitates a deep copy, and should be used sparingly on large tensors. A short form of this command exists; <code>foo=</code> or <code>foo= N</code> may be used instead of <code>set'foo'</code> or <code>set'foo' N</code></p>
+    <p>Sets a named variable to a certain value. The size may be explicitly set, as the variables
+       can be used as uniforms for the shaders. For example
+       <pre><code>[1 2 3];set'vec' 3;</code></pre>
+       would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and
+       make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16
+       for a 4x4 matrix. If set is called without a size, the named variable will not be set as a uniform. This function necessitates a deep copy, and should be used sparingly on large tensors. A short form of this command exists; <code>foo=</code> or <code>foo= N</code> may be used instead of <code>set'foo'</code> or <code>set'foo' N</code></p>
   </section>
 
   <section id="cmd-shape">
     <h2>shape</h2>
-    <p>This returns a vector containg the shape of a tensor, if called twice it will return the rank of a tensor as a vector. For example:
-      <pre><code>[[[1] [2]][[1] [2]][[1] [2]]];print;shape;print;shape;print;quit;</code></pre> 
-      will print 
-      <pre><code>CPU tensor 0
-shape: 3 2 1
-strides: 2 1 1
-+-----------------------+
-| +-------------------+ |
-| | +------+ +------+ | |
-| | | 1.00 | | 2.00 | | |
-| | +------+ +------+ | |
-| +-------------------+ |
-| +-------------------+ |
-| | +------+ +------+ | |
-| | | 1.00 | | 2.00 | | |
-| | +------+ +------+ | |
-| +-------------------+ |
-| +-------------------+ |
-| | +------+ +------+ | |
-| | | 1.00 | | 2.00 | | |
-| | +------+ +------+ | |
-| +-------------------+ |
-+-----------------------+
-
-CPU tensor 0
-shape: 3
-strides: 1
-+----------------+
-| 3.00 2.00 1.00 |
-+----------------+
-
-CPU tensor 0
-shape: 1
-strides: 1
-+------+
-| 3.00 |
-+------+</code></pre></p>
+    <p>This returns a vector containing the shape of a tensor, if called twice it will return the rank of a tensor as a vector.</p>
   </section>
 
   <section id="cmd-size">
@@ -1061,55 +723,28 @@ strides: 1
 
   <section id="cmd-t">
     <h2>t (transpose)</h2>
-    <p>Transposes two dimensions in a tensor. The argument is a rank 1 tensor (array) in the form 
-      <code>[axis1 axis2]</code>. The tensor below that has those axes swapped. This is equivalent to 
-      mirroring along a diagonal. For example:
-      <pre><code>[[0 1][2 3]];print;[0 1];t;print;quit;</code></pre>
-      prints 
-      <pre><code>CPU tensor 0
-shape: 2 2
-strides: 2 1
-+---------------+
-| +-----------+ |
-| | 0.00 1.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 2.00 3.00 | |
-| +-----------+ |
-+---------------+
-
-CPU tensor 0
-shape: 2 2
-strides: 1 2
-+---------------+
-| +-----------+ |
-| | 0.00 2.00 | |
-| +-----------+ |
-| +-----------+ |
-| | 1.00 3.00 | |
-| +-----------+ |
-+---------------+
-</code></pre></p>
+    <p>Transposes two dimensions in a tensor. The argument is a rank 1 tensor (array) in the form
+       <code>[axis1 axis2]</code>. The tensor below that has those axes swapped.</p>
   </section>
 
   <section id="cmd-textBufferView">
     <h2>textBufferView</h2>
-    <p>This command creates a view of the standard output buffer.  It takes one argument, a 3 vector like [width height scrollUp] where scrollUp casues that many visible lines to be skipped, scrolling the buffer up.  Words are wrapped to width.  This command produces a tensor suitable for use with std.textAreaToFlatTexture or std.textToTexture.</p>
+    <p>This command creates a view of the standard output buffer. It takes one argument, a 3 vector like [width height scrollUp] where scrollUp causes that many visible lines to be skipped, scrolling the buffer up. Words are wrapped to width. This command produces a tensor suitable for use with std.textAreaToFlatTexture or std.textToTexture.</p>
   </section>
-    
+
   <section id="cmd-textInput">
     <h2>textInput</h2>
-    <p>This command pushes the text input since the last call to this command onto the stack as ascii.  This makes it easy to gather text from the keyboard.  Up to 65536 characters are buffered.</p>
+    <p>This command pushes the text input since the last call to this command onto the stack as ascii. This makes it easy to gather text from the keyboard. Up to 65536 characters are buffered.</p>
   </section>
 
   <section id="cmd-texture">
     <h2>texture</h2>
-    <p>This command takes the texture on top of the stack, which must be rank 3, 1 or 4 component like [512 512 4] or [256 256 1], and makes it suitable for use as a texture. That is, this commmand enables and generates mipmaps and anisotropic filtering.</p>
+    <p>This command takes the texture on top of the stack, which must be rank 3, 1 or 4 component like [512 512 4] or [256 256 1], and makes it suitable for use as a texture. That is, this command enables and generates mipmaps and anisotropic filtering.</p>
   </section>
 
   <section id="cmd-textureArray">
     <h2>textureArray</h2>
-    <p>This command takes the texture on top of the stack, which must be rank 4, 1 or 4 component like [512 512 512 4] or [256 32 256 1], and turns it into a 2d texture array.  These textures can be sampled from using the overloaded af,bf,cf,df( vec3 ) versions.  This command takes a single numeric argument, channels, which matches the c compute command: 1 for a single channel float, 10 for a single channel u8 normalized, 4 for an float vec4, and 40 for the rgba u8 version.  This command does not turn on mipmapping and anisotropic filtering for the texture, that can be done by then calling the texture command.</p>
+    <p>This command takes the texture on top of the stack, which must be rank 4, 1 or 4 component like [512 512 512 4] or [256 32 256 1], and turns it into a 2d texture array. These textures can be sampled from using the overloaded af,bf,cf,df( vec3 ) versions. This command takes a single numeric argument, channels, which matches the c compute command: 1 for a single channel float, 10 for a single channel u8 normalized, 4 for an float vec4, and 40 for the rgba u8 version. This command does not turn on mipmapping and anisotropic filtering for the texture, that can be done by then calling the texture command.</p>
   </section>
 
   <section id="cmd-timeDelta">
@@ -1118,8 +753,8 @@ strides: 1 2
   </section>
 
   <section id="cmd-time">
-    <h2>timeDelta</h2>
-    <p>This command pushes a 2 vector with the the total time in hours as an integer, and the time since last hour in seconds.  This provides accurate runtimes for up to 1875 years.</p>
+    <h2>time</h2>
+    <p>This command pushes a 2 vector with the the total time in hours as an integer, and the time since last hour in seconds. This provides accurate runtimes for up to 1875 years.</p>
   </section>
 
   <section id="cmd-toString">
@@ -1132,14 +767,14 @@ strides: 1 2
     <p>This command pushes a 4x4 translation matrix onto the stack, corresponding to a translation by the 3-vector argument on the stack.</p>
   </section>
 
-    <section id="cmd-unext">
+  <section id="cmd-unext">
     <h2>unext (unextrude)</h2>
-    <p>This command performs the reverse of extrusion on the tensor on top of the stack. That is, if the last dimension is of length 1, this command reduces the rank by 1.  If the last dimension isn't of length 1, an error is generated.</p>
+    <p>This command performs the reverse of extrusion on the tensor on top of the stack. That is, if the last dimension is of length 1, this command reduces the rank by 1. If the last dimension isn't of length 1, an error is generated.</p>
   </section>
 
   <section id="cmd-unkettle">
     <h2>unkettle</h2>
-    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been push onto the stack.  The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.</p>
+    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been push onto the stack. The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.</p>
   </section>
 
   <section id="cmd-while">
@@ -1150,8 +785,7 @@ l'start';   // The start label
 get'i';print;[1];+; // Get i onto the stack and increment it
 0;dup;set'i' 1;     // Set i to new value, leave i on stack
 [6];-;first;if'start'; // Loop if i != 6
-quit;
-</code></pre>
+quit;</code></pre>
   </section>
 
   <section id="cmd-windowSize">
@@ -1161,9 +795,8 @@ quit;
 
   <section id="cmd-workspace">
     <h2>workspace</h2>
-    <p>This command takes one immediate string parameter and sets the current workspace for the current file.  For example, workspace'foo' will cause all subsequent sets and gets to be prefixed by "foo." and all glsl variables will be prefixed by "foo_".  Because both sets and gets are prefixed, the current file need not prefix normal gets, just the glsl variables must always be prefixed as they are statically compiled at script inititialization.  All subseqent commands are prefixed this way until the end of file or next workspace command.</p>
+    <p>This command takes one immediate string parameter and sets the current workspace for the current file. For example, workspace'foo' will cause all subsequent sets and gets to be prefixed by "foo." and all glsl variables will be prefixed by "foo_". Because both sets and gets are prefixed, the current file need not prefix normal gets, just the glsl variables must always be prefixed as they are statically compiled at script inititialization. All subsequent commands are prefixed this way until the end of file or next workspace command.</p>
   </section>
-
 </main>
 </body>
 </html>
