@@ -2250,238 +2250,81 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
 
   return NULL;
 }
-/* char* unkettle( tensorStack* ts, const char* filename ){ */
-/*   static unkettleState s; */
-/*   s.f = fopen( filename, "rb" ); */
-/*   if( !s.f ){ */
-/*     resetUnkettleState( &s ); */
-/*     err( "Unkettle: Could not open %s.", filename ); */
-/*   } */
-/*   fread( &s.uSize, sizeof( u32 ), 1, s.f ); */
-/*   fread( &s.cSize, sizeof( u32 ), 1, s.f ); */
-  
-/*   // 1. Read Compressed Data from File */
-/*   s.compressedData = mem( s.cSize, u8 ); */
-/*   if( fread( s.compressedData, 1, s.cSize, s.f ) != s.cSize ){ */
-/*     resetUnkettleState( &s ); */
-/*     err( "%s", "Unkettle: File truncated." ); */
-/*   } */
-/*   fclose( s.f ); // File is closed here. Do not close again at bottom. */
-/*   s.f = NULL; */
-
-/*   // 2. Decompress */
-/*   s.decompressedBuffer = mem( s.uSize, u8 ); // Renamed for clarity vs macro */
-/*   mz_ulong destLen = s.uSize; */
-/*   int status = mz_uncompress( s.decompressedBuffer, &destLen, s.compressedData, s.cSize ); */
-    
-/*   if( status != MZ_OK ) err( "Unkettle: Decompression failed %d", status ); */
-    
-/*   unmem( s.compressedData ); */
-  
-/*   // 3. Setup a pointer for the parsing loop */
-/*   s.readHead = 0; */
-
-/*   // Macro uses 'decompressedBuffer' specifically now */
-/* #define READ_MEM( dest, size ) { memcpy( dest, s.decompressedBuffer + s.readHead, size ); s.readHead += size; } */
-    
-/*   KettleHeader h; */
-/*   READ_MEM( &h, sizeof(KettleHeader) ); */
-/*   if( h.magic != 0x4B544C31 ){ */
-/*     resetUnkettleState( &s ); */
-/*     err( "Unkettle: Invalid file format in %s.", filename ); */
-/*   } */
-  
-/*   for( u32 i = 0; i < h.count; ++i ){ */
-/*     KettleMeta meta; */
-/*     READ_MEM( &meta, sizeof( KettleMeta ) ); */
-
-/*     tensor* t = mem( 1, tensor ); */
-/*     t->rank = meta.rank; */
-/*     t->size = meta.size; */
-/*     memcpy( t->shape, meta.shape, sizeof(u32)*4 ); */
-    
-/*     // Reconstruct strides */
-/*     u32 stride = 1; */
-/*     for( int k = t->rank - 1; k >= 0; --k ){ */
-/*       t->strides[ k ] = stride; */
-/*       stride *= t->shape[ k ]; */
-/*     } */
-/*     for( u32 k = t->rank; k < 4; ++k ){ */
-/*       t->shape[k] = 1; */
-/*       t->strides[k] = 1; */
-/*     } */
-
-/*     t->offset = 0; */
-/*     t->ownsData = true; */
-/*     t->gpu = ( meta.isGpu != 0 ); */
-
-/*     if( t->gpu ){ */
-/*       // --- GPU UPLOAD PATH --- */
-/*       t->tex.channels = meta.channels; */
-/*       t->tex.layers = meta.layers; */
-/*       t->tex.height = meta.height; */
-/*       t->tex.width  = meta.width; */
-
-/*       GLenum internalFormat = GL_RGBA32F; */
-/*       GLenum format = GL_RGBA; */
-/*       GLenum type = GL_FLOAT; */
-      
-/*       // FIXED: Rename this so it doesn't shadow 'decompressedBuffer'  */
-/*       // or confuse the macro logic */
-/*       void* texData = NULL;  */
-      
-/*       u32 bytesToRead = 0; */
-/*       bool isU8 = false; */
-
-/*       // Determine GL formats based on Atlas Channel Logic */
-/*       if( meta.channels == 40 ){ */
-/*         internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; isU8 = true; */
-/*       } else if( meta.channels == 30 ){ */
-/*         internalFormat = GL_RGB8;  format = GL_RGB;  type = GL_UNSIGNED_BYTE; isU8 = true; */
-/*       } else if( meta.channels == 20 ){ */
-/*         internalFormat = GL_RG8;   format = GL_RG;   type = GL_UNSIGNED_BYTE; isU8 = true; */
-/*       } else if( meta.channels == 10 ){ */
-/*         internalFormat = GL_R8;    format = GL_RED;  type = GL_UNSIGNED_BYTE; isU8 = true; */
-/*       } else if( meta.channels == 4 ){ */
-/*         internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; */
-/*       } else if( meta.channels == 3 ){ */
-/*         internalFormat = GL_RGB32F;  format = GL_RGB;  type = GL_FLOAT; */
-/*       } else if( meta.channels == 2 ){ */
-/*         internalFormat = GL_RG32F;   format = GL_RG;   type = GL_FLOAT; */
-/*       } else if( meta.channels == 1 ){ */
-/*         internalFormat = GL_R32F;    format = GL_RED;  type = GL_FLOAT; */
-/*       } */
-
-/*       bytesToRead = meta.size * ( isU8 ? 1 : 4 ); */
-/*       u32 channelMult = 4; */
-/*       if( meta.channels > 10 ) */
-/*         channelMult = meta.channels / 10; */
-/*       else if( meta.channels ) */
-/*         channelMult = meta.channels; */
-      
-/*       // Allocate temp buffer for upload */
-/*       texData = mem( t->tex.width * t->tex.height * t->tex.layers * ( isU8 ? 1 : 4 ) * channelMult, u8 ); */
-      
-/*       // FIXED: Read from the global decompressedBuffer INTO texData */
-/*       READ_MEM( texData, bytesToRead ); */
-
-/*       glGenTextures( 1, &t->tex.texture ); */
-/*       glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture ); */
-      
-/*       glPixelStorei( GL_UNPACK_ALIGNMENT, 1 ); */
-/*       glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat,  */
-/*                     t->tex.width, t->tex.height, t->tex.layers,  */
-/*                     0, format, type, texData ); */
-
-/*       if( meta.mipmapped ){ */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR ); */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
-/*         if( getMaxAnisotropy() > 1.0 ) */
-/*           glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() ); */
-/*         glGenerateMipmap( GL_TEXTURE_2D_ARRAY ); */
-/*         t->tex.mipmapped = true; */
-/*       }else{ */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST ); */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE ); */
-/*         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE ); */
-/*       } */
-
-/*       glGenFramebuffers( 1, &t->tex.framebuffer ); */
-/*       glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer ); */
-/*       glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 ); */
-      
-/*       if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) */
-/*         error( "%s", "Unkettle: Framebuffer incomplete." ); */
-          
-/*       glBindFramebuffer( GL_FRAMEBUFFER, 0 ); */
-/*       glBindTexture( GL_TEXTURE_2D_ARRAY, 0 ); */
-
-/*       unmem( texData ); // Free the temp buffer */
-
-/*     } else { */
-/*       // CPU */
-/*       t->data = mem( meta.size, f32 ); */
-      
-/*       if( meta.channels >= 10 ) { */
-/*         u8* tmp = mem( meta.size, u8 ); */
-/*         READ_MEM( tmp, meta.size ); */
-/*         for( u32 k=0; k<meta.size; ++k ) t->data[k] = (f32)tmp[k] / 255.0f; */
-/*         unmem( tmp ); */
-/*       } else { */
-/*         READ_MEM( t->data, sizeof(f32) * meta.size ); */
-/*       } */
-/*     } */
-/*     push( ts, t ); */
-/*   } */
-
-/*   unmem( s.decompressedBuffer ); */
-/*   s.decompressedBuffer = NULL; */
-/*   return NULL; */
-/* } */
 tensor* textBufferView( u32 width, u32 height, u32 scrollUp ){
   u32 shape[ 2 ] = { height, width };
   u32 totalCells = width * height;
   f32* view = mem( totalCells, f32 ); 
 
+  // Initialize with spaces (32.0f)
   for( u32 i = 0; i < totalCells; ++i ){
     view[ i ] = 32.0f; 
   }
 
   s64 bufIdx = textBufferPos - 1;
-  s64 row = height - 1;           
-  
-  char* lineCache = mem( width, char ); 
-  u32 lineLen = 0;
-
+  s64 row = height - 1;            
   u32 linesSkipped = 0; 
 
-  while( bufIdx >= 0 && row >= 0 ){ 
-    char c = textBuffer[ bufIdx-- ];
-
-    if( c == '\n' ){
+  while( bufIdx >= 0 && row >= 0 ){
+    
+    // 1. Handle explicit newlines (Empty lines)
+    if( textBuffer[ bufIdx ] == '\n' ){
       if( linesSkipped >= scrollUp ){
-        if( row < height ){
-          for( u32 k = 0; k < lineLen; ++k ){
-            view[ row * width + k ] = (f32)lineCache[ lineLen - 1 - k ];
-          }
-        }
-        row--; 
+        row--; // Consume a visual row
       } else {
         linesSkipped++;
       }
-      
-      lineLen = 0;
+      bufIdx--;
       continue;
     }
 
-    if( lineLen >= width ){
+    // 2. Found text content. Scan backwards to find the START of this logical line.
+    s64 lineEnd = bufIdx;
+    s64 lineStart = bufIdx;
+    while( lineStart >= 0 && textBuffer[ lineStart ] != '\n' ){
+      lineStart--;
+    }
+    // lineStart is now the index of the preceding '\n' (or -1). 
+    // The content is effectively textBuffer[ lineStart+1 ... lineEnd ]
+
+    s64 contentStart = lineStart + 1;
+    u32 lineLen = (u32)(lineEnd - contentStart + 1);
+
+    // 3. Calculate wrapping logic
+    // We are filling from the bottom up. The last part of the string 
+    // goes on the bottom-most row of this block.
+    // Standard wrap: The 'remainder' is the last line. Previous lines are full 'width'.
+    
+    s64 currentChunkEnd = lineEnd;
+    s64 charsRemaining = lineLen;
+    
+    // The size of the last visual chunk (the ragged end of the line)
+    u32 remainder = lineLen % width;
+    u32 lastChunkSize = (remainder == 0 && lineLen > 0) ? width : remainder;
+    
+    // Loop to produce the visual rows for this logical line
+    while( charsRemaining > 0 && row >= 0 ){
+      // If we are at the very end of the string, use lastChunkSize. 
+      // Otherwise (for the upper parts of the wrap), we use the full width.
+      u32 chunkSize = ( charsRemaining == lineLen ) ? lastChunkSize : width;
+      
       if( linesSkipped >= scrollUp ){
-        if( row < height ){
-          for( u32 k = 0; k < lineLen; ++k ){
-            view[ row * width + k ] = (f32)lineCache[ lineLen - 1 - k ];
-          }
+        s64 chunkStart = currentChunkEnd - chunkSize + 1;
+        
+        for( u32 k = 0; k < chunkSize; ++k ){
+          view[ row * width + k ] = (f32)textBuffer[ chunkStart + k ];
         }
+        
         row--;
       } else {
         linesSkipped++;
       }
-      lineLen = 0;
+      
+      currentChunkEnd -= chunkSize;
+      charsRemaining -= chunkSize;
     }
 
-    lineCache[ lineLen++ ] = c;
+    bufIdx = lineStart - 1; 
   }
 
-  if( lineLen > 0 ){
-    if( linesSkipped >= scrollUp && row >= 0 && row < height ){
-      for( u32 k = 0; k < lineLen; ++k ){
-        view[ row * width + k ] = (f32)lineCache[ lineLen - 1 - k ];
-      }
-    }
-  }
-
-  unmem( lineCache );
   return newTensor( 2, shape, view );
 }
