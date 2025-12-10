@@ -164,6 +164,7 @@
       <li><a href="#control-structures">Control Structures</a></li>
       <li><a href="#functions">Functions</a></li>
       <li><a href="#looping">Looping</a></li>
+      <li><a href="#AI">AI participation</a></li>
     </ul>
   </details>
   <details>
@@ -253,8 +254,8 @@
        the <code>c</code> (compute) statements, which allow the definition of arbitrary GLSL functions, multiple return values,
        and parameters of different sizes. Compute statements always compute on the accelerator, and
        consequently should be restricted to large tensors.</p>
-  </section>
-
+   </section>
+       
   <section id="basic-concepts">
     <h2>Basic Concepts</h2>
     <p>Atlas code is stack-oriented and uses a simple command-oriented syntax. Comments start with <code>//</code>
@@ -774,7 +775,7 @@ print;quit;</code></pre>
 
   <section id="cmd-unkettle">
     <h2>unkettle</h2>
-    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been push onto the stack. The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.</p>
+    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been pushed onto the stack. The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.</p>
   </section>
 
   <section id="cmd-while">
@@ -797,6 +798,17 @@ quit;</code></pre>
     <h2>workspace</h2>
     <p>This command takes one immediate string parameter and sets the current workspace for the current file. For example, workspace'foo' will cause all subsequent sets and gets to be prefixed by "foo." and all glsl variables will be prefixed by "foo_". Because both sets and gets are prefixed, the current file need not prefix normal gets, just the glsl variables must always be prefixed as they are statically compiled at script inititialization. All subsequent commands are prefixed this way until the end of file or next workspace command.</p>
   </section>
+
+  <section id="AI">
+    <h2>AI Credits</h2>
+    <p>Many AIs participated in the creation of Atlas. Special thanks to the frontier models that assisted with logic, debugging, and documentation over the last two years, including:</p>
+    <ul>
+      <li><strong>OpenAI:</strong> GPT-4, GPT-4o, o1, o3, GPT-5, and GPT-5.1</li>
+      <li><strong>Anthropic:</strong> Claude 3.5 Sonnet, Claude Opus 4.1, Claude Sonnet 4.5, and Claude Opus 4.5</li>
+      <li><strong>Google:</strong> Gemini 2.5 Pro and Gemini 3 Pro</li>
+    </ul>
+  </section>
+
 </main>
 </body>
 </html>
