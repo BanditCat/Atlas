@@ -1,3 +1,5 @@
+GLB_ASSETS = $(wildcard inc/*.glb)
+KTL_ASSETS = $(GLB_ASSETS:.glb=.ktl)
 
 WINDOWS_TRIPLE ?= x86_64-w64-windows-gnu
 
@@ -47,17 +49,17 @@ WINDRES ?= x86_64-w64-mingw32-windres
 .PHONY: all rall clean backup release tidy
 
 rall: release 
-	./$(TARGET)
+	./$(TARGET) 
 rdall: debug
 	./$(TARGET)
 
 
 debug: CFLAGS += $(CFLAGS_DEBUG)
 debug: LDFLAGS += $(LDFLAGS_DEBUG)
-debug: $(TARGET)
+debug: $(TARGET) assets
 
 release: CFLAGS += $(CFLAGS_RELEASE)
-release: $(TARGET)
+release: $(TARGET) assets
 
 tidy:
 	clang-tidy $(MSRCS) -- $(CFLAGS) $(CPPFLAGS)
@@ -78,8 +80,14 @@ $(TARGET): $(OBJS) $(ATLHS) icon.o
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(SDL2_CFLAGS) -c $< -o $@
 
+%.ktl: %.glb gltfToKtl.atl | $(TARGET)
+	./$(TARGET) gltfToKtl.atl $<
+
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.o
+
+.PHONY: assets
+assets: $(KTL_ASSETS)
 
 backup:
 	$(MAKE) release
