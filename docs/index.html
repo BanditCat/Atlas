@@ -377,47 +377,47 @@ l'fib';1;dup;1;dup;+; // Duplicate the top two elements and then add them.
 0;dup;21;-;if'fib'; // Loop back to l'fib' if the top of the stack isn't 21.
 print;quit; // Show the results.</code></pre>
       prints
-      <pre><code>tensor 8
+      <pre><code>CPU tensor 8
 shape:
 strides:
 21.00
 
-tensor 7
+CPU tensor 7
 shape:
 strides:
 13.00
 
-tensor 6
+CPU tensor 6
 shape:
 strides:
 8.00
 
-tensor 5
+CPU tensor 5
 shape:
 strides:
 5.00
 
-tensor 4
+CPU tensor 4
 shape:
 strides:
 3.00
 
-tensor 3
+CPU tensor 3
 shape:
 strides:
 2.00
 
-tensor 2
+CPU tensor 2
 shape:
 strides:
 1.00
 
-tensor 1
+CPU tensor 1
 shape:
 strides:
 1.00
 
-tensor 0
+CPU tensor 0
 shape:
 strides:
 0.00</code></pre>
@@ -448,7 +448,7 @@ l'skip';
     <h2>+ / - / * / / / ^ / sin / cos / floor / ciel / log </h2>
     <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, ceiling, or logarithm them, respectively.  The argument on the top of the stack is the subtractend, denominator, or exponent, while the tensor below is the minuend, numerator, or base.  These operations are done on the CPU and therefore should only be done on small tensors.  Large tensor computation should be done with the c (compute) command. For example: 
     <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>will print
-    <pre><code>tensor 0
+    <pre><code>CPU tensor 0
 shape: 3
 strides: 1
 +----------------+
@@ -459,22 +459,22 @@ strides: 1
 
   <section id="cmd-b">
     <h2>b (bury)</h2>
-    <p>This command takes one scalar integer argument, and then burries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;quit;</code> would print <pre><code>tensor 3
+    <p>This command takes one scalar integer argument, and then burries the top tensor that deep into the stack. For example <code>1;2;3;4;1;bury;print;quit;</code> would print <pre><code>CPU tensor 3
 shape:
 strides:
 3.00
 
-tensor 2
+CPU tensor 2
 shape:
 strides:
 4.00
 
-tensor 1
+CPU tensor 1
 shape:
 strides:
 2.00
 
-tensor 0
+CPU tensor 0
 shape:
 strides:
 1.00</code></pre> This command necessitates a deep copy if the tensor to bury is a copy or slice of some other tensor.</p>
@@ -568,7 +568,7 @@ print;quit;
 After execution, the first output tensor (from ret[0]) will contain the element-wise minimum values, and the second (from ret[1]) will contain the element-wise maximum values.
 
     <p>This will print:</p>
-    <pre><code>tensor 1
+    <pre><code>CPU tensor 1
 shape: 2 2
 strides: 2 1
 +---------------+
@@ -580,7 +580,7 @@ strides: 2 1
 | +-----------+ |
 +---------------+
 
-tensor 0
+CPU tensor 0
 shape: 2 2
 strides: 2 1
 +---------------+
@@ -601,7 +601,7 @@ strides: 2 1
 [[0 1][2 3]];[[4 5][6 7]];1;cat;
 print;quit;</code></pre> 
       prints 
-      <pre><code>tensor 1
+      <pre><code>CPU tensor 1
 shape: 2 4
 strides: 4 1
 +-------------------------+
@@ -613,7 +613,7 @@ strides: 4 1
 | +---------------------+ |
 +-------------------------+
 
-tensor 0
+CPU tensor 0
 shape: 4 2
 strides: 2 1
 +---------------+
@@ -653,14 +653,14 @@ strides: 2 1
     <p>Given a scalar integer N on top of the stack, duplicates the Nth item on the stack and places it on top. For example:
     <pre><code>[0 1 2];0;dup;print;quit;</code></pre> 
     prints 
-    <pre><code>tensor 1
+    <pre><code>CPU tensor 1
 shape: 3
 strides: 1
 +----------------+
 | 0.00 1.00 2.00 |
 +----------------+
 
-tensor 0
+CPU tensor 0
 shape: 3
 strides: 1
 +----------------+
@@ -674,7 +674,7 @@ strides: 1
     <p>This takes the tensor on top of the stack and raises its rank by 1 appending [1] onto its shape. For example:
       <pre><code>.5;e;[[0 1][2 3]];e;print;quit;</code></pre> 
       prints 
-      <pre><code>tensor 1
+      <pre><code>CPU tensor 1
 shape: 1 2 2
 strides: 2 2 1
 +---------------------------------+
@@ -685,7 +685,7 @@ strides: 2 2 1
 | +-----------------------------+ |
 +---------------------------------+
 
-tensor 0
+CPU tensor 0
 shape: 1
 strides: 1
 +------+
@@ -699,7 +699,7 @@ strides: 1
     <p>This takes the tensor on top of the stack and raises its rank by 1 prepending [1] onto its shape. For example:
       <pre><code>.5;ext;[[0 1][2 3]];ext;print;quit;</code></pre> 
       prints 
-      <pre><code>tensor 1
+      <pre><code>CPU tensor 1
 shape: 2 2 1
 strides: 2 1 1
 +-----------------------+
@@ -715,7 +715,7 @@ strides: 2 1 1
 | +-------------------+ |
 +-----------------------+
 
-tensor 0
+CPU tensor 0
 shape: 1
 strides: 1
 +------+
@@ -734,14 +734,14 @@ strides: 1
     <p>These commands return the first or last element along the first axis, reducing rank by 1. For example:
       <pre><code>[[0 1][2 3]];first;print;last;print;quit;</code></pre>
       prints 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 2
 strides: 1
 +-----------+
 | 0.00 1.00 |
 +-----------+
 
-tensor 0
+CPU tensor 0
 shape:
 strides:
 1.00</code></pre>
@@ -818,7 +818,7 @@ strides:
 
   <section id="cmd-m">
     <h2>m (matrix multiply)</h2>
-    <p>This mulitplies the top two tensors (which must be rank 2 or less) and pushes the result on the stack. The result is always of rank 2. For example <code>[[1 0 1][2 1 1][0 1 1][1 1 2]];[[1 2 1][2 3 1][4 2 2]];m;print;quit;</code> prints <pre><code>tensor 0
+    <p>This mulitplies the top two tensors (which must be rank 2 or less) and pushes the result on the stack. The result is always of rank 2. For example <code>[[1 0 1][2 1 1][0 1 1][1 1 2]];[[1 2 1][2 3 1][4 2 2]];m;print;quit;</code> prints <pre><code>CPU tensor 0
 shape: 4 3
 strides: 3 1
 +-----------------------+
@@ -834,7 +834,7 @@ strides: 3 1
 | +-------------------+ |
 | | 11.00 9.00  6.00  | |
 | +-------------------+ |
-+-----------------------+</code></pre> and <code>[[5 4 3][8 9 5][6 5 3][11 9 6]];[100 80 60];m;print;quit;</code> will print <pre><code>tensor 0
++-----------------------+</code></pre> and <code>[[5 4 3][8 9 5][6 5 3][11 9 6]];[100 80 60];m;print;quit;</code> will print <pre><code>CPU tensor 0
 shape: 4 1
 strides: 1 1
 +-------------+
@@ -850,7 +850,7 @@ strides: 1 1
 | +---------+ |
 | | 2180.00 | |
 | +---------+ |
-+-------------+</code></pre> The m command can also be used as a dot product; <code>[1 2];[3 4];m;print;quit;</code> will print <pre><code>tensor 0
++-------------+</code></pre> The m command can also be used as a dot product; <code>[1 2];[3 4];m;print;quit;</code> will print <pre><code>CPU tensor 0
 shape: 1 1
 strides: 1 1
 +-----------+
@@ -885,14 +885,14 @@ strides: 1 1
     <p>Prints the stack.</p>
     <pre><code>[1 2 .3];'Hello, world!';print;</code></pre>
     <p>results in</p>
-    <pre><code>tensor 1
+    <pre><code>CPU tensor 1
 shape: 13
 strides: 1
 +--------------------------------------------------------------------------------------------+
 | 72.00  101.00 108.00 108.00 111.00 44.00  32.00  119.00 111.00 114.00 108.00 100.00 33.00  |
 +--------------------------------------------------------------------------------------------+
 
-tensor 0
+CPU tensor 0
 shape: 3
 strides: 1
 +----------------+
@@ -922,7 +922,7 @@ strides: 1
       the stack, and the tensor below that. This is equivalent to mirroring along an axis. For example:
       <pre><code>[[0 1][2 3]];0;r;print;quit;</code></pre>
       prints
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 2 2
 strides: -2 1
 +---------------+
@@ -937,7 +937,7 @@ strides: -2 1
       and
       <pre><code>[[0 1][2 3]];1;r;print;quit;</code></pre>
       prints
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 2 2
 strides: 2 -1
 +---------------+
@@ -962,7 +962,7 @@ strides: 2 -1
       scalar. For example: 
       <pre><code>[0 1 2];3;rep;print;quit;</code></pre>
       This prints 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 3 3
 strides: 3 1
 +--------------------+
@@ -989,7 +989,7 @@ return;
 l'past';2;square;square;print;quit;
 </code></pre>
       This prints 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape:
 strides:
 16.00</code></pre></p>
@@ -997,7 +997,7 @@ strides:
 
     <section id="cmd-rotate">
     <h2>rot (rotate)</h2>
-    <p>This function returns a 4x4 rotation matrix. The rotation is performed around a 3D vector (taken from the top of the stack) by an angle (stored as the scalar immediately below the vector on the stack). For example: <code>3.141592653589793;6.0;/;[1 1 0];rot;print;quit;</code> will print <pre><code>tensor 0
+    <p>This function returns a 4x4 rotation matrix. The rotation is performed around a 3D vector (taken from the top of the stack) by an angle (stored as the scalar immediately below the vector on the stack). For example: <code>3.141592653589793;6.0;/;[1 1 0];rot;print;quit;</code> will print <pre><code>CPU tensor 0
 shape: 4 4
 strides: 4 1
 +-----------------------------+
@@ -1023,7 +1023,7 @@ strides: 4 1
       to <code>end</code> (exclusive) along dimension <code>axis</code>. For example:
       <code>[[0 1][2 3][4 5]];[1 2 1];s;print;quit;</code>
       prints 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 3 1
 strides: 2 1
 +----------+
@@ -1041,7 +1041,7 @@ strides: 2 1
       and
       <pre><code>[[0 1][2 3][4 5]];[1 2 0];s;print;quit;</code></pre>
       prints 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 1 2
 strides: 2 1
 +---------------+
@@ -1067,7 +1067,7 @@ strides: 2 1
     <p>This returns a vector containg the shape of a tensor, if called twice it will return the rank of a tensor as a vector. For example:
       <pre><code>[[[1] [2]][[1] [2]][[1] [2]]];print;shape;print;shape;print;quit;</code></pre> 
       will print 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 3 2 1
 strides: 2 1 1
 +-----------------------+
@@ -1088,14 +1088,14 @@ strides: 2 1 1
 | +-------------------+ |
 +-----------------------+
 
-tensor 0
+CPU tensor 0
 shape: 3
 strides: 1
 +----------------+
 | 3.00 2.00 1.00 |
 +----------------+
 
-tensor 0
+CPU tensor 0
 shape: 1
 strides: 1
 +------+
@@ -1115,7 +1115,7 @@ strides: 1
       mirroring along a diagonal. For example:
       <pre><code>[[0 1][2 3]];print;[0 1];t;print;quit;</code></pre>
       prints 
-      <pre><code>tensor 0
+      <pre><code>CPU tensor 0
 shape: 2 2
 strides: 2 1
 +---------------+
@@ -1127,7 +1127,7 @@ strides: 2 1
 | +-----------+ |
 +---------------+
 
-tensor 0
+CPU tensor 0
 shape: 2 2
 strides: 1 2
 +---------------+
