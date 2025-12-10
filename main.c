@@ -12,16 +12,16 @@
 #include <windows.h>
 #endif
 
-#define STARTTEXT \
-"      N\n"\
-"      |\n"\
-"  NW  |  NE\n"\
-"    \\ | /\n"\
-" W ---+--- E                   Welcome to Atlas!\n"\
-"    / | \\ \n"\
-"  SW  |  SE\n"\
-"      |\n"\
-"      S\n"
+#define STARTTEXT                                       \
+  "      N\n"                                           \
+  "      |\n"                                           \
+  "  NW  |  NE\n"                                       \
+  "    \\ | /\n"                                        \
+  " W ---+--- E                   Welcome to Atlas!\n"  \
+  "    / | \\ \n"                                       \
+  "  SW  |  SE\n"                                       \
+  "      |\n"                                           \
+  "      S\n"
 
 ////////////////////////////////////////////////////////////////////
 // Global state
@@ -966,51 +966,53 @@ int main( int argc, char* argv[] )
   textInputBuffer = mem( TEXTINPUTBUFFERSIZE, char );
   textBuffer = mem( TEXTBUFFERSIZE, char );
 #ifndef __EMSCRIPTEN__
-  // 1. Get the handle
-  HANDLE hOut = GetStdHandle( STD_OUTPUT_HANDLE );
-  DWORD fileType = GetFileType( hOut );
 
-  // 2. If no valid handle, try to attach to parent console
-  if( hOut == NULL || hOut == INVALID_HANDLE_VALUE ||
-      fileType == FILE_TYPE_UNKNOWN ){
-    if( AttachConsole( ATTACH_PARENT_PROCESS ) ){
-      // We successfully attached to a console (e.g. Bash/CMD).
-      // Use freopen, which is the most reliable way to write to a physical
-      // console window.
-      freopen( "CONOUT$", "w", stdout );
-      freopen( "CONOUT$", "w", stderr );
-    }
-    // If AttachConsole fails, we might be in a detached process or a pipe-only
-    // environment that hasn't initialized yet.
-  } else if( fileType == FILE_TYPE_PIPE ){
-    // 3. We have a valid PIPE handle (This is the Emacs case).
-    // We must ensure the C Runtime (printf) uses this OS handle.
-    int fd = _open_osfhandle( (intptr_t)hOut, _O_TEXT );
-    if( fd != -1 ){
-      _dup2( fd, 1 );  // Bind os-handle to stdout (fd 1)
-      setvbuf( stdout,
-               NULL,
-               _IONBF,
-               0 );  // Ensure it's unbuffered for immediate display in Emacs
+  // 1. Get the handle
+  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  DWORD fileType = GetFileType(hOut);
+    
+  // Check if the handle is valid
+  bool isValidHandle = (hOut != NULL && hOut != INVALID_HANDLE_VALUE && fileType != FILE_TYPE_UNKNOWN);
+
+  // 2. If we have ANY valid handle (Pipe, File, or inherited Console), use it.
+  // Do NOT assume only Pipes are valid. 
+  if (isValidHandle) {
+    // Bind the OS handle to the C Runtime's stdout (fd 1)
+    int fd = _open_osfhandle((intptr_t)hOut, _O_TEXT);
+    if (fd != -1) {
+      _dup2(fd, 1);
+      // DISABLE BUFFERING: This is the #1 cause of "missing" output in Emacs
+      setvbuf(stdout, NULL, _IONBF, 0);
     }
 
     // Do the same for Stderr
-    HANDLE hErr = GetStdHandle( STD_ERROR_HANDLE );
-    if( hErr != NULL && hErr != INVALID_HANDLE_VALUE ){
-      int fdErr = _open_osfhandle( (intptr_t)hErr, _O_TEXT );
-      if( fdErr != -1 )
-        _dup2( fdErr, 2 );
-      setvbuf( stderr, NULL, _IONBF, 0 );
+    HANDLE hErr = GetStdHandle(STD_ERROR_HANDLE);
+    if (hErr != NULL && hErr != INVALID_HANDLE_VALUE) {
+      int fdErr = _open_osfhandle((intptr_t)hErr, _O_TEXT);
+      if (fdErr != -1) {
+        _dup2(fdErr, 2);
+        setvbuf(stderr, NULL, _IONBF, 0);
+      }
     }
-  } else {
-    // 4. We have a valid handle that isn't a pipe (likely a direct Console
-    // handle inherited). Fallback to the console method.
-    freopen( "CONOUT$", "w", stdout );
-    freopen( "CONOUT$", "w", stderr );
+  } 
+  // 3. Only if we have NO handle (Detached GUI app), try to attach to parent
+  else {
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+      // Now we are attached to a physical console (e.g., Bash window)
+      // It is safe to reopen CONOUT$ here because we had no handle to begin with.
+      freopen("CONOUT$", "w", stdout);
+      freopen("CONOUT$", "w", stderr);
+            
+      // Still disable buffering just in case
+      setvbuf(stdout, NULL, _IONBF, 0);
+      setvbuf(stderr, NULL, _IONBF, 0);
+    }
+    // If AttachConsole fails, we are truly detached (double-click launch)
+    // and have nowhere to print.
   }
 
-  // Set the output code page to UTF-8
-  SetConsoleOutputCP( CP_UTF8 );
+  // Set UTF-8 to handle special chars correctly in Emacs
+  SetConsoleOutputCP(CP_UTF8);
 
   SDL_AtomicSet( &running, 1 );
 
