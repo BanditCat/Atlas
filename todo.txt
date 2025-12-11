@@ -1,3 +1,5 @@
+filename gets deleted in root error msgs
+
 newline on error messages.
 write gltfToKtl and make it display runtime info instead of printfing.
 introduce atlas to pipeline

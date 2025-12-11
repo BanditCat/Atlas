@@ -153,6 +153,7 @@
       <li><a href="#invocation">Invocation</a></li>
       <li><a href="#gotchas">Gotchas</a></li>
       <li><a href="#sugar">Syntactic Sugar</a></li>
+      <li><a href="#AI">AI Participation</a></li>
     </ul>
   </details>
   <details>
@@ -164,7 +165,6 @@
       <li><a href="#control-structures">Control Structures</a></li>
       <li><a href="#functions">Functions</a></li>
       <li><a href="#looping">Looping</a></li>
-      <li><a href="#AI">AI participation</a></li>
     </ul>
   </details>
   <details>
@@ -775,7 +775,7 @@ print;quit;</code></pre>
 
   <section id="cmd-unkettle">
     <h2>unkettle</h2>
-    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been pushed onto the stack. The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.</p>
+    <p>This command takes one string argument, a filename, and loads the kettled tensors and textures stored in it. It is reentrant, it returns on top of the stack a scalar indicating progress. When this reaches 0, it indicates the items have been pushed onto the stack. The filename is only consumed on the first call to unkettle, subsequent calls don't expect it until until progress reaches 0.  The returned progress will be a number counting down from 2.0 to 1.0, and then jumps to 0 at completion, so that values close to 1.0 don't get confused with 0.0.</p>
   </section>
 
   <section id="cmd-while">

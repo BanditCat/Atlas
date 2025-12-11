@@ -4,7 +4,7 @@ include'inc\nav.atl';
 size;if'started'; // init code goes here
 
 'inc\\catlas.ktl';unkettle;pop;
-[1.0];progress= 1;
+[2.0];progress= 1;
 
 [1024];dim= 1; // constants
 [0.2];hscale= 1;
@@ -49,7 +49,7 @@ pop;
 progress;unext;ifn'loop4';
 unkettle;e;progress= 1;
 // load bar
-windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 1.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
+windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
 continue;
 l'loop4';
 1;loadedKettle=;

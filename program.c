@@ -2696,8 +2696,8 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       break;
     }
     case UNKETTLE: {
-      static f32 progress = 2.0;
-      if( progress == 2.0 ){       
+      static f32 progress = 3.0;
+      if( progress == 3.0 ){       
         if( ts->size < 1 )
           err( "%s:%u command %u: Unkettle requires [filename] on stack.", s->filename, s->linenum, s->commandnum );
         tensor* tName = ts->stack[ ts->size - 1 ];

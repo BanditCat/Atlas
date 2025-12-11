@@ -1866,7 +1866,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
   const f32 W_UNZIP  = 0.20f; 
   const f32 W_UPLOAD = 0.70f; 
 
-  if( progress && s.stage == UNKETTLE_START ) *progress = 1.0f;
+  if( progress && s.stage == UNKETTLE_START ) *progress = 2.0f;
 
   u64 startTime = SDL_GetPerformanceCounter();
   f64 freq = (f64)SDL_GetPerformanceFrequency();
@@ -1906,7 +1906,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
       fread( s.compressedData + s.bytesRead, 1, toRead, s.f );
       s.bytesRead += toRead;
           
-      if( progress ) *progress = 1.0f - ( ((f32)s.bytesRead/s.cSize) * W_READ );
+      if( progress ) *progress = 2.0f - ( ((f32)s.bytesRead/s.cSize) * W_READ );
     }
     fclose(s.f); s.f = NULL;
     s.stage = UNKETTLE_UNZIP;
@@ -1948,7 +1948,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
       if( elapsed >= timeLimitMs ){
         if( progress ){
           f32 unzipPct = (f32)s.stream.total_out / (f32)s.uSize;
-          f32 currentBase = 1.0f - W_READ; 
+          f32 currentBase = 2.0f - W_READ; 
           *progress = currentBase - ( unzipPct * W_UNZIP );
         }
         return NULL; // Yield
@@ -1994,7 +1994,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
         
         // Return immediately to let the next frame start the upload phase
         // (Visual polish: updates the progress bar to the end of Unzip phase)
-        if( progress ) *progress = 1.0f - ( W_READ + W_UNZIP );
+        if( progress ) *progress = 2.0f - ( W_READ + W_UNZIP );
         return NULL; 
       }
       else if( status != MZ_OK ){
@@ -2022,7 +2022,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
             f32 layerPct = ((f32)s.currentLayer + yPct) / (f32)s.currentTensorLayers;
             f32 totalUploadPct = ((f32)s.currentTensorIndex + layerPct) / (f32)s.h.count;
 
-            f32 currentBase = 1.0f - ( W_READ + W_UNZIP ); 
+            f32 currentBase = 2.0f - ( W_READ + W_UNZIP ); 
             *progress = currentBase - ( totalUploadPct * W_UPLOAD );
           }
           return NULL; // Yield
@@ -2159,7 +2159,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
                 f32 layerPct = ((f32)s.currentLayer + yPct) / (f32)s.currentTensorLayers;
                 f32 totalUploadPct = ((f32)s.currentTensorIndex + layerPct) / (f32)s.h.count;
 
-                f32 currentBase = 1.0f - ( W_READ + W_UNZIP ); 
+                f32 currentBase = 2.0f - ( W_READ + W_UNZIP ); 
                 *progress = currentBase - ( totalUploadPct * W_UPLOAD );
               }
               return NULL; // Yield
