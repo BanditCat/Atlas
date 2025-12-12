@@ -2261,8 +2261,8 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
              "Attempt to call minmax on an empty tensor." );
         
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
-      float min = FLT_MAX;
-      float max = FLT_MIN;
+      f32 min = FLT_MAX;
+      f32 max = FLT_MIN;
       tensor* t1 = ts->stack[ ts->size - 1 ];
       for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
         for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
@@ -2276,7 +2276,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
             }
       
       pop( ts );
-      float* nt = mem( 2, float );
+      f32* nt = mem( 2, f32 );
       nt[ 0 ] = min; nt[ 1 ] = max;
       u32 ntshape[ 1 ] = { 2 };
       push( ts, newTensor( 1, ntshape, nt ) );

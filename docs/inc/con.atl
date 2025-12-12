@@ -13,8 +13,8 @@ inited;if'initEnd';  // Do init
 [0];histPos=;
 [0];scrollUp=;
 [0 0 0 0 0 0 0 0 0 0 0];gamepadHistory=;
-0.1;keyRepeatDelay=;
-4;pressKeyMult=;
+0.05;keyRepeatDelay=;
+8;pressKeyMult=;
 l'initEnd';
 
 
@@ -30,7 +30,36 @@ l'notPressed';
 pressLoop;5;-;if'pressLoop1';
 pop;
 
+//////////////////////////////
+// If gamepad console enabled
 gpconsoleEnabled;ifn'nogpCon';
+std.keyPresses;minmax;last;0.1;-;ifn'bypassReset';
+0;gpconsoleEnabled=;
+
+l'bypassReset';
+buffer;shape;cursor= 1;
+std.gamepadState;[3 4 0];s;first;10;/;curgpChar;+;curgpChar=;
+std.gamepadState;[5 6 0];s;first;2;/;curgpChar;+;curgpChar=;
+curgpChar;32;-;if'lowcapChar';32;curgpChar=;l'lowcapChar';
+curgpChar;126;-;ifn'highcapChar';126;curgpChar=;l'highcapChar';
+buffer;shape;first;ifn'nobuf';
+buffer;[0];buffer;shape;[1];-;0;cat;[0];0;cat;s;buffer=;
+l'nobuf';
+buffer;curgpChar;floor;e;0;cat;buffer=;
+
+std.gamepadPresses;[15 16 0];s;first;ifn'skipA';
+buffer;curgpChar;floor;e;0;cat;buffer=;
+l'skipA';
+std.gamepadPresses;[16 17 0];s;first;ifn'skipB';
+buffer;shape;first;ifn'skipB';
+buffer;[0];buffer;shape;[1];-;0;cat;[0];0;cat;s;buffer=;
+l'skipB';
+std.gamepadPresses;[14 15 0];s;first;ifn'skipgpEval';
+pop;1;if'eval';
+l'skipgpEval';
+
+
+
 std.gamepadState;[0 1 0];s;unext;ifn'nogpCon';
 std.gamepadState;[1 2 0];s;unext;ifn'nogpCon';
 std.gamepadState;[6 7 0];s;unext;ifn'nogpCon';
@@ -83,6 +112,7 @@ pop;cursor;tilen;e;+;cursor= 1;
 
 // DOING THE THING!!! :D :D :D
 std.keyPresses;[40 41 0];s;unext;ifn'skipEval';
+l'eval';
 buffer;printLine;buffer;eval;
 commandHistorySizes;buffer;shape;0;cat;commandHistorySizes=;
 buffer;
