@@ -12,6 +12,7 @@ inited;if'initEnd';  // Do init
 '';commandHistorySizes=;
 [0];histPos=;
 [0];scrollUp=;
+0.1;keyRepeatDelay=;
 
 l'initEnd';
 
@@ -74,7 +75,9 @@ commandHistory;commandHistorySizes;pop;pop;
 l'skipEval';
 
 
-std.keyPresses;[82 83 0];s;unext;ifn'skipUp';
+std.keyState;[82 83 0];s;unext;ifn'skipUp';
+skipUpDelay;timeDelta;-;skipUpDelay=;skipUpDelay;if'skipUp';
+keyRepeatDelay;skipUpDelay=;
 histPos;unext;ifn'skipUp'; // Stop if already at 0
 histPos;[1];-;histPos=; // Decrement index
 commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
@@ -83,7 +86,9 @@ rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
 buffer;shape;cursor= 1;
 l'skipUp';
 
-std.keyPresses;[81 82 0];s;unext;ifn'skipDown';
+std.keyState;[81 82 0];s;unext;ifn'skipDown';
+skipDownDelay;timeDelta;-;skipDownDelay=;skipDownDelay;if'skipDown';
+keyRepeatDelay;skipDownDelay=;
 histPos;[1];+;histPos=;
 histPos;commandHistorySizes;shape;-;[1];+;unext;if'clearBuffer';
 commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
@@ -99,12 +104,16 @@ l'skipDown';
 
 
 // cursor
-std.keyPresses;[79 80 0];s;unext;ifn'skipRight';
+std.keyState;[79 80 0];s;unext;ifn'skipRight';
+skipRightDelay;timeDelta;-;skipRightDelay=;skipRightDelay;if'skipRight';
+keyRepeatDelay;skipRightDelay=;
 [1];cursor;+;cursor= 1;
 buffer;shape;cursor;-;unext;if'skipRight';
 buffer;shape;cursor= 1;
 l'skipRight';
-std.keyPresses;[80 81 0];s;unext;ifn'skipLeft';
+std.keyState;[80 81 0];s;unext;ifn'skipLeft';
+skipLeftDelay;timeDelta;-;skipLeftDelay=;skipLeftDelay;if'skipLeft';
+keyRepeatDelay;skipLeftDelay=;
 cursor;[1];-;cursor= 1;
 cursor;unext;if'skipLeft';
 [0];cursor= 1;
@@ -116,15 +125,19 @@ std.keyPresses;[77 78 0];s;unext;ifn'skipEnd';
 buffer;shape;cursor= 1;
 l'skipEnd';
 
-// del
-std.keyPresses;[42 43 0];s;unext;ifn'skipBksp';
+// del and bkspc
+std.keyState;[42 43 0];s;unext;ifn'skipBksp';
+skipBkspDelay;timeDelta;-;skipBkspDelay=;skipBkspDelay;if'skipBksp';
+keyRepeatDelay;skipBkspDelay=;
 cursor;unext;ifn'skipBksp';
 buffer;[0];cursor;[1];-;0;cat;[0];0;cat;s;
 buffer;cursor;buffer;shape;0;cat;[0];0;cat;s;
 0;cat;buffer=;
 cursor;[1];-;cursor= 1;
 l'skipBksp';
-std.keyPresses;[76 77 0];s;unext;ifn'skipDel';
+std.keyState;[76 77 0];s;unext;ifn'skipDel';
+skipDelDelay;timeDelta;-;skipDelDelay=;skipDelDelay;if'skipDel';
+keyRepeatDelay;skipDelDelay=;
 buffer;shape;cursor;-;unext;ifn'skipDel';
 buffer;[0];cursor;0;cat;[0];0;cat;s;
 buffer;cursor;[1];+;buffer;shape;0;cat;[0];0;cat;s;
