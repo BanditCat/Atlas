@@ -2717,7 +2717,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       } else{ 
         char* emsg = unkettle( ts, NULL, &progress );
         if( emsg ){
-          progress = 2.0;
+          progress = 3.0;
           return emsg;
         }
         f32* ndata = mem( 1, f32 );

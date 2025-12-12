@@ -13,7 +13,7 @@ inited;if'initEnd';  // Do init
 [0];histPos=;
 [0];scrollUp=;
 0.1;keyRepeatDelay=;
-
+4;pressKeyMult=;
 l'initEnd';
 
 
@@ -76,48 +76,61 @@ l'skipEval';
 
 
 std.keyState;[82 83 0];s;unext;ifn'skipUp';
-skipUpDelay;timeDelta;-;skipUpDelay=;skipUpDelay;if'skipUp';
-keyRepeatDelay;skipUpDelay=;
-histPos;unext;ifn'skipUp'; // Stop if already at 0
+skipUpDelay;timeDelta;-;skipUpDelay=;skipUpDelay;if'skipUp2';
+upSlow;ifn'upSlow1';pressKeyMult;0;upSlow=;1;if'upSlow2';l'upSlow1';1;l'upSlow2';keyRepeatDelay;*;skipUpDelay=;
+histPos;unext;ifn'skipUp2'; // Stop if already at 0
 histPos;[1];-;histPos=; // Decrement index
 commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
 commandHistory;histPos;histPos;[1];+;0;cat;[0];0;cat;s;first;rawRow=;
 rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
 buffer;shape;cursor= 1;
+1;if'skipUp2';
 l'skipUp';
+1;upSlow=;
+l'skipUp2';
 
 std.keyState;[81 82 0];s;unext;ifn'skipDown';
-skipDownDelay;timeDelta;-;skipDownDelay=;skipDownDelay;if'skipDown';
-keyRepeatDelay;skipDownDelay=;
+skipDownDelay;timeDelta;-;skipDownDelay=;skipDownDelay;if'skipDown2';
+downSlow;ifn'downSlow1';pressKeyMult;0;downSlow=;1;if'downSlow2';l'downSlow1';1;l'downSlow2';keyRepeatDelay;*;skipDownDelay=;
 histPos;[1];+;histPos=;
 histPos;commandHistorySizes;shape;-;[1];+;unext;if'clearBuffer';
 commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
 commandHistory;histPos;histPos;[1];+;0;cat;[0];0;cat;s;first;rawRow=;
 rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
 buffer;shape;cursor= 1;
-1;if'skipDown';
+1;if'skipDown2';
 l'clearBuffer';
 commandHistorySizes;shape;histPos=;
 '';buffer=;
 [0];cursor= 1;
+1;if'skipDown2';
 l'skipDown';
-
+1;downSlow=;
+l'skipDown2';
 
 // cursor
 std.keyState;[79 80 0];s;unext;ifn'skipRight';
-skipRightDelay;timeDelta;-;skipRightDelay=;skipRightDelay;if'skipRight';
-keyRepeatDelay;skipRightDelay=;
+skipRightDelay;timeDelta;-;skipRightDelay=;skipRightDelay;if'skipRight2';
+rightSlow;ifn'rightSlow1';pressKeyMult;0;rightSlow=;1;if'rightSlow2';l'rightSlow1';1;l'rightSlow2';keyRepeatDelay;*;skipRightDelay=;
 [1];cursor;+;cursor= 1;
-buffer;shape;cursor;-;unext;if'skipRight';
+buffer;shape;cursor;-;unext;if'skipRight2';
 buffer;shape;cursor= 1;
+1;if'skipRight2';
 l'skipRight';
+1;rightSlow=;
+l'skipRight2';
+
 std.keyState;[80 81 0];s;unext;ifn'skipLeft';
-skipLeftDelay;timeDelta;-;skipLeftDelay=;skipLeftDelay;if'skipLeft';
-keyRepeatDelay;skipLeftDelay=;
+skipLeftDelay;timeDelta;-;skipLeftDelay=;skipLeftDelay;if'skipLeft2';
+leftSlow;ifn'leftSlow1';pressKeyMult;0;leftSlow=;1;if'leftSlow2';l'leftSlow1';1;l'leftSlow2';keyRepeatDelay;*;skipLeftDelay=;
 cursor;[1];-;cursor= 1;
-cursor;unext;if'skipLeft';
+cursor;unext;if'skipLeft2';
 [0];cursor= 1;
+1;if'skipLeft2';
 l'skipLeft';
+1;leftSlow=;
+l'skipLeft2';
+
 std.keyPresses;[74 75 0];s;unext;ifn'skipHome';
 [0];cursor= 1;
 l'skipHome';
@@ -127,23 +140,29 @@ l'skipEnd';
 
 // del and bkspc
 std.keyState;[42 43 0];s;unext;ifn'skipBksp';
-skipBkspDelay;timeDelta;-;skipBkspDelay=;skipBkspDelay;if'skipBksp';
-keyRepeatDelay;skipBkspDelay=;
-cursor;unext;ifn'skipBksp';
+skipBkspDelay;timeDelta;-;skipBkspDelay=;skipBkspDelay;if'skipBksp2';
+bkspSlow;ifn'bkspSlow1';pressKeyMult;0;bkspSlow=;1;if'bkspSlow2';l'bkspSlow1';1;l'bkspSlow2';keyRepeatDelay;*;skipBkspDelay=;
+cursor;unext;ifn'skipBksp2';
 buffer;[0];cursor;[1];-;0;cat;[0];0;cat;s;
 buffer;cursor;buffer;shape;0;cat;[0];0;cat;s;
 0;cat;buffer=;
 cursor;[1];-;cursor= 1;
+1;if'skipBksp2';
 l'skipBksp';
+1;bkspSlow=;
+l'skipBksp2';
+
 std.keyState;[76 77 0];s;unext;ifn'skipDel';
-skipDelDelay;timeDelta;-;skipDelDelay=;skipDelDelay;if'skipDel';
-keyRepeatDelay;skipDelDelay=;
-buffer;shape;cursor;-;unext;ifn'skipDel';
+skipDelDelay;timeDelta;-;skipDelDelay=;skipDelDelay;if'skipDel2';
+delSlow;ifn'delSlow1';pressKeyMult;0;delSlow=;1;if'delSlow2';l'delSlow1';1;l'delSlow2';keyRepeatDelay;*;skipDelDelay=;
+buffer;shape;cursor;-;unext;ifn'skipDel2';
 buffer;[0];cursor;0;cat;[0];0;cat;s;
 buffer;cursor;[1];+;buffer;shape;0;cat;[0];0;cat;s;
 0;cat;buffer=;
+1;if'skipDel2';
 l'skipDel';
-
+1;delSlow=;
+l'skipDel2';
 
 
 
