@@ -86,7 +86,7 @@ rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
 buffer;shape;cursor= 1;
 1;if'skipUp2';
 l'skipUp';
-1;upSlow=;
+1;upSlow=;0;skipUpDelay=;
 l'skipUp2';
 
 std.keyState;[81 82 0];s;unext;ifn'skipDown';
@@ -105,7 +105,7 @@ commandHistorySizes;shape;histPos=;
 [0];cursor= 1;
 1;if'skipDown2';
 l'skipDown';
-1;downSlow=;
+1;downSlow=;0;skipDownDelay=;
 l'skipDown2';
 
 // cursor
@@ -117,7 +117,7 @@ buffer;shape;cursor;-;unext;if'skipRight2';
 buffer;shape;cursor= 1;
 1;if'skipRight2';
 l'skipRight';
-1;rightSlow=;
+1;rightSlow=;0;skipRightDelay=;
 l'skipRight2';
 
 std.keyState;[80 81 0];s;unext;ifn'skipLeft';
@@ -128,7 +128,7 @@ cursor;unext;if'skipLeft2';
 [0];cursor= 1;
 1;if'skipLeft2';
 l'skipLeft';
-1;leftSlow=;
+1;leftSlow=;0;skipLeftDelay=;
 l'skipLeft2';
 
 std.keyPresses;[74 75 0];s;unext;ifn'skipHome';
@@ -149,7 +149,7 @@ buffer;cursor;buffer;shape;0;cat;[0];0;cat;s;
 cursor;[1];-;cursor= 1;
 1;if'skipBksp2';
 l'skipBksp';
-1;bkspSlow=;
+1;bkspSlow=;0;skipBkspDelay=;
 l'skipBksp2';
 
 std.keyState;[76 77 0];s;unext;ifn'skipDel';
@@ -161,7 +161,7 @@ buffer;cursor;[1];+;buffer;shape;0;cat;[0];0;cat;s;
 0;cat;buffer=;
 1;if'skipDel2';
 l'skipDel';
-1;delSlow=;
+1;delSlow=;0;skipDelDelay=;
 l'skipDel2';
 
 
