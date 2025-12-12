@@ -130,7 +130,7 @@ commandHistory;commandHistorySizes;pop;pop;
 l'skipEval';
 
 
-std.keyState;[82 83 0];s;unext;ifn'skipUp';
+std.keyState;[82 83 0];s;unext;std.gamepadState;[9 10 0];s;unext;gpconsoleEnabled;*;+;ifn'skipUp';
 skipUpDelay;timeDelta;-;skipUpDelay=;skipUpDelay;if'skipUp2';
 upSlow;ifn'upSlow1';pressKeyMult;0;upSlow=;1;if'upSlow2';l'upSlow1';1;l'upSlow2';keyRepeatDelay;*;skipUpDelay=;
 histPos;unext;ifn'skipUp2'; // Stop if already at 0
@@ -144,7 +144,7 @@ l'skipUp';
 1;upSlow=;0;skipUpDelay=;
 l'skipUp2';
 
-std.keyState;[81 82 0];s;unext;ifn'skipDown';
+std.keyState;[81 82 0];s;unext;std.gamepadState;[11 12 0];s;unext;gpconsoleEnabled;*;+;ifn'skipDown';
 skipDownDelay;timeDelta;-;skipDownDelay=;skipDownDelay;if'skipDown2';
 downSlow;ifn'downSlow1';pressKeyMult;0;downSlow=;1;if'downSlow2';l'downSlow1';1;l'downSlow2';keyRepeatDelay;*;skipDownDelay=;
 histPos;[1];+;histPos=;
