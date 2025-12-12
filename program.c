@@ -1340,19 +1340,21 @@ char* addProgram( const char* filename, char* prog, program* program ){
         endi++;
       if( endi == starti ){
         unmem( buf );
+        char* emsg = printToString( "%s:%u command %u: %s", filename,
+                                    linenum,
+                                    commandnum,
+                                    "Empty include statement." );
         finalizeCleanup( program, NULL, NULL );
-        err( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Empty include statement." );
+        return emsg;
       }
       if( *endi != '\'' ){
         unmem( buf );
+        char* emsg = printToString( "%s:%u command %u: %s", filename,
+                                    linenum,
+                                    commandnum,
+                                    "Unmatched quote in include statement." );
         finalizeCleanup( program, NULL, NULL );
-        err( "%s:%u command %u: %s", filename,
-             linenum,
-             commandnum,
-             "Unmatched quote in include statement." );
+        return emsg;
       }
       char* inc = mem( 1 + endi - starti, char );
       memcpy( inc, starti, endi - starti );
@@ -2722,7 +2724,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         *ndata = progress;
         push( ts, newTensor( 0, NULL, ndata ) );
         if( progress == 0.0 )
-          progress = 2.0;
+          progress = 3.0;
       }
       break;
     }
