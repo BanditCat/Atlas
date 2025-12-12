@@ -12,7 +12,7 @@ inited;if'initEnd';  // Do init
 '';commandHistorySizes=;
 [0];histPos=;
 [0];scrollUp=;
-[0 0 0 0];gamepadHistory=;
+[0 0 0 0 0 0 0 0 0 0 0];gamepadHistory=;
 0.1;keyRepeatDelay=;
 4;pressKeyMult=;
 l'initEnd';
@@ -23,18 +23,28 @@ std.gamepadPresses;
 l'pressLoop1';
 pressLoop;1;-;pressLoop=;
 0;dup;pressLoop;e;pressLoop;1;+;e;0;cat;[0];0;cat;s;unext;ifn'notPressed';
-pressLoop;toString;printLine;
+pressLoop;e;gamepadHistory;[0 10 0];s;0;cat;gamepadHistory=;
+[14 16 15 10 12 10 12 11 11 9 9];gamepadHistory;-;minmax;0;dup;last;1;raise;first;-;0.1;-;if'notPressed';
+[1 1 0.5 0];gamepadRumble;1;gpconsoleEnabled=;pop;1;if'toggleConsole';
 l'notPressed';
-pressLoop;if'pressLoop1';
+pressLoop;5;-;if'pressLoop1';
 pop;
 
-std.gamepadState;[17 18 0];s;first;ifn'skipStickL';
-[1 1 0.5 0];gamepadRumble;
-l'skipStickL';
+gpconsoleEnabled;ifn'nogpCon';
+std.gamepadState;[0 1 0];s;unext;ifn'nogpCon';
+std.gamepadState;[1 2 0];s;unext;ifn'nogpCon';
+std.gamepadState;[6 7 0];s;unext;ifn'nogpCon';
+std.gamepadState;[7 8 0];s;unext;ifn'nogpCon';
+std.gamepadPresses;[0 1 0];s;unext;if'toggleConsole';
+std.gamepadPresses;[1 2 0];s;unext;if'toggleConsole';
+std.gamepadPresses;[6 7 0];s;unext;if'toggleConsole';
+std.gamepadPresses;[7 8 0];s;unext;if'toggleConsole';
+l'nogpCon';
 
 
 // Toggle console state 
 std.keyPresses;[53 54 0];s;first;ifn'noTilde';
+l'toggleConsole';
 textInput;pop;
 1;visible;-;visible=;
 visible;ifn'noTilde';
