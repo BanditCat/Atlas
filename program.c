@@ -930,6 +930,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = GAMEPAD;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "gamepadRumble" ) ){
+    curStep->type = GAMEPADRUMBLE;
+    // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
+
   } else if( !strcmp( command, "toString" ) ){
     curStep->type = TOSTRING;
     // dbg( "Linenum %u commandnum %u: toString\n", linenum, commandnum );
@@ -1953,6 +1957,42 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         }
 
       push( ts, newTensor( 2, gpshape, data ) );
+#ifndef __EMSCRIPTEN__
+      //SDL_UnlockMutex( data_mutex );
+#endif
+      break;
+    }
+    case GAMEPADRUMBLE: {
+#ifndef __EMSCRIPTEN__
+      //SDL_LockMutex( data_mutex );
+#endif
+      if( ts->size < 2 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to gamepadRumble without enough elements on the stack." );
+      if( ts->stack[ ts->size - 1 ]->rank != 1 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to gamepadRumble with a parameter not of rank 1." );
+      if( ts->stack[ ts->size - 1 ]->size != 4 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to gamepadRumble with a parameter not a vector of length 4." );
+      
+      u32 lowfreq = *( ts->stack[ ts->size - 1 ]->data +
+                       ts->stack[ ts->size - 1 ]->offset ) * 65535.0;
+      u32 highfreq =
+        *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
+           ts->stack[ ts->size - 1 ]->strides[ 0 ] ) * 65535.0;
+      f32 duration = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
+           ts->stack[ ts->size - 1 ]->strides[ 0 ] * 2 );
+      u32 index =
+        *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
+           ts->stack[ ts->size - 1 ]->strides[ 0 ] * 3 );
+      pop( ts );
+      u32 which = 0;
+      for( u32 i = 0; i < MAX_CONTROLLERS; ++i )
+        if( controllers[ i ] ){
+          if( which == index ){
+            SDL_GameControllerRumble( controllers[ i ], lowfreq, highfreq, duration * 1000.0 );
+          } else
+            ++which;          
+        }
+
 #ifndef __EMSCRIPTEN__
       //SDL_UnlockMutex( data_mutex );
 #endif

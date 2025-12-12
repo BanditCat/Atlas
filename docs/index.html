@@ -193,6 +193,7 @@
       <li><a href="#cmd-extrude">ext (extrude)</a></li>
       <li><a href="#cmd-first">first / last</a></li>
       <li><a href="#cmd-gamepad">gamepad</a></li>
+      <li><a href="#cmd-gamepadRumble">gamepadRumble</a></li>
       <li><a href="#cmd-get">get</a></li>
       <li><a href="#cmd-gltf">gltf</a></li>
       <li><a href="#cmd-if">if / ifn</a></li>
@@ -548,6 +549,11 @@ print;quit;</code></pre>
     <h2>gamepad</h2>
     <p>This command pushes a vector of vectors corresponding to the gamepad state of attached controllers.
     The returned vectors are of the form [throttleLeft throttleRight leftStickX leftStickY rightStickX rightStickY leftShoulder rightShoulder home up right down left select start a b x y leftStick rightStick]</p>
+  </section>
+
+  <section id="cmd-gamepadRumble">
+    <h2>gamepadRumble</h2>
+    <p>This command takes one argument, a vector like [lowFrequencyRumble highFrequencyRumble duration index], and makes the gamepad with that index vibrate with those frequencies for that duration (in seconds).  The frequencies are between 0.0 and 1.0.</p>
   </section>
 
   <section id="cmd-get">

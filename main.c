@@ -311,7 +311,6 @@ void mainPoll( void ){
 
       char* pastedText = (char*)event.user.data1;
       if( pastedText ){
-        // Safe concatenation into your text buffer
         s64 available = TEXTINPUTBUFFERSIZE - textInputBufferPos - 1;
         if( available > 0 ){
           strncpy(
@@ -389,7 +388,7 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       // SDL_LockMutex( data_mutex );
 #endif
-      // Hard coded copy paste so we can
+      // Hard coded copy paste
       if( ( event.key.keysym.sym == SDLK_v &&
             ( SDL_GetModState() & KMOD_CTRL ) ) ||
           ( event.key.keysym.sym == SDLK_INSERT &&

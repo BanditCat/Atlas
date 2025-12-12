@@ -12,10 +12,25 @@ inited;if'initEnd';  // Do init
 '';commandHistorySizes=;
 [0];histPos=;
 [0];scrollUp=;
+[0 0 0 0];gamepadHistory=;
 0.1;keyRepeatDelay=;
 4;pressKeyMult=;
 l'initEnd';
 
+
+std.gamepadPresses;
+21;pressLoop=; // loop over all buttons
+l'pressLoop1';
+pressLoop;1;-;pressLoop=;
+0;dup;pressLoop;e;pressLoop;1;+;e;0;cat;[0];0;cat;s;unext;ifn'notPressed';
+pressLoop;toString;printLine;
+l'notPressed';
+pressLoop;if'pressLoop1';
+pop;
+
+std.gamepadState;[17 18 0];s;first;ifn'skipStickL';
+[1 1 0.5 0];gamepadRumble;
+l'skipStickL';
 
 
 // Toggle console state 

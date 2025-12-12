@@ -74,6 +74,7 @@ typedef struct{
     POP, // documented
     RETURN, // documented
     GAMEPAD, // documented, 6 axis, 15 buttons. [throttleLeft throttleRight leftStickX leftStickY rightStickX rightStickY leftShoulder rightShoulder home up right down left select start a b x y leftStick rightStick]
+    GAMEPADRUMBLE, // documented
     GETINPUT, // documented, three axes and three buttons
     TEXTINPUT, // documented 
     SET, // documented
