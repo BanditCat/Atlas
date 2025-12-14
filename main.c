@@ -12,15 +12,15 @@
 #include <windows.h>
 #endif
 
-#define STARTTEXT                                       \
-  "      N\n"                                           \
-  "      |\n"                                           \
-  "   NW | NE\n"                                       \
-  "     \\|/\n"                                        \
-  " W----+----E                   Welcome to Atlas!\n"  \
+#define STARTTEXT                                     \
+  "      N\n"                                         \
+  "      |\n"                                         \
+  "   NW | NE\n"                                      \
+  "     \\|/\n"                                       \
+  " W----+----E                   Welcome to Atlas!\n"\
   "     /|\\\n"                                       \
-  "   SW | SE\n"                                       \
-  "      |\n"                                           \
+  "   SW | SE\n"                                      \
+  "      |\n"                                         \
   "      S\n"
 
 ////////////////////////////////////////////////////////////////////

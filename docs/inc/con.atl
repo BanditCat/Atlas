@@ -54,7 +54,7 @@ std.gamepadPresses;[16 17 0];s;first;ifn'skipB';
 buffer;shape;first;ifn'skipB';
 buffer;[0];buffer;shape;[1];-;0;cat;[0];0;cat;s;buffer=;
 l'skipB';
-std.gamepadPresses;[14 15 0];s;first;ifn'skipgpEval';
+std.gamepadPresses;[14 15 0];s;first;visible;*;ifn'skipgpEval';
 pop;1;if'eval';
 l'skipgpEval';
 
