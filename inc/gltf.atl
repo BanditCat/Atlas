@@ -15,8 +15,9 @@ size;if'started'; // init code goes here
 [2048 2048 1];shadowSize= 3;
 [0.001];shadowBias= 1;
 [50];softShadows= 1;
+[0.05];sableScale= 1;
 [0];timer= 1;
-[1000];instanceCount= 1;
+[2000];instanceCount= 1;
 [7];instanceVars= 1;
 
 
@@ -55,14 +56,12 @@ windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - 
 continue;
 l'loop4';
 1;loadedKettle=;
-4;raise;e;animCount= 1;6;raise;6;raise;6;raise;
 /////////////////////////////////////////////////
 // instance init
+4;raise;e;animCount= 1;6;raise;6;raise;6;raise;
 3;dup;shape;[0 1 0];s;vertexCount= 1;
 5;dup;shape;0;dup;[0 1 0];s;frameCount= 1;[1 2 0];s;animCount;/;boneCount= 1;
 6;dup;shape;[1 3 0];s;atlasSize= 2;
-
-
 
 4;raise; // get indices
 0;dup;shape;indexCount= 1;
@@ -79,7 +78,7 @@ float hash( vec2 p, float time ){
 /////////////////////////////////////
 // bake VAT
 3;dup;6;dup;   // duplicate vertex data (a) and bone matrices (b)
-6;vertexCount;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;print;
+6;vertexCount;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;
 c'''
 mat4 getBoneMat(int frame, int bone, int anim) {
     mat4 m;
@@ -162,19 +161,116 @@ set'lightUnrotation' 16;
 
 
 
-// Stack here: prevFrame, heightMap, gradient
+// Stack here: prevFrame, heightMap, gradient, vertexatrribs, indices, bones, mats, VAT
 
-2;dup;2;dup; // duplicate terrain and heightmap
+
+
+/////////////////////////////////////////////////////
+// shadow map terrain
+1;dup;
+// Stack here: heightmapCopy, prevFrame, heightMap, gradient
+
+6;dim;dim;*;first;*;shadowSize;
+backface;depth;
+c'
+vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+out float depth;
+'
+int index = gl_VertexID / 6;
+int x = index / int( dim );
+int y = index - x * int( dim );
+vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
+v.z = af( v.xy ).x * hscale;
+v.xy /= dim;
+ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v.yzxw ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+depth = ( ret.z / ret.w ) * 0.5 + 0.5;
+'
+in float depth;
+'
+ret[ 0 ] = depth;
+'
+1 1 1 0;
+backface;depth;
+
+////////////////////////////////////////////////////////////////////////////
+//  Shadow map sables
+//         0          1          2     3     4       5      6     7     8
+// stack: shadowmap, prevframe, hmap, grad, vertex, index, bone, mats, vat
+5;dup;9;dup;
+indexCount;unext;instanceCount;unext;*;
+shadowSize;
+depth;backface;
+c'
+out float depth;
+'
+int vertsPerInstance = int(indexCount);
+int instanceID = gl_VertexID / vertsPerInstance;
+int localVertID = gl_VertexID % vertsPerInstance;
+int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+float xCoord = float(index) + 0.5;
+
+int base = vertsPerInstance + instanceID * int(instanceVars);
+ vec3 instPos = vec3(
+     b(ivec4(base + 0, 0, 0, 0)),
+     b(ivec4(base + 1, 0, 0, 0)),
+     b(ivec4(base + 2, 0, 0, 0))
+ );
+ float facing = b(ivec4(base + 3, 0, 0, 0));
+ float animIdx = b(ivec4(base + 4, 0, 0, 0));
+ float animStart = b(ivec4(base + 5, 0, 0, 0));
+int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
+float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+int f0 = int( frame );
+int f1 = ( f0 + 1 ) % int( frameCount );
+float lerp = fract( frame );
+
+int frameAnim0 = f0 + anim * int(frameCount);
+int frameAnim1 = f1 + anim * int(frameCount);
+float yPos0 = float(frameAnim0 * 2) + 0.5;
+float yPos1 = float(frameAnim1 * 2) + 0.5;
+vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
+
+v.w = 1.0;
+v.xyz *= sableScale;
+v.xyz += instPos;
+ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+depth = ( ret.z / ret.w ) * 0.5 + 0.5;
+'
+in float depth;
+'
+ret[ 0 ] = depth;
+' 2 1 1 1;
+depth;backface;texture;
+
+
+
+
+
+
+
+
+
+
+
+3;dup;3;dup; // duplicate terrain and heightmap
 windowSize;[2 2];*;set'wdims' 2;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
-
-
-
 [90];windowSize;[2 2];*;0;cat;[0.01 3];0;cat;proj;proj= 16;
 
-// Stack here: the arguments (heightmapcopy, gradientcopy, prevFrame), heightMap, gradient
+// Stack here: the arguments (heightmapcopy, gradientcopy, shadowMap, prevFrame), heightMap, gradient
+//2;dup;5;bury;print;   // OOPS dont do this, itll deep copy
+2;raise;4;bury;4;dup;2;bury;
 depth;backface;
 6;dim;dim;*;first;*;windowSize;[2 2];*;[4];0;cat;
 c'
@@ -224,6 +320,22 @@ vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( wor
 lightPos /= lightPos.w;
 lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
 float curDepth = lightPos.z;
+float centerLightDepth = cf( lightPos.xy * shadowSize.xy ).x;
+float spread = clamp( ( curDepth - centerLightDepth ) * softShadows, 1.0, 100000000.0 );
+
+
+float shadow = 0.0;
+for( float dx = -0.5; dx <= 0.5; ++dx ){
+  for( float dy = -0.5; dy <= 0.5; ++dy ){
+    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
+    vec2 delta = ( vec2( dx, dy ) + jitter ) * spread;
+
+    float lightDepth = cf( lightPos.xy * shadowSize.xy + delta ).x;
+    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
+  }
+}
+shadow /= 4.0;
+shadow *= 0.5;
 
 
 float len = length( d );
@@ -233,9 +345,10 @@ if( d.y > 0.0 )
 float waterDepth = len * ( 1.0 - t );
 float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
 float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
+diffuse *= ( 1.0 - shadow );
 ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
-3 1 40 0;
+4 1 40 0;
 
 6;1;dup;shape;c''''
 vec3 ray = normalize(
@@ -256,9 +369,10 @@ ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
 depth;backface;
 
 
-6;dup;5;dup;9;dup;
+
+7;dup;6;dup;10;dup; 5;raise;3;bury;// Stack here: VAT copy, indices copy, mats copy, shadowmap, frame, hmap, gradient, vertexAtribs, indices, bones, mats, VAT
 indexCount;unext;instanceCount;unext;*;
-4;dup;shape;
+5;dup;shape;
 depth;backface;
 c'
 out vec3 normal;
@@ -306,15 +420,20 @@ uv = vec2( v.w, n.w );
 v.w = 1.0;
 n.w = 1.0;
 normal = normalize( n.xyz );
-worldPos = v.xyz;
-v.xyz /= 10.0;
+v.xyz *= sableScale;
 v.xyz += instPos;
+worldPos = v.xyz;
 ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
 '
 in vec3 normal;
 in vec2 uv;
 in vec3 worldPos;
 flat in float mat;
+
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
 '
 vec2 muv = fract( uv );
 
@@ -325,13 +444,31 @@ vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
 // // Combine
 vec3 diffuse = color.rgb;
 vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
-ret[ 0 ] = vec4( diffuse * dot( normal, L ), 1.0 );
+
+
+vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+lightPos /= lightPos.w;
+lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
+float curDepth = lightPos.z;
+
+float shadow = 0.0;
+for( float dx = -0.5; dx <= 0.5; ++dx ){
+  for( float dy = -0.5; dy <= 0.5; ++dy ){
+    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
+    vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
+    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
+  }
+}
+shadow = shadow / 4.0 * 0.5;
+
+ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
 // //ret[0] = vec4(vec3(roughness), 1.0);
 // //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 // //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
 // //ret[ 0 ] = vec4( color, 1.0 );
-' 3 1 40 1;
-depth;backface;print;
+' 4 1 40 1;
+depth;backface;
 
 
 

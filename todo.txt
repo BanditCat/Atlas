@@ -1,7 +1,5 @@
-cook vertices
+shadows
 lod
-
-instancing
 
 
 filename gets deleted in root error msgs

@@ -98,7 +98,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Console'
+	git commit -m 'Shadows'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)
