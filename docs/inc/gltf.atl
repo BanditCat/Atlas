@@ -346,8 +346,20 @@ totalInstances;instanceVars;0;cat;reshape;
 [0 3 1];s;
 6;totalInstances;c''''
 vec3 pos = vec3( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ) );
-ret[ 0 ] = length( pos - std_origin );' 1 1 0 0;
-sort;0;index;print;
+float dist = length( pos - std_origin );
+
+// Transform to clip space
+vec4 clipPos = proj * std_worldUnrotation * ( vec4( pos, 1.0 ) - vec4( std_origin, 0.0 ) );
+
+// Frustum check with margin for model size
+float margin = 1.5;  // padding so units don't pop at edges
+bool outside = abs( clipPos.x ) > clipPos.w * margin ||
+               abs( clipPos.y ) > clipPos.w * margin ||
+               clipPos.z < -clipPos.w * 0.2 ||
+               clipPos.z > clipPos.w * 1.2;
+
+ret[ 0 ] = outside ? dist + 1000000.0 : dist;' 1 1 0 0;
+sort;0;index;
 totalInstances;instanceVars;*;reshape;
 8;bury;
 
