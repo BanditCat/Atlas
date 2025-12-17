@@ -1,3 +1,14 @@
-0;dup;[0];1;dup;shape;[4];-;0;cat;[0];0;cat;s;'.ktl';0;cat;ktlname=;
-gltf;print;
-ktlname;5;kettle;quit;
+'inc/catlasHigh.glb';gltf;
+'inc/catlasLow.glb';gltf;
+2;raise;pop; // low poly bones
+7;raise;pop; // high poly mats
+3;raise;pop; // second anim count
+// lowverts lowindeices lowmats highverts highindices highbones animcount
+
+2;raise;
+6;1;dup;shape;[1 4 0];s;
+c''''ret[ 0 ] = af( vec4( tf, 0.0, 0.0 ) );' 1 1 40 0;
+2;bury;
+
+'inc/catlas.ktl';7;kettle;quit;
+

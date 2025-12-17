@@ -1,92 +1,18 @@
-include'inc\stdlib.atl';
-'inc\\catlas.atl';
-include'inc\nav.atl';
-size;if'started'; // init code goes here
-
-'inc\\catlas.ktl';unkettle;pop;
-[2.0];progress= 1;
-
-[1024];dim= 1; // constants
-[0.2];hscale= 1;
-[0.5];hscale;[2];/;0;cat;[0.5];0;cat;hmapCenter= 3;
-[0.05];waterLevel= 1;
-[30.0];waterFogScale= 1;
-[0.0 0.15 0.25];waterColor= 3;
-[2048 2048 1];shadowSize= 3;
-[0.001];shadowBias= 1;
-[50];softShadows= 1;
-[0.05];sableScale= 1;
-[0];timer= 1;
-[2000];instanceCount= 1;
-[7];instanceVars= 1;
-
-
-dim;first;2;rep;set'texsize' 2;
-img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
-6;[1];ttexsize;0;cat;[4];0;cat;
-c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
-                    a( ivec4( 0, tf.y, 1, 0 ) ),  
-                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
-dim;first;4;std.fractalNoise;
-// get minmax
-0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
-
-
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 10 0;texture;
-[150 400];set'lrot' 2;
-lrot;first;-300;/;[0 1 0];rot; // rot about y
-lrot;last;-300;/;[1 0 0];rot;m; // rot about x
-set'lightRotation' 16;
-
-std.nav3d;
-[0.5 1.0 2.0];std.origin= 3;
-[171 134];std.3dnavParam=;
-
-6;windowSize;[2 2];*;[4];0;cat;
-c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
-
-1;
-l'started'; // init code complete
-loadedKettle;if'kettled';
-pop;
-progress;unext;ifn'loop4';
-unkettle;e;progress= 1;
-// load bar
-windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
-continue;
-l'loop4';
-1;loadedKettle=;
-/////////////////////////////////////////////////
-// instance init
-4;raise;e;animCount= 1;6;raise;6;raise;6;raise;
-3;dup;shape;[0 1 0];s;vertexCount= 1;
-5;dup;shape;0;dup;[0 1 0];s;frameCount= 1;[1 2 0];s;animCount;/;boneCount= 1;
-6;dup;shape;[1 3 0];s;atlasSize= 2;
-
-4;raise; // get indices
-0;dup;shape;indexCount= 1;
-6;indexCount;instanceCount;instanceVars;*;+;
-c'''
-float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-    return fract( sin( h ) * 43758.5453123 );
-}
-'ret[ 0 ] = t.x < int( indexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
-4;bury;  // put indices back
-
-
-/////////////////////////////////////
-// bake VAT
-3;dup;6;dup;   // duplicate vertex data (a) and bone matrices (b)
-6;vertexCount;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;
+// Functions
+1;if'skipFuncs';
+////////////////////////////////////////////////////////////////////
+// bake VAT  takes vertex data and bone matrices and produces a VAT
+// stack should be a) bones and b) vertex data.
+l'bakeVat';
+6;2;dup;shape;[0 1 0];s;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;
 c'''
 mat4 getBoneMat(int frame, int bone, int anim) {
     mat4 m;
     for (int col = 0; col < 4; col++) {
-       vec4 val = af(vec3(
+       vec4 val = af(vec4(
            float(col) + 0.5,
            float(anim) + animCount * float(bone) + 0.5,
-           float(frame)
+           float(frame), 0.0
        ));
        m[col] = val;
     }
@@ -132,81 +58,15 @@ normal = skin * normal;
 normal.w = uv.y;
 ret[0] = posOrNormal == 0 ? v : normal;
 ' 2 1 4 0;
-7;bury;
-
-
-
-l'kettled';
-
-
-
-timer;timeDelta;e;+;timer= 1;
-// Stack here: prevFrame, heightMap, gradient
+return;
 
 
 
 
-
-
-
-std.nav3d;std.3dnavParam;set'lrot' 2;
-lrot;first;-300;/;[0 1 0];rot; // rot about y
-lrot;last;-300;/;[1 0 0];rot;m; // rot about x
-0;dup;
-set'lightRotation' 16;
-0;dup;[0 1];t;
-set'lightUnrotation' 16;
-[0 0 -1 0];m;unext;[0 3 0];s;[1 -1 1];*;lightDir= 3;
-[-0.72 0.72 -0.72 0.72 1.0 5.0];ortho;orthoproj= 16;
-
-
-
-// Stack here: prevFrame, heightMap, gradient, vertexatrribs, indices, bones, mats, VAT
-
-
-
-/////////////////////////////////////////////////////
-// shadow map terrain
-1;dup;
-// Stack here: heightmapCopy, prevFrame, heightMap, gradient
-
-6;dim;dim;*;first;*;shadowSize;
-backface;depth;
-c'
-vec4 verts[] = vec4[](
-vec4( 0.0,0.0,0.0,1.0 ),
-vec4( 1.0,0.0,0.0,1.0 ), 
-vec4( 0.0,1.0,0.0,1.0 ), 
-vec4( 1.0,1.0,0.0,1.0 ),
-vec4( 0.0,1.0,0.0,1.0 ),
-vec4( 1.0,0.0,0.0,1.0 ) 
-);
-out float depth;
-'
-int index = gl_VertexID / 6;
-int x = index / int( dim );
-int y = index - x * int( dim );
-vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
-v.z = af( v.xy ).x * hscale;
-v.xy /= dim;
-ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v.yzxw ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
-depth = ( ret.z / ret.w ) * 0.5 + 0.5;
-'
-in float depth;
-'
-ret[ 0 ] = depth;
-'
-1 1 1 0;
-backface;depth;
-
-////////////////////////////////////////////////////////////////////////////
-//  Shadow map sables
-//         0          1          2     3     4       5      6     7     8
-// stack: shadowmap, prevframe, hmap, grad, vertex, index, bone, mats, vat
-5;dup;9;dup;
+l'sableShadowPass';
+instanceCount= 1;indexCount= 1;
 indexCount;unext;instanceCount;unext;*;
 shadowSize;
-depth;backface;
 c'
 out float depth;
 '
@@ -249,6 +109,297 @@ in float depth;
 '
 ret[ 0 ] = depth;
 ' 2 1 1 1;
+return;
+
+
+
+
+
+
+///////////////////////////////////////////////////////////
+//  Sable pass, expects instanceCount indexCount vat indices mat smap frame
+l'sablePass';
+instanceCount= 1;indexCount= 1;
+indexCount;unext;instanceCount;unext;*;
+5;dup;shape;
+c'
+out vec3 normal;
+out vec2 uv;
+out vec3 worldPos;
+flat out float mat;
+'
+mat = 0.0;
+int vertsPerInstance = int(indexCount);
+int instanceID = gl_VertexID / vertsPerInstance;
+int localVertID = gl_VertexID % vertsPerInstance;
+int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+float xCoord = float(index) + 0.5;
+
+int base = vertsPerInstance + instanceID * int(instanceVars);
+ vec3 instPos = vec3(
+     b(ivec4(base + 0, 0, 0, 0)),
+     b(ivec4(base + 1, 0, 0, 0)),
+     b(ivec4(base + 2, 0, 0, 0))
+ );
+ float facing = b(ivec4(base + 3, 0, 0, 0));
+ float animIdx = b(ivec4(base + 4, 0, 0, 0));
+ float animStart = b(ivec4(base + 5, 0, 0, 0));
+ float tint = b(ivec4(base + 6, 0, 0, 0));
+int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
+float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+int f0 = int( frame );
+int f1 = ( f0 + 1 ) % int( frameCount );
+float lerp = fract( frame );
+
+int frameAnim0 = f0 + anim * int(frameCount);
+int frameAnim1 = f1 + anim * int(frameCount);
+float yPos0 = float(frameAnim0 * 2) + 0.5;
+float yPos1 = float(frameAnim1 * 2) + 0.5;
+float yNrm0 = float(frameAnim0 * 2 + 1) + 0.5;
+float yNrm1 = float(frameAnim1 * 2 + 1) + 0.5;
+vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 n0 = af( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
+vec4 n1 = af( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
+vec4 n = n1 * lerp + n0 * ( 1.0 - lerp );
+vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
+
+uv = vec2( v.w, n.w );
+v.w = 1.0;
+n.w = 1.0;
+normal = normalize( n.xyz );
+v.xyz *= sableScale;
+v.xyz += instPos;
+worldPos = v.xyz;
+ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
+'
+in vec3 normal;
+in vec2 uv;
+in vec3 worldPos;
+flat in float mat;
+
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+vec2 muv = fract( uv );
+
+vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
+//if( color.a < 0.5 )  discard;
+
+
+// // Combine
+vec3 diffuse = color.rgb;
+vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
+
+
+vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+lightPos /= lightPos.w;
+lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
+float curDepth = lightPos.z;
+
+float shadow = 0.0;
+for( float dx = -0.5; dx <= 0.5; ++dx ){
+  for( float dy = -0.5; dy <= 0.5; ++dy ){
+    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
+    vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
+    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
+  }
+}
+shadow = shadow / 4.0 * 0.5;
+
+ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
+// //ret[0] = vec4(vec3(roughness), 1.0);
+// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
+// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
+// //ret[ 0 ] = vec4( color, 1.0 );
+' 4 1 40 1;
+
+return;
+
+
+
+
+
+
+
+
+
+l'skipFuncs';
+include'inc\stdlib.atl';
+'inc\\catlas.atl';
+include'inc\nav.atl';
+size;if'started'; // init code goes here
+
+'inc\\catlas.ktl';unkettle;pop;
+[2.0];progress= 1;
+
+[1024];dim= 1; // constants
+[0.2];hscale= 1;
+[0.5];hscale;[2];/;0;cat;[0.5];0;cat;hmapCenter= 3;
+[0.05];waterLevel= 1;
+[30.0];waterFogScale= 1;
+[0.0 0.15 0.25];waterColor= 3;
+[2048 2048 1];shadowSize= 3;
+[0.001];shadowBias= 1;
+[50];softShadows= 1;
+[0.05];sableScale= 1;
+[0];timer= 1;
+[900];lowInstanceCount= 1;
+[100];highInstanceCount= 1;
+[7];instanceVars= 1;
+
+
+dim;first;2;rep;set'texsize' 2;
+img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
+6;[1];ttexsize;0;cat;[4];0;cat;
+c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
+                    a( ivec4( 0, tf.y, 1, 0 ) ),  
+                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
+dim;first;4;std.fractalNoise;
+// get minmax
+0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
+
+
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 10 0;texture;
+[150 400];set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
+set'lightRotation' 16;
+
+std.nav3d;
+[0.5 1.0 2.0];std.origin= 3;
+[171 134];std.3dnavParam=;
+
+6;windowSize;[2 2];*;[4];0;cat;
+c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
+
+1;
+l'started'; // init code complete
+loadedKettle;if'kettled';
+pop;
+progress;unext;ifn'loop4';
+unkettle;e;progress= 1;
+// load bar
+windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
+continue;
+l'loop4';
+1;loadedKettle=;
+/////////////////////////////////////////////////
+// instance/unkettle init
+//print;quit; // stack:  lowverts lowindices mat highverts highindices bones animcount prevframe hmap gradient
+6;raise;e;animCount= 1; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
+0;dup;shape;[0 1 0];s;lowVertexCount= 1;
+3;dup;shape;[0 1 0];s;highVertexCount= 1;
+5;dup;shape;0;dup;[0 1 0];s;frameCount= 1;[1 2 0];s;animCount;/;boneCount= 1;
+2;dup;shape;[0 2 0];s;atlasSize= 2;
+
+1;raise; // get indices
+0;dup;shape;lowIndexCount= 1;
+6;lowIndexCount;lowInstanceCount;instanceVars;*;+;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'ret[ 0 ] = t.x < int( lowIndexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
+1;bury;  // put indices back
+4;raise; // get indices
+0;dup;shape;highIndexCount= 1;
+6;highIndexCount;highInstanceCount;instanceVars;*;+;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'ret[ 0 ] = t.x < int( highIndexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
+4;bury;  // put indices back
+//print;quit; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
+
+0;dup;6;dup;bakeVat; // stack:  lowVAT lowverts lowindices mat highverts highindices bones prevframe hmap gradient
+4;dup;7;dup;bakeVat;
+2;raise;pop;4;raise;pop;5;raise;pop; // stack:  highVAT lowVAT lowindices mat highindices prevframe hmap gradient
+7;raise;7;raise;7;raise;
+
+
+
+
+
+l'kettled';
+
+
+
+timer;timeDelta;e;+;timer= 1;
+// Stack here: prevFrame, heightMap, gradient
+
+
+
+
+
+
+// set light and orthoproject
+std.nav3d;std.3dnavParam;set'lrot' 2;
+lrot;first;-300;/;[0 1 0];rot; // rot about y
+lrot;last;-300;/;[1 0 0];rot;m; // rot about x
+0;dup;
+set'lightRotation' 16;
+0;dup;[0 1];t;
+set'lightUnrotation' 16;
+[0 0 -1 0];m;unext;[0 3 0];s;[1 -1 1];*;lightDir= 3;
+[-0.72 0.72 -0.72 0.72 1.0 5.0];ortho;orthoproj= 16;
+
+
+
+//print; quit; // Stack here: prevFrame, heightMap, gradient, highvat, lowvat, lowindices, mat, highindices
+
+
+
+/////////////////////////////////////////////////////
+// shadow map terrain
+1;dup;
+// Stack here: heightmapCopy, prevFrame, heightMap, gradient
+
+6;dim;dim;*;first;*;shadowSize;
+backface;depth;
+c'
+vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+out float depth;
+'
+int index = gl_VertexID / 6;
+int x = index / int( dim );
+int y = index - x * int( dim );
+vec4 v = vec4( float(x), float(y), 0.0, 0.0 ) + verts[ gl_VertexID % 6 ];
+v.z = af( v.xy ).x * hscale;
+v.xy /= dim;
+ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v.yzxw ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+depth = ( ret.z / ret.w ) * 0.5 + 0.5;
+'
+in float depth;
+'
+ret[ 0 ] = depth;
+'
+1 1 1 0;
+backface;depth;
+
+////////////////////////////////////////////////////////////////////////////
+//  Shadow map sables
+//   0          1          2          3         4        5       6           7    8
+//  shadowmap, prevFrame, heightMap, gradient, highvat, lowvat, lowindices, mat, highindices
+depth;backface;
+6;dup;6;dup;
+lowIndexCount;lowInstanceCount;sableShadowPass;
+8;dup;5;dup;
+highIndexCount;highInstanceCount;sableShadowPass;
+
 depth;backface;texture;
 
 
@@ -368,108 +519,16 @@ ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
 ' 0 1 40 1;
 depth;backface;
 
+//print; quit; // frame hmap smap grad highvat lowvat lowindices mat highindices
+7;dup;7;dup;7;dup;5;dup;3;bury; // lowvatc lowindsc matc smap frame smap hmap grad highvat lowvat lowindices mat highindices
 
-
-7;dup;6;dup;10;dup; 5;raise;3;bury;// Stack here: VAT copy, indices copy, mats copy, shadowmap, frame, hmap, gradient, vertexAtribs, indices, bones, mats, VAT
-indexCount;unext;instanceCount;unext;*;
-5;dup;shape;
 depth;backface;
-c'
-out vec3 normal;
-out vec2 uv;
-out vec3 worldPos;
-flat out float mat;
-'
-mat = 0.0;
-int vertsPerInstance = int(indexCount);
-int instanceID = gl_VertexID / vertsPerInstance;
-int localVertID = gl_VertexID % vertsPerInstance;
-int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
-float xCoord = float(index) + 0.5;
-
-int base = vertsPerInstance + instanceID * int(instanceVars);
- vec3 instPos = vec3(
-     b(ivec4(base + 0, 0, 0, 0)),
-     b(ivec4(base + 1, 0, 0, 0)),
-     b(ivec4(base + 2, 0, 0, 0))
- );
- float facing = b(ivec4(base + 3, 0, 0, 0));
- float animIdx = b(ivec4(base + 4, 0, 0, 0));
- float animStart = b(ivec4(base + 5, 0, 0, 0));
- float tint = b(ivec4(base + 6, 0, 0, 0));
-int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
-float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
-int f0 = int( frame );
-int f1 = ( f0 + 1 ) % int( frameCount );
-float lerp = fract( frame );
-
-int frameAnim0 = f0 + anim * int(frameCount);
-int frameAnim1 = f1 + anim * int(frameCount);
-float yPos0 = float(frameAnim0 * 2) + 0.5;
-float yPos1 = float(frameAnim1 * 2) + 0.5;
-float yNrm0 = float(frameAnim0 * 2 + 1) + 0.5;
-float yNrm1 = float(frameAnim1 * 2 + 1) + 0.5;
-vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
-vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
-vec4 n0 = af( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
-vec4 n1 = af( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
-vec4 n = n1 * lerp + n0 * ( 1.0 - lerp );
-vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
-
-uv = vec2( v.w, n.w );
-v.w = 1.0;
-n.w = 1.0;
-normal = normalize( n.xyz );
-v.xyz *= sableScale;
-v.xyz += instPos;
-worldPos = v.xyz;
-ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
-'
-in vec3 normal;
-in vec2 uv;
-in vec3 worldPos;
-flat in float mat;
-
-float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-    return fract( sin( h ) * 43758.5453123 );
-}
-'
-vec2 muv = fract( uv );
-
-vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
-//if( color.a < 0.5 )  discard;
-
-
-// // Combine
-vec3 diffuse = color.rgb;
-vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
-
-
-vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
-lightPos /= lightPos.w;
-lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
-float curDepth = lightPos.z;
-
-float shadow = 0.0;
-for( float dx = -0.5; dx <= 0.5; ++dx ){
-  for( float dy = -0.5; dy <= 0.5; ++dy ){
-    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
-    vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
-    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
-    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
-  }
-}
-shadow = shadow / 4.0 * 0.5;
-
-ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
-// //ret[0] = vec4(vec3(roughness), 1.0);
-// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
-// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
-// //ret[ 0 ] = vec4( color, 1.0 );
-' 4 1 40 1;
+lowIndexCount;lowInstanceCount;sablePass;
+//print;quit; // frame hmap smap grad highvat lowvat lowinds mat highinds
+2;raise;      // smap frame hmap grad highvat lowvat lowinds mat highinds
+7;dup;9;dup;6;dup;
+highIndexCount;highInstanceCount;sablePass;
 depth;backface;
-
 
 
 

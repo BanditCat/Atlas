@@ -2392,7 +2392,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       u32 shape[ 4 ];
       u32 rank = ts->stack[ ts->size - 1 ]->size;
       for( u32 i = 0; i < rank; ++i )
-        shape[ i ] = ts->stack[ ts->size - 1 ]->data[ i ];
+        shape[ i ] = ts->stack[ ts->size - 1 ]->data[ ts->stack[ ts->size - 1 ]->offset + ts->stack[ ts->size - 1 ]->strides[ 0 ] * i ];
       for( u32 i = rank; i < 4; ++ i )
         shape[ i ] = 1;
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );

@@ -1,5 +1,4 @@
-GLB_ASSETS = $(wildcard inc/*.glb)
-KTL_ASSETS = $(GLB_ASSETS:.glb=.ktl)
+KTL_ASSETS = inc/catlas.ktl
 
 WINDOWS_TRIPLE ?= x86_64-w64-windows-gnu
 
@@ -80,8 +79,8 @@ $(TARGET): $(OBJS) $(ATLHS) icon.o
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(SDL2_CFLAGS) -c $< -o $@
 
-%.ktl: %.glb gltfToKtl.atl | $(TARGET)
-	./$(TARGET) gltfToKtl.atl $<
+inc/catlas.ktl: inc/catlasHigh.glb inc/catlasLow.glb gltfToKtl.atl | $(TARGET)
+	./$(TARGET) gltfToKtl.atl
 
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(HTML) $(TARGET) $(JS) $(WASM) $(ATLHS) icon.o
