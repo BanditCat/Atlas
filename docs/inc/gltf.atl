@@ -249,8 +249,9 @@ size;if'started'; // init code goes here
 [0];timer= 1;
 [900];lowInstanceCount= 1;
 [100];highInstanceCount= 1;
+lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
-
+[2 2];ssaa=;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -273,7 +274,7 @@ std.nav3d;
 [0.5 1.0 2.0];std.origin= 3;
 [171 134];std.3dnavParam=;
 
-6;windowSize;[2 2];*;[4];0;cat;
+6;windowSize;ssaa;*;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
 
 1;
@@ -321,13 +322,45 @@ float hash( vec2 p, float time ){
 0;dup;6;dup;bakeVat; // stack:  lowVAT lowverts lowindices mat highverts highindices bones prevframe hmap gradient
 4;dup;7;dup;bakeVat;
 2;raise;pop;4;raise;pop;5;raise;pop; // stack:  highVAT lowVAT lowindices mat highindices prevframe hmap gradient
+2;dup;lowindscpu=;4;dup;highindscpu=;
 7;raise;7;raise;7;raise;
+6;totalInstances;instanceVars;*;c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'ret[ 0 ] = hash( vec2( t.xy ), 0.1 );' 0 1 0 0;
+//0;dup;[6000 6010 0];s;print;pop;
+0;1;dup;shape;unext;rep;+;
+//0;dup;[6000 6010 0];s;print;pop;
+8;bury;
 
 
 
 
 
 l'kettled';
+
+
+
+
+///////////////////////////////////////////////////////////
+// instance mashing.
+//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances
+
+7;raise;
+8;dup;[0];highInstanceCount;instanceVars;*;0;cat;[0];0;cat;s;
+6;highInstanceCount;instanceVars;*;highIndexCount;+;
+c''''ret[ 0 ] = t.x < int( highIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
+                                             a( ivec4( t.x - int( highIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
+7;bury;
+5;raise;
+8;dup;highInstanceCount;instanceVars;*;totalInstances;instanceVars;*;0;cat;[0];0;cat;s;
+6;lowInstanceCount;instanceVars;*;lowIndexCount;+;
+c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
+                                             a( ivec4( t.x - int( lowIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
+5;bury;
+
 
 
 
@@ -413,17 +446,17 @@ depth;backface;texture;
 
 
 3;dup;3;dup; // duplicate terrain and heightmap
-windowSize;[2 2];*;set'wdims' 2;
+windowSize;ssaa;*;set'wdims' 2;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
-[90];windowSize;[2 2];*;0;cat;[0.01 3];0;cat;proj;proj= 16;
+[90];windowSize;ssaa;*;0;cat;[0.01 3];0;cat;proj;proj= 16;
 
 // Stack here: the arguments (heightmapcopy, gradientcopy, shadowMap, prevFrame), heightMap, gradient
 //2;dup;5;bury;print;   // OOPS dont do this, itll deep copy
 2;raise;4;bury;4;dup;2;bury;
 depth;backface;
-6;dim;dim;*;first;*;windowSize;[2 2];*;[4];0;cat;
+6;dim;dim;*;first;*;windowSize;ssaa;*;[4];0;cat;
 c'
 vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -529,6 +562,10 @@ lowIndexCount;lowInstanceCount;sablePass;
 7;dup;9;dup;6;dup;
 highIndexCount;highInstanceCount;sablePass;
 depth;backface;
+
+
+
+
 
 
 

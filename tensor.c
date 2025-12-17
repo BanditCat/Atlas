@@ -47,53 +47,66 @@ tensor* copyTensor( const tensor* t ){
   ret->ownsData = false;
   return ret;
 }
-// This converts a tensor to cpu memory.
 void tensorToHostMemory( tensor* t ){
   if( !t->gpu )
     return;
 
-  // hostData is allocated for the EXACT tensor size
-  f32* hostData = mem( t->size, f32 );
-
   u64 mult = t->tex.channels;
   if( mult >= 10 )
     mult /= 10;
-  if( !mult ) mult = 4; // Generic storage is RGBA (4 floats)
+  if( !mult ) mult = 4;
   
-  // layerElementCount is the TEXTURE size (which may include padding)
   u32 layerElementCount = t->tex.width * t->tex.height * mult;
-  f32* tempData =  mem( layerElementCount, f32 ); 
+  u64 totalTexElements = (u64)layerElementCount * t->tex.layers;
+  f32* texData = mem( totalTexElements, f32 );
+  f32* tempData = mem( layerElementCount, f32 );
 
   CHECK_GL_ERROR();
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
-  glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
-  CHECK_GL_ERROR();
   
   GLenum format = GL_RGBA;
   if( t->tex.channels == 1 || t->tex.channels == 10 ) format = GL_RED;
   if( t->tex.channels == 2 || t->tex.channels == 20 ) format = GL_RG;
   if( t->tex.channels == 3 || t->tex.channels == 30 ) format = GL_RGB;
 
+  // Read all layers into texData
+  printf( "READPIXELS!\n" );
   for( u32 i = 0; i < t->tex.layers; ++i ){
     glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i );
     glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
-    
-    u64 offset = (u64)i * layerElementCount;
-    u64 elementsToCopy = layerElementCount;
-
-    if( offset + elementsToCopy > t->size ){
-      if( offset >= t->size ) {
-        elementsToCopy = 0;
-      } else {
-        elementsToCopy = t->size - offset;
-      }
-    }
-
-    memcpy( hostData + offset, tempData, elementsToCopy * sizeof( f32 ) );
+    memcpy( texData + (u64)i * layerElementCount, tempData, layerElementCount * sizeof( f32 ) );
   }
   CHECK_GL_ERROR();
-
   unmem( tempData );
+
+  // Now extract logical tensor using offset/strides
+  f32* hostData = mem( t->size, f32 );
+  
+  // Compute standard contiguous strides for output
+  u32 std_strides[4] = {1, 1, 1, 1};
+  if( t->rank > 0 ){
+    std_strides[ t->rank - 1 ] = 1;
+    for( int i = t->rank - 2; i >= 0; --i )
+      std_strides[ i ] = std_strides[ i + 1 ] * t->shape[ i + 1 ];
+  }
+  
+  // Copy using offset/strides to read, contiguous to write
+  u32 indices[4] = {0, 0, 0, 0};
+  for( u32 i = 0; i < t->size; ++i ){
+    u32 tmp = i;
+    for( u32 dim = 0; dim < t->rank; ++dim ){
+      indices[ dim ] = tmp / std_strides[ dim ];
+      tmp %= std_strides[ dim ];
+    }
+    
+    s64 src_idx = t->offset;
+    for( u32 dim = 0; dim < t->rank; ++dim )
+      src_idx += (s64)indices[ dim ] * t->strides[ dim ];
+    
+    hostData[ i ] = texData[ src_idx ];
+  }
+  
+  unmem( texData );
 
   if( t->ownsData ){
     if( t->tex.texture ){
@@ -110,12 +123,78 @@ void tensorToHostMemory( tensor* t ){
   t->data = hostData;
   t->gpu = false;
   t->ownsData = true;
-  u32 stride = 1;
-  for( int i = t->rank - 1; i >= 0; --i ){
-    t->strides[ i ] = stride;
-    stride *= t->shape[ i ];
-  }
+  for( u32 i = 0; i < t->rank; ++i )
+    t->strides[ i ] = std_strides[ i ];
 }
+/* // This converts a tensor to cpu memory. */
+/* void tensorToHostMemory( tensor* t ){ */
+/*   if( !t->gpu ) */
+/*     return; */
+
+/*   // hostData is allocated for the EXACT tensor size */
+/*   f32* hostData = mem( t->size, f32 ); */
+
+/*   u64 mult = t->tex.channels; */
+/*   if( mult >= 10 ) */
+/*     mult /= 10; */
+/*   if( !mult ) mult = 4; // Generic storage is RGBA (4 floats) */
+  
+/*   // layerElementCount is the TEXTURE size (which may include padding) */
+/*   u32 layerElementCount = t->tex.width * t->tex.height * mult; */
+/*   f32* tempData =  mem( layerElementCount, f32 );  */
+
+/*   CHECK_GL_ERROR(); */
+/*   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer ); */
+/*   glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 ); */
+/*   CHECK_GL_ERROR(); */
+  
+/*   GLenum format = GL_RGBA; */
+/*   if( t->tex.channels == 1 || t->tex.channels == 10 ) format = GL_RED; */
+/*   if( t->tex.channels == 2 || t->tex.channels == 20 ) format = GL_RG; */
+/*   if( t->tex.channels == 3 || t->tex.channels == 30 ) format = GL_RGB; */
+
+/*   for( u32 i = 0; i < t->tex.layers; ++i ){ */
+/*     glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i ); */
+/*     glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData ); */
+    
+/*     u64 offset = (u64)i * layerElementCount; */
+/*     u64 elementsToCopy = layerElementCount; */
+
+/*     if( offset + elementsToCopy > t->size ){ */
+/*       if( offset >= t->size ) { */
+/*         elementsToCopy = 0; */
+/*       } else { */
+/*         elementsToCopy = t->size - offset; */
+/*       } */
+/*     } */
+
+/*     memcpy( hostData + offset, tempData, elementsToCopy * sizeof( f32 ) ); */
+/*   } */
+/*   CHECK_GL_ERROR(); */
+
+/*   unmem( tempData ); */
+
+/*   if( t->ownsData ){ */
+/*     if( t->tex.texture ){ */
+/*       glDeleteTextures( 1, &t->tex.texture ); */
+/*       t->tex.texture = 0; */
+/*     } */
+/*     if( t->tex.framebuffer ){ */
+/*       glDeleteFramebuffers( 1, &t->tex.framebuffer ); */
+/*       t->tex.framebuffer = 0; */
+/*     } */
+/*   } */
+
+/*   t->offset = 0; */
+/*   t->data = hostData; */
+/*   t->gpu = false; */
+/*   t->ownsData = true; */
+/*   u32 stride = 1; */
+/*   for( int i = t->rank - 1; i >= 0; --i ){ */
+/*     t->strides[ i ] = stride; */
+/*     stride *= t->shape[ i ]; */
+/*   } */
+/* } */
 void tensorToGPUMemory( tensor* t ){
   if( t->gpu )
     return;
@@ -896,7 +975,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
 #ifndef EMSCRIPTEN // only need this for native afaict
-  glFinish();
+  //glFinish();
 #endif
 
   if( compute->reuse ){
