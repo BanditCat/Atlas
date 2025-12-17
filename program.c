@@ -918,6 +918,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = BURY;
     // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "index" ) ){
+    curStep->type = INDEX;
+    // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
+
   } else if( !strcmp( command, "raise" ) ){
     curStep->type = RAISE;
     // dbg( "Linenum %u commandnum %u: bury\n", linenum, commandnum );
@@ -1038,6 +1042,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = FLOOR;
     // dbg( "Linenum %u commandnum %u: floor\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "sort" ) ){
+    curStep->type = SORT;
+    // dbg( "Linenum %u commandnum %u: sort\n", linenum, commandnum );
+
   } else if( !strcmp( command, "ceil" ) ){
     curStep->type = CEIL;
     // dbg( "Linenum %u commandnum %u: ceil\n", linenum, commandnum );
@@ -1093,6 +1101,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
   } else if( !strcmp( command, "shape" ) ){
     curStep->type = SHAPE;
     // dbg( "Linenum %u commandnum %u: shape\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "reshape" ) ){
+    curStep->type = RESHAPE;
+    // dbg( "Linenum %u commandnum %u: reshape\n", linenum, commandnum );
 
   } else if( !strcmp( command, "dup" ) ){
     curStep->type = DUP;
@@ -1842,7 +1854,12 @@ void deleteProgram( program* p ){
     unmem( p->mainFilename );
   unmem( p );
 }
-
+static f32* compareArray = NULL;
+int compareFloats(const void *a, const void *b) {
+    u32 fa = *(const f32 *)a;
+    u32 fb = *(const f32 *)b;
+    return (compareArray[ fa ] > compareArray[ fb ]) - (compareArray[ fa ] < compareArray[ fb ] );
+}
 // A pointer pointer because program might change during e.g. a load.
 char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
   program* p = *progp;
@@ -1851,6 +1868,29 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     // dbg( "Step %u", i );
     step* s = p->steps + i;
     switch( s->type ){
+    case INDEX: {
+      char* err = tensorIndex( ts );
+      if( err )
+        return err;
+      break;
+    }
+    case SORT: {
+      if( !ts->size )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sort on an empty stack." );
+      tensor* top = ts->stack[ ts->size - 1 ];
+      if( top->rank != 1 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sort a non-vector." );
+      tensorEnsureContiguous( top );
+      compareArray = top->data;
+      f32* sorted = mem( top->shape[ 0 ], f32 );
+      for( u32 i = 0; i < top->shape[ 0 ]; ++i )
+        sorted[ i ] = i;
+      qsort( sorted, top->shape[ 0 ], sizeof( f32 ), compareFloats );
+      u32 shape[ 4 ] = { top->shape[ 0 ], 1, 1, 1 };
+      pop( ts );      
+      push( ts, newTensor( 1, shape, sorted ) );
+      break;
+    }
     case WINDOWSIZE: {
       static const u32 wsshape[ 1 ] = { 2 };
       int windowWidth, windowHeight;
@@ -2648,6 +2688,27 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         pop( ts );
       // dbg( "%s'%s'", "load ", s=>progName );
       *ret = true; return NULL;
+    }
+    case RESHAPE: {
+      if( ts->size < 2 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Attempt to reshape tensor without both a shape and tensor." );
+      const tensor* top = ts->stack[ ts->size - 1 ];
+      if( top->rank != 1 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Attempt to reshape a tensor with shape rank not equal 1." );
+      u32 rank = top->shape[ 0 ];
+      if( top->shape[ 0 ] > 4 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Attempt to reshape a tensor with shape greater than length 4." );
+      u32 shape[ 4 ] = { 1, 1, 1, 1 };
+      for( u32 i = 0; i < rank; ++i )
+        shape[ i ] = top->data[ top->offset + top->strides[ 0 ] * i ];
+      pop( ts );
+      char* err = tensorReshape( ts, ts->size - 1, rank, shape );
+      if( err )
+        return err;
+      break;
     }
     case EVAL: {
       char* codeToRun = NULL;

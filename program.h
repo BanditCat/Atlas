@@ -14,6 +14,8 @@
 // Also add it to the documentation, docs/index.html.
 typedef struct{
   enum{
+    INDEX, // documented
+    SORT, // documented
     CLS, // documented
     COMPUTE, // documented
     CONTINUE, // documented
@@ -30,7 +32,6 @@ typedef struct{
     MINMAX, // documented
     GLTF, // documented
     TOSTRING, // documented
-    RTD, // documented
     BURY, // documented
     RAISE, // documented
     BACKFACE, // documented
@@ -69,6 +70,7 @@ typedef struct{
     TIMEDELTA, // documented
     REPEAT, // documented
     SHAPE, // documented
+    RESHAPE, // documented
     QUIT, // documented
     CALL, // documented
     POP, // documented

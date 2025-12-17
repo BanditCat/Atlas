@@ -199,6 +199,7 @@
       <li><a href="#cmd-if">if / ifn</a></li>
       <li><a href="#cmd-img">img (image)</a></li>
       <li><a href="#cmd-include">include</a></li>
+      <li><a href="#cmd-index">index</a></li>
       <li><a href="#cmd-input">input</a></li>
       <li><a href="#cmd-kettle">kettle</a></li>
       <li><a href="#cmd-keys">keys</a></li>
@@ -216,10 +217,12 @@
       <li><a href="#cmd-r">r (reverse)</a></li>
       <li><a href="#cmd-raise">raise</a></li>
       <li><a href="#cmd-repeat">rep (repeat)</a></li>
+      <li><a href="#cmd-reshape">reshape</a></li>
       <li><a href="#cmd-return">return</a></li>
       <li><a href="#cmd-rotate">rot (rotate)</a></li>
       <li><a href="#cmd-s">s (slice)</a></li>
       <li><a href="#cmd-set">set</a></li>
+      <li><a href="#cmd-sort">sort</a></li>
       <li><a href="#cmd-shape">shape</a></li>
       <li><a href="#cmd-size">size</a></li>
       <li><a href="#cmd-t">t (transpose)</a></li>
@@ -589,6 +592,45 @@ print;quit;</code></pre>
     <p>This includes another file textually, placing all the commands in that file at the location of the include command. For example <code>include'head.atl'</code> would include all the commands of <code>head.atl</code>.</p>
   </section>
 
+<section id="cmd-index">
+  <h2>index</h2>
+  <p>Selects elements from a tensor along a specified axis using a vector of indices. The stack should contain (from bottom to top): the source tensor, a vector of indices to select, and a scalar specifying the axis. The result is a new tensor containing only the selected slices along that axis.</p>
+  
+  <p>For example, to select specific rows (axis 0) from a matrix:</p>
+  <pre><code>[[10 11 12]
+ [20 21 22]
+ [30 31 32]
+ [40 41 42]];  // Source tensor (4x3 matrix)
+[0 2 3];       // Indices: select rows 0, 2, and 3
+0;             // Axis 0 (rows)
+index;
+print;quit;</code></pre>
+  <p>This produces a 3x3 matrix containing rows 0, 2, and 3:</p>
+  <pre><code>[[10 11 12]
+ [30 31 32]
+ [40 41 42]]</code></pre>
+
+  <p>To select specific columns (axis 1) instead:</p>
+  <pre><code>[[10 11 12 13]
+ [20 21 22 23]];  // Source tensor (2x4 matrix)
+[1 3];            // Indices: select columns 1 and 3
+1;                // Axis 1 (columns)
+index;
+print;quit;</code></pre>
+  <p>This produces a 2x2 matrix containing columns 1 and 3:</p>
+  <pre><code>[[11 13]
+ [21 23]]</code></pre>
+
+  <p>Indices may be repeated or reordered to duplicate or shuffle elements:</p>
+  <pre><code>[100 200 300];  // Source vector
+[2 0 0 1];      // Indices: element 2, then 0 twice, then 1
+0;              // Axis 0
+index;
+print;quit;</code></pre>
+  <p>This produces:</p>
+  <pre><code>[300 100 100 200]</code></pre>
+</section>
+
   <section id="cmd-input">
     <h2>input</h2>
     <p>This loads a 6 element input tensor corresponding to the mouse cursor. The first two elements are the x and y mouse deltas, and the 3rd element is the mouse wheel delta. The next 3 elements correspond to the left, right, and middle mouse buttons, 1.0 if held, 0.0 if released, and 2.0 if double clicked.</p>
@@ -688,6 +730,11 @@ print;quit;</code></pre>
     </p>
   </section>
 
+  <section id="cmd-reshape">
+    <h2>rep (repeat)</h2>
+    <p>Given a shape and tensor on top of the stack, this command changes the shape of the tensor.  The new old and old sizes must match, or an error occurs.</p>
+  </section>
+
   <section id="cmd-return">
     <h2>return</h2>
     <p>Returns from a function to the place that called that label:
@@ -716,6 +763,11 @@ print;quit;</code></pre>
        would set a variable named <code>vec</code> with the value <code>[1 2 3]</code>, and
        make it available as a <code>vec3</code> in compute shaders. The valid sizes are 1,2,3,4 for vectors, and 16
        for a 4x4 matrix. If set is called without a size, the named variable will not be set as a uniform. This function necessitates a deep copy, and should be used sparingly on large tensors. A short form of this command exists; <code>foo=</code> or <code>foo= N</code> may be used instead of <code>set'foo'</code> or <code>set'foo' N</code></p>
+  </section>
+
+  <section id="cmd-sort">
+    <h2>sort</h2>
+    <p>This commands takes 1 vector and produces a new vector of equal length containing the indices of that vector in sorted order, from smallest to largest.</p>
   </section>
 
   <section id="cmd-shape">

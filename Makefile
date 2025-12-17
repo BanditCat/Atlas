@@ -97,7 +97,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'Shadows'
+	git commit -m 'LoD'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)

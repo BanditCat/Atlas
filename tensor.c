@@ -70,7 +70,6 @@ void tensorToHostMemory( tensor* t ){
   if( t->tex.channels == 3 || t->tex.channels == 30 ) format = GL_RGB;
 
   // Read all layers into texData
-  printf( "READPIXELS!\n" );
   for( u32 i = 0; i < t->tex.layers; ++i ){
     glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i );
     glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
@@ -1066,15 +1065,16 @@ char* tensorReshapeHelper( tensor* t, u32 newRank, u32* newShape ){
   for( u32 i = 0; i < newRank; ++i )
     newSize *= newShape[ i ];
   if( newSize != t->size )
-    err( "%s", "New shape size does not match tensor size." );
+    err( "New shape size %u does not match tensor size %u.", newSize, t->size );
 
   memcpy( t->shape, newShape, sizeof( u32 ) * newRank );
+  for( int i = 3; i >= newRank; --i )
+    t->shape[ i ] = 1;
   u32 size = 1;
   for( int i = newRank - 1; i >= 0; --i ){
     t->strides[ i ] = size;
     size *= newShape[ i ];
   }
-
   t->rank = newRank;
   return NULL;
 }
@@ -2406,4 +2406,93 @@ tensor* textBufferView( u32 width, u32 height, u32 scrollUp ){
   }
 
   return newTensor( 2, shape, view );
+}
+char* tensorIndexHelper(tensor* t, tensor* indices, u32 axis, tensor** result) {
+  if (!t || !indices)
+    err("%s", "Tensor is NULL in tensorIndexHelper.");
+  if (indices->rank != 1)
+    err("%s", "Indices must be a rank-1 tensor (vector).");
+  if (axis >= t->rank)
+    err("Axis %u is out of bounds for tensor of rank %u.", axis, t->rank);
+
+  tensorToHostMemory(t);
+  tensorToHostMemory(indices);
+
+  u32 numIndices = indices->size;
+
+  // Compute new shape (same as source, but axis dimension = numIndices)
+  u32 new_shape[4];
+  for (u32 i = 0; i < t->rank; ++i)
+    new_shape[i] = (i == axis) ? numIndices : t->shape[i];
+  for (u32 i = t->rank; i < 4; ++i)
+    new_shape[i] = 1;
+
+  // Compute contiguous strides for output
+  u32 new_strides[4] = {1, 1, 1, 1};
+  u32 new_size = 1;
+  for (int i = t->rank - 1; i >= 0; --i) {
+    new_strides[i] = new_size;
+    new_size *= new_shape[i];
+  }
+
+  f32* new_data = mem(new_size, f32);
+
+  // Iterate over all output elements
+  u32 dst_indices[4] = {0, 0, 0, 0};
+  for (u32 i = 0; i < new_size; ++i) {
+    // Compute destination multi-index from linear index
+    u32 tmp = i;
+    for (u32 dim = 0; dim < t->rank; ++dim) {
+      dst_indices[dim] = tmp / new_strides[dim];
+      tmp %= new_strides[dim];
+    }
+
+    // Get the remapped index along the target axis
+    u32 idx_pos = dst_indices[axis];
+    s32 mapped_idx = (s32)indices->data[indices->offset + idx_pos * indices->strides[0]];
+
+    // Handle negative indices
+    if (mapped_idx < 0)
+      mapped_idx += t->shape[axis];
+
+    if (mapped_idx < 0 || mapped_idx >= (s32)t->shape[axis]) {
+      unmem(new_data);
+      err("Index %d out of bounds for axis %u with size %u.", mapped_idx, axis, t->shape[axis]);
+    }
+
+    // Compute source linear index
+    s64 src_idx = t->offset;
+    for (u32 dim = 0; dim < t->rank; ++dim) {
+      u32 src_dim_idx = (dim == axis) ? (u32)mapped_idx : dst_indices[dim];
+      src_idx += (s64)src_dim_idx * t->strides[dim];
+    }
+
+    new_data[i] = t->data[src_idx];
+  }
+
+  *result = newTensor(t->rank, new_shape, new_data);
+  return NULL;
+}
+
+char* tensorIndex(tensorStack* ts) {
+  if (ts->size < 3)
+    err("%s", "Index requires 3 stack items: source tensor, indices vector, and axis scalar.");
+
+  tensor* axisT = ts->stack[ts->size - 1];
+  tensor* indicesT = ts->stack[ts->size - 2];
+  tensor* sourceT = ts->stack[ts->size - 3];
+
+  tensorToHostMemory(axisT);
+  u32 axis = (u32)axisT->data[axisT->offset];
+
+  tensor* resultT;
+  char* error = tensorIndexHelper(sourceT, indicesT, axis, &resultT);
+  if (error) return error;
+
+  pop(ts);  // axis
+  pop(ts);  // indices
+  pop(ts);  // source
+
+  push(ts, resultT);
+  return NULL;
 }

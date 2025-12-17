@@ -72,7 +72,8 @@ tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );
 void deleteStack( tensorStack* ts );
 void push( tensorStack* ts, tensor* t );
-char* tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape );  // BUGBUG
+char* tensorIndex( tensorStack* ts );
+char* tensorReshape( tensorStack* ts, u32 index, u32 newRank, u32* newShape ); 
 char* tensorTranspose( tensorStack* ts, u32 index, u32 axis1, u32 axis2 );
 char* tensorReverse( tensorStack* ts, u32 index, u32 axis );
 char* tensorCat( tensorStack* ts, u32 index1, u32 index2, u32 axis );
