@@ -340,9 +340,7 @@ float hash( vec2 p, float time ){
 l'kettled';
 
 ////////////////////////////////////////////////////////////////////
-// lod sort 10 times/second
-lodTimer;[0.1];-;unext;if'skipLod';
-lodTimer;[0.1];-;lodTimer=;
+// lod sort 
 8;raise;
 totalInstances;instanceVars;0;cat;reshape;
 0;dup;
@@ -366,7 +364,6 @@ float y = a( ivec4( t.x + 1, 0, 0, 0 ) ) * dim;
 ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, 0, 0, 0 ) );
 ' 2 1 0 0;
 8;bury;
-l'skipLod';
 
 
 ///////////////////////////////////////////////////////////
