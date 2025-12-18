@@ -273,8 +273,8 @@ size;if'started'; // init code goes here
 [0.02];sableScale= 1;
 [0];timer= 1;
 [0];lodTimer=;
-[900];lowInstanceCount= 1;
-[100];highInstanceCount= 1;
+[950];lowInstanceCount= 1;
+[50];highInstanceCount= 1;
 lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
 [2 2];ssaa=;
@@ -368,13 +368,18 @@ l'kettled';
 // lod sort 
 8;raise;
 totalInstances;instanceVars;0;cat;reshape;
-0;dup;6;totalInstances;c''''ret[ 0 ] = length( vec3( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ) ) - std_origin );' 1 1 0 0;
+0;dup;6;totalInstances;c''''
+vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
+pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
+pos /= pos.w;
+ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
+' 1 1 0 0;
 // 0;dup;
 // [0 3 1];s;
 // std.origin;totalInstances;unext;rep;-;
 // std.worldUnrotation;[0 3 0];s;[0 3 1];s;[0 1];t;m;
 // 0;dup;[0 2 1];s;0;dup;*;0;dup;[0 1 1];s;1;raise;[1 2 1];s;+;unext;0.5;totalInstances;unext;rep;^; // length(xy), pos, ...
-// 10;totalInstances;unext;rep;*; // length(xy)*weight, pos, ...
+// 5;totalInstances;unext;rep;*; // length(xy)*weight, pos, ...
 // 1;raise;[2 3 1];s;unext;1;bury;1;dup;-1;totalInstances;unext;rep;*;+; // length(xy)*weight-pos.z, zs, ...
 // 1;raise;0;totalInstances;unext;rep;>;1000;totalInstances;unext;rep;*;+;
 
