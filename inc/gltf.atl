@@ -1,258 +1,3 @@
-// Functions
-1;if'skipFuncs';
-////////////////////////////////////////////////////////////////////
-// bake VAT  takes vertex data and bone matrices and produces a VAT
-// stack should be a) bones and b) vertex data.
-l'bakeVat';
-6;2;dup;shape;[0 1 0];s;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;
-c'''
-mat4 getBoneMat(int frame, int bone, int anim) {
-    mat4 m;
-    for (int col = 0; col < 4; col++) {
-       vec4 val = af(vec4(
-           float(col) + 0.5,
-           float(anim) + animCount * float(bone) + 0.5,
-           float(frame), 0.0
-       ));
-       m[col] = val;
-    }
-    return m;
-}
-'
-int vertIdx = int(tf.x);
-int frameAnim = int(tf.y) / 2;
-int posOrNormal = int(tf.y) % 2;
-int frame = frameAnim % int(frameCount);
-int anim = frameAnim / int(frameCount);
-
-vec4 v = vec4(
-    b(ivec4(vertIdx, 0, 0, 0)),
-    b(ivec4(vertIdx, 1, 0, 0)),
-    b(ivec4(vertIdx, 2, 0, 0)),
-    1.0
-);
-
-ivec4 bi = ivec4(
-    b(ivec4(vertIdx, 8, 0, 0)),
-    b(ivec4(vertIdx, 9, 0, 0)),
-    b(ivec4(vertIdx, 10, 0, 0)),
-    b(ivec4(vertIdx, 11, 0, 0))
-);
-vec4 weights = vec4(
-    b(ivec4(vertIdx, 12, 0, 0)),
-    b(ivec4(vertIdx, 13, 0, 0)),
-    b(ivec4(vertIdx, 14, 0, 0)),
-    b(ivec4(vertIdx, 15, 0, 0))
-);
-vec2 uv = vec2( b( ivec4( vertIdx, 6, 0, 0 ) ), b( ivec4( vertIdx, 7, 0, 0 ) ) );
-vec4 normal = vec4( b( ivec4( vertIdx, 3, 0, 0 ) ), b( ivec4( vertIdx, 4, 0, 0 ) ),
-                    b( ivec4( vertIdx, 5, 0, 0 ) ), 1.0 );
-mat4 skin = getBoneMat(frame, bi.x, anim) * weights.x +
-            getBoneMat(frame, bi.y, anim) * weights.y +
-            getBoneMat(frame, bi.z, anim) * weights.z +
-            getBoneMat(frame, bi.w, anim) * weights.w;
-
-v = skin * v;
-v.w = uv.x;
-normal = skin * normal;
-normal.w = uv.y;
-ret[0] = posOrNormal == 0 ? v : normal;
-' 2 1 4 0;
-return;
-
-
-
-//////////////////////////////////////////////////////////////////////////
-// sable shadow pass,
-// expects from top to bottom instancecount, indexcount, vat, indices
-
-l'sableShadowPass';
-instanceCount= 1;indexCount= 1;
-indexCount;unext;instanceCount;unext;*;
-shadowSize;
-c'
-mat3 rotY(float facing) {
-    float c = cos(facing);
-    float s = sin(facing);
-    return mat3(
-        c,   0.0,  s,
-        0.0, 1.0,  0.0,
-       -s,   0.0,  c
-    );
-}
-out float depth;
-'
-int vertsPerInstance = int(indexCount);
-int instanceID = gl_VertexID / vertsPerInstance;
-int localVertID = gl_VertexID % vertsPerInstance;
-int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
-float xCoord = float(index) + 0.5;
-
-int base = vertsPerInstance + instanceID * int(instanceVars);
- vec3 instPos = vec3(
-     b(ivec4(base + 0, 0, 0, 0)),
-     b(ivec4(base + 1, 0, 0, 0)),
-     b(ivec4(base + 2, 0, 0, 0))
- );
- float facing = b(ivec4(base + 3, 0, 0, 0));
- float animIdx = b(ivec4(base + 4, 0, 0, 0));
- float animStart = b(ivec4(base + 5, 0, 0, 0));
-int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
-float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
-int f0 = int( frame );
-int f1 = ( f0 + 1 ) % int( frameCount );
-float lerp = fract( frame );
-
-int frameAnim0 = f0 + anim * int(frameCount);
-int frameAnim1 = f1 + anim * int(frameCount);
-float yPos0 = float(frameAnim0 * 2) + 0.5;
-float yPos1 = float(frameAnim1 * 2) + 0.5;
-vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
-vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
-vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
-
-v.w = 1.0;
-v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
-v.xyz *= sableScale;
-v.xyz += instPos;
-
-ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
-depth = ( ret.z / ret.w ) * 0.5 + 0.5;
-'
-in float depth;
-'
-ret[ 0 ] = depth;
-' 2 1 1 1;
-return;
-
-
-
-
-
-
-///////////////////////////////////////////////////////////
-//  Sable pass, expects instanceCount indexCount vat indices mat smap frame
-l'sablePass';
-instanceCount= 1;indexCount= 1;
-indexCount;unext;instanceCount;unext;*;
-5;dup;shape;
-c'
-out vec3 normal;
-out vec2 uv;
-out vec3 worldPos;
-flat out float mat;
-mat3 rotY(float facing) {
-    float c = cos(facing);
-    float s = sin(facing);
-    return mat3(
-        c,   0.0,  s,
-        0.0, 1.0,  0.0,
-       -s,   0.0,  c
-    );
-}
-'
-mat = 0.0;
-int vertsPerInstance = int(indexCount);
-int instanceID = gl_VertexID / vertsPerInstance;
-int localVertID = gl_VertexID % vertsPerInstance;
-int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
-float xCoord = float(index) + 0.5;
-
-int base = vertsPerInstance + instanceID * int(instanceVars);
- vec3 instPos = vec3(
-     b(ivec4(base + 0, 0, 0, 0)),
-     b(ivec4(base + 1, 0, 0, 0)),
-     b(ivec4(base + 2, 0, 0, 0))
- );
- float facing = b(ivec4(base + 3, 0, 0, 0));
- float animIdx = b(ivec4(base + 4, 0, 0, 0));
- float animStart = b(ivec4(base + 5, 0, 0, 0));
- float tint = b(ivec4(base + 6, 0, 0, 0));
-int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
-float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
-int f0 = int( frame );
-int f1 = ( f0 + 1 ) % int( frameCount );
-float lerp = fract( frame );
-
-int frameAnim0 = f0 + anim * int(frameCount);
-int frameAnim1 = f1 + anim * int(frameCount);
-float yPos0 = float(frameAnim0 * 2) + 0.5;
-float yPos1 = float(frameAnim1 * 2) + 0.5;
-float yNrm0 = float(frameAnim0 * 2 + 1) + 0.5;
-float yNrm1 = float(frameAnim1 * 2 + 1) + 0.5;
-vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
-vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
-vec4 n0 = af( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
-vec4 n1 = af( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
-vec4 n = n1 * lerp + n0 * ( 1.0 - lerp );
-vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
-
-uv = vec2( v.w, n.w );
-v.w = 1.0;
-n.w = 1.0;
-n.xyz = rotY( facing * 3.14159265359 * 2.0 ) * n.xyz;
-normal = normalize( n.xyz );
-v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
-v.xyz *= sableScale;
-v.xyz += instPos;
-worldPos = v.xyz;
-ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
-'
-in vec3 normal;
-in vec2 uv;
-in vec3 worldPos;
-flat in float mat;
-
-float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-    return fract( sin( h ) * 43758.5453123 );
-}
-'
-vec2 muv = fract( uv );
-
-vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
-//if( color.a < 0.5 )  discard;
-
-
-// // Combine
-vec3 diffuse = color.rgb;
-vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
-
-
-vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
-lightPos /= lightPos.w;
-lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
-float curDepth = lightPos.z;
-
-float shadow = 0.0;
-for( float dx = -0.5; dx <= 0.5; ++dx ){
-  for( float dy = -0.5; dy <= 0.5; ++dy ){
-    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
-    vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
-    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
-    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
-  }
-}
-shadow = shadow / 4.0 * 0.5;
-
-ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
-// //ret[0] = vec4(vec3(roughness), 1.0);
-// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
-// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
-// //ret[ 0 ] = vec4( color, 1.0 );
-' 4 1 40 1;
-
-return;
-
-
-
-
-
-
-
-
-
-l'skipFuncs';
 include'inc\stdlib.atl';
 'inc\\catlas.atl';
 include'inc\nav.atl';
@@ -277,6 +22,7 @@ size;if'started'; // init code goes here
 lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
 [2 2];ssaa=;
+[1000 100];fireworksDims=;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -289,7 +35,7 @@ dim;first;4;std.fractalNoise;
 0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
 
 
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 10 0;texture;
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 1 0;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
@@ -357,6 +103,20 @@ float hash( vec2 p, float time ){
 'ret[ 0 ] = hash( vec2( t.xy ), 0.1 );' 0 1 0 0;
 8;bury;
 
+//print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances
+/////////////////////////////////////////////////
+//  init fireworks
+6;fireworksDims;[4];0;cat;c''''
+ret[ 0 ] = vec4( 0.0 );
+' 0 1 4 0;
+9;bury;
+6;fireworksDims;[4];0;cat;c''''
+ret[ 0 ] = vec4( 0.0 );
+' 0 1 4 0;
+9;bury;
+//print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
+
+
 
 
 
@@ -364,9 +124,46 @@ float hash( vec2 p, float time ){
 l'kettled';
 
 ////////////////////////////////////////////////////////////////////
-// lod sort 
-8;raise;
+//  Check for exploding sables.
+8;raise; // instances
 totalInstances;instanceVars;0;cat;reshape;
+0;dup;6;totalInstances;c''''
+float animIdx = a(ivec4( t.x, 4, 0, 0));
+float animStart = a(ivec4( t.x, 5, 0, 0));
+int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
+float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+ret[ 0 ] = ( anim == 2 && frame > 20.0 ) ? 0.0 : 1.0;
+' 1 1 0 0;
+3;raise;1;dup;3;dup;
+totalInstances;unext;3;*;dim;dim;0;cat;[1];0;cat;additive;c'
+const vec4 verts[3] = vec4[](
+    vec4( 0.0,        2.0, 0.0, 1.0),   // top
+    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+);
+out vec2 tripos;
+'
+int vert = gl_VertexID % 3;
+int idx = gl_VertexID / 3;
+vec4 pos = vec4( a( ivec4( idx, 2, 0, 0 ) ), a( ivec4( idx, 0, 0, 0 ) ), 0.0, 0.0 );
+pos.xy = pos.xy * 2.0 - 1.0;
+tripos = verts[ vert ].xy;
+ret = b( ivec4( idx, 0, 0, 0 ) ) == 0.0 ? ( ( verts[ vert ] * vec4( 0.02, 0.02, 1.0, 1.0 ) + pos ) ) : vec4( -1.0 );
+'
+in vec2 tripos;
+'
+ret[ 0 ] = clamp( 1.0 - length( tripos ), 0.0, 1.0 ) * -0.1;
+' 2 1 1 1;additive;
+3;bury;
+0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
+ret[ 0 ] = a( ivec4( t.x, t.y, 0, 0 ) ) * ( b( ivec4( t.x, 0, 0, 0 ) ) );
+' 2 1 0 0;
+1;bury;
+pop;
+
+
+////////////////////////////////////////////////////////////////////
+// lod sort 
 0;dup;6;totalInstances;c''''
 vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
 pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
@@ -760,3 +557,256 @@ l'skipf2';
 
 // generate mipmaps
 texture;
+
+
+
+
+// Functions
+1;if'skipFuncs';
+////////////////////////////////////////////////////////////////////
+// bake VAT  takes vertex data and bone matrices and produces a VAT
+// stack should be a) bones and b) vertex data.
+l'bakeVat';
+6;2;dup;shape;[0 1 0];s;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;
+c'''
+mat4 getBoneMat(int frame, int bone, int anim) {
+    mat4 m;
+    for (int col = 0; col < 4; col++) {
+       vec4 val = af(vec4(
+           float(col) + 0.5,
+           float(anim) + animCount * float(bone) + 0.5,
+           float(frame), 0.0
+       ));
+       m[col] = val;
+    }
+    return m;
+}
+'
+int vertIdx = int(tf.x);
+int frameAnim = int(tf.y) / 2;
+int posOrNormal = int(tf.y) % 2;
+int frame = frameAnim % int(frameCount);
+int anim = frameAnim / int(frameCount);
+
+vec4 v = vec4(
+    b(ivec4(vertIdx, 0, 0, 0)),
+    b(ivec4(vertIdx, 1, 0, 0)),
+    b(ivec4(vertIdx, 2, 0, 0)),
+    1.0
+);
+
+ivec4 bi = ivec4(
+    b(ivec4(vertIdx, 8, 0, 0)),
+    b(ivec4(vertIdx, 9, 0, 0)),
+    b(ivec4(vertIdx, 10, 0, 0)),
+    b(ivec4(vertIdx, 11, 0, 0))
+);
+vec4 weights = vec4(
+    b(ivec4(vertIdx, 12, 0, 0)),
+    b(ivec4(vertIdx, 13, 0, 0)),
+    b(ivec4(vertIdx, 14, 0, 0)),
+    b(ivec4(vertIdx, 15, 0, 0))
+);
+vec2 uv = vec2( b( ivec4( vertIdx, 6, 0, 0 ) ), b( ivec4( vertIdx, 7, 0, 0 ) ) );
+vec4 normal = vec4( b( ivec4( vertIdx, 3, 0, 0 ) ), b( ivec4( vertIdx, 4, 0, 0 ) ),
+                    b( ivec4( vertIdx, 5, 0, 0 ) ), 1.0 );
+mat4 skin = getBoneMat(frame, bi.x, anim) * weights.x +
+            getBoneMat(frame, bi.y, anim) * weights.y +
+            getBoneMat(frame, bi.z, anim) * weights.z +
+            getBoneMat(frame, bi.w, anim) * weights.w;
+
+v = skin * v;
+v.w = uv.x;
+normal = skin * normal;
+normal.w = uv.y;
+ret[0] = posOrNormal == 0 ? v : normal;
+' 2 1 4 0;
+return;
+
+
+
+//////////////////////////////////////////////////////////////////////////
+// sable shadow pass,
+// expects from top to bottom instancecount, indexcount, vat, indices
+
+l'sableShadowPass';
+instanceCount= 1;indexCount= 1;
+indexCount;unext;instanceCount;unext;*;
+shadowSize;
+c'
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
+out float depth;
+'
+int vertsPerInstance = int(indexCount);
+int instanceID = gl_VertexID / vertsPerInstance;
+int localVertID = gl_VertexID % vertsPerInstance;
+int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+float xCoord = float(index) + 0.5;
+
+int base = vertsPerInstance + instanceID * int(instanceVars);
+ vec3 instPos = vec3(
+     b(ivec4(base + 0, 0, 0, 0)),
+     b(ivec4(base + 1, 0, 0, 0)),
+     b(ivec4(base + 2, 0, 0, 0))
+ );
+ float facing = b(ivec4(base + 3, 0, 0, 0));
+ float animIdx = b(ivec4(base + 4, 0, 0, 0));
+ float animStart = b(ivec4(base + 5, 0, 0, 0));
+int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
+float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+int f0 = int( frame );
+int f1 = ( f0 + 1 ) % int( frameCount );
+float lerp = fract( frame );
+
+int frameAnim0 = f0 + anim * int(frameCount);
+int frameAnim1 = f1 + anim * int(frameCount);
+float yPos0 = float(frameAnim0 * 2) + 0.5;
+float yPos1 = float(frameAnim1 * 2) + 0.5;
+vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
+
+v.w = 1.0;
+v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
+v.xyz *= sableScale;
+v.xyz += instPos;
+
+ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+depth = ( ret.z / ret.w ) * 0.5 + 0.5;
+'
+in float depth;
+'
+ret[ 0 ] = depth;
+' 2 1 1 1;
+return;
+
+
+
+
+
+
+///////////////////////////////////////////////////////////
+//  Sable pass, expects instanceCount indexCount vat indices mat smap frame
+l'sablePass';
+instanceCount= 1;indexCount= 1;
+indexCount;unext;instanceCount;unext;*;
+5;dup;shape;
+c'
+out vec3 normal;
+out vec2 uv;
+out vec3 worldPos;
+flat out float mat;
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
+'
+mat = 0.0;
+int vertsPerInstance = int(indexCount);
+int instanceID = gl_VertexID / vertsPerInstance;
+int localVertID = gl_VertexID % vertsPerInstance;
+int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+float xCoord = float(index) + 0.5;
+
+int base = vertsPerInstance + instanceID * int(instanceVars);
+ vec3 instPos = vec3(
+     b(ivec4(base + 0, 0, 0, 0)),
+     b(ivec4(base + 1, 0, 0, 0)),
+     b(ivec4(base + 2, 0, 0, 0))
+ );
+ float facing = b(ivec4(base + 3, 0, 0, 0));
+ float animIdx = b(ivec4(base + 4, 0, 0, 0));
+ float animStart = b(ivec4(base + 5, 0, 0, 0));
+ float tint = b(ivec4(base + 6, 0, 0, 0));
+int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
+float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+int f0 = int( frame );
+int f1 = ( f0 + 1 ) % int( frameCount );
+float lerp = fract( frame );
+
+int frameAnim0 = f0 + anim * int(frameCount);
+int frameAnim1 = f1 + anim * int(frameCount);
+float yPos0 = float(frameAnim0 * 2) + 0.5;
+float yPos1 = float(frameAnim1 * 2) + 0.5;
+float yNrm0 = float(frameAnim0 * 2 + 1) + 0.5;
+float yNrm1 = float(frameAnim1 * 2 + 1) + 0.5;
+vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 n0 = af( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
+vec4 n1 = af( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
+vec4 n = n1 * lerp + n0 * ( 1.0 - lerp );
+vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
+
+uv = vec2( v.w, n.w );
+v.w = 1.0;
+n.w = 1.0;
+n.xyz = rotY( facing * 3.14159265359 * 2.0 ) * n.xyz;
+normal = normalize( n.xyz );
+v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
+v.xyz *= sableScale;
+v.xyz += instPos;
+worldPos = v.xyz;
+ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
+'
+in vec3 normal;
+in vec2 uv;
+in vec3 worldPos;
+flat in float mat;
+
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+vec2 muv = fract( uv );
+
+vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
+//if( color.a < 0.5 )  discard;
+
+
+// // Combine
+vec3 diffuse = color.rgb;
+vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
+
+
+vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+lightPos /= lightPos.w;
+lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
+float curDepth = lightPos.z;
+
+float shadow = 0.0;
+for( float dx = -0.5; dx <= 0.5; ++dx ){
+  for( float dy = -0.5; dy <= 0.5; ++dy ){
+    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
+    vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
+    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
+  }
+}
+shadow = shadow / 4.0 * 0.5;
+
+ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
+// //ret[0] = vec4(vec3(roughness), 1.0);
+// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
+// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
+// //ret[ 0 ] = vec4( color, 1.0 );
+' 4 1 40 1;
+
+return;
+
+
+
+l'skipFuncs';

@@ -23,6 +23,7 @@ typedef struct{
     SUB, // documented
     MUL, // documented
     DIV, // documented
+    MOD, // documented
     POW, // documented
     LOG, // documented
     SIN, // documented

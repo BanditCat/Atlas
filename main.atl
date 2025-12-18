@@ -22,7 +22,7 @@ std.nav2d;
 '6. A gravitational nbodies demo.                  ';e;0;cat;
 '7. A 4d fractal. (The set of all Julia sets.)     ';e;0;cat;
 '8. A Klein bottle in 4d.                          ';e;0;cat;
-'9. A gltf viewer.                                 ';e;0;cat;
+'9. Catgirl fireworks.                             ';e;0;cat;
 '0. The game Catlas :D                             ';e;0;cat;
 std.textToTexture;
 0;dup;shape;[0 2 0];s;tsize= 2;

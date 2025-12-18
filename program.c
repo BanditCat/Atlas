@@ -1026,6 +1026,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = DIV;
     // dbg( "Linenum %u commandnum %u: div\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "%" ) ){
+    curStep->type = MOD;
+    // dbg( "Linenum %u commandnum %u: mod\n", linenum, commandnum );
+
   } else if( !strcmp( command, "^" ) ){
     curStep->type = POW;
     // dbg( "Linenum %u commandnum %u: exp\n", linenum, commandnum );
@@ -2255,6 +2259,37 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
                 i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
                 i3 * t2->strides[ 3 ];
               *offset2 = *offset2 / *offset1;
+            }
+
+      pop( ts );
+      // dbg( "%s", "div" );
+      break;
+    }
+    case MOD: {
+      if( ts->size < 2 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mod without enough arguments on the stack." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensorToHostMemory( ts->stack[ ts->size - 2 ] );
+      takeOwnership( ts->stack[ ts->size - 2 ] );
+      tensor* t1 = ts->stack[ ts->size - 1 ];
+      tensor* t2 = ts->stack[ ts->size - 2 ];
+      if( t1->rank != t2->rank )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mod tensors with incompatible ranks." );
+      for( u32 i = 0; i < t1->rank; ++i )
+        if( t1->shape[ i ] != t2->shape[ i ] )
+          err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to mod tensors with incompatible shapes." );
+      for( s32 i0 = 0; i0 < t1->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t1->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t1->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t1->shape[ 3 ]; ++i3 ){
+              f32* offset1 = t1->data + t1->offset + i0 * t1->strides[ 0 ] +
+                i1 * t1->strides[ 1 ] + i2 * t1->strides[ 2 ] +
+                i3 * t1->strides[ 3 ];
+              f32* offset2 = t2->data + t2->offset + i0 * t2->strides[ 0 ] +
+                i1 * t2->strides[ 1 ] + i2 * t2->strides[ 2 ] +
+                i3 * t2->strides[ 3 ];
+              *offset2 = fmod( *offset2, *offset1 );
             }
 
       pop( ts );
