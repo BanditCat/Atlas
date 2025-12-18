@@ -267,12 +267,11 @@ size;if'started'; // init code goes here
 [0.05];waterLevel= 1;
 [30.0];waterFogScale= 1;
 [0.0 0.15 0.25];waterColor= 3;
-[2048 2048 1];shadowSize= 3;
+[4096 4096 1];shadowSize= 3;
 [0.001];shadowBias= 1;
 [50];softShadows= 1;
-[0.02];sableScale= 1;
+[0.008];sableScale= 1;
 [0];timer= 1;
-[0];lodTimer=;
 [950];lowInstanceCount= 1;
 [50];highInstanceCount= 1;
 lowInstanceCount;highInstanceCount;+;totalInstances=;
@@ -423,7 +422,6 @@ c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
 
 
 timer;timeDelta;e;+;timer= 1;
-lodTimer;timeDelta;e;+;lodTimer=;
 // Stack here: prevFrame, heightMap, gradient
 
 
