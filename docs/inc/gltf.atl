@@ -245,7 +245,7 @@ size;if'started'; // init code goes here
 [2048 2048 1];shadowSize= 3;
 [0.001];shadowBias= 1;
 [50];softShadows= 1;
-[0.05];sableScale= 1;
+[0.02];sableScale= 1;
 [0];timer= 1;
 [900];lowInstanceCount= 1;
 [100];highInstanceCount= 1;
@@ -348,11 +348,22 @@ std.origin;totalInstances;unext;rep;-;
 0;dup;*;
 0;dup;0;dup;
 [0 1 1];s;2;raise;[1 2 1];s;2;raise;[2 3 1];s;+;+;unext;
-
-
-
 sort;0;index;
 totalInstances;instanceVars;*;reshape;
+
+
+//print;quit; instances frame hmap grad highvat lowvat lowinds mat highinds
+2;dup;1;raise; // instances hmapc frame hmap grad highvat lowvat lowinds mat highinds
+6;1;dup;shape;c'''
+'
+int var = t.x % int( instanceVars );
+int instance = t.x / int( instanceVars );
+float x = a( ivec4( t.x - 1, 0, 0, 0 ) ) * dim; 
+float y = a( ivec4( t.x + 1, 0, 0, 0 ) ) * dim; 
+ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, 0, 0, 0 ) );
+' 2 1 0 0;
+
+
 8;bury;
 
 
