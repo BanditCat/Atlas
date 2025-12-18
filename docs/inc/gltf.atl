@@ -247,6 +247,7 @@ size;if'started'; // init code goes here
 [50];softShadows= 1;
 [0.02];sableScale= 1;
 [0];timer= 1;
+[0];lodTimer=;
 [900];lowInstanceCount= 1;
 [100];highInstanceCount= 1;
 lowInstanceCount;highInstanceCount;+;totalInstances=;
@@ -339,7 +340,9 @@ float hash( vec2 p, float time ){
 l'kettled';
 
 ////////////////////////////////////////////////////////////////////
-// lod sort
+// lod sort 10 times/second
+lodTimer;[0.1];-;unext;if'skipLod';
+lodTimer;[0.1];-;lodTimer=;
 8;raise;
 totalInstances;instanceVars;0;cat;reshape;
 0;dup;
@@ -362,9 +365,8 @@ float x = a( ivec4( t.x - 1, 0, 0, 0 ) ) * dim;
 float y = a( ivec4( t.x + 1, 0, 0, 0 ) ) * dim; 
 ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, 0, 0, 0 ) );
 ' 2 1 0 0;
-
-
 8;bury;
+l'skipLod';
 
 
 ///////////////////////////////////////////////////////////
@@ -388,6 +390,7 @@ c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
 
 
 timer;timeDelta;e;+;timer= 1;
+lodTimer;timeDelta;e;+;lodTimer=;
 // Stack here: prevFrame, heightMap, gradient
 
 
