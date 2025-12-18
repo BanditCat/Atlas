@@ -400,8 +400,8 @@ l'skip';</code></pre>
   </section>
 
   <section id="cmd-arith">
-    <h2>+ / - / * / / / ^ / sin / cos / floor / ceil / log</h2>
-    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, ceiling, or logarithm them, respectively. The argument on the top of the stack is the subtrahend, denominator, or exponent, while the tensor below is the minuend, numerator, or base. These operations are done on the CPU and therefore should only be done on small tensors. Large tensor computation should be done with the c (compute) command. For example:
+    <h2>+ / - / * / / / ^ / sin / cos / floor / ceil / log / > / == </h2>
+    <p>These arithmetic commands take one or two arguments and do one of add, subtract, multiply, divide, exponentiate, sin, cosine, floor, ceiling, logarithm, compare greater than, or compare equals them, respectively. The comparison operators produce 1.0 for yes and 0.0 for no. The argument on the top of the stack is the subtrahend, denominator, or exponent, while the tensor below is the minuend, numerator, or base. These operations are done on the CPU and therefore should only be done on small tensors. Large tensor computation should be done with the c (compute) command. For example:
      <pre><code>[1 2 3];[0.5 4 0.1];*;print;quit;</code></pre>
     will print
     <pre><code>CPU tensor 0

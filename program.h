@@ -29,6 +29,8 @@ typedef struct{
     COS, // documented
     FLOOR, // documented
     CEIL, // documented
+    GREATERTHAN, // documented
+    EQUALS, // documented
     MINMAX, // documented
     GLTF, // documented
     TOSTRING, // documented

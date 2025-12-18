@@ -62,12 +62,24 @@ return;
 
 
 
+//////////////////////////////////////////////////////////////////////////
+// sable shadow pass,
+// expects from top to bottom instancecount, indexcount, vat, indices
 
 l'sableShadowPass';
 instanceCount= 1;indexCount= 1;
 indexCount;unext;instanceCount;unext;*;
 shadowSize;
 c'
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
 out float depth;
 '
 int vertsPerInstance = int(indexCount);
@@ -100,8 +112,10 @@ vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
 vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
 
 v.w = 1.0;
+v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
 v.xyz *= sableScale;
 v.xyz += instPos;
+
 ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
 depth = ( ret.z / ret.w ) * 0.5 + 0.5;
 '
@@ -127,6 +141,15 @@ out vec3 normal;
 out vec2 uv;
 out vec3 worldPos;
 flat out float mat;
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
 '
 mat = 0.0;
 int vertsPerInstance = int(indexCount);
@@ -167,7 +190,9 @@ vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
 uv = vec2( v.w, n.w );
 v.w = 1.0;
 n.w = 1.0;
+n.xyz = rotY( facing * 3.14159265359 * 2.0 ) * n.xyz;
 normal = normalize( n.xyz );
+v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
 v.xyz *= sableScale;
 v.xyz += instPos;
 worldPos = v.xyz;
@@ -346,13 +371,18 @@ totalInstances;instanceVars;0;cat;reshape;
 0;dup;
 [0 3 1];s;
 std.origin;totalInstances;unext;rep;-;
-0;dup;*;
-0;dup;0;dup;
-[0 1 1];s;2;raise;[1 2 1];s;2;raise;[2 3 1];s;+;+;unext;
+std.worldUnrotation;[0 3 0];s;[0 3 1];s;[0 1];t;m;
+0;dup;[0 2 1];s;0;dup;*;0;dup;[0 1 1];s;1;raise;[1 2 1];s;+;unext;0.5;totalInstances;unext;rep;^; // length(xy), pos, ...
+10;totalInstances;unext;rep;*; // length(xy)*weight, pos, ...
+1;raise;[2 3 1];s;unext;1;bury;1;dup;-1;totalInstances;unext;rep;*;+; // length(xy)*weight-pos.z, zs, ...
+1;raise;0;totalInstances;unext;rep;>;1000;totalInstances;unext;rep;*;+;
+
 sort;0;index;
 totalInstances;instanceVars;*;reshape;
 
 
+
+// place on ground
 //print;quit; instances frame hmap grad highvat lowvat lowinds mat highinds
 2;dup;1;raise; // instances hmapc frame hmap grad highvat lowvat lowinds mat highinds
 6;1;dup;shape;c'''
