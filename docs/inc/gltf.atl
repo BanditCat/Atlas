@@ -22,7 +22,8 @@ size;if'started'; // init code goes here
 lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
 [2 2];ssaa=;
-totalInstances;[100];0;cat;fireworksDims=;
+totalInstances;[100];0;cat;fireworksDims= 2;
+windowSize;ssaa;*;wdims= 2;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -45,7 +46,7 @@ std.nav3d;
 [0.5 1.0 2.0];std.origin= 3;
 [171 134];std.3dnavParam=;
 
-6;windowSize;ssaa;*;[4];0;cat;
+6;wdims;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
 
 1;
@@ -122,6 +123,8 @@ ret[ 0 ] = vec4( 0.0 );
 
 
 l'kettled';
+windowSize;ssaa;*;wdims= 2;
+
 
 ////////////////////////////////////////////////////////////////////
 //  Check for exploding sables.
@@ -155,44 +158,46 @@ in vec2 tripos;
 ret[ 0 ] = clamp( 1.0 - length( tripos ), 0.0, 1.0 ) * -0.1;
 ' 2 1 1 1;additive;
 3;bury;
-// Zero exploded sables
-0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
-ret[ 0 ] = a( ivec4( t.x, t.y, 0, 0 ) ) * ( b( ivec4( t.x, 0, 0, 0 ) ) );
-' 2 1 0 0;
-1;bury;
 
 //////////////////////////////////////////////////////////////////
 // fireworks
 // 0           1         2     3    4    5       6      7       8   9        10    11     
 // explodemask instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
+0;dup;12;bury;
 11;raise;11;raise;3;dup;3;bury; // fwpos fwvel explodemask instancescopy ...
 6;fireworksDims;[4];0;cat;
 c'''
-// float hash( vec2 p, float time ){
-//     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-//     return fract( sin( h ) * 43758.5453123 );
-// }
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
 '
-// vec4 posSamp = af( vec4( tf, 0.0, 0.0 ) );
-// vec3 pos = posSamp.xyz;
-// float tint = posSamp.w;
-// vec4 velSamp = bf( vec4( tf, 0.0, 0.0 ) );
-// vec3 vel = velSamp.xyz;
-// float fade = velSamp.w;
-// vec3 ipos = vec3( d( ivec4( tf.x + 0.5, 0, 0, 0 ) ), d( ivec4( tf.x + 0.5, 1, 0, 0 ) ), d( ivec4( tf.x + 0.5, 2, 0, 0 ) ) ); 
-// bool explode = c( ivec4( tf.x + 0.5, 0, 0, 0 ) ) == 0.0;
-// pos += vel;
-// vel += vec3( 0.0, -0.0001, 0.0 );
-// fade -= 0.0001;
-// vec3 randomVel = vec3( hash( vec2( 11.0, 30.0 ), timer ), hash( vec2( 12.0, 30.0 ), timer ),hash( vec2( 13.0, 30.0 ), timer ) );
-// randomVel = randomVel * 2.0 - 1.0;
-// randomVel.y += 3.0;
-// randomVel *= 0.001;
-ret[ 0 ] = vec4( 0.0 );//explode ? vec4( ipos, hash( vec2( 10.0, 20.0 ), timer ) ) : vec4( pos, tint );
-ret[ 1 ] = vec4( 0.0 );//explode ? vec4( randomVel, 1.0 ) : vec4( vel, fade );
+vec4 posSamp = af( vec4( tf, 0.0, 0.0 ) );
+vec3 pos = posSamp.xyz;
+float tint = posSamp.w;
+vec4 velSamp = bf( vec4( tf, 0.0, 0.0 ) );
+vec3 vel = velSamp.xyz;
+float fade = velSamp.w;
+vec3 ipos = vec3( d( ivec4( tf.x + 0.5, 0, 0, 0 ) ), d( ivec4( tf.x + 0.5, 1, 0, 0 ) ), d( ivec4( tf.x + 0.5, 2, 0, 0 ) ) ); 
+bool explode = c( ivec4( tf.x + 0.5, 0, 0, 0 ) ) == 0.0;
+pos += vel;
+vel += vec3( 0.0, -0.00001, 0.0 );
+fade -= 0.0001;
+vec3 randomVel = vec3( hash( vec2( tf * 5.0 ), timer ), hash( vec2( tf * 11.0 ), timer ),hash( vec2( tf * 17.0 ), timer ) );
+randomVel = randomVel * 2.0 - 1.0;
+randomVel.y += 3.0;
+randomVel *= 0.001;
+ret[ 0 ] = explode ? vec4( ipos, hash( vec2( 10.0, 20.0 ), timer ) ) : vec4( pos, tint );
+ret[ 1 ] = explode ? vec4( randomVel, 1.0 ) : vec4( vel, fade );
 ' 4 2 4 0;
-
 10;bury;10;bury;
+11;raise;
+
+// Zero exploded sables
+0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
+ret[ 0 ] = a( ivec4( t.x, t.y, 0, 0 ) ) * ( b( ivec4( t.x, 0, 0, 0 ) ) );
+' 2 1 0 0;
+1;bury;pop;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -333,17 +338,16 @@ depth;backface;texture;
 
 
 3;dup;3;dup; // duplicate terrain and heightmap
-windowSize;ssaa;*;set'wdims' 2;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
-[90];windowSize;ssaa;*;0;cat;[0.01 3];0;cat;proj;proj= 16;
+[90];wdims;0;cat;[0.01 3];0;cat;proj;proj= 16;
 
 // Stack here: the arguments (heightmapcopy, gradientcopy, shadowMap, prevFrame), heightMap, gradient
 //2;dup;5;bury;print;   // OOPS dont do this, itll deep copy
 2;raise;4;bury;4;dup;2;bury;
 depth;backface;
-6;dim;dim;*;first;*;windowSize;ssaa;*;[4];0;cat;
+6;dim;dim;*;first;*;wdims;[4];0;cat;
 c'
 vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -458,13 +462,42 @@ depth;backface;
 // fireworks pass
 // 0     1    2    3       4      5       6   7        8         9     10
 // frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
-//10;dup;10;dup; // fwposcopy fwvelcopy ...
-//0;dup;shape;0;dup;[0 1 0];s;1;raise;[1 2 0];s;*;[3];*;unext;wdims;[4];0;cat;c'
-//'
-//'
-//'
-//ret[ 0 ] = vec4( 0.0 );
-//' 2 1 40 1;
+10;dup;10;dup; // fwposcopy fwvelcopy ...
+0;dup;shape;0;dup;[0 1 0];s;1;raise;[1 2 0];s;*;[3];*;unext;wdims;[4];0;cat;depth;c'
+const vec4 verts[3] = vec4[](
+    vec4( 0.0,        2.0, 0.0, 1.0),   // top
+    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+);
+out vec2 tripos;
+out float tint;
+out float fade;
+'
+int vert = gl_VertexID % 3;
+int idx = gl_VertexID / 3;
+float instance = float( idx % int( fireworksDims.x ) );
+float firework = float( idx / int( fireworksDims.x ) ); 
+vec4 posSamp = af( vec4( instance, firework, 0.0, 0.0 ) );
+vec4 velSamp = bf( vec4( instance, firework, 0.0, 0.0 ) );
+vec4 pos = vec4( posSamp.xyz, 1.0 );
+tint = posSamp.w;
+fade = velSamp.w;
+tripos = verts[ vert ].xy;
+ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+ret.xy += tripos * 0.004 * vec2( 1.0 / aspect, aspect );
+'
+vec3 hue2rgb(float h) {
+    vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
+    return clamp(p - 1.0, 0.0, 1.0);
+}
+in vec2 tripos;
+in float tint;
+in float fade;
+'
+if( length( tripos ) > 1.0 )
+  discard;
+ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
+' 2 1 40 1;depth;
 
 
 
