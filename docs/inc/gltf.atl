@@ -22,7 +22,7 @@ size;if'started'; // init code goes here
 lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
 [1.5 1.5];ssaa=;
-totalInstances;[100];0;cat;fireworksDims= 2;
+totalInstances;[1000];0;cat;fireworksDims= 2;
 windowSize;ssaa;*;wdims= 2;
 [0.001];fireworkSize= 1;
 [0.0003];fireworksSpeed= 1;
@@ -245,6 +245,7 @@ float x = a( ivec4( t.x - 1, 0, 0, 0 ) ) * dim;
 float y = a( ivec4( t.x + 1, 0, 0, 0 ) ) * dim; 
 ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, 0, 0, 0 ) );
 ' 2 1 0 0;
+
 8;bury;
 
 
