@@ -22,7 +22,7 @@ size;if'started'; // init code goes here
 lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
 [1.5 1.5];ssaa=;
-totalInstances;[1000];0;cat;fireworksDims= 2;
+totalInstances;[500];0;cat;fireworksDims= 2;
 windowSize;ssaa;*;wdims= 2;
 [0.001];fireworkSize= 1;
 [0.0003];fireworksSpeed= 1;
@@ -212,8 +212,23 @@ ret[ 0 ] = a( ivec4( t.x, t.y, 0, 0 ) ) * ( b( ivec4( t.x, 0, 0, 0 ) ) );
 1;bury;pop;
 
 
+// place on ground
+//print;quit; instances frame hmap grad highvat lowvat lowinds mat highinds
+2;dup;1;raise; // instances hmapc frame hmap grad highvat lowvat lowinds mat highinds
+6;1;dup;shape;c'''
+'
+int var = t.y;
+int instance = t.x;
+float x = a( ivec4( t.x, 0, 0, 0 ) ) * dim; 
+float y = a( ivec4( t.x, 2, 0, 0 ) ) * dim; 
+ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, t.y, 0, 0 ) );
+' 2 1 0 0;
+
+
+//print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
 ////////////////////////////////////////////////////////////////////
-// lod sort 
+// lod sort
+10;bury;10;dup;
 0;dup;6;totalInstances;c''''
 vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
 pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
@@ -230,28 +245,17 @@ ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 // 1;raise;0;totalInstances;unext;rep;>;1000;totalInstances;unext;rep;*;+;
 
 sort;0;index;
+
+
+
+
 totalInstances;instanceVars;*;reshape;
-
-
-
-// place on ground
-//print;quit; instances frame hmap grad highvat lowvat lowinds mat highinds
-2;dup;1;raise; // instances hmapc frame hmap grad highvat lowvat lowinds mat highinds
-6;1;dup;shape;c'''
-'
-int var = t.x % int( instanceVars );
-int instance = t.x / int( instanceVars );
-float x = a( ivec4( t.x - 1, 0, 0, 0 ) ) * dim; 
-float y = a( ivec4( t.x + 1, 0, 0, 0 ) ) * dim; 
-ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, 0, 0, 0 ) );
-' 2 1 0 0;
-
 8;bury;
 
 
 ///////////////////////////////////////////////////////////
 // instance mashing.
-//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances
+//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel
 
 7;raise;
 8;dup;[0];highInstanceCount;instanceVars;*;0;cat;[0];0;cat;s;
@@ -266,7 +270,7 @@ c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
                                              a( ivec4( t.x - int( lowIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
 5;bury;
 
-
+8;raise;pop;10;raise;totalInstances;instanceVars;*;reshape;8;bury;
 
 
 timer;timeDelta;e;+;timer= 1;
