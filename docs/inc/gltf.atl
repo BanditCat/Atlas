@@ -96,12 +96,7 @@ float hash( vec2 p, float time ){
 2;raise;pop;4;raise;pop;5;raise;pop; // stack:  highVAT lowVAT lowindices mat highindices prevframe hmap gradient
 2;dup;lowindscpu=;4;dup;highindscpu=;
 7;raise;7;raise;7;raise;
-6;totalInstances;instanceVars;*;c'''
-float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-    return fract( sin( h ) * 43758.5453123 );
-}
-'ret[ 0 ] = hash( vec2( t.xy ), 0.1 );' 0 1 0 0;
+resetInstances;
 8;bury;
 
 //print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances
@@ -124,6 +119,16 @@ ret[ 0 ] = vec4( 0.0 );
 
 l'kettled';
 windowSize;ssaa;*;wdims= 2;
+std.nav3d;
+
+
+/////////////////////////////////////////////
+// reset sables maybe
+8;raise;
+std.gamepadPresses;[17 18 0];s;unext;ifn'noreset';
+pop;resetInstances;
+l'noreset';
+8;bury;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -135,7 +140,7 @@ float animIdx = a(ivec4( t.x, 4, 0, 0));
 float animStart = a(ivec4( t.x, 5, 0, 0));
 int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
 float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
-ret[ 0 ] = ( anim == 2 && frame > 20.0 ) ? 0.0 : 1.0;
+ret[ 0 ] = ( anim == 2 && frame > 20.0 ) ? 1.0 : 1.0;
 ' 1 1 0 0;
 3;raise;1;dup;3;dup;
 totalInstances;unext;3;*;dim;dim;0;cat;[1];0;cat;additive;c'
@@ -265,7 +270,7 @@ timer;timeDelta;e;+;timer= 1;
 
 
 // set light and orthoproject
-std.nav3d;std.3dnavParam;set'lrot' 2;
+std.3dnavParam;set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 0;dup;
@@ -738,7 +743,7 @@ int base = vertsPerInstance + instanceID * int(instanceVars);
  float facing = b(ivec4(base + 3, 0, 0, 0));
  float animIdx = b(ivec4(base + 4, 0, 0, 0));
  float animStart = b(ivec4(base + 5, 0, 0, 0));
-int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
+int anim = int( animIdx );  
 float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
 int f0 = int( frame );
 int f1 = ( f0 + 1 ) % int( frameCount );
@@ -809,7 +814,7 @@ int base = vertsPerInstance + instanceID * int(instanceVars);
  float animIdx = b(ivec4(base + 4, 0, 0, 0));
  float animStart = b(ivec4(base + 5, 0, 0, 0));
  float tint = b(ivec4(base + 6, 0, 0, 0));
-int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
+int anim = int( animIdx ); 
 float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
 int f0 = int( frame );
 int f1 = ( f0 + 1 ) % int( frameCount );
@@ -886,5 +891,17 @@ ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
 return;
 
 
-
+l'resetInstances';
+6;totalInstances;instanceVars;*;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+int instance = t.x / int( instanceVars );
+int var = t.x % int( instanceVars );
+ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) : hash( vec2( t.xy ), timer );
+' 0 1 0 0;
+return;
 l'skipFuncs';

@@ -745,6 +745,11 @@ int renderThreadFunction( void* data ){
       break;
     }
 
+#ifndef EMSCRIPTEN // only need this for native afaict
+    //glFinish();
+    //glFlush();
+#endif
+
     // Get current window size
     SDL_GetWindowSize( window, &windowWidth, &windowHeight );
 
@@ -814,7 +819,12 @@ int renderThreadFunction( void* data ){
 
     // Cleanup
     glDisableVertexAttribArray( posAttrib );
+    glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
 
+#ifndef EMSCRIPTEN // only need this for native afaict
+    //glFinish();
+    //glFlush();
+#endif
     SDL_GL_SwapWindow( window );
 
     // DwmFlush();
@@ -944,7 +954,8 @@ void main_loop( void ){
 
   // Cleanup
   glDisableVertexAttribArray( posAttrib );
-
+  glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+  
   SDL_GL_SwapWindow( window );
 }
 #endif

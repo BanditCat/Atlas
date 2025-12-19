@@ -54,6 +54,7 @@ static inline bool isfloat(const char *str) {
 #ifdef DEBUG
 static inline void checkFramebufferStatus( GLuint framebuffer ){
   glBindFramebuffer( GL_FRAMEBUFFER, framebuffer );
+  
 
   GLenum status = glCheckFramebufferStatus( GL_FRAMEBUFFER );
   switch( status ){

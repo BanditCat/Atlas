@@ -75,6 +75,7 @@ void tensorToHostMemory( tensor* t ){
     glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
     memcpy( texData + (u64)i * layerElementCount, tempData, layerElementCount * sizeof( f32 ) );
   }
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   CHECK_GL_ERROR();
   unmem( tempData );
 
@@ -872,6 +873,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
         CHECK_GL_ERROR();
         // Create framebuffer
         glGenFramebuffers( 1, &ret->tex.framebuffer );
+        glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
       }
     }
     rets[ reti ] = ret;
@@ -968,14 +970,18 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
   //glBindVertexArray( 0 );
   // glUseProgram( 0 );
-
+  for( u32 i = 0; i < compute->argCount; ++i ){
+    glActiveTexture( GL_TEXTURE0 + i );
+    glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+  }
   CHECK_GL_ERROR();
   // Pop arguments off the stack
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
 #ifndef EMSCRIPTEN // only need this for native afaict
   //glFinish();
-  glFlush();
+  //glFlush();
+  //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 #endif
 
   if( compute->reuse ){
@@ -2175,7 +2181,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
                         t->tex.width, t->tex.height, t->tex.layers, 
                         0, format, type, NULL );
-
+          glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
         } else {
           // CPU Path (Fast enough to do in one shot usually)
           t->data = mem( meta.size, f32 );
@@ -2258,7 +2264,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
                              0, s.currentY, s.currentLayer,    // x, y, z
                              t->tex.width, chunkHeight, 1,     // w, h, d
                              format, type, dataPtr );
-            
+            glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
             s.currentY += chunkHeight;
           }
 
