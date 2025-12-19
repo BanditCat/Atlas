@@ -12,7 +12,7 @@ size;if'started'; // init code goes here
 [0.05];waterLevel= 1;
 [30.0];waterFogScale= 1;
 [0.0 0.15 0.25];waterColor= 3;
-[4096 4096 1];shadowSize= 3;
+[2048 2048 1];shadowSize= 3;
 [0.001];shadowBias= 1;
 [50];softShadows= 1;
 [0.008];sableScale= 1;
@@ -21,9 +21,10 @@ size;if'started'; // init code goes here
 [50];highInstanceCount= 1;
 lowInstanceCount;highInstanceCount;+;totalInstances=;
 [7];instanceVars= 1;
-[2 2];ssaa=;
+[1.5 1.5];ssaa=;
 totalInstances;[100];0;cat;fireworksDims= 2;
 windowSize;ssaa;*;wdims= 2;
+[0.001];fireworkSize= 1;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -128,6 +129,9 @@ std.nav3d;
 std.gamepadPresses;[17 18 0];s;unext;ifn'noreset';
 pop;resetInstances;
 l'noreset';
+std.gamepadPresses;[16 17 0];s;unext;ifn'noexplodify';
+explodify;
+l'noexplodify';
 8;bury;
 
 
@@ -138,9 +142,10 @@ totalInstances;instanceVars;0;cat;reshape;
 0;dup;6;totalInstances;c''''
 float animIdx = a(ivec4( t.x, 4, 0, 0));
 float animStart = a(ivec4( t.x, 5, 0, 0));
-int anim = int(lrot.y / 30.0 + animIdx * 10.0) % int( animCount ); 
-float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
-ret[ 0 ] = ( anim == 2 && frame > 20.0 ) ? 1.0 : 1.0;
+int anim = int( animIdx ); 
+float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
+float frame = pframe * 24.0;
+ret[ 0 ] = ( anim == 2 && frame > 80.0 ) ? 0.0 : 1.0;
 ' 1 1 0 0;
 3;raise;1;dup;3;dup;
 totalInstances;unext;3;*;dim;dim;0;cat;[1];0;cat;additive;c'
@@ -489,7 +494,7 @@ tint = posSamp.w;
 fade = velSamp.w;
 tripos = verts[ vert ].xy;
 ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
-ret.xy += tripos * 0.004 * vec2( 1.0 / aspect, aspect );
+ret.xy += tripos * fireworkSize * vec2( 1.0 / aspect, aspect );
 '
 vec3 hue2rgb(float h) {
     vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
@@ -743,8 +748,9 @@ int base = vertsPerInstance + instanceID * int(instanceVars);
  float facing = b(ivec4(base + 3, 0, 0, 0));
  float animIdx = b(ivec4(base + 4, 0, 0, 0));
  float animStart = b(ivec4(base + 5, 0, 0, 0));
-int anim = int( animIdx );  
-float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+int anim = int( animIdx );
+float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
+float frame = mod(pframe * 24.0, frameCount);
 int f0 = int( frame );
 int f1 = ( f0 + 1 ) % int( frameCount );
 float lerp = fract( frame );
@@ -815,7 +821,8 @@ int base = vertsPerInstance + instanceID * int(instanceVars);
  float animStart = b(ivec4(base + 5, 0, 0, 0));
  float tint = b(ivec4(base + 6, 0, 0, 0));
 int anim = int( animIdx ); 
-float frame = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
+float frame = mod(pframe * 24.0, frameCount);
 int f0 = int( frame );
 int f1 = ( f0 + 1 ) % int( frameCount );
 float lerp = fract( frame );
@@ -904,4 +911,25 @@ int var = t.x % int( instanceVars );
 ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) : hash( vec2( t.xy ), timer );
 ' 0 1 0 0;
 return;
+
+
+
+l'explodify';
+6;totalInstances;instanceVars;*;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+int instance = t.x / int( instanceVars );
+int var = t.x % int( instanceVars );
+ret[ 0 ] = var == 4 ? 2.0 : a( ivec4( t.x, 0, 0, 0 ) );
+ret[ 0 ] = var == 5 ? timer + 1.0 + hash( vec2( t.x, timer ), timer ) * 10.0 : ret[ 0 ];
+' 1 1 0 0;
+return;
+
+
+
+
 l'skipFuncs';
