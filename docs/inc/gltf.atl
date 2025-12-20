@@ -184,6 +184,7 @@ float hash( vec2 p, float time ){
     return fract( sin( h ) * 43758.5453123 );
 }
 '
+float frameTime = dt * 165.0;
 vec4 posSamp = af( vec4( tf, 0.0, 0.0 ) );
 vec3 pos = posSamp.xyz;
 float tint = posSamp.w;
@@ -192,9 +193,9 @@ vec3 vel = velSamp.xyz;
 float fade = velSamp.w;
 vec3 ipos = vec3( d( ivec4( tf.x + 0.5, 0, 0, 0 ) ), d( ivec4( tf.x + 0.5, 1, 0, 0 ) ), d( ivec4( tf.x + 0.5, 2, 0, 0 ) ) ); 
 bool explode = c( ivec4( tf.x + 0.5, 0, 0, 0 ) ) == 0.0;
-pos += vel;
-vel += vec3( 0.0, gravity, 0.0 );
-fade -= 0.0001;
+pos += vel * frameTime;
+vel += vec3( 0.0, gravity * frameTime, 0.0 );
+fade -= 0.0001 * frameTime;
 vec3 randomVel = vec3( hash( vec2( tf * 5.0 ), timer ), hash( vec2( tf * 11.0 ), timer ),hash( vec2( tf * 17.0 ), timer ) );
 randomVel = randomVel * 2.0 - 1.0;
 randomVel.y += 3.0;
@@ -274,6 +275,7 @@ c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
 
 
 timer;timeDelta;e;+;timer= 1;
+timeDelta;e;dt= 1;
 // Stack here: prevFrame, heightMap, gradient
 
 
