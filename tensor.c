@@ -979,9 +979,9 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
   for( u32 i = 0; i < compute->argCount; ++i )
     pop( ts );
 #ifndef EMSCRIPTEN // only need this for native afaict
+  //glMemoryBarrier(GL_ALL_BARRIER_BITS);
   glFinish();
   //glFlush();
-  //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
 #endif
 
   if( compute->reuse ){

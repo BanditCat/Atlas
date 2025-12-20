@@ -140,7 +140,7 @@ char* finalizeCleanup( program* program, char* block, char* msg ) {
     return finalizeCleanup( p, NULL, msg );     \
   } while( 0 )
 
-void copyProgramState( program* src, program* dst ){
+void copyProgramState( program* src, program* dst, bool uniforms ){
   
   // 1. Copy Small Variables (No changes needed here, just memcpy)
   for( u32 i = 0; i < dst->numVars; ++i ){
@@ -153,9 +153,44 @@ void copyProgramState( program* src, program* dst ){
       f32* srcPtr = src->varBlock + src->varOffsets[ srcIndex ];
       f32* dstPtr = dst->varBlock + dst->varOffsets[ i ];
       memcpy( dstPtr, srcPtr, copySize * sizeof( f32 ) );
+      if( uniforms ){
+        for( u32 j = 0; j < dst->numComputes; ++j ){
+          glUseProgram( dst->computes[ j ]->program );
+          switch( dst->varSizes[ i ] ){
+          case 1:
+            glUniform1fv( dst->computes[ j ]->uniformLocs[ i ],  1,
+                          dst->varBlock + dst->varOffsets[ i ] );
+            break;
+          case 2:
+            glUniform2fv( dst->computes[ j ]->uniformLocs[ i ],
+                          1,
+                          dst->varBlock + dst->varOffsets[ i ] );
+            break;
+          case 3:
+            glUniform3fv( dst->computes[ j ]->uniformLocs[ i ],
+                          1,
+                          dst->varBlock + dst->varOffsets[ i ] );
+            break;
+          case 4:
+            glUniform4fv( dst->computes[ j ]->uniformLocs[ i ],
+                          1,
+                          dst->varBlock + dst->varOffsets[ i ] );
+            break;
+          case 16:
+            glUniformMatrix4fv( dst->computes[ j ]->uniformLocs[ i ],
+                                1,
+                                GL_TRUE,
+                                dst->varBlock + dst->varOffsets[ i ] );
+            break;
+          }
+        }
+      }
+
     }
   }
 
+
+  
   // 2. Copy Big Variables (Tensors)
   for( u32 i = 0; i < dst->numBigvars; ++i ){
     char* name = dst->bigvarNames[ i ];
@@ -1868,9 +1903,9 @@ void deleteProgram( program* p ){
 }
 static f32* compareArray = NULL;
 int compareFloats(const void *a, const void *b) {
-    u32 fa = *(const f32 *)a;
-    u32 fb = *(const f32 *)b;
-    return (compareArray[ fa ] > compareArray[ fb ]) - (compareArray[ fa ] < compareArray[ fb ] );
+  u32 fa = *(const f32 *)a;
+  u32 fb = *(const f32 *)b;
+  return (compareArray[ fa ] > compareArray[ fb ]) - (compareArray[ fa ] < compareArray[ fb ] );
 }
 // A pointer pointer because program might change during e.g. a load.
 char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
@@ -2031,7 +2066,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
            ts->stack[ ts->size - 1 ]->strides[ 0 ] ) * 65535.0;
       f32 duration = *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
-           ts->stack[ ts->size - 1 ]->strides[ 0 ] * 2 );
+                        ts->stack[ ts->size - 1 ]->strides[ 0 ] * 2 );
       u32 index =
         *( ts->stack[ ts->size - 1 ]->data + ts->stack[ ts->size - 1 ]->offset +
            ts->stack[ ts->size - 1 ]->strides[ 0 ] * 3 );
@@ -2838,11 +2873,11 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         unmem( err );
         unmem( codeToRun );
       } else{
-        copyProgramState( p, tempProg );
+        copyProgramState( p, tempProg, false );
         bool iret = true;
         char* err = runProgram( ts, &tempProg, start, &iret );
         if( !err ){
-          copyProgramState( tempProg, p );
+          copyProgramState( tempProg, p, true );
           
           for( u32 i = 0; i < ts->size; ++i )
             takeOwnership( ts->stack[ i ] );
