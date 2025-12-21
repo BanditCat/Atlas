@@ -465,31 +465,31 @@ depth;backface;
 
 // //////////////////////////////////////////////////////////////////////
 // // Selected ui
-// 3;1;dup;shape;c'
-// const vec4 verts[3] = vec4[](
-//     vec4( 0.0,        2.0, 0.0, 1.0),   // top
-//     vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
-//     vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
-// );
-// out vec2 tripos;
-// flat out float radius;
-// '
-// vec4 pos = verts[ gl_VertexID ].xzyw;
-// tripos = verts[ gl_VertexID ].xy;
-// pos.xyz *= sableScale;
-// pos.xyz += selectedReticle;
-// radius = mod( timer * 5.0, 2.0 );
-// ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
-// '
-// in vec2 tripos;
-// flat in float radius;
-// '
-// if( length( tripos ) > radius + 0.2 )
-//   discard;
-// if( length( tripos ) < radius - 0.2 )
-//   discard;
-// ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
-// ' 0 1 40 1;
+3;1;dup;shape;c'
+const vec4 verts[3] = vec4[](
+    vec4( 0.0,        2.0, 0.0, 1.0),   // top
+    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+);
+out vec2 tripos;
+flat out float radius;
+'
+vec4 pos = verts[ gl_VertexID ].xzyw;
+tripos = verts[ gl_VertexID ].xy;
+pos.xyz *= sableScale;
+pos.xyz += selectedReticle;
+radius = mod( timer * 5.0, 2.0 );
+ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+'
+in vec2 tripos;
+flat in float radius;
+'
+if( length( tripos ) > radius + 0.2 )
+  discard;
+if( length( tripos ) < radius - 0.2 )
+  discard;
+ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
+' 0 1 40 1;
 
 
 //////////////////////////////////////////////////
@@ -836,7 +836,7 @@ out vec3 normal;
 out vec2 uv;
 out vec3 worldPos;
 flat out float mat;
-out vec3 tint;
+flat out vec3 tint;
 vec3 hue2rgb(float h) {
     vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
     return clamp(p - 1.0, 0.0, 1.0);
@@ -902,7 +902,7 @@ ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
 in vec3 normal;
 in vec2 uv;
 in vec3 worldPos;
-in vec3 tint;
+flat in vec3 tint;
 flat in float mat;
 
 float hash( vec2 p, float time ){
