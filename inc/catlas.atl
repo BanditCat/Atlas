@@ -463,33 +463,33 @@ depth;backface;
 
 
 
-//////////////////////////////////////////////////////////////////////
-// Selected ui
-3;1;dup;shape;c'
-const vec4 verts[3] = vec4[](
-    vec4( 0.0,        2.0, 0.0, 1.0),   // top
-    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
-    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
-);
-out vec2 tripos;
-flat out float radius;
-'
-vec4 pos = verts[ gl_VertexID ].xzyw;
-tripos = verts[ gl_VertexID ].xy;
-pos.xyz *= sableScale;
-pos.xyz += selectedReticle;
-radius = mod( timer * 5.0, 2.0 );
-ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
-'
-in vec2 tripos;
-flat in float radius;
-'
-if( length( tripos ) > radius + 0.2 )
-  discard;
-if( length( tripos ) < radius - 0.2 )
-  discard;
-ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
-' 0 1 40 1;
+// //////////////////////////////////////////////////////////////////////
+// // Selected ui
+// 3;1;dup;shape;c'
+// const vec4 verts[3] = vec4[](
+//     vec4( 0.0,        2.0, 0.0, 1.0),   // top
+//     vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+//     vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+// );
+// out vec2 tripos;
+// flat out float radius;
+// '
+// vec4 pos = verts[ gl_VertexID ].xzyw;
+// tripos = verts[ gl_VertexID ].xy;
+// pos.xyz *= sableScale;
+// pos.xyz += selectedReticle;
+// radius = mod( timer * 5.0, 2.0 );
+// ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+// '
+// in vec2 tripos;
+// flat in float radius;
+// '
+// if( length( tripos ) > radius + 0.2 )
+//   discard;
+// if( length( tripos ) < radius - 0.2 )
+//   discard;
+// ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
+// ' 0 1 40 1;
 
 
 //////////////////////////////////////////////////
