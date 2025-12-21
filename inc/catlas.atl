@@ -3,7 +3,8 @@ include'inc\stdlib.atl';
 include'inc\nav.atl';
 size;if'started'; // init code goes here
 
-
+'inc\\catlas.ktl';unkettle;pop;
+[2.0];progress= 1;
 
 [1024];dim= 1; // constants
 [0.2];hscale= 1;
@@ -14,8 +15,19 @@ size;if'started'; // init code goes here
 [2048 2048 1];shadowSize= 3;
 [0.001];shadowBias= 1;
 [50];softShadows= 1;
+[0.008];sableScale= 1;
 [0];timer= 1;
-
+[950];lowInstanceCount= 1;
+[50];highInstanceCount= 1;
+lowInstanceCount;highInstanceCount;+;totalInstances=;
+[7];instanceVars= 1;
+[1.5 1.5];ssaa=;
+totalInstances;[500];0;cat;fireworksDims= 2;
+windowSize;ssaa;*;wdims= 2;
+[0.001];fireworkSize= 1;
+[0.0003];fireworksSpeed= 1;
+[-0.000004];gravity= 1;
+20;reticleSnappiness=;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -28,7 +40,7 @@ dim;first;4;std.fractalNoise;
 0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
 
 
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 10 0;texture;
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 1 0;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
@@ -36,14 +48,229 @@ set'lightRotation' 16;
 
 std.nav3d;
 [0.5 1.0 2.0];std.origin= 3;
-[150 400];std.3dnavParam=;
+[171 134];std.3dnavParam=;
 
-6;windowSize;[4];0;cat;
+6;wdims;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
 
-
+1;
 l'started'; // init code complete
+loadedKettle;if'kettled';
+pop;
+progress;unext;ifn'loop4';
+unkettle;e;progress= 1;
+// load bar
+windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
+continue;
+l'loop4';
+1;loadedKettle=;
+/////////////////////////////////////////////////
+// instance/unkettle init
+//print;quit; // stack:  lowverts lowindices mat highverts highindices bones animcount prevframe hmap gradient
+6;raise;e;animCount= 1; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
+0;dup;shape;[0 1 0];s;lowVertexCount= 1;
+3;dup;shape;[0 1 0];s;highVertexCount= 1;
+5;dup;shape;0;dup;[0 1 0];s;frameCount= 1;[1 2 0];s;animCount;/;boneCount= 1;
+2;dup;shape;[0 2 0];s;atlasSize= 2;
+
+1;raise; // get indices
+0;dup;shape;lowIndexCount= 1;
+6;lowIndexCount;lowInstanceCount;instanceVars;*;+;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'ret[ 0 ] = t.x < int( lowIndexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
+1;bury;  // put indices back
+4;raise; // get indices
+0;dup;shape;highIndexCount= 1;
+6;highIndexCount;highInstanceCount;instanceVars;*;+;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'ret[ 0 ] = t.x < int( highIndexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
+4;bury;  // put indices back
+//print;quit; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
+
+0;dup;6;dup;bakeVat; // stack:  lowVAT lowverts lowindices mat highverts highindices bones prevframe hmap gradient
+4;dup;7;dup;bakeVat;
+2;raise;pop;4;raise;pop;5;raise;pop; // stack:  highVAT lowVAT lowindices mat highindices prevframe hmap gradient
+2;dup;lowindscpu=;4;dup;highindscpu=;
+7;raise;7;raise;7;raise;
+resetInstances;
+8;bury;
+
+//print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances
+/////////////////////////////////////////////////
+//  init fireworks
+6;fireworksDims;[4];0;cat;c''''
+ret[ 0 ] = vec4( 0.0 );
+' 0 1 4 0;
+9;bury;
+6;fireworksDims;[4];0;cat;c''''
+ret[ 0 ] = vec4( 0.0 );
+' 0 1 4 0;
+9;bury;
+//print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
+
+
+
+
+
+
+l'kettled';
+windowSize;ssaa;*;wdims= 2;
+std.nav3d;
+
+
+/////////////////////////////////////////////
+// reset sables maybe
+8;raise;
+std.gamepadPresses;[17 18 0];s;std.keyPresses;[21 22 0];s;+;unext;ifn'noreset';
+pop;resetInstances;
+l'noreset';
+std.gamepadPresses;[16 17 0];s;std.keyPresses;[40 41 0];s;+;unext;ifn'noexplodify';
+explodify;
+l'noexplodify';
+8;bury;
+
+
+////////////////////////////////////////////////////////////////////
+//  Check for exploding sables.
+8;raise; // instances
+totalInstances;instanceVars;0;cat;reshape;
+0;dup;6;totalInstances;c''''
+float animIdx = a(ivec4( t.x, 4, 0, 0));
+float animStart = a(ivec4( t.x, 5, 0, 0));
+int anim = int( animIdx ); 
+float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
+float frame = pframe * 24.0;
+ret[ 0 ] = ( anim == 2 && frame > 80.0 ) ? 0.0 : 1.0;
+' 1 1 0 0;
+3;raise;1;dup;3;dup;
+totalInstances;unext;3;*;dim;dim;0;cat;[1];0;cat;additive;c'
+const vec4 verts[3] = vec4[](
+    vec4( 0.0,        2.0, 0.0, 1.0),   // top
+    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+);
+out vec2 tripos;
+'
+int vert = gl_VertexID % 3;
+int idx = gl_VertexID / 3;
+vec4 pos = vec4( a( ivec4( idx, 2, 0, 0 ) ), a( ivec4( idx, 0, 0, 0 ) ), 0.0, 0.0 );
+pos.xy = pos.xy * 2.0 - 1.0;
+tripos = verts[ vert ].xy;
+ret = b( ivec4( idx, 0, 0, 0 ) ) == 0.0 ? ( ( verts[ vert ] * vec4( 0.02, 0.02, 1.0, 1.0 ) + pos ) ) : vec4( -1.0 );
+'
+in vec2 tripos;
+'
+ret[ 0 ] = clamp( 1.0 - length( tripos ), 0.0, 1.0 ) * -0.1;
+' 2 1 1 1;additive;
+3;bury;
+
+//////////////////////////////////////////////////////////////////
+// fireworks
+// 0           1         2     3    4    5       6      7       8   9        10    11     
+// explodemask instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
+0;dup;12;bury;
+11;raise;11;raise;3;dup;3;bury; // fwpos fwvel explodemask instancescopy ...
+6;fireworksDims;[4];0;cat;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+float frameTime = dt * 165.0;
+vec4 posSamp = af( vec4( tf, 0.0, 0.0 ) );
+vec3 pos = posSamp.xyz;
+float tint = posSamp.w;
+vec4 velSamp = bf( vec4( tf, 0.0, 0.0 ) );
+vec3 vel = velSamp.xyz;
+float fade = velSamp.w;
+vec3 ipos = vec3( d( ivec4( tf.x + 0.5, 0, 0, 0 ) ), d( ivec4( tf.x + 0.5, 1, 0, 0 ) ), d( ivec4( tf.x + 0.5, 2, 0, 0 ) ) );
+float ctint = d( ivec4( tf.x + 0.5, 6, 0, 0 ) );
+bool explode = c( ivec4( tf.x + 0.5, 0, 0, 0 ) ) == 0.0;
+pos += vel * frameTime;
+vel += vec3( 0.0, gravity * frameTime, 0.0 );
+fade -= 0.0001 * frameTime;
+vec3 randomVel = vec3( hash( vec2( tf * 5.0 ), timer ), hash( vec2( tf * 11.0 ), timer ),hash( vec2( tf * 17.0 ), timer ) );
+randomVel = randomVel * 2.0 - 1.0;
+randomVel.y += 3.0;
+randomVel *= fireworksSpeed;
+ret[ 0 ] = explode ? vec4( ipos, ctint ) : vec4( pos, tint );
+ret[ 1 ] = explode ? vec4( randomVel, 1.0 ) : vec4( vel, fade );
+' 4 2 4 0;
+10;bury;10;bury;
+11;raise;
+
+// Zero exploded sables
+0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
+ret[ 0 ] = a( ivec4( t.x, t.y, 0, 0 ) ) * ( b( ivec4( t.x, 0, 0, 0 ) ) );
+' 2 1 0 0;
+1;bury;pop;
+
+
+// place on ground
+//print;quit; instances frame hmap grad highvat lowvat lowinds mat highinds
+2;dup;1;raise; // instances hmapc frame hmap grad highvat lowvat lowinds mat highinds
+6;1;dup;shape;c'''
+'
+int var = t.y;
+int instance = t.x;
+float x = a( ivec4( t.x, 0, 0, 0 ) ) * dim; 
+float y = a( ivec4( t.x, 2, 0, 0 ) ) * dim; 
+ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, t.y, 0, 0 ) );
+' 2 1 0 0;
+
+
+//print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
+////////////////////////////////////////////////////////////////////
+// lod sort
+10;bury;10;dup;
+0;dup;6;totalInstances;c''''
+vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
+pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
+pos /= pos.w;
+ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
+' 1 1 0 0;
+
+sort;0;dup;[0 1 0];s;selectedIdx=;0;index; 
+0;dup;[0 1 0];s;[0 3 1];s;first;selected=;
+selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
+
+
+
+totalInstances;instanceVars;*;reshape;
+8;bury;
+
+
+///////////////////////////////////////////////////////////
+// instance mashing.
+//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel
+
+7;raise;
+8;dup;[0];highInstanceCount;instanceVars;*;0;cat;[0];0;cat;s;
+6;highInstanceCount;instanceVars;*;highIndexCount;+;
+c''''ret[ 0 ] = t.x < int( highIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
+                                             a( ivec4( t.x - int( highIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
+7;bury;
+5;raise;
+8;dup;highInstanceCount;instanceVars;*;totalInstances;instanceVars;*;0;cat;[0];0;cat;s;
+6;lowInstanceCount;instanceVars;*;lowIndexCount;+;
+c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
+                                             a( ivec4( t.x - int( lowIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
+5;bury;
+
+8;raise;pop;10;raise;totalInstances;instanceVars;*;reshape;8;bury;
+
+
 timer;timeDelta;e;+;timer= 1;
+timeDelta;e;dt= 1;
 // Stack here: prevFrame, heightMap, gradient
 
 
@@ -51,8 +278,8 @@ timer;timeDelta;e;+;timer= 1;
 
 
 
-
-std.nav3d;std.3dnavParam;set'lrot' 2;
+// set light and orthoproject
+std.3dnavParam;set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 0;dup;
@@ -62,7 +289,14 @@ set'lightUnrotation' 16;
 [0 0 -1 0];m;unext;[0 3 0];s;[1 -1 1];*;lightDir= 3;
 [-0.72 0.72 -0.72 0.72 1.0 5.0];ortho;orthoproj= 16;
 
-// shadow map
+
+
+//print; quit; // Stack here: prevFrame, heightMap, gradient, highvat, lowvat, lowindices, mat, highindices
+
+
+
+/////////////////////////////////////////////////////
+// shadow map terrain
 1;dup;
 // Stack here: heightmapCopy, prevFrame, heightMap, gradient
 
@@ -92,25 +326,43 @@ in float depth;
 '
 ret[ 0 ] = depth;
 '
-1 1 1 0;texture;
+1 1 1 0;
 backface;depth;
 
-1;bury;
-// Stack here: prevFrame, shadowmap, heightMap, gradient
+////////////////////////////////////////////////////////////////////////////
+//  Shadow map sables
+//   0          1          2          3         4        5       6           7    8
+//  shadowmap, prevFrame, heightMap, gradient, highvat, lowvat, lowindices, mat, highindices
+depth;backface;
+6;dup;6;dup;
+lowIndexCount;lowInstanceCount;sableShadowPass;
+8;dup;5;dup;
+highIndexCount;highInstanceCount;sableShadowPass;
+
+depth;backface;texture;
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////
+// terrain
 
 3;dup;3;dup; // duplicate terrain and heightmap
-windowSize;set'wdims' 2;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
+[90];wdims;0;cat;[0.01 3];0;cat;proj;proj= 16;
 
-
-
-[90];windowSize;0;cat;[0.01 3];0;cat;proj;proj= 16;
-
-// Stack here: the arguments (heightmapcopy, gradientcopy, prevFrame), heightMap, gradient
+// Stack here: the arguments (heightmapcopy, gradientcopy, shadowMap, prevFrame), heightMap, gradient
+//2;dup;5;bury;print;   // OOPS dont do this, itll deep copy
+2;raise;4;bury;4;dup;2;bury;
 depth;backface;
-6;dim;dim;*;first;*;windowSize;[4];0;cat;
+6;dim;dim;*;first;*;wdims;[4];0;cat;
 c'
 vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -158,21 +410,22 @@ vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( wor
 lightPos /= lightPos.w;
 lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
 float curDepth = lightPos.z;
-float centerLightDepth = df( lightPos.xy * shadowSize.xy ).x;
+float centerLightDepth = cf( lightPos.xy * shadowSize.xy ).x;
 float spread = clamp( ( curDepth - centerLightDepth ) * softShadows, 1.0, 100000000.0 );
 
+
 float shadow = 0.0;
-for( float dx = -2.0; dx <= 2.0; ++dx ){
-  for( float dy = -2.0; dy <= 2.0; ++dy ){
+for( float dx = -0.5; dx <= 0.5; ++dx ){
+  for( float dy = -0.5; dy <= 0.5; ++dy ){
     vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
     vec2 delta = ( vec2( dx, dy ) + jitter ) * spread;
 
-    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    float lightDepth = cf( lightPos.xy * shadowSize.xy + delta ).x;
     shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
   }
 }
-shadow /= 25.0;
-shadow *= 0.7;
+shadow /= 4.0;
+shadow *= 0.5;
 
 
 float len = length( d );
@@ -187,6 +440,8 @@ ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
 4 1 40 0;
 
+/////////////////////////////////
+// sky
 6;1;dup;shape;c''''
 vec3 ray = normalize(
     vec3(
@@ -207,6 +462,209 @@ depth;backface;
 
 
 
+//////////////////////////////////////////////////////////////////////
+// Selected ui
+3;1;dup;shape;c'
+const vec4 verts[3] = vec4[](
+    vec4( 0.0,        2.0, 0.0, 1.0),   // top
+    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+);
+out vec2 tripos;
+flat out float radius;
+'
+vec4 pos = verts[ gl_VertexID ].xzyw;
+tripos = verts[ gl_VertexID ].xy;
+pos.xyz *= sableScale;
+pos.xyz += selectedReticle;
+radius = mod( timer * 5.0, 2.0 );
+ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+'
+in vec2 tripos;
+in float radius;
+'
+if( length( tripos ) > radius + 0.2 )
+  discard;
+if( length( tripos ) < radius - 0.2 )
+  discard;
+ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
+' 0 1 40 1;
+
+
+//////////////////////////////////////////////////
+// sables
+//print; quit; // frame hmap smap grad highvat lowvat lowindices mat highindices
+7;dup;7;dup;7;dup;5;dup;3;bury; // lowvatc lowindsc matc smap frame smap hmap grad highvat lowvat lowindices mat highindices
+
+
+depth;backface;
+lowIndexCount;lowInstanceCount;sablePass;
+//print;quit; // frame hmap smap grad highvat lowvat lowinds mat highinds
+2;raise;      // smap frame hmap grad highvat lowvat lowinds mat highinds
+7;dup;9;dup;6;dup;
+highIndexCount;highInstanceCount;sablePass;
+depth;backface;
+
+
+
+////////////////////////////////////////////////
+// fireworks pass
+// 0     1    2    3       4      5       6   7        8         9     10
+// frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
+10;dup;10;dup; // fwposcopy fwvelcopy ...
+0;dup;shape;0;dup;[0 1 0];s;1;raise;[1 2 0];s;*;[3];*;unext;wdims;[4];0;cat;depth;c'
+const vec4 verts[3] = vec4[](
+    vec4( 0.0,        2.0, 0.0, 1.0),   // top
+    vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
+    vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
+);
+out vec2 tripos;
+out float tint;
+out float fade;
+'
+int vert = gl_VertexID % 3;
+int idx = gl_VertexID / 3;
+float instance = float( idx % int( fireworksDims.x ) );
+float firework = float( idx / int( fireworksDims.x ) ); 
+vec4 posSamp = af( vec4( instance, firework, 0.0, 0.0 ) );
+vec4 velSamp = bf( vec4( instance, firework, 0.0, 0.0 ) );
+vec4 pos = vec4( posSamp.xyz, 1.0 );
+tint = posSamp.w;
+fade = velSamp.w;
+tripos = verts[ vert ].xy;
+ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+ret.xy += tripos * fireworkSize * vec2( 1.0 / aspect, aspect );
+'
+vec3 hue2rgb(float h) {
+    vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
+    return clamp(p - 1.0, 0.0, 1.0);
+}
+in vec2 tripos;
+in float tint;
+in float fade;
+'
+if( length( tripos ) > 1.0 )
+  discard;
+ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
+' 2 1 40 1;depth;
+
+
+
+// 6;dup;6;dup;6;dup;6;dup;
+// indexCount;unext;instanceCount;unext;*;
+
+
+// 5;dup;shape;
+// depth;backface;
+// c'
+// vec3 hsv2rgb(vec3 c) {
+//     vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
+//     return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+// }
+// mat4 getBoneMat(int frame, int bone, int anim) {
+//     mat4 m;
+//     for (int col = 0; col < 4; col++) {
+//        vec4 val = cf(vec3(
+//            float(col) + 0.5,                              // x: column within the 4-wide texture
+//            float(anim) + animCount * float(bone) + 0.5,   // y: row 
+//            float(frame)                                  // z: layer (frame)
+//        ));
+//        m[col] = val;
+//     }
+//     return m;
+// }
+// mat4 getLerpMat(int f0, int f1, int bone, int anim, float t) {
+//     mat4 m0 = getBoneMat(f0, bone, anim);
+//     mat4 m1 = getBoneMat(f1, bone, anim);
+//     // Manual lerp: result = start * (1 - t) + end * t
+//     return m0 * (1.0 - t) + m1 * t; 
+// }
+// out vec3 normal;
+// out vec2 uv;
+// out vec3 worldPos;
+// flat out float mat;
+// '
+// int vertsPerInstance = int(indexCount);
+// int instanceID = gl_VertexID / vertsPerInstance;
+// int localVertID = gl_VertexID % vertsPerInstance;
+// int base = vertsPerInstance + instanceID * int(instanceVars);
+// vec3 instPos = vec3(
+//     b(ivec4(base + 0, 0, 0, 0)),
+//     b(ivec4(base + 1, 0, 0, 0)),
+//     b(ivec4(base + 2, 0, 0, 0))
+// );
+// float facing = b(ivec4(base + 3, 0, 0, 0));
+// float animIdx = b(ivec4(base + 4, 0, 0, 0));
+// float animStart = b(ivec4(base + 5, 0, 0, 0));
+// float tint = b(ivec4(base + 6, 0, 0, 0));
+
+// int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+// vec4 v = vec4( a( ivec4( index, 0, 0, 0 ) ), a( ivec4( index, 1, 0, 0 ) ), a( ivec4( index, 2, 0, 0 ) ), 1.0 );
+// normal = vec3( a( ivec4( index, 3, 0, 0 ) ), a( ivec4( index, 4, 0, 0 ) ), a( ivec4( index, 5, 0, 0 ) ) );
+// uv = vec2( a( ivec4( index, 6, 0, 0 ) ), a( ivec4( index, 7, 0, 0 ) ) );
+// vec4 bones = vec4( a( ivec4( index, 8, 0, 0 ) ), a( ivec4( index, 9, 0, 0 ) ), a( ivec4( index, 10, 0, 0 ) ),
+//                    a( ivec4( index, 11, 0, 0 ) ) );
+// vec4 weights = vec4( a( ivec4( index, 12, 0, 0 ) ), a( ivec4( index, 13, 0, 0 ) ),
+//                      a( ivec4( index, 14, 0, 0 ) ), a( ivec4( index, 15, 0, 0 ) ) );
+// mat = a( ivec4( index, 16, 0, 0 ) );
+
+// // Animation Logic
+// float playHead = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
+// int f0 = int(playHead);
+// int f1 = (f0 + 1) % int( frameCount ); 
+// float t = fract(playHead);
+
+// int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
+
+// ivec4 bi = ivec4(bones);
+
+// // Blend the blend
+// mat4 skin = getLerpMat(f0, f1, bi.x, anim, t) * weights.x +
+//             getLerpMat(f0, f1, bi.y, anim, t) * weights.y +
+//             getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
+//             getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
+
+// v = skin * v;
+// v.xyz = v.xyz / 10.0;
+// v.xyz += instPos;
+// worldPos = v.xyz;
+// normal = mat3(skin) * normal;
+
+// ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
+// '
+// in vec3 normal;
+// in vec2 uv;
+// in vec3 worldPos;
+// flat in float mat;
+// '
+// vec2 muv = fract( uv );
+
+// vec4 color = df( vec3( muv * atlasSize, mat * 2.0 ) );
+// //if( color.a < 0.5 )  discard;
+// vec4 orm = df( vec3( muv * atlasSize, mat * 2.0 + 1.0 ) );
+// float packedB = orm.b * 255.0;
+// float metallic = floor(packedB / 64.0) / 3.0;  // 0-3 ? 0.0-1.0
+// float roughness = max(mod(packedB, 64.0) / 63.0, 0.04);
+
+// float ao = orm.a;
+
+// vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
+// vec3 V = normalize(std_origin - worldPos);  // need to pass worldPos from vert
+// vec3 H = normalize(L + V);
+
+
+
+// // Combine
+// vec3 diffuse = color.rgb;
+
+// ret[ 0 ] = vec4( diffuse * dot( normal, L ), 1.0 );
+// //ret[0] = vec4(vec3(roughness), 1.0);
+// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
+// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
+// //ret[ 0 ] = vec4( color, 1.0 );
+// ' 4 1 40 1;
+// depth;backface;
+
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
@@ -216,9 +674,312 @@ std.keyState;[58 59 0];s;first;ifn'skipf1';
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
 'Mouse wheel: change fly speed                   ';e;0;cat;
 'Hold f key and drag mouse: change light location';e;0;cat;
+'Enter: catgirl fireworks :D                     ';e;0;cat;
+'R: reset                                        ';e;0;cat;
 std.textToTexture;std.blitText;
 l'skipf1';
 std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
 std.textToTexture;std.blitText;
 l'skipf2';
+
+
+// generate mipmaps for ssaa
+ssaa;first;1;-;ifn'nomipmap';
+texture;
+l'nomipmap';
+
+
+
+// Functions
+1;if'skipFuncs';
+////////////////////////////////////////////////////////////////////
+// bake VAT  takes vertex data and bone matrices and produces a VAT
+// stack should be a) bones and b) vertex data.
+l'bakeVat';
+6;2;dup;shape;[0 1 0];s;frameCount;animCount;[2];*;*;0;cat;[4];0;cat;
+c'''
+mat4 getBoneMat(int frame, int bone, int anim) {
+    mat4 m;
+    for (int col = 0; col < 4; col++) {
+       vec4 val = af(vec4(
+           float(col) + 0.5,
+           float(anim) + animCount * float(bone) + 0.5,
+           float(frame), 0.0
+       ));
+       m[col] = val;
+    }
+    return m;
+}
+'
+int vertIdx = int(tf.x);
+int frameAnim = int(tf.y) / 2;
+int posOrNormal = int(tf.y) % 2;
+int frame = frameAnim % int(frameCount);
+int anim = frameAnim / int(frameCount);
+
+vec4 v = vec4(
+    b(ivec4(vertIdx, 0, 0, 0)),
+    b(ivec4(vertIdx, 1, 0, 0)),
+    b(ivec4(vertIdx, 2, 0, 0)),
+    1.0
+);
+
+ivec4 bi = ivec4(
+    b(ivec4(vertIdx, 8, 0, 0)),
+    b(ivec4(vertIdx, 9, 0, 0)),
+    b(ivec4(vertIdx, 10, 0, 0)),
+    b(ivec4(vertIdx, 11, 0, 0))
+);
+vec4 weights = vec4(
+    b(ivec4(vertIdx, 12, 0, 0)),
+    b(ivec4(vertIdx, 13, 0, 0)),
+    b(ivec4(vertIdx, 14, 0, 0)),
+    b(ivec4(vertIdx, 15, 0, 0))
+);
+vec2 uv = vec2( b( ivec4( vertIdx, 6, 0, 0 ) ), b( ivec4( vertIdx, 7, 0, 0 ) ) );
+vec4 normal = vec4( b( ivec4( vertIdx, 3, 0, 0 ) ), b( ivec4( vertIdx, 4, 0, 0 ) ),
+                    b( ivec4( vertIdx, 5, 0, 0 ) ), 1.0 );
+mat4 skin = getBoneMat(frame, bi.x, anim) * weights.x +
+            getBoneMat(frame, bi.y, anim) * weights.y +
+            getBoneMat(frame, bi.z, anim) * weights.z +
+            getBoneMat(frame, bi.w, anim) * weights.w;
+
+v = skin * v;
+v.w = uv.x;
+normal = skin * normal;
+normal.w = uv.y;
+ret[0] = posOrNormal == 0 ? v : normal;
+' 2 1 4 0;
+return;
+
+
+
+//////////////////////////////////////////////////////////////////////////
+// sable shadow pass,
+// expects from top to bottom instancecount, indexcount, vat, indices
+
+l'sableShadowPass';
+instanceCount= 1;indexCount= 1;
+indexCount;unext;instanceCount;unext;*;
+shadowSize;
+c'
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
+out float depth;
+'
+int vertsPerInstance = int(indexCount);
+int instanceID = gl_VertexID / vertsPerInstance;
+int localVertID = gl_VertexID % vertsPerInstance;
+int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+float xCoord = float(index) + 0.5;
+
+int base = vertsPerInstance + instanceID * int(instanceVars);
+ vec3 instPos = vec3(
+     b(ivec4(base + 0, 0, 0, 0)),
+     b(ivec4(base + 1, 0, 0, 0)),
+     b(ivec4(base + 2, 0, 0, 0))
+ );
+ float facing = b(ivec4(base + 3, 0, 0, 0));
+ float animIdx = b(ivec4(base + 4, 0, 0, 0));
+ float animStart = b(ivec4(base + 5, 0, 0, 0));
+int anim = int( animIdx );
+float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
+float frame = mod(pframe * 24.0, frameCount);
+int f0 = int( frame );
+int f1 = ( f0 + 1 ) % int( frameCount );
+float lerp = fract( frame );
+
+int frameAnim0 = f0 + anim * int(frameCount);
+int frameAnim1 = f1 + anim * int(frameCount);
+float yPos0 = float(frameAnim0 * 2) + 0.5;
+float yPos1 = float(frameAnim1 * 2) + 0.5;
+vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
+
+v.w = 1.0;
+v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
+v.xyz *= sableScale;
+v.xyz += instPos;
+
+ret = orthoproj*lightUnrotation*( ( vec4( -hmapCenter, 0.0 ) + v ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+depth = ( ret.z / ret.w ) * 0.5 + 0.5;
+'
+in float depth;
+'
+ret[ 0 ] = depth;
+' 2 1 1 1;
+return;
+
+
+
+
+
+
+///////////////////////////////////////////////////////////
+//  Sable pass, expects instanceCount indexCount vat indices mat smap frame
+l'sablePass';
+instanceCount= 1;indexCount= 1;
+indexCount;unext;instanceCount;unext;*;
+5;dup;shape;
+c'
+out vec3 normal;
+out vec2 uv;
+out vec3 worldPos;
+flat out float mat;
+out vec3 tint;
+vec3 hue2rgb(float h) {
+    vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
+    return clamp(p - 1.0, 0.0, 1.0);
+}
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
+'
+mat = 0.0;
+int vertsPerInstance = int(indexCount);
+int instanceID = gl_VertexID / vertsPerInstance;
+int localVertID = gl_VertexID % vertsPerInstance;
+int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+float xCoord = float(index) + 0.5;
+
+int base = vertsPerInstance + instanceID * int(instanceVars);
+ vec3 instPos = vec3(
+     b(ivec4(base + 0, 0, 0, 0)),
+     b(ivec4(base + 1, 0, 0, 0)),
+     b(ivec4(base + 2, 0, 0, 0))
+ );
+ float facing = b(ivec4(base + 3, 0, 0, 0));
+ float animIdx = b(ivec4(base + 4, 0, 0, 0));
+ float animStart = b(ivec4(base + 5, 0, 0, 0));
+ tint = hue2rgb( b(ivec4(base + 6, 0, 0, 0)) );
+int anim = int( animIdx ); 
+float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
+float frame = mod(pframe * 24.0, frameCount);
+int f0 = int( frame );
+int f1 = ( f0 + 1 ) % int( frameCount );
+float lerp = fract( frame );
+
+int frameAnim0 = f0 + anim * int(frameCount);
+int frameAnim1 = f1 + anim * int(frameCount);
+float yPos0 = float(frameAnim0 * 2) + 0.5;
+float yPos1 = float(frameAnim1 * 2) + 0.5;
+float yNrm0 = float(frameAnim0 * 2 + 1) + 0.5;
+float yNrm1 = float(frameAnim1 * 2 + 1) + 0.5;
+vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 n0 = af( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
+vec4 n1 = af( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
+vec4 n = n1 * lerp + n0 * ( 1.0 - lerp );
+vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
+
+uv = vec2( v.w, n.w );
+v.w = 1.0;
+n.w = 1.0;
+n.xyz = rotY( facing * 3.14159265359 * 2.0 ) * n.xyz;
+normal = normalize( n.xyz );
+v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
+v.xyz *= sableScale;
+v.xyz += instPos;
+worldPos = v.xyz;
+ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
+'
+in vec3 normal;
+in vec2 uv;
+in vec3 worldPos;
+in vec3 tint;
+flat in float mat;
+
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+vec2 muv = fract( uv );
+
+vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
+if( color.a > 0.98 && color.a < 1.0 )
+  color.rgb = tint;
+//if( color.a < 0.5 )  discard;
+
+
+// // Combine
+vec3 diffuse = color.rgb;
+vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
+
+
+vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
+lightPos /= lightPos.w;
+lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
+float curDepth = lightPos.z;
+
+float shadow = 0.0;
+for( float dx = -0.5; dx <= 0.5; ++dx ){
+  for( float dy = -0.5; dy <= 0.5; ++dy ){
+    vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
+    vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
+    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
+  }
+}
+shadow = shadow / 4.0 * 0.5;
+
+ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
+// //ret[0] = vec4(vec3(roughness), 1.0);
+// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
+// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
+// //ret[ 0 ] = vec4( color, 1.0 );
+' 4 1 40 1;
+
+return;
+
+
+l'resetInstances';
+6;totalInstances;instanceVars;*;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+int instance = t.x / int( instanceVars );
+int var = t.x % int( instanceVars );
+ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) : hash( vec2( t.xy ), timer );
+' 0 1 0 0;
+return;
+
+
+
+l'explodify';
+6;totalInstances;instanceVars;*;
+c'''
+float hash( vec2 p, float time ){
+    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+int instance = t.x / int( instanceVars );
+int var = t.x % int( instanceVars );
+ret[ 0 ] = var == 4 ? 2.0 : a( ivec4( t.x, 0, 0, 0 ) );
+ret[ 0 ] = var == 5 ? timer + 1.0 + hash( vec2( t.x, timer ), timer ) * 10.0 : ret[ 0 ];
+' 1 1 0 0;
+return;
+
+
+
+
+l'skipFuncs';

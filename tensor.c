@@ -980,7 +980,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
     pop( ts );
 #ifndef EMSCRIPTEN // only need this for native afaict
   //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-  glFinish();
+  //glFinish();
   //glFlush();
 #endif
 
