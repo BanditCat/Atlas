@@ -482,7 +482,7 @@ radius = mod( timer * 5.0, 2.0 );
 ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
 '
 in vec2 tripos;
-in float radius;
+flat in float radius;
 '
 if( length( tripos ) > radius + 0.2 )
   discard;
