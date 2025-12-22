@@ -1294,7 +1294,7 @@ char* tensorTakeFirstHelper( tensor* t ){
     err( "%s", "Cannot reduce rank of a tensor with rank 0." );
 
   // Adjust the offset to point to the first element along axis 0
-  t->offset += 0 * t->strides[ 0 ];
+  // what??? t->offset += 0 * t->strides[ 0 ];
   
   // Reduce the rank by one
   t->rank -= 1;

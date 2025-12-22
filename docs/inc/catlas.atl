@@ -68,6 +68,7 @@ l'loop4';
 /////////////////////////////////////////////////
 // instance/unkettle init
 //print;quit; // stack:  lowverts lowindices mat highverts highindices bones animcount prevframe hmap gradient
+2;raise;0;dup;shape;[0 2 0];s;matDim= 2;2;bury;
 6;raise;e;animCount= 1; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
 0;dup;shape;[0 1 0];s;lowVertexCount= 1;
 3;dup;shape;[0 1 0];s;highVertexCount= 1;
@@ -211,7 +212,9 @@ ret[ 1 ] = explode ? vec4( randomVel, 1.0 ) : vec4( vel, fade );
 
 // Zero exploded sables
 0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
-ret[ 0 ] = a( ivec4( t.x, t.y, 0, 0 ) ) * ( b( ivec4( t.x, 0, 0, 0 ) ) );
+ret[ 0 ] = b( ivec4( t.x, 0, 0, 0 ) ) == 0.0 ?
+           (t.y < 3 ? -10000.0 : 0.0 ) :
+           a( ivec4( t.x, t.y, 0, 0 ) );
 ' 2 1 0 0;
 1;bury;pop;
 
@@ -837,6 +840,7 @@ out vec2 uv;
 out vec3 worldPos;
 flat out float mat;
 flat out vec3 tint;
+flat out float job;
 vec3 hue2rgb(float h) {
     vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
     return clamp(p - 1.0, 0.0, 1.0);
@@ -868,7 +872,8 @@ int base = vertsPerInstance + instanceID * int(instanceVars);
  float animIdx = b(ivec4(base + 4, 0, 0, 0));
  float animStart = b(ivec4(base + 5, 0, 0, 0));
  tint = hue2rgb( b(ivec4(base + 6, 0, 0, 0)) );
-int anim = int( animIdx ); 
+int anim = int( animIdx );
+job = animIdx;
 float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
 float frame = mod(pframe * 24.0, frameCount);
 int f0 = int( frame );
@@ -904,6 +909,7 @@ in vec2 uv;
 in vec3 worldPos;
 flat in vec3 tint;
 flat in float mat;
+flat in float job;
 
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
@@ -913,8 +919,14 @@ float hash( vec2 p, float time ){
 vec2 muv = fract( uv );
 
 vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
-if( color.a > 0.98 && color.a < 1.0 )
+if( color.a > 0.99 && color.a < 1.0 )
   color.rgb = tint;
+else if( color.a > 0.98 && color.a <= 0.99 )
+  color.rgb = cf( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
+else if( color.a > 0.97 && color.a <= 0.98 )
+  color.rgb = cf( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
+else if( color.a > 0.96 && color.a <= 0.97 )
+  color.rgb = cf( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
 //if( color.a < 0.5 )  discard;
 
 
