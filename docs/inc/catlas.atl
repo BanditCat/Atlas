@@ -225,10 +225,22 @@ ret[ 0 ] = b( ivec4( t.x, 0, 0, 0 ) ) == 0.0 ?
 
 
 
+// place on ground
+//print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel sorted
+2;dup;1;raise; // instances hmapc frame ...
+6;1;dup;shape;c'''
+'
+int var = t.y;
+int ind = t.x;
+float x = a( ivec4( ind, 0, 0, 0 ) ) * dim; 
+float y = a( ivec4( ind, 2, 0, 0 ) ) * dim; 
+ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( ind, t.y, 0, 0 ) );
+' 2 1 0 0;
+
 //print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
 ////////////////////////////////////////////////////////////////////
 // lod sort
-//10;bury;10;dup;
+10;bury;10;dup;
 0;dup;6;totalInstances;c''''
 vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
 pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
@@ -237,22 +249,11 @@ ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0;
 
 sort;0;dup;[0 1 0];s;selectedIdx=;
-6;1;dup;shape;c''''ret[ 0 ] = a( t );' 1 1 0 0;11;bury; // put sort list on gpu
-0;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
+6;1;dup;shape;c''''ret[ 0 ] = a( t );' 1 1 0 0;
+0;dup;2;raise;6;1;dup;shape;c''''ret[ 0 ] = a( ivec4( int( b( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;
+11;bury; // put sort list on gpu
+12;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
 selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
-
-
-// place on ground and sort
-//print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel sorted
-2;dup;1;raise;12;dup; // sortedc instances hmapc frame ...
-6;2;dup;shape;c'''
-'
-int var = t.y;
-int ind = int( a( ivec4( t.x, 0, 0, 0 ) ) );
-float x = b( ivec4( ind, 0, 0, 0 ) ) * dim; 
-float y = b( ivec4( ind, 2, 0, 0 ) ) * dim; 
-ret[ 0 ] = var == 1 ? cf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : b( ivec4( ind, t.y, 0, 0 ) );
-' 3 1 0 0;
 
 totalInstances;instanceVars;*;reshape;
 8;bury;
@@ -583,6 +584,9 @@ ret[ 0 ] = vec4( fract( pos.x * numJobs ), pos.y, 1.0, 1.0 );
 ' 0 1 40 1;
 
 11;raise;pop; // get rid of sort index
+8;raise;pop;
+10;raise;totalInstances;instanceVars;*;reshape;8;bury;
+
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate
