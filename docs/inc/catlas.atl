@@ -224,18 +224,6 @@ ret[ 0 ] = b( ivec4( t.x, 0, 0, 0 ) ) == 0.0 ?
 1;bury;pop;
 
 
-// place on ground
-//print;quit; instances frame hmap grad highvat lowvat lowinds mat highinds
-2;dup;1;raise; // instances hmapc frame hmap grad highvat lowvat lowinds mat highinds
-6;1;dup;shape;c'''
-'
-int var = t.y;
-int instance = t.x;
-float x = a( ivec4( t.x, 0, 0, 0 ) ) * dim; 
-float y = a( ivec4( t.x, 2, 0, 0 ) ) * dim; 
-ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, t.y, 0, 0 ) );
-' 2 1 0 0;
-
 
 //print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
 ////////////////////////////////////////////////////////////////////
@@ -248,11 +236,23 @@ pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0;
 
-sort;11;bury;11;dup;[0 1 0];s;selectedIdx=;
+sort;0;dup;[0 1 0];s;selectedIdx=;
+6;1;dup;shape;c''''ret[ 0 ] = a( t );' 1 1 0 0;11;bury; // put sort list on gpu
 0;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
 selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
 
 
+// place on ground and sort
+//print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel sorted
+2;dup;1;raise;12;dup; // sortedc instances hmapc frame ...
+6;2;dup;shape;c'''
+'
+int var = t.y;
+int ind = int( a( ivec4( t.x, 0, 0, 0 ) ) );
+float x = b( ivec4( ind, 0, 0, 0 ) ) * dim; 
+float y = b( ivec4( ind, 2, 0, 0 ) ) * dim; 
+ret[ 0 ] = var == 1 ? cf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : b( ivec4( ind, t.y, 0, 0 ) );
+' 3 1 0 0;
 
 totalInstances;instanceVars;*;reshape;
 8;bury;
@@ -706,7 +706,7 @@ int localVertID = gl_VertexID % vertsPerInstance;
 int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
 float xCoord = float(index) + 0.5;
 
-int base = int( d( ivec4( instanceID, 0, 0, 0 ) ) ) * int(instanceVars);
+int base = instanceID * int(instanceVars);
  vec3 instPos = vec3(
      c(ivec4(base + 0, 0, 0, 0)),
      c(ivec4(base + 1, 0, 0, 0)),
@@ -789,7 +789,7 @@ int localVertID = gl_VertexID % vertsPerInstance;
 int index = int( d( ivec4( localVertID, 0, 0, 0 ) ) );
 float xCoord = float(index) + 0.5;
 
-int base = int( a( ivec4( instanceID, 0, 0, 0 ) ) ) * int(instanceVars);
+int base = instanceID * int(instanceVars);
  vec3 instPos = vec3(
      b(ivec4(base + 0, 0, 0, 0)),
      b(ivec4(base + 1, 0, 0, 0)),
