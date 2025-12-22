@@ -79,23 +79,9 @@ l'loop4';
 
 1;raise; // get indices
 0;dup;shape;lowIndexCount= 1;
-6;lowIndexCount;lowInstanceCount;instanceVars;*;+;
-c'''
-float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-    return fract( sin( h ) * 43758.5453123 );
-}
-'ret[ 0 ] = t.x < int( lowIndexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
 1;bury;  // put indices back
 4;raise; // get indices
 0;dup;shape;highIndexCount= 1;
-6;highIndexCount;highInstanceCount;instanceVars;*;+;
-c'''
-float hash( vec2 p, float time ){
-    float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
-    return fract( sin( h ) * 43758.5453123 );
-}
-'ret[ 0 ] = t.x < int( highIndexCount ) ? a( ivec4( t.x, 0, 0, 0 ) ) : hash( vec2( t.xy ), 0.1 );' 1 1 0 0;
 4;bury;  // put indices back
 //print;quit; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
 
@@ -252,7 +238,7 @@ sort;0;dup;[0 1 0];s;selectedIdx=;
 0;dup;2;raise;6;1;dup;shape;c''''ret[ 0 ] = a( ivec4( int( b( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;
 pop;
 11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
-selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
+//selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
 
 totalInstances;instanceVars;*;reshape;
 8;bury;
