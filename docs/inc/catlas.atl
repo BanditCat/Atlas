@@ -29,6 +29,8 @@ windowSize;ssaa;*;wdims= 2;
 [-0.000004];gravity= 1;
 20;reticleSnappiness=;
 [0 0 0];selectedReticle= 3;
+[3];numJobs= 1;
+[0.15];uiSize=;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -125,6 +127,8 @@ ret[ 0 ] = vec4( 0.0 );
 
 l'kettled';
 windowSize;ssaa;*;wdims= 2;
+wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
+
 std.nav3d;
 
 
@@ -307,7 +311,7 @@ set'lightUnrotation' 16;
 6;dim;dim;*;first;*;shadowSize;
 backface;depth;
 c'
-vec4 verts[] = vec4[](
+const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
 vec4( 1.0,0.0,0.0,1.0 ), 
 vec4( 0.0,1.0,0.0,1.0 ), 
@@ -368,7 +372,7 @@ wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window
 depth;backface;
 6;dim;dim;*;first;*;wdims;[4];0;cat;
 c'
-vec4 verts[] = vec4[](
+const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
 vec4( 1.0,0.0,0.0,1.0 ), 
 vec4( 0.0,1.0,0.0,1.0 ), 
@@ -466,8 +470,8 @@ depth;backface;
 
 
 
-// //////////////////////////////////////////////////////////////////////
-// // Selected ui
+//////////////////////////////////////////////////////////////////////
+// Selected ui
 3;1;dup;shape;c'
 const vec4 verts[3] = vec4[](
     vec4( 0.0,        2.0, 0.0, 1.0),   // top
@@ -553,121 +557,31 @@ ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
 ' 2 1 40 1;depth;
 
 
-
-// 6;dup;6;dup;6;dup;6;dup;
-// indexCount;unext;instanceCount;unext;*;
-
-
-// 5;dup;shape;
-// depth;backface;
-// c'
-// vec3 hsv2rgb(vec3 c) {
-//     vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
-//     return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
-// }
-// mat4 getBoneMat(int frame, int bone, int anim) {
-//     mat4 m;
-//     for (int col = 0; col < 4; col++) {
-//        vec4 val = cf(vec3(
-//            float(col) + 0.5,                              // x: column within the 4-wide texture
-//            float(anim) + animCount * float(bone) + 0.5,   // y: row 
-//            float(frame)                                  // z: layer (frame)
-//        ));
-//        m[col] = val;
-//     }
-//     return m;
-// }
-// mat4 getLerpMat(int f0, int f1, int bone, int anim, float t) {
-//     mat4 m0 = getBoneMat(f0, bone, anim);
-//     mat4 m1 = getBoneMat(f1, bone, anim);
-//     // Manual lerp: result = start * (1 - t) + end * t
-//     return m0 * (1.0 - t) + m1 * t; 
-// }
-// out vec3 normal;
-// out vec2 uv;
-// out vec3 worldPos;
-// flat out float mat;
-// '
-// int vertsPerInstance = int(indexCount);
-// int instanceID = gl_VertexID / vertsPerInstance;
-// int localVertID = gl_VertexID % vertsPerInstance;
-// int base = vertsPerInstance + instanceID * int(instanceVars);
-// vec3 instPos = vec3(
-//     b(ivec4(base + 0, 0, 0, 0)),
-//     b(ivec4(base + 1, 0, 0, 0)),
-//     b(ivec4(base + 2, 0, 0, 0))
-// );
-// float facing = b(ivec4(base + 3, 0, 0, 0));
-// float animIdx = b(ivec4(base + 4, 0, 0, 0));
-// float animStart = b(ivec4(base + 5, 0, 0, 0));
-// float tint = b(ivec4(base + 6, 0, 0, 0));
-
-// int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
-// vec4 v = vec4( a( ivec4( index, 0, 0, 0 ) ), a( ivec4( index, 1, 0, 0 ) ), a( ivec4( index, 2, 0, 0 ) ), 1.0 );
-// normal = vec3( a( ivec4( index, 3, 0, 0 ) ), a( ivec4( index, 4, 0, 0 ) ), a( ivec4( index, 5, 0, 0 ) ) );
-// uv = vec2( a( ivec4( index, 6, 0, 0 ) ), a( ivec4( index, 7, 0, 0 ) ) );
-// vec4 bones = vec4( a( ivec4( index, 8, 0, 0 ) ), a( ivec4( index, 9, 0, 0 ) ), a( ivec4( index, 10, 0, 0 ) ),
-//                    a( ivec4( index, 11, 0, 0 ) ) );
-// vec4 weights = vec4( a( ivec4( index, 12, 0, 0 ) ), a( ivec4( index, 13, 0, 0 ) ),
-//                      a( ivec4( index, 14, 0, 0 ) ), a( ivec4( index, 15, 0, 0 ) ) );
-// mat = a( ivec4( index, 16, 0, 0 ) );
-
-// // Animation Logic
-// float playHead = mod(lrot.x / 30.0 + timer * 24.0 + animStart * 10.0, frameCount);
-// int f0 = int(playHead);
-// int f1 = (f0 + 1) % int( frameCount ); 
-// float t = fract(playHead);
-
-// int anim = int(mod(lrot.y / 30.0 + animIdx * 10.0, float(frameCount))) % int( animCount ); 
-
-// ivec4 bi = ivec4(bones);
-
-// // Blend the blend
-// mat4 skin = getLerpMat(f0, f1, bi.x, anim, t) * weights.x +
-//             getLerpMat(f0, f1, bi.y, anim, t) * weights.y +
-//             getLerpMat(f0, f1, bi.z, anim, t) * weights.z +
-//             getLerpMat(f0, f1, bi.w, anim, t) * weights.w;
-
-// v = skin * v;
-// v.xyz = v.xyz / 10.0;
-// v.xyz += instPos;
-// worldPos = v.xyz;
-// normal = mat3(skin) * normal;
-
-// ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
-// '
-// in vec3 normal;
-// in vec2 uv;
-// in vec3 worldPos;
-// flat in float mat;
-// '
-// vec2 muv = fract( uv );
-
-// vec4 color = df( vec3( muv * atlasSize, mat * 2.0 ) );
-// //if( color.a < 0.5 )  discard;
-// vec4 orm = df( vec3( muv * atlasSize, mat * 2.0 + 1.0 ) );
-// float packedB = orm.b * 255.0;
-// float metallic = floor(packedB / 64.0) / 3.0;  // 0-3 ? 0.0-1.0
-// float roughness = max(mod(packedB, 64.0) / 63.0, 0.04);
-
-// float ao = orm.a;
-
-// vec3 L = normalize(lightDir * vec3(-1.0, 1.0, -1.0));
-// vec3 V = normalize(std_origin - worldPos);  // need to pass worldPos from vert
-// vec3 H = normalize(L + V);
+//////////////////////////////////////////////////////////////////
+// UI
+// frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
+// 0     1    2    3       4      5       6   7        8         9     10
+6;wdims;[4];0;cat;c'
+const vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+out vec2 pos;
+'
+pos = verts[ gl_VertexID ].xy;
+ret = vec4( ( uiDims.x / wdims.x ) * ( pos.x * 2.0 - 1.0 ),
+            ( uiDims.y / wdims.y ) * pos.y * 2.0 - 1.0, 0.0, 1.0 );
+'
+in vec2 pos;
+'
+ret[ 0 ] = vec4( fract( pos.x * numJobs ), pos.y, 1.0, 1.0 );
+' 0 1 40 1;
 
 
-
-// // Combine
-// vec3 diffuse = color.rgb;
-
-// ret[ 0 ] = vec4( diffuse * dot( normal, L ), 1.0 );
-// //ret[0] = vec4(vec3(roughness), 1.0);
-// //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
-// //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
-// //ret[ 0 ] = vec4( color, 1.0 );
-// ' 4 1 40 1;
-// depth;backface;
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate

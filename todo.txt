@@ -1,4 +1,6 @@
-tint mapping
+make shaders take 6 params instead of 4, unmash instances, use sort index
+nav controls for just catlas
+
 ui
 
 
