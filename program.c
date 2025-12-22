@@ -898,19 +898,19 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
         unmem( comp );
         err3( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
       }
-      if( argCount > 4 ){
+      if( argCount > 6 ){
         unmem( pre );
         unmem( vcomp );
         unmem( vpre );
         unmem( comp );
-        err3( "%s", "Compute created with more than 4 arguments. The maximum is 4." );
+        err3( "%s", "Compute created with more than 6 arguments. The maximum is 6." );
       }
-      if( retCount > 4 || !retCount ){
+      if( retCount > 6 || !retCount ){
         unmem( pre );
         unmem( vcomp );
         unmem( vpre );
         unmem( comp );
-        err3( "%s", "Compute created with a bad return count, must be 1-4." );
+        err3( "%s", "Compute created with a bad return count, must be 1-6." );
       }
       curStep->toCompute.glslpre = pre;
       curStep->toCompute.glsl = comp;

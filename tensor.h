@@ -6,8 +6,8 @@
 // This is the number of popped gpu tensors to keep cached.
 // THIS LIST IS CRAWLED THROUGH LINEARLY, DONT make it huge
 
-#define TENSOR_CACHE 16
-#define MAX_TENSOR_DIPLAY_SIZE 1024
+#define TENSOR_CACHE 24
+#define MAX_TENSOR_DISPLAY_SIZE 1024
 
 typedef struct{
   u32 rank;              // Rank of the tensor (0 to 4)
@@ -35,10 +35,10 @@ typedef struct{
   GLuint stridesLocation;
   u32 argCount;
   u32 retCount; 
-  GLuint argDimsLocation[ 4 ];
-  GLuint argStridesLocation[ 4 ];
-  GLuint argToffsetLocation[ 4 ];
-  GLuint argTexLocation[ 4 ];
+  GLuint argDimsLocation[ 6 ];
+  GLuint argStridesLocation[ 6 ];
+  GLuint argToffsetLocation[ 6 ];
+  GLuint argTexLocation[ 6 ];
   GLuint* uniformLocs;
   u32 channels;
   bool reuse;

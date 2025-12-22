@@ -128,7 +128,8 @@ ret[ 0 ] = vec4( 0.0 );
 l'kettled';
 windowSize;ssaa;*;wdims= 2;
 wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
-
+timer;timeDelta;e;+;timer= 1;
+timeDelta;e;dt= 1;
 std.nav3d;
 
 
@@ -239,7 +240,7 @@ ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( t.x, t
 //print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
 ////////////////////////////////////////////////////////////////////
 // lod sort
-10;bury;10;dup;
+//10;bury;10;dup;
 0;dup;6;totalInstances;c''''
 vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
 pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
@@ -247,8 +248,8 @@ pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0;
 
-sort;0;dup;[0 1 0];s;selectedIdx=;0;index; 
-0;dup;[0 1 0];s;[0 3 1];s;first;selected=;
+sort;11;bury;11;dup;[0 1 0];s;selectedIdx=;
+0;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
 selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
 
 
@@ -259,27 +260,26 @@ totalInstances;instanceVars;*;reshape;
 
 ///////////////////////////////////////////////////////////
 // instance mashing.
-//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel
+//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel sorted
 
-7;raise;
-8;dup;[0];highInstanceCount;instanceVars;*;0;cat;[0];0;cat;s;
-6;highInstanceCount;instanceVars;*;highIndexCount;+;
-c''''ret[ 0 ] = t.x < int( highIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
-                                             a( ivec4( t.x - int( highIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
-7;bury;
-5;raise;
-8;dup;highInstanceCount;instanceVars;*;totalInstances;instanceVars;*;0;cat;[0];0;cat;s;
-6;lowInstanceCount;instanceVars;*;lowIndexCount;+;
-c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
-                                             a( ivec4( t.x - int( lowIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
-5;bury;
+// 7;raise;
+// 8;dup;[0];highInstanceCount;instanceVars;*;0;cat;[0];0;cat;s;
+// 6;highInstanceCount;instanceVars;*;highIndexCount;+;
+// c''''ret[ 0 ] = t.x < int( highIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
+//                                              a( ivec4( t.x - int( highIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
+// 7;bury;
+// 5;raise;
+// 8;dup;highInstanceCount;instanceVars;*;totalInstances;instanceVars;*;0;cat;[0];0;cat;s;
+// 6;lowInstanceCount;instanceVars;*;lowIndexCount;+;
+// c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
+//                                              a( ivec4( t.x - int( lowIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
+// 5;bury;
 
-8;raise;pop;10;raise;totalInstances;instanceVars;*;reshape;8;bury;
+//8;raise;pop;10;raise;totalInstances;instanceVars;*;reshape;8;bury;
 
 
-timer;timeDelta;e;+;timer= 1;
-timeDelta;e;dt= 1;
-// Stack here: prevFrame, heightMap, gradient
+//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel sorted
+
 
 
 
@@ -342,10 +342,10 @@ backface;depth;
 //   0          1          2          3         4        5       6           7    8
 //  shadowmap, prevFrame, heightMap, gradient, highvat, lowvat, lowindices, mat, highindices
 depth;backface;
-6;dup;6;dup;
-lowIndexCount;lowInstanceCount;sableShadowPass;
-8;dup;5;dup;
-highIndexCount;highInstanceCount;sableShadowPass;
+12;dup;10;dup;8;dup;8;dup;
+lowIndexCount;lowInstanceCount;highInstanceCount;sableShadowPass2;
+12;dup;10;dup;10;dup;7;dup;
+highIndexCount;highInstanceCount;[0];sableShadowPass2;
 
 depth;backface;texture;
 
@@ -502,15 +502,16 @@ ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
 //////////////////////////////////////////////////
 // sables
 //print; quit; // frame hmap smap grad highvat lowvat lowindices mat highindices
-7;dup;7;dup;7;dup;5;dup;3;bury; // lowvatc lowindsc matc smap frame smap hmap grad highvat lowvat lowindices mat highindices
+7;dup;7;dup;7;dup;5;dup;3;bury; // lowvatc lowindsc matc smapc frame hmap smap grad highvat lowvat lowindices mat highindices instances fwpos fwvel sorted
 
 
 depth;backface;
-lowIndexCount;lowInstanceCount;sablePass;
-//print;quit; // frame hmap smap grad highvat lowvat lowinds mat highinds
+13;dup;17;dup;
+lowIndexCount;lowInstanceCount;highInstanceCount;sablePass2;
 2;raise;      // smap frame hmap grad highvat lowvat lowinds mat highinds
-7;dup;9;dup;6;dup;
-highIndexCount;highInstanceCount;sablePass;
+7;dup;9;dup;6;dup;12;dup;16;dup;
+//print;quit; // sortedc instancesc highvatc highindsc matc smap frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel sorted  
+highIndexCount;highInstanceCount;[0];sablePass2;
 depth;backface;
 
 
@@ -581,7 +582,7 @@ in vec2 pos;
 ret[ 0 ] = vec4( fract( pos.x * numJobs ), pos.y, 1.0, 1.0 );
 ' 0 1 40 1;
 
-
+11;raise;pop; // get rid of sort index
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate
@@ -673,11 +674,17 @@ return;
 
 
 
-//////////////////////////////////////////////////////////////////////////
-// sable shadow pass,
-// expects from top to bottom instancecount, indexcount, vat, indices
 
-l'sableShadowPass';
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+// sable shadow pass 2,
+// expects from top to bottom bypasscount, instancecount, indexcount, vat, indices, instances, sorted
+
+l'sableShadowPass2';
+bypass= 1;
 instanceCount= 1;indexCount= 1;
 indexCount;unext;instanceCount;unext;*;
 shadowSize;
@@ -694,20 +701,20 @@ mat3 rotY(float facing) {
 out float depth;
 '
 int vertsPerInstance = int(indexCount);
-int instanceID = gl_VertexID / vertsPerInstance;
+int instanceID = gl_VertexID / vertsPerInstance + int(bypass);
 int localVertID = gl_VertexID % vertsPerInstance;
 int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
 float xCoord = float(index) + 0.5;
 
-int base = vertsPerInstance + instanceID * int(instanceVars);
+int base = int( d( ivec4( instanceID, 0, 0, 0 ) ) ) * int(instanceVars);
  vec3 instPos = vec3(
-     b(ivec4(base + 0, 0, 0, 0)),
-     b(ivec4(base + 1, 0, 0, 0)),
-     b(ivec4(base + 2, 0, 0, 0))
+     c(ivec4(base + 0, 0, 0, 0)),
+     c(ivec4(base + 1, 0, 0, 0)),
+     c(ivec4(base + 2, 0, 0, 0))
  );
- float facing = b(ivec4(base + 3, 0, 0, 0));
- float animIdx = b(ivec4(base + 4, 0, 0, 0));
- float animStart = b(ivec4(base + 5, 0, 0, 0));
+ float facing = c(ivec4(base + 3, 0, 0, 0));
+ float animIdx = c(ivec4(base + 4, 0, 0, 0));
+ float animStart = c(ivec4(base + 5, 0, 0, 0));
 int anim = int( animIdx );
 float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
 float frame = mod(pframe * 24.0, frameCount);
@@ -734,7 +741,7 @@ depth = ( ret.z / ret.w ) * 0.5 + 0.5;
 in float depth;
 '
 ret[ 0 ] = depth;
-' 2 1 1 1;
+' 4 1 1 1;
 return;
 
 
@@ -742,12 +749,18 @@ return;
 
 
 
+
+
+
+
+
 ///////////////////////////////////////////////////////////
-//  Sable pass, expects instanceCount indexCount vat indices mat smap frame
-l'sablePass';
+//  Sable pass2, expects bypassCount instanceCount indexCount sorted instances vat indices mat smap frame
+l'sablePass2';
+bypass= 1;
 instanceCount= 1;indexCount= 1;
 indexCount;unext;instanceCount;unext;*;
-5;dup;shape;
+7;dup;shape;
 c'
 out vec3 normal;
 out vec2 uv;
@@ -771,12 +784,12 @@ mat3 rotY(float facing) {
 '
 mat = 0.0;
 int vertsPerInstance = int(indexCount);
-int instanceID = gl_VertexID / vertsPerInstance;
+int instanceID = int( bypass ) + gl_VertexID / vertsPerInstance;
 int localVertID = gl_VertexID % vertsPerInstance;
-int index = int( b( ivec4( localVertID, 0, 0, 0 ) ) );
+int index = int( d( ivec4( localVertID, 0, 0, 0 ) ) );
 float xCoord = float(index) + 0.5;
 
-int base = vertsPerInstance + instanceID * int(instanceVars);
+int base = int( a( ivec4( instanceID, 0, 0, 0 ) ) ) * int(instanceVars);
  vec3 instPos = vec3(
      b(ivec4(base + 0, 0, 0, 0)),
      b(ivec4(base + 1, 0, 0, 0)),
@@ -800,10 +813,10 @@ float yPos0 = float(frameAnim0 * 2) + 0.5;
 float yPos1 = float(frameAnim1 * 2) + 0.5;
 float yNrm0 = float(frameAnim0 * 2 + 1) + 0.5;
 float yNrm1 = float(frameAnim1 * 2 + 1) + 0.5;
-vec4 v0 = af( vec4(xCoord, yPos0, 0.0, 0.0 ) );
-vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
-vec4 n0 = af( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
-vec4 n1 = af( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
+vec4 v0 = cf( vec4(xCoord, yPos0, 0.0, 0.0 ) );
+vec4 v1 = cf( vec4(xCoord, yPos1, 0.0, 0.0 ) );
+vec4 n0 = cf( vec4(xCoord, yNrm0, 0.0, 0.0 ) );
+vec4 n1 = cf( vec4(xCoord, yNrm1, 0.0, 0.0 ) );
 vec4 n = n1 * lerp + n0 * ( 1.0 - lerp );
 vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
 
@@ -832,15 +845,15 @@ float hash( vec2 p, float time ){
 '
 vec2 muv = fract( uv );
 
-vec4 color = cf( vec3( muv * atlasSize, mat * 2.0 ) );
+vec4 color = ef( vec3( muv * atlasSize, mat * 2.0 ) );
 if( color.a > 0.99 && color.a < 1.0 )
   color.rgb = tint;
 else if( color.a > 0.98 && color.a <= 0.99 )
-  color.rgb = cf( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
+  color.rgb = ef( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
 else if( color.a > 0.97 && color.a <= 0.98 )
-  color.rgb = cf( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
+  color.rgb = ef( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
 else if( color.a > 0.96 && color.a <= 0.97 )
-  color.rgb = cf( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
+  color.rgb = ef( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
 //if( color.a < 0.5 )  discard;
 
 
@@ -859,7 +872,7 @@ for( float dx = -0.5; dx <= 0.5; ++dx ){
   for( float dy = -0.5; dy <= 0.5; ++dy ){
     vec2 jitter = vec2( hash( vec2( dx, dy ), timer ), hash( vec2( dx + 10.0, dy ), timer ) ) - 0.5;
     vec2 delta = ( vec2( dx, dy ) + jitter ) * 1.0; // no spread calc needed for small objects
-    float lightDepth = df( lightPos.xy * shadowSize.xy + delta ).x;
+    float lightDepth = ff( lightPos.xy * shadowSize.xy + delta ).x;
     shadow += ( curDepth - shadowBias ) > lightDepth ? 1.0 : 0.0;
   }
 }
@@ -869,10 +882,26 @@ ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
 // //ret[0] = vec4(vec3(roughness), 1.0);
 // //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 // //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
-// //ret[ 0 ] = vec4( color, 1.0 );
-' 4 1 40 1;
+// ret[ 0 ] = vec4( color );
+' 6 1 40 1;
 
 return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 l'resetInstances';

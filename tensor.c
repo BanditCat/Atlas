@@ -466,6 +466,54 @@ char* makeCompute( const char* filename,
     }\n\
     vec4 df( vec4 uv ){\n\
       return textureLod( _a_dtex, vec3( uv.xy / vec2( _a_ddims ), uv.z ), uv.w );\n\
+    }\n\
+    uniform ivec4 _a_estrides;\n\
+    uniform int _a_etoffset;\n\
+    uniform ivec2 _a_edims;\n\
+    uniform sampler2DArray _a_etex;\n\
+    float e( ivec4 i ){\n\
+      vec2 a_adims = vec2( _a_edims );\n\
+      int lindex = _a_etoffset;\n\
+      for( int j = 0; j < 4; ++j )\n\
+        lindex += _a_estrides[ j ] * int( i[ j ] );\n\
+      int pixel_index = lindex / 4;\n\
+      int channel = lindex % 4;\n\
+      vec2 uv = ( vec2( pixel_index % _a_edims.x, pixel_index / _a_edims.x ) + 0.5 ) / a_adims;\n\
+      vec4 texel = textureLod( _a_etex, vec3( uv, 0.0 ), 0.0 );\n\
+      return texel[ int( channel ) ];\n\
+    }\n\
+    vec4 ef( vec2 uv ){\n\
+      return texture( _a_etex, vec3( uv / vec2( _a_edims ), 0.0 ) );\n\
+    }\n\
+    vec4 ef( vec3 uv ){\n\
+      return texture( _a_etex, vec3( uv.xy / vec2( _a_edims ), uv.z ) );\n\
+    }\n\
+    vec4 ef( vec4 uv ){\n\
+      return textureLod( _a_etex, vec3( uv.xy / vec2( _a_edims ), uv.z ), uv.w );\n\
+    }\n\
+    uniform ivec4 _a_fstrides;\n\
+    uniform int _a_ftoffset;\n\
+    uniform ivec2 _a_fdims;\n\
+    uniform sampler2DArray _a_ftex;\n\
+    float f( ivec4 i ){\n\
+      vec2 a_adims = vec2( _a_fdims );\n\
+      int lindex = _a_ftoffset;\n\
+      for( int j = 0; j < 4; ++j )\n\
+        lindex += _a_fstrides[ j ] * int( i[ j ] );\n\
+      int pixel_index = lindex / 4;\n\
+      int channel = lindex % 4;\n\
+      vec2 uv = ( vec2( pixel_index % _a_fdims.x, pixel_index / _a_fdims.x ) + 0.5 ) / a_adims;\n\
+      vec4 texel = textureLod( _a_ftex, vec3( uv, 0.0 ), 0.0 );\n\
+      return texel[ int( channel ) ];\n\
+    }\n\
+    vec4 ff( vec2 uv ){\n\
+      return texture( _a_ftex, vec3( uv / vec2( _a_fdims ), 0.0 ) );\n\
+    }\n\
+    vec4 ff( vec3 uv ){\n\
+      return texture( _a_ftex, vec3( uv.xy / vec2( _a_fdims ), uv.z ) );\n\
+    }\n\
+    vec4 ff( vec4 uv ){\n\
+      return textureLod( _a_ftex, vec3( uv.xy / vec2( _a_fdims ), uv.z ), uv.w );\n\
     }\n";
   
   // Fragment shader template
@@ -915,10 +963,12 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
   // glUniformBlockBinding( compute->program, compute->uboLoc, 0 );
   // glBindBufferBase( GL_UNIFORM_BUFFER, 0, p->ubo );
 
-  GLenum drawBuffers[ 4 ] = { GL_COLOR_ATTACHMENT0,
+  GLenum drawBuffers[ 6 ] = { GL_COLOR_ATTACHMENT0,
                               GL_COLOR_ATTACHMENT1,
                               GL_COLOR_ATTACHMENT2,
-                              GL_COLOR_ATTACHMENT3 };
+                              GL_COLOR_ATTACHMENT3,
+                              GL_COLOR_ATTACHMENT4,
+                              GL_COLOR_ATTACHMENT5 };
   glDrawBuffers( compute->retCount, drawBuffers );
 
   if( depthTest ){
@@ -1052,7 +1102,7 @@ void printStack( tensorStack* ts ){
     print( "\nstrides:" );
     for( u32 j = 0; j < t->rank; ++j )
       print( " %i", t->strides[ j ] );
-    if( t->size < MAX_TENSOR_DIPLAY_SIZE ){
+    if( t->size < MAX_TENSOR_DISPLAY_SIZE ){
       char* fd = formatTensorData( t );
       print( "\n%s\n\n", fd );
       unmem( fd );

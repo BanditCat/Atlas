@@ -435,7 +435,7 @@ strides: 1
     <ul>
         <li><strong>Output Shape:</strong> A tensor that defines the shape of the output.</li>
         <li><strong>Vertex Count:</strong> An integer specifying the vertex count (e.g., <code>6</code> for two triangles covering the tensor).</li>
-        <li><strong>Input Tensors:</strong> (Optional) Up to four tensors that will serve as inputs to your shader.</li>
+        <li><strong>Input Tensors:</strong> (Optional) Up to six tensors that will serve as inputs to your shader.</li>
         <li><strong>Return Tensors:</strong> (Optional) If <code>reuse</code> is nonzero, these are the tensors that the results will be drawn on top of.</li>
     </ul>
 
@@ -457,7 +457,7 @@ strides: 1
     <h3>3. Numeric Parameters</h3>
     <p>Following the strings, four numeric parameters configure the operation:</p>
     <ul>
-        <li><strong>argCount</strong> (0-4): The number of input tensors to pop from the stack. Inside GLSL, these are accessed via functions <code>a(t)</code>, <code>b(t)</code>, <code>c(t)</code>, and <code>d(t)</code>.</li>
+        <li><strong>argCount</strong> (0-6): The number of input tensors to pop from the stack. Inside GLSL, these are accessed via functions <code>a(t)</code>, <code>b(t)</code>, <code>c(t)</code>, <code>d(t)</code>,  <code>3(t)</code> and <code>f(t)</code>.</li>
         <li><strong>retCount</strong>: The number of values the shader outputs (assigned to <code>ret[]</code>).</li>
         <li><strong>channels</strong>: Determines the output mode:
             <ul>
