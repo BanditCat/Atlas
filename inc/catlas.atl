@@ -35,8 +35,8 @@ windowSize;ssaa;*;wdims= 2;
 [0.001];fireworkSize= 1;
 [0.0003];fireworksSpeed= 1;
 [-0.000004];gravity= 1;
-20;reticleSnappiness=;
-[0 0 0];selectedReticle= 3;
+[20];reticleSnappiness= 1;
+[0 0 0];selectedReticle=;
 [3];numJobs= 1;
 [0.15];uiSize=;
 
@@ -112,7 +112,7 @@ ret[ 0 ] = vec4( 0.0 );
 ret[ 0 ] = vec4( 0.0 );
 ' 0 1 4 0;
 9;bury;
-//print;quit //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
+[0 0 0];11;bury; //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
 
 
 
@@ -233,7 +233,6 @@ float y = a( ivec4( ind, 2, 0, 0 ) ) * dim;
 ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( ind, t.y, 0, 0 ) );
 ' 2 1 0 0;
 
-
 //print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
 ////////////////////////////////////////////////////////////////////
 // lod sort
@@ -253,11 +252,12 @@ sort;
 1;bury;
 //pop;1;bury;pop;
 
-0;index;1;bury;pop;
-//6;2;dup;shape;c''''ret[ 0 ] = b( ivec4( int( a( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
+//0;index;1;bury;pop;
+6;2;dup;shape;c''''ret[ 0 ] = b( ivec4( int( a( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
 //11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
-0;dup;[0 1 0];s;[0 3 1];s;first;selected=;
-selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
+0;dup;[0 1 0];s;[0 3 1];s;first;
+//selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle=;
+13;raise;6;[3];c''''ret[ 0 ] = a( t ) + ( b( t ) - a( t ) ) * dt * reticleSnappiness;' 2 1 0 0;12;bury;
 
 totalInstances;instanceVars;*;reshape;
 8;bury;
@@ -285,7 +285,6 @@ totalInstances;instanceVars;*;reshape;
 
 
 //print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel sorted
-
 
 
 
@@ -354,7 +353,6 @@ lowIndexCount;lowInstanceCount;highInstanceCount;sableShadowPass2;
 highIndexCount;highInstanceCount;[0];sableShadowPass2;
 
 depth;backface;texture;
-
 
 
 
@@ -475,10 +473,10 @@ ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
 depth;backface;
 
 
-
 //////////////////////////////////////////////////////////////////////
 // Selected ui
-3;1;dup;shape;c'
+13;dup;
+3;2;dup;shape;c'
 const vec4 verts[3] = vec4[](
     vec4( 0.0,        2.0, 0.0, 1.0),   // top
     vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
@@ -490,7 +488,7 @@ flat out float radius;
 vec4 pos = verts[ gl_VertexID ].xzyw;
 tripos = verts[ gl_VertexID ].xy;
 pos.xyz *= sableScale;
-pos.xyz += selectedReticle;
+pos.xyz += vec3( a( ivec4( 0, 0, 0, 0 ) ), a( ivec4( 1, 0, 0, 0 ) ), a( ivec4( 2, 0, 0, 0 ) ) );
 radius = mod( timer * 5.0, 2.0 );
 ret = proj*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
 '
@@ -502,8 +500,7 @@ if( length( tripos ) > radius + 0.2 )
 if( length( tripos ) < radius - 0.2 )
   discard;
 ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
-' 0 1 40 1;
-
+' 1 1 40 1;
 
 //////////////////////////////////////////////////
 // sables
