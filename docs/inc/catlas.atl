@@ -610,7 +610,8 @@ acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
 vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
 vec2 p = fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 );
 vec2 ap = abs(p);
-ap.y *= 0.5;  // Now both axes hit 1.0 at their edg
+if( abs( ap.y ) > 0.5 )
+  ap.y -= 1.0;
 
 // Edge lines
 float edge = max(ap.x, ap.y);
