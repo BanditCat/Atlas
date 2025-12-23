@@ -164,7 +164,7 @@ int idx = gl_VertexID / 3;
 vec4 pos = vec4( a( ivec4( idx, 2, 0, 0 ) ), a( ivec4( idx, 0, 0, 0 ) ), 0.0, 0.0 );
 pos.xy = pos.xy * 2.0 - 1.0;
 tripos = verts[ vert ].xy;
-ret = b( ivec4( idx, 0, 0, 0 ) ) == 0.0 ? ( ( verts[ vert ] * vec4( 0.02, 0.02, 1.0, 1.0 ) + pos ) ) : vec4( -1.0 );
+ret = b( ivec4( idx, 0, 0, 0 ) ) == 0.0 ? ( ( verts[ vert ] * vec4( 0.04, 0.04, 1.0, 1.0 ) + pos ) ) : vec4( -1.0 );
 '
 in vec2 tripos;
 '

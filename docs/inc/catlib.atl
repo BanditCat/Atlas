@@ -131,6 +131,18 @@ rotzv;
 1500;/;forward;rot;worldRotation;m;worldRotation= 16;
 worldRotation;[0 1];t;worldUnrotation= 16;
 
+// Roll error = dot(cross(up, worldY), forward)
+// cross(up, (0,1,0)) = (-up.z, 0, up.x)
+// dot with forward = -up.z*forward.x + up.x*forward.z
+
+up;[0 1 0];s;first;forward;[2 3 0];s;first;*;  // up.x * forward.z
+up;[2 3 0];s;first;forward;[0 1 0];s;first;*;  // up.z * forward.x
+-;  // roll error
+20;*;timeDelta;165;*;*;
+rotzv;+;rotzv=;
+
+
+
 worldRotation;accel;timeDelta;165;*;3;rep;*;[1];0;cat;m;unext;[0 3 0];s;accel=;
 velocity;accel;speed;3;rep;*;+;velocity=;
 velocity;[0.95 0.95 0.95];timeDelta;165;*;3;rep;^;*;velocity=;
