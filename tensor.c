@@ -70,7 +70,6 @@ void tensorToHostMemory( tensor* t ){
   if( t->tex.channels == 3 || t->tex.channels == 30 ) format = GL_RGB;
 
   // Read all layers into texData
-  printf( "Reading der pixels!\n\n" );
   for( u32 i = 0; i < t->tex.layers; ++i ){
     glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i );
     glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
