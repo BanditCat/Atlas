@@ -112,7 +112,8 @@ ret[ 0 ] = vec4( 0.0 );
 ret[ 0 ] = vec4( 0.0 );
 ' 0 1 4 0;
 9;bury;
-//print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
+//print;quit //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
+
 
 
 
@@ -242,23 +243,7 @@ vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec
 pos = cat_worldUnrotation*(pos - vec4( cat_origin, 0.0 ) );
 pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
-' 1 1 0 0;
-
-// 6;1;dup;shape;c''''
-// float count = 0.0;
-// float val = a( t );
-// for( int i = 0; i < 1000; ++i ) {
-//   float other = a( ivec4( i, 0, 0, 0 ) );
-//   if( other < val || (other == val && i < t.x) )
-//     ++count;
-// }
-// ret[ 0 ] = count;
-// ' 1 1 0 0;
-// 6;1;dup;shape;c''''
-// for( int i = 0; i < 1000; ++i )
-//   if( int(a( ivec4( i, 0, 0, 0 ) )) == t.x )
-//     ret[0] = float(i);
-// ' 1 1 0 0;
+' 1 1 0 0; 
 
 
 sort;
@@ -267,10 +252,9 @@ sort;
 0;dup;2;raise;
 1;bury;
 //pop;1;bury;pop;
-0;index;1;bury;pop;
 
-
-//6;1;dup;shape;c''''ret[ 0 ] = a( ivec4( int( b( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
+//0;index;1;bury;pop;
+6;2;dup;shape;c''''ret[ 0 ] = b( ivec4( int( a( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
 //11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
 0;dup;[0 1 0];s;[0 3 1];s;first;selected=;
 selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
