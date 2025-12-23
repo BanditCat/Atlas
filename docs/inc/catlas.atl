@@ -244,7 +244,26 @@ pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0;
 
-sort;0;dup;[0 1 0];s;selectedIdx=;
+// 6;1;dup;shape;c''''
+// float count = 0.0;
+// float val = a( t );
+// for( int i = 0; i < 1000; ++i ) {
+//   float other = a( ivec4( i, 0, 0, 0 ) );
+//   if( other < val || (other == val && i < t.x) )
+//     ++count;
+// }
+// ret[ 0 ] = count;
+// ' 1 1 0 0;
+// 6;1;dup;shape;c''''
+// for( int i = 0; i < 1000; ++i )
+//   if( int(a( ivec4( i, 0, 0, 0 ) )) == t.x )
+//     ret[0] = float(i);
+// ' 1 1 0 0;
+
+
+sort;
+
+0;dup;[0 1 0];s;selectedIdx=;
 0;dup;2;raise;
 1;bury;
 //pop;1;bury;pop;
