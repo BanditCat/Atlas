@@ -1,0 +1,330 @@
+workspace'catcon';
+
+
+
+inited;if'initEnd';  // Do init
+1;inited=;
+[0.01];posCutoff=;
+'';buffer=;
+[0];cursor= 1;
+320;commandHistorySize=;
+0;commandHistory=;
+'';commandHistorySizes=;
+[0];histPos=;
+[0];scrollUp=;
+[0 0 0 0 0 0 0 0 0 0 0];gamepadHistory=;
+0.05;keyRepeatDelay=;
+8;pressKeyMult=;
+l'initEnd';
+
+
+cat.gamepadPresses;
+21;pressLoop=; // loop over all buttons
+l'pressLoop1';
+pressLoop;1;-;pressLoop=;
+0;dup;pressLoop;e;pressLoop;1;+;e;0;cat;[0];0;cat;s;unext;ifn'notPressed';
+pressLoop;e;gamepadHistory;[0 10 0];s;0;cat;gamepadHistory=;
+[14 16 15 10 12 10 12 11 11 9 9];gamepadHistory;-;minmax;0;dup;last;1;raise;first;-;0.1;-;if'notPressed';
+[1 1 0.5 0];gamepadRumble;1;gpconsoleEnabled=;pop;1;if'toggleConsole';
+l'notPressed';
+pressLoop;5;-;if'pressLoop1';
+pop;
+
+//////////////////////////////
+// If gamepad console enabled
+gpconsoleEnabled;ifn'nogpCon';
+cat.keyPresses;minmax;last;0.1;-;ifn'bypassReset';
+0;gpconsoleEnabled=;
+
+l'bypassReset';
+buffer;shape;cursor= 1;
+cat.gamepadState;[3 4 0];s;first;10;/;curgpChar;+;curgpChar=;
+cat.gamepadState;[5 6 0];s;first;2;/;curgpChar;+;curgpChar=;
+curgpChar;32;-;if'lowcapChar';32;curgpChar=;l'lowcapChar';
+curgpChar;126;-;ifn'highcapChar';126;curgpChar=;l'highcapChar';
+buffer;shape;first;ifn'nobuf';
+buffer;[0];buffer;shape;[1];-;0;cat;[0];0;cat;s;buffer=;
+l'nobuf';
+buffer;curgpChar;floor;e;0;cat;buffer=;
+
+cat.gamepadPresses;[15 16 0];s;first;ifn'skipA';
+buffer;curgpChar;floor;e;0;cat;buffer=;
+l'skipA';
+cat.gamepadPresses;[16 17 0];s;first;ifn'skipB';
+buffer;shape;first;ifn'skipB';
+buffer;[0];buffer;shape;[1];-;0;cat;[0];0;cat;s;buffer=;
+l'skipB';
+cat.gamepadPresses;[14 15 0];s;first;visible;*;ifn'skipgpEval';
+pop;1;if'eval';
+l'skipgpEval';
+
+
+
+cat.gamepadState;[0 1 0];s;unext;ifn'nogpCon';
+cat.gamepadState;[1 2 0];s;unext;ifn'nogpCon';
+cat.gamepadState;[6 7 0];s;unext;ifn'nogpCon';
+cat.gamepadState;[7 8 0];s;unext;ifn'nogpCon';
+cat.gamepadPresses;[0 1 0];s;unext;if'toggleConsole';
+cat.gamepadPresses;[1 2 0];s;unext;if'toggleConsole';
+cat.gamepadPresses;[6 7 0];s;unext;if'toggleConsole';
+cat.gamepadPresses;[7 8 0];s;unext;if'toggleConsole';
+l'nogpCon';
+
+
+// Toggle console state 
+cat.keyPresses;[53 54 0];s;first;ifn'noTilde';
+l'toggleConsole';
+textInput;pop;
+1;visible;-;visible=;
+visible;ifn'noTilde';
+[0.1];pos= 1;
+l'noTilde';
+
+
+
+
+pos;visible;e;pos;-;[0.08];timeDelta;165;*;e;^;*;+;pos= 1;
+
+
+pos;posCutoff;-;unext;ifn'end';   // Skip if pos < 0.05;
+prevSize;if'skipPrevSizeSetup';
+// console init here, its visible and were setting stack size
+size;prevSize=;
+textInput;pop;
+1; // place a dummy because were now drawing;
+l'skipPrevSizeSetup';
+
+
+pop; // pop last display
+
+
+// Input
+textInput;0;dup;shape;unext;tilen=;
+tilen;ifn'noInput';
+buffer;shape;unext;ifn'skipCat';
+// textInput on top of stack
+buffer;[0];cursor;[0];0;cat;0;cat;s;1;raise;0;cat;
+buffer;cursor;buffer;shape;0;cat;[0];0;cat;s;0;cat;
+l'skipCat';
+buffer=;'';
+l'noInput';
+pop;cursor;tilen;e;+;cursor= 1;
+
+// DOING THE THING!!! :D :D :D
+cat.keyPresses;[40 41 0];s;unext;ifn'skipEval';
+l'eval';
+buffer;printLine;buffer;eval;
+commandHistorySizes;buffer;shape;0;cat;commandHistorySizes=;
+buffer;
+  0;commandHistorySize;buffer;shape;unext;-;rep;0;cat;e;
+  commandHistory;shape;shape;unext;if'haveHistory';
+  commandHistory=;
+1;if'doneHistory';
+  l'haveHistory';
+  commandHistory;1;raise;0;cat;commandHistory=;
+l'doneHistory';
+commandHistorySizes;shape;histPos=;
+
+commandHistory;commandHistorySizes;pop;pop;
+'';buffer=;[0];cursor= 1;
+l'skipEval';
+
+
+cat.keyState;[82 83 0];s;unext;cat.gamepadState;[9 10 0];s;unext;gpconsoleEnabled;*;+;ifn'skipUp';
+skipUpDelay;timeDelta;-;skipUpDelay=;skipUpDelay;if'skipUp2';
+upSlow;ifn'upSlow1';pressKeyMult;0;upSlow=;1;if'upSlow2';l'upSlow1';1;l'upSlow2';keyRepeatDelay;*;skipUpDelay=;
+histPos;unext;ifn'skipUp2'; // Stop if already at 0
+histPos;[1];-;histPos=; // Decrement index
+commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
+commandHistory;histPos;histPos;[1];+;0;cat;[0];0;cat;s;first;rawRow=;
+rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
+buffer;shape;cursor= 1;
+1;if'skipUp2';
+l'skipUp';
+1;upSlow=;0;skipUpDelay=;
+l'skipUp2';
+
+cat.keyState;[81 82 0];s;unext;cat.gamepadState;[11 12 0];s;unext;gpconsoleEnabled;*;+;ifn'skipDown';
+skipDownDelay;timeDelta;-;skipDownDelay=;skipDownDelay;if'skipDown2';
+downSlow;ifn'downSlow1';pressKeyMult;0;downSlow=;1;if'downSlow2';l'downSlow1';1;l'downSlow2';keyRepeatDelay;*;skipDownDelay=;
+histPos;[1];+;histPos=;
+histPos;commandHistorySizes;shape;-;[1];+;unext;if'clearBuffer';
+commandHistorySizes;histPos;histPos;[1];+;0;cat;[0];0;cat;s;len=;
+commandHistory;histPos;histPos;[1];+;0;cat;[0];0;cat;s;first;rawRow=;
+rawRow;[0];len;0;cat;[0];0;cat;s;buffer=;
+buffer;shape;cursor= 1;
+1;if'skipDown2';
+l'clearBuffer';
+commandHistorySizes;shape;histPos=;
+'';buffer=;
+[0];cursor= 1;
+1;if'skipDown2';
+l'skipDown';
+1;downSlow=;0;skipDownDelay=;
+l'skipDown2';
+
+// cursor
+cat.keyState;[79 80 0];s;unext;ifn'skipRight';
+skipRightDelay;timeDelta;-;skipRightDelay=;skipRightDelay;if'skipRight2';
+rightSlow;ifn'rightSlow1';pressKeyMult;0;rightSlow=;1;if'rightSlow2';l'rightSlow1';1;l'rightSlow2';keyRepeatDelay;*;skipRightDelay=;
+[1];cursor;+;cursor= 1;
+buffer;shape;cursor;-;unext;if'skipRight2';
+buffer;shape;cursor= 1;
+1;if'skipRight2';
+l'skipRight';
+1;rightSlow=;0;skipRightDelay=;
+l'skipRight2';
+
+cat.keyState;[80 81 0];s;unext;ifn'skipLeft';
+skipLeftDelay;timeDelta;-;skipLeftDelay=;skipLeftDelay;if'skipLeft2';
+leftSlow;ifn'leftSlow1';pressKeyMult;0;leftSlow=;1;if'leftSlow2';l'leftSlow1';1;l'leftSlow2';keyRepeatDelay;*;skipLeftDelay=;
+cursor;[1];-;cursor= 1;
+cursor;unext;if'skipLeft2';
+[0];cursor= 1;
+1;if'skipLeft2';
+l'skipLeft';
+1;leftSlow=;0;skipLeftDelay=;
+l'skipLeft2';
+
+cat.keyPresses;[74 75 0];s;unext;ifn'skipHome';
+[0];cursor= 1;
+l'skipHome';
+cat.keyPresses;[77 78 0];s;unext;ifn'skipEnd';
+buffer;shape;cursor= 1;
+l'skipEnd';
+
+// del and bkspc
+cat.keyState;[42 43 0];s;unext;ifn'skipBksp';
+skipBkspDelay;timeDelta;-;skipBkspDelay=;skipBkspDelay;if'skipBksp2';
+bkspSlow;ifn'bkspSlow1';pressKeyMult;0;bkspSlow=;1;if'bkspSlow2';l'bkspSlow1';1;l'bkspSlow2';keyRepeatDelay;*;skipBkspDelay=;
+cursor;unext;ifn'skipBksp2';
+buffer;[0];cursor;[1];-;0;cat;[0];0;cat;s;
+buffer;cursor;buffer;shape;0;cat;[0];0;cat;s;
+0;cat;buffer=;
+cursor;[1];-;cursor= 1;
+1;if'skipBksp2';
+l'skipBksp';
+1;bkspSlow=;0;skipBkspDelay=;
+l'skipBksp2';
+
+cat.keyState;[76 77 0];s;unext;ifn'skipDel';
+skipDelDelay;timeDelta;-;skipDelDelay=;skipDelDelay;if'skipDel2';
+delSlow;ifn'delSlow1';pressKeyMult;0;delSlow=;1;if'delSlow2';l'delSlow1';1;l'delSlow2';keyRepeatDelay;*;skipDelDelay=;
+buffer;shape;cursor;-;unext;ifn'skipDel2';
+buffer;[0];cursor;0;cat;[0];0;cat;s;
+buffer;cursor;[1];+;buffer;shape;0;cat;[0];0;cat;s;
+0;cat;buffer=;
+1;if'skipDel2';
+l'skipDel';
+1;delSlow=;0;skipDelDelay=;
+l'skipDel2';
+
+
+
+// set scroll for long lines
+windowSize;[12 16];/;floor;[1 1];-;charswid=;
+buffer;shape;charswid;[0 1 0];s;-;0;dup;unext;ifn'shortLine';
+[12];*;scroll= 1;
+1;if'doneScroll';
+l'shortLine';pop;[0];scroll= 1;
+l'doneScroll';
+
+
+
+//Add a blank tex or the buffer.
+input;[0 2 0];s;mouse;+;mouse= 2;
+buffer;shape;unext;ifn'skipTex';
+buffer;e;scroll;[2];/;[0];0;cat;charswid;[0 1 0];s;[6];*;0;cat;[8];0;cat;[0 0 1 1];+;cat.textAreaToFlatTexture;
+1;if'skipConst';
+l'skipTex';
+' ';e;[0 0 7 9];cat.textAreaToFlatTexture;
+l'skipConst';
+0;dup;shape;[0 2 0];s;tdims= 2;
+tdims;[0 1 0];s;[6];buffer;shape;*;[1];+;-;unext;ifn'noRedim';
+[6];buffer;shape;*;tdims;[1 2 0];s;0;cat;tdims= 2;
+l'noRedim';
+
+
+// Create output view.
+input;[2 3 0];s;[4];*;scrollUp;+;scrollUp=;
+cat.keyPresses;[75 76 0];s;unext;ifn'nopgUp';scrollUp;[4];+;scrollUp=;l'nopgUp';
+cat.keyPresses;[78 79 0];s;unext;ifn'nopgDown';scrollUp;[4];-;scrollUp=;l'nopgDown';
+scrollUp;unext;if'nonneg';[0];scrollUp=;l'nonneg';
+
+charswid;scrollUp;0;cat;textBufferView;
+[0 0];charswid;0;cat;[1 1 6 8];*;[0 0 1 1];+;cat.textAreaToFlatTexture;
+0;dup;shape;[0 2 0];s;otdims= 2;
+
+2;dup;texture; // texture the display tensor so we can blur it.
+0;dup;shape;[0 2 0];s;windowSize;0;dup;wdims= 2;/;0;dup;wmult= 2;log;wadd= 2;
+6;windowSize;[4];0;cat;
+c'
+vec4 verts[] = vec4[](
+vec4( -1.0, -1.0,0.0,1.0 ),
+vec4(  1.0, -1.0,0.0,1.0 ), 
+vec4( -1.0,  1.0,0.0,1.0 ), 
+vec4(  1.0,  1.0,0.0,1.0 ),
+vec4( -1.0,  1.0,0.0,1.0 ),
+vec4(  1.0, -1.0,0.0,1.0 ) 
+);
+'
+ret = verts[ i ];
+''
+float blur = catcon_pos * 5.0 - 2.5;
+if( (1.0 - tf.y / catcon_wdims.y) < ( catcon_pos * 0.8 ) ){
+  float aboveLine = ( catcon_pos * 0.8 * catcon_wdims.y ) - ( catcon_wdims.y - tf.y );
+  vec4 text = vec4( 0.0 );
+  if( aboveLine > catcon_tdims.y * 2.0 && tf.x < catcon_otdims.x * 2.0 )
+     text = vec4( 1.0 - bf( vec2( tf.x / 2.0, ( aboveLine - ( catcon_tdims.y * 2.0 + 1.0 ) ) / 2.0 ) ).x ) * 0.7;
+  if( aboveLine < 1.0 || ( aboveLine > catcon_tdims.y * 2.0 - 1.0 && aboveLine < catcon_tdims.y * 2.0 ) )
+    text = vec4( 0.0, 1.0, 0.0, 0.0 );
+  if( aboveLine > 1.0 && aboveLine < catcon_tdims.y * 2.0 - 1.0 && ( tf.x ) > 1.0 && ( tf.x ) < catcon_tdims.x * 2.0 + 2.0 )
+    text = vec4( 1.0 - cf( vec2( tf.x / 2.0, aboveLine / 2.0 ) ).x );
+  if( aboveLine > 1.0 && aboveLine < 3.0 && ( tf.x + catcon_scroll ) >= catcon_cursor * 12.0 && ( tf.x + catcon_scroll ) < ( catcon_cursor + 1.0 ) * 12.0 )
+    text.r = 1.0;
+
+
+
+  float l = blur + catcon_wadd.x;
+  vec2 uv = tf * catcon_wmult;
+
+  vec2 d = catcon_wmult * exp2(blur) * 0.4; 
+
+  vec4 acc = af(vec4(uv, 0.0, l)) * 0.38;
+
+  acc += af(vec4(uv + d, 0.0, l)) * 0.155;
+  acc += af(vec4(uv - d, 0.0, l)) * 0.155;
+  acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
+  acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
+
+  ret[ 0 ] = acc * 0.5 + text;
+} else
+  ret[ 0 ] = af( vec4( tf * catcon_wmult, 0.0, 0.0 ) );
+
+' 3 1 40 0;
+
+
+
+
+// quit maybe
+cat.keyState;[41 42 0];s;first;
+cat.gamepadState;[19 20 0];s;first;+;
+cat.gamepadState;[20 21 0];s;first;+;
+ifn'go';
+quit;  // Quit if escape pressed.
+l'go';
+
+continue;
+
+
+l'end';
+
+
+//cleanup
+prevSize;ifn'cleanSkip';pos;posCutoff;-;unext;if'cleanSkip';
+l'loopPop';
+size;prevSize;-;ifn'setPrevSize';
+pop;1;if'loopPop';
+l'setPrevSize';
+0;prevSize=;
+l'cleanSkip';

@@ -1,6 +1,4 @@
-include'inc\stdlib.atl';
-'main.atl';
-include'inc\nav.atl';
+include'inc\catlib.atl';
 size;if'started'; // init code goes here
 
 'inc\\catlas.ktl';unkettle;pop;
@@ -38,7 +36,7 @@ img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
 c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
                     a( ivec4( 0, tf.y, 1, 0 ) ),  
                     a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
-dim;first;4;std.fractalNoise;
+dim;first;4;cat.fractalNoise;
 // get minmax
 0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
 
@@ -49,9 +47,9 @@ lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 
-std.nav3d;
-[0.5 1.0 2.0];std.origin= 3;
-[171 134];std.3dnavParam=;
+cat.nav3d;
+[0.5 1.0 2.0];cat.origin= 3;
+[171 134];cat.3dnavParam=;
 
 6;wdims;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
@@ -116,16 +114,16 @@ windowSize;ssaa;*;wdims= 2;
 wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
 timer;timeDelta;e;+;timer= 1;
 timeDelta;e;dt= 1;
-std.nav3d;
+cat.nav3d;
 
 
 /////////////////////////////////////////////
 // reset sables maybe
 8;raise;
-std.gamepadPresses;[17 18 0];s;std.keyPresses;[21 22 0];s;+;unext;ifn'noreset';
+cat.gamepadPresses;[17 18 0];s;cat.keyPresses;[21 22 0];s;+;unext;ifn'noreset';
 pop;resetInstances;
 l'noreset';
-std.gamepadPresses;[16 17 0];s;std.keyPresses;[40 41 0];s;+;unext;ifn'noexplodify';
+cat.gamepadPresses;[16 17 0];s;cat.keyPresses;[40 41 0];s;+;unext;ifn'noexplodify';
 explodify;
 l'noexplodify';
 8;bury;
@@ -231,7 +229,7 @@ ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( ind, t
 10;bury;10;dup;
 0;dup;6;totalInstances;c''''
 vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec4( t.x, 2, 0, 0 ) ), 1.0 );
-pos = std_worldUnrotation*(pos - vec4( std_origin, 0.0 ) );
+pos = cat_worldUnrotation*(pos - vec4( cat_origin, 0.0 ) );
 pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0;
@@ -282,7 +280,7 @@ totalInstances;instanceVars;*;reshape;
 
 
 // set light and orthoproject
-std.3dnavParam;set'lrot' 2;
+cat.3dnavParam;set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 0;dup;
@@ -398,7 +396,7 @@ normal = normalize( cross( nrml1, nrml2 ) ).yzx;
 
 v.xy /= dim;
 worldPos = v.yzx;
-ret = proj*std_worldUnrotation*( v.yzxw - vec4( std_origin, 0.0 ) );
+ret = proj*cat_worldUnrotation*( v.yzxw - vec4( cat_origin, 0.0 ) );
 '
 in vec3 color;
 in vec3 worldPos;
@@ -408,7 +406,7 @@ float hash( vec2 p, float time ){
     return fract( sin( h ) * 43758.5453123 );
 }
 '
-vec3 d = worldPos - std_origin;
+vec3 d = worldPos - cat_origin;
 vec4 lightPos = orthoproj*lightUnrotation*( vec4( -hmapCenter, 0.0 ) + vec4( worldPos, 1.0 ) ) + vec4( 0.0, 0.0, 1.0, 0.0 );
 lightPos /= lightPos.w;
 lightPos.xyz = lightPos.xyz * 0.5 + 0.5;
@@ -432,7 +430,7 @@ shadow *= 0.5;
 
 
 float len = length( d );
-float t = ( waterLevel - std_origin.y ) / d.y;
+float t = ( waterLevel - cat_origin.y ) / d.y;
 if( d.y > 0.0 )
   t = 1.0;
 float waterDepth = len * ( 1.0 - t );
@@ -452,7 +450,7 @@ vec3 ray = normalize(
       -1.0
     )
 );
-ray = ( std_worldRotation * vec4( ray, 1.0 ) ).xyz;
+ray = ( cat_worldRotation * vec4( ray, 1.0 ) ).xyz;
 float skyness = clamp( dot( ray, vec3( 0.0, 1.0, 0.0 ) ) * 5.0 + 2.3, 0.0, 1.0 );
 vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
                      vec3( 0.1, 0.2, 0.9 ),
@@ -481,7 +479,7 @@ tripos = verts[ gl_VertexID ].xy;
 pos.xyz *= sableScale;
 pos.xyz += selectedReticle;
 radius = mod( timer * 5.0, 2.0 );
-ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+ret = proj*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
 '
 in vec2 tripos;
 flat in float radius;
@@ -536,7 +534,7 @@ vec4 pos = vec4( posSamp.xyz, 1.0 );
 tint = posSamp.w;
 fade = velSamp.w;
 tripos = verts[ vert ].xy;
-ret = proj*std_worldUnrotation*( pos - vec4( std_origin, 0.0 ) );
+ret = proj*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
 ret.xy += tripos * fireworkSize * vec2( 1.0 / aspect, aspect );
 '
 vec3 hue2rgb(float h) {
@@ -584,7 +582,7 @@ ret[ 0 ] = vec4( fract( pos.x * numJobs ), pos.y, 1.0, 1.0 );
 //////////////////////////////////////////////////////////////////
 // Help and framerate
 
-std.keyState;[58 59 0];s;first;ifn'skipf1';
+cat.keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                     ';e;
 'Right click: fly forward                        ';e;0;cat;
 'w/s/a/d/c/shift/ctrl/space/q/e: fly around      ';e;0;cat;
@@ -592,11 +590,11 @@ std.keyState;[58 59 0];s;first;ifn'skipf1';
 'Hold f key and drag mouse: change light location';e;0;cat;
 'Enter: catgirl fireworks :D                     ';e;0;cat;
 'R: reset                                        ';e;0;cat;
-std.textToTexture;std.blitText;
+cat.textToTexture;cat.blitText;
 l'skipf1';
-std.keyState;[59 60 0];s;first;std.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
+cat.keyState;[59 60 0];s;first;cat.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 'FPS:';1;timeDelta;/;toString;0;cat;' Hours:';0;cat;time;first;toString;0;cat;' Seconds:';0;cat;time;last;toString;0;cat;e;
-std.textToTexture;std.blitText;
+cat.textToTexture;cat.blitText;
 l'skipf2';
 
 
@@ -826,7 +824,7 @@ v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
 v.xyz *= sableScale;
 v.xyz += instPos;
 worldPos = v.xyz;
-ret = proj*std_worldUnrotation*( v - vec4( std_origin, 0.0 ) );
+ret = proj*cat_worldUnrotation*( v - vec4( cat_origin, 0.0 ) );
 '
 in vec3 normal;
 in vec2 uv;
