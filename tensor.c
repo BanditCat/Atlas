@@ -13,31 +13,134 @@
     return msg;                                 \
   }  while( 0 )
 
+/* void takeOwnership( tensor* t ){ */
+/*   if( t->ownsData ) */
+/*     return;  // Already owns data, nothing to do */
+
+/*   if( t->gpu ){ */
+/*     tensorToHostMemory( t ); */
+/*     tensorToGPUMemory( t ); */
+/*   }else{ */
+/*     tensorEnsureContiguous( t ); */
+    
+/*     if( t->ownsData ) */
+/*       return;  // Already owns data, nothing to do */
+    
+/*     // Allocate new memory for the data */
+/*     f32* newData = mem( t->size, f32 ); */
+/*     // Copy the data from the original tensor, considering the offset */
+/*     memcpy( newData, t->data + t->offset, t->size * sizeof( f32 ) ); */
+/*     // Reset the offset since data is now at the beginning */
+/*     t->offset = 0; */
+/*     // Update the data pointer to the new data */
+/*     t->data = newData; */
+/*     // Mark that the tensor now owns the data */
+/*     t->ownsData = true; */
+/*   } */
+/* }; */
 void takeOwnership( tensor* t ){
   if( t->ownsData )
-    return;  // Already owns data, nothing to do
+    return;
 
   if( t->gpu ){
-    tensorToHostMemory( t );
-    tensorToGPUMemory( t );		    
-  }else{
+    // GPU-to-GPU copy via framebuffer blit
+    GLenum internalFormat, format, type;
+    u32 ch = t->tex.channels;
+    
+    switch( ch ){
+      case 0: case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
+      case 40: internalFormat = GL_RGBA8;  format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
+      case 1:  internalFormat = GL_R32F;   format = GL_RED;  type = GL_FLOAT; break;
+      case 10: internalFormat = GL_R8;     format = GL_RED;  type = GL_UNSIGNED_BYTE; break;
+      case 2:  internalFormat = GL_RG32F;  format = GL_RG;   type = GL_FLOAT; break;
+      case 20: internalFormat = GL_RG8;    format = GL_RG;   type = GL_UNSIGNED_BYTE; break;
+      case 3:  internalFormat = GL_RGB32F; format = GL_RGB;  type = GL_FLOAT; break;
+      case 30: internalFormat = GL_RGB8;   format = GL_RGB;  type = GL_UNSIGNED_BYTE; break;
+      default: error( "takeOwnership: unknown channel format %u", ch );
+    }
+    
+    // Create new texture with same dimensions
+    GLuint newTex;
+    glGenTextures( 1, &newTex );
+    glBindTexture( GL_TEXTURE_2D_ARRAY, newTex );
+    glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat,
+                  t->tex.width, t->tex.height, t->tex.layers,
+                  0, format, type, NULL );
+    
+    // Copy texture parameters
+    if( t->tex.mipmapped ){
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+      if( getMaxAnisotropy() > 1.0f )
+        glTexParameterf( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+    } else {
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+    }
+    glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+    
+    // Create temp framebuffers for blit
+    GLuint readFBO, drawFBO;
+    glGenFramebuffers( 1, &readFBO );
+    glGenFramebuffers( 1, &drawFBO );
+    
+    // Copy each layer
+    for( u32 layer = 0; layer < t->tex.layers; ++layer ){
+      glBindFramebuffer( GL_READ_FRAMEBUFFER, readFBO );
+      glFramebufferTextureLayer( GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                 t->tex.texture, 0, layer );
+      
+      glBindFramebuffer( GL_DRAW_FRAMEBUFFER, drawFBO );
+      glFramebufferTextureLayer( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                 newTex, 0, layer );
+      
+      glBlitFramebuffer( 0, 0, t->tex.width, t->tex.height,
+                         0, 0, t->tex.width, t->tex.height,
+                         GL_COLOR_BUFFER_BIT, GL_NEAREST );
+    }
+    
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    glDeleteFramebuffers( 1, &readFBO );
+    glDeleteFramebuffers( 1, &drawFBO );
+    
+    // Regenerate mipmaps if source had them
+    if( t->tex.mipmapped ){
+      glBindTexture( GL_TEXTURE_2D_ARRAY, newTex );
+      glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+      glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+    }
+    
+    // Create new framebuffer for the tensor
+    GLuint newFBO;
+    glGenFramebuffers( 1, &newFBO );
+    glBindFramebuffer( GL_FRAMEBUFFER, newFBO );
+    glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, newTex, 0, 0 );
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    
+    // Update tensor to own new resources
+    t->tex.texture = newTex;
+    t->tex.framebuffer = newFBO;
+    t->ownsData = true;
+    
+  } else {
+    // CPU path - unchanged
     tensorEnsureContiguous( t );
     
     if( t->ownsData )
-      return;  // Already owns data, nothing to do
+      return;
     
-    // Allocate new memory for the data
     f32* newData = mem( t->size, f32 );
-    // Copy the data from the original tensor, considering the offset
     memcpy( newData, t->data + t->offset, t->size * sizeof( f32 ) );
-    // Reset the offset since data is now at the beginning
     t->offset = 0;
-    // Update the data pointer to the new data
     t->data = newData;
-    // Mark that the tensor now owns the data
     t->ownsData = true;
   }
-};
+}
 // DANGER this sets owns data to false, therefore the underlying data MUST NOT
 // be destroyed BEFORE the copy while the programming is running. At exit
 // cleanup, it shouldn't matter the order of deallocation.
@@ -818,9 +921,14 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
   for( u32 reti = 0; reti < compute->retCount; ++reti ){
     if( compute->reuse ){
       tensor* t = ts->stack[ ( ( ts->size - 1 ) - compute->argCount ) - reti ];
+      if( !t->ownsData ){
+         unmem( rets ); 
+         err( "%s", "Attempt to return on top of a non-owning texture." ); 
+        //takeOwnership( t );
+      }
       if( !t->gpu || ( t->tex.channels != compute->channels ) ){
         unmem( rets );
-        err( "%s", "Attempt to return on top of a incompatible tensor (wrong channel count)." );
+        err( "%s %u %u %u %u", "Attempt to return on top of a incompatible tensor (wrong channel count or not gpu).", t->tex.channels, compute->channels, t->tex.width, t->tex.height );
       }
       if( t->tex.width != width || t->tex.height != height ){
         unmem( rets );

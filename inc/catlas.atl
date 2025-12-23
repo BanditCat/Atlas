@@ -62,7 +62,7 @@ cat.nav3d;
 [171 134];cat.3dnavParam=;
 
 6;wdims;[4];0;cat;
-c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
+c''''ret[ 0 ]=vec4( 0 );' 0 1 40 0; // dummy value to pop off in place of display tensor.
 
 1;
 l'started'; // init code complete
@@ -114,7 +114,6 @@ ret[ 0 ] = vec4( 0.0 );
 9;bury;
 [0 0 0];11;bury; //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
 0;totalInstances;first;rep;12;bury;
-
 
 
 
@@ -450,7 +449,8 @@ float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
 ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
-4 1 40 0;
+3 1 40 0;
+1;raise;pop;
 
 /////////////////////////////////
 // sky
@@ -565,6 +565,7 @@ ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
 // UI
 // frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
 // 0     1    2    3       4      5       6   7        8         9     10
+0;dup;texture;
 6;wdims;[4];0;cat;c'
 const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -582,9 +583,47 @@ ret = vec4( ( uiDims.x / wdims.x ) * ( pos.x * 2.0 - 1.0 ),
 '
 in vec2 pos;
 '
-ret[ 0 ] = vec4( fract( pos.x * numJobs ), pos.y, 1.0, 1.0 );
-' 0 1 40 1;
+float l = 3.5;
+vec2 uv = tf.xy;
 
+vec2 d = vec2( 1.4 ); 
+
+vec4 acc = af(vec4(uv, 0.0, l)) * 0.38;
+
+acc += af(vec4(uv + d, 0.0, l)) * 0.155;
+acc += af(vec4(uv - d, 0.0, l)) * 0.155;
+acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
+acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
+
+
+
+vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
+vec2 p = fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 );
+vec2 ap = abs(p);
+ap.y *= 0.5;  // Now both axes hit 1.0 at their edg
+
+// Edge lines
+float edge = max(ap.x, ap.y);
+float line = smoothstep(0.9, 0.91, edge) - smoothstep(0.91, 0.95, edge);
+
+// Corner brackets (only show near corners)
+float corner = step(0.7, ap.x) * step(0.7, ap.y);
+float bracket = corner * line * 2.0;
+
+// Subtle vignette
+float vignette = 1.0 - smoothstep(0.5, 2.1, length(p));
+
+vec3 frameColor = vec3(0.0, 1.0, 1.0) * (line * 0.3 + bracket);
+
+ret[0] = vec4(acc.rgb * 0.5 * vignette + frameColor, 1.0);
+
+
+//vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
+//vec4 frame = length( fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 ) ).xxxx;
+//ret[ 0 ] = acc * 0.5 + frame;
+//vec3 bg = af( tf ).rgb;
+//ret[ 0 ] = vec4( bg, 1.0 );
+' 1 1 40 1;
 8;raise;pop;
 10;raise;totalInstances;instanceVars;*;reshape;8;bury;
 
@@ -612,7 +651,6 @@ l'skipf2';
 ssaa;first;1;-;ifn'nomipmap';
 texture;
 l'nomipmap';
-
 
 
 // Functions
