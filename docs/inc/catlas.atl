@@ -113,7 +113,7 @@ ret[ 0 ] = vec4( 0.0 );
 ' 0 1 4 0;
 9;bury;
 [0 0 0];11;bury; //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
-
+0;totalInstances;first;rep;12;bury;
 
 
 
@@ -242,7 +242,7 @@ vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec
 pos = cat_worldUnrotation*(pos - vec4( cat_origin, 0.0 ) );
 pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
-' 1 1 0 0; 
+' 1 1 0 0; 14;raise;1;raise;14;bury;
 
 
 sort;
