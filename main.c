@@ -825,6 +825,7 @@ int renderThreadFunction( void* data ){
     //glFinish();
     //glFlush();
 #endif
+  printf( "Swapping der window!\n\n" );
     SDL_GL_SwapWindow( window );
 
     // DwmFlush();

@@ -253,8 +253,8 @@ sort;
 1;bury;
 //pop;1;bury;pop;
 
-//0;index;1;bury;pop;
-6;2;dup;shape;c''''ret[ 0 ] = b( ivec4( int( a( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
+0;index;1;bury;pop;
+//6;2;dup;shape;c''''ret[ 0 ] = b( ivec4( int( a( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
 //11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
 0;dup;[0 1 0];s;[0 3 1];s;first;selected=;
 selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
