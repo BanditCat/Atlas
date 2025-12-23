@@ -104,12 +104,6 @@ keyState;[224 225 0];s;keyState;[6 7 0];s;+;first;ifn'ctkeyskip';
 accel;+;accel=;
 l'ctkeyskip';
 0;rotza=;
-keyState;[20 21 0];s;first;gamepadState;[6 7 0];s;first;+;ifn'clockwiseskip';
-1;rotza=;
-l'clockwiseskip';
-keyState;[8 9 0];s;first;gamepadState;[7 8 0];s;first;+;ifn'cclockwiseskip';
--1;rotza=;
-l'cclockwiseskip';
 
 rotza;timeDelta;165;*;2;^;*;rotza=;
 rotzv;rotza;+;rotzv=;

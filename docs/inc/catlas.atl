@@ -39,6 +39,7 @@ windowSize;ssaa;*;wdims= 2;
 [0 0 0];selectedReticle=;
 [3];numJobs= 1;
 [0.15];uiSize=;
+[0];activeJob= 1;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -120,6 +121,13 @@ ret[ 0 ] = vec4( 0.0 );
 
 
 l'kettled';
+cat.keyPresses;[8 9 0];s;first;cat.gamepadPresses;[7 8 0];s;first;+;ifn'actionplus';
+activeJob;[1];+;numJobs;%;activeJob= 1;
+l'actionplus';
+cat.keyPresses;[20 21 0];s;first;cat.gamepadPresses;[6 7 0];s;first;+;ifn'actionminus';
+activeJob;numJobs;[1];-;+;numJobs;%;activeJob= 1;
+l'actionminus';
+
 windowSize;ssaa;*;wdims= 2;
 wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
 timer;timeDelta;e;+;timer= 1;
@@ -608,6 +616,7 @@ acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
 acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
 
 vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
+int which = int( pos.x * numJobs );
 vec2 p = fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 );
 vec2 ap = abs(p);
 if( abs( ap.y ) > 0.5 )
@@ -624,7 +633,7 @@ float bracket = corner * line * 2.0;
 // Subtle vignette
 float vignette = 1.0 - smoothstep(0.5, 2.1, length(p));
 
-vec3 frameColor = vec3(0.0, 1.0, 1.0) * (line * 0.3 + bracket);
+vec3 frameColor = ( which == int( activeJob ) ? vec3( 1.0, 0.0, 0.0 ) : vec3(0.0, 1.0, 1.0) ) * (line * 0.3 + bracket);
 
 ret[0] = vec4(acc.rgb * 0.5 * vignette + frameColor, 1.0);
 
