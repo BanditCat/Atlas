@@ -1,4 +1,14 @@
 include'inc\catlib.atl';
+
+// Exit
+cat.keyState;[41 42 0];s;first;
+cat.gamepadState;[19 20 0];s;first;+;
+cat.gamepadState;[20 21 0];s;first;+;
+ifn'go';
+quit;  // Quit if escape pressed.
+l'go';
+
+
 size;if'started'; // init code goes here
 
 'inc\\catlas.ktl';unkettle;pop;
