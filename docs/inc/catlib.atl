@@ -132,8 +132,8 @@ worldRotation;[0 1];t;worldUnrotation= 16;
 up;[0 1 0];s;first;forward;[2 3 0];s;first;*;  // up.x * forward.z
 up;[2 3 0];s;first;forward;[0 1 0];s;first;*;  // up.z * forward.x
 -;  // roll error
-20;*;timeDelta;165;*;*;
-rotzv;+;rotzv=;
+200;*;timeDelta;165;*;*;
+rotzv=;
 
 
 
