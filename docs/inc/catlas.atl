@@ -565,7 +565,19 @@ ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
 // UI
 // frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
 // 0     1    2    3       4      5       6   7        8         9     10
-0;dup;6;1;dup;shape;c''''ret[0] = af(tf.xy);' 1 1 40 0;texture;
+0;dup;6;uiDims;[4];0;cat;c'
+const vec4 verts[] = vec4[](
+vec4( 0.0,0.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ), 
+vec4( 0.0,1.0,0.0,1.0 ), 
+vec4( 1.0,1.0,0.0,1.0 ),
+vec4( 0.0,1.0,0.0,1.0 ),
+vec4( 1.0,0.0,0.0,1.0 ) 
+);
+'
+vec2 pos = verts[ gl_VertexID ].xy;
+ret = vec4( pos * 2.0 - 1.0, 0.0, 1.0 );
+''ret[0] = af( vec4( tf.x + ( wdims.x - uiDims.x ) / 2.0, tf.y, 0.0, 0.0 ) );' 1 1 40 0;texture;
 6;wdims;[4];0;cat;c'
 const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -584,7 +596,7 @@ ret = vec4( ( uiDims.x / wdims.x ) * ( pos.x * 2.0 - 1.0 ),
 in vec2 pos;
 '
 float l = 3.5;
-vec2 uv = tf.xy;
+vec2 uv = pos * uiDims;
 
 vec2 d = vec2( 1.4 ); 
 
@@ -594,8 +606,6 @@ acc += af(vec4(uv + d, 0.0, l)) * 0.155;
 acc += af(vec4(uv - d, 0.0, l)) * 0.155;
 acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
 acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
-
-
 
 vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
 vec2 p = fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 );
