@@ -565,7 +565,7 @@ ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
 // UI
 // frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
 // 0     1    2    3       4      5       6   7        8         9     10
-0;dup;texture;
+0;dup;6;1;dup;shape;c''''ret[0] = af(tf.xy);' 1 1 40 0;texture;
 6;wdims;[4];0;cat;c'
 const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
