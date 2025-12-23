@@ -130,7 +130,6 @@ explodify;
 l'noexplodify';
 8;bury;
 
-
 ////////////////////////////////////////////////////////////////////
 //  Check for exploding sables.
 8;raise; // instances
@@ -165,11 +164,13 @@ ret[ 0 ] = clamp( 1.0 - length( tripos ), 0.0, 1.0 ) * -0.1;
 ' 2 1 1 1;additive;
 3;bury;
 
+
 //////////////////////////////////////////////////////////////////
 // fireworks
 // 0           1         2     3    4    5       6      7       8   9        10    11     
 // explodemask instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
-0;dup;12;bury;
+//0;dup;12;bury;
+11;bury;11;dup;
 11;raise;11;raise;3;dup;3;bury; // fwpos fwvel explodemask instancescopy ...
 6;fireworksDims;[4];0;cat;
 c'''
@@ -201,6 +202,7 @@ ret[ 1 ] = explode ? vec4( randomVel, 1.0 ) : vec4( vel, fade );
 10;bury;10;bury;
 11;raise;
 
+
 // Zero exploded sables
 0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
 ret[ 0 ] = b( ivec4( t.x, 0, 0, 0 ) ) == 0.0 ?
@@ -208,7 +210,6 @@ ret[ 0 ] = b( ivec4( t.x, 0, 0, 0 ) ) == 0.0 ?
            a( ivec4( t.x, t.y, 0, 0 ) );
 ' 2 1 0 0;
 1;bury;pop;
-
 
 
 // place on ground
@@ -223,6 +224,7 @@ float y = a( ivec4( ind, 2, 0, 0 ) ) * dim;
 ret[ 0 ] = var == 1 ? bf( vec4( y, x, 0.0, 0.0 ) ).x * hscale : a( ivec4( ind, t.y, 0, 0 ) );
 ' 2 1 0 0;
 
+
 //print;quit; // instances frame hmap grad highvat lowvat lowinds mat highinds fwpos fwvel
 ////////////////////////////////////////////////////////////////////
 // lod sort
@@ -235,13 +237,20 @@ ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0;
 
 sort;0;dup;[0 1 0];s;selectedIdx=;
-0;dup;2;raise;6;1;dup;shape;c''''ret[ 0 ] = a( ivec4( int( b( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;
-pop;
-11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
-//selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
+0;dup;2;raise;
+1;bury;
+//pop;1;bury;pop;
+0;index;1;bury;pop;
+
+
+//6;1;dup;shape;c''''ret[ 0 ] = a( ivec4( int( b( ivec4( t.x, 0, 0, 0 ) ) ), t.y, 0, 0 ) );' 2 1 0 0;1;bury;pop;
+//11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
+0;dup;[0 1 0];s;[0 3 1];s;first;selected=;
+selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle= 3;
 
 totalInstances;instanceVars;*;reshape;
 8;bury;
+
 
 
 ///////////////////////////////////////////////////////////
@@ -837,11 +846,11 @@ vec4 color = df( vec3( muv * atlasSize, mat * 2.0 ) );
 if( color.a > 0.99 && color.a < 1.0 )
   color.rgb = tint;
 else if( color.a > 0.98 && color.a <= 0.99 )
-  color.rgb = ef( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
+  color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
 else if( color.a > 0.97 && color.a <= 0.98 )
-  color.rgb = ef( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
+  color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
 else if( color.a > 0.96 && color.a <= 0.97 )
-  color.rgb = ef( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
+  color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
 //if( color.a < 0.5 )  discard;
 
 

@@ -955,7 +955,7 @@ void main_loop( void ){
   // Cleanup
   glDisableVertexAttribArray( posAttrib );
   glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
-  
+
   SDL_GL_SwapWindow( window );
 }
 #endif
