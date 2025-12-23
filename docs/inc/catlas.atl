@@ -251,8 +251,30 @@ pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0; 14;raise;1;raise;14;bury;
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+//  THIS IS WHERE WE READPIXELS, DO IT ALL IN ONE PLACE!
+sort; // first sort
+3;dup;cat.origin;6;[3];c''''
+float ox = a( ivec4( 0, 0, 0, 0 ) );
+float oy = a( ivec4( 1, 0, 0, 0 ) );
+float oz = a( ivec4( 2, 0, 0, 0 ) );
 
-sort;
+float margin = 0.02;
+ox = clamp( ox, margin, 1.0 - margin );
+oz = clamp( oz, margin, 1.0 - margin );
+
+// Sample heightmap at camera position (note the swizzle from terrain shader)
+float terrainHeight = bf( vec4( oz * dim, ox * dim, 0.0, 0.0 ) ).x * hscale;
+
+// Keep camera above terrain but not too far up
+float minHeight = terrainHeight + 0.04;
+float maxHeight = 4.0;
+oy = clamp( oy, minHeight, maxHeight );
+
+ret[ 0 ] = t.x == 0 ? ox : ( t.x == 1 ? oy : oz );
+' 2 1 0 0;cat.origin= 3; // then clip camera
+
+
 
 0;dup;[0 1 0];s;selectedIdx=;
 0;dup;2;raise;
