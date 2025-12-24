@@ -119,6 +119,18 @@ ret[ 0 ] = vec4( 0.0 );
 [0];6;[1];c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;13;bury; // fake height
 
 
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////
+// actual start post init
 l'kettled';
 cat.keyPresses;[8 9 0];s;first;cat.gamepadPresses;[7 8 0];s;first;+;ifn'actionplus';
 activeJob;[1];+;numJobs;%;activeJob= 1;
@@ -482,7 +494,54 @@ ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 
 /////////////////////////////////
 // sky
-6;1;dup;shape;c''''
+// 6;1;dup;shape;c''''
+// vec3 ray = normalize(
+//     vec3(
+//       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
+//       -1.0
+//     )
+// );
+// ray = ( cat_worldRotation * vec4( ray, 1.0 ) ).xyz;
+// float skyness = clamp( dot( ray, vec3( 0.0, 1.0, 0.0 ) ) * 5.0 + 2.3, 0.0, 1.0 );
+// vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
+//                      vec3( 0.1, 0.2, 0.9 ),
+//                      clamp( dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ), 0.0, 1.0 ) );
+// float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
+// skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
+// ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
+// ' 0 1 400 1;
+// depth;backface;
+/////////////////////////////////
+// sky
+6;1;dup;shape;c'''
+// --- Optimized Noise ---
+float hash(vec3 p) {
+    p = fract(p * 0.3183099 + .1);
+    p *= 17.0;
+    return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float noise(vec3 x) {
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+                   mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                   mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+
+// Fractal Brownian Motion with wind
+float map(vec3 p) {
+    vec3 q = p - vec3(0.2, 0.0, 0.1) * timer * 0.2; // Wind speed
+    float f = 0.0;
+    f += 0.50000 * noise(q); q = q * 2.02;
+    f += 0.25000 * noise(q); q = q * 2.03;
+    f += 0.12500 * noise(q); q = q * 2.01;
+    f += 0.06250 * noise(q);
+    return clamp(f - 0.3, 0.0, 1.0); // Threshold (cloud coverage)
+}
+
+'
 vec3 ray = normalize(
     vec3(
       ( tf.xy / wdims * 2.0 - 1.0 ) * vec2(aspect, 1.0/aspect), 
@@ -490,16 +549,61 @@ vec3 ray = normalize(
     )
 );
 ray = ( cat_worldRotation * vec4( ray, 1.0 ) ).xyz;
+
+// Gradient Background
 float skyness = clamp( dot( ray, vec3( 0.0, 1.0, 0.0 ) ) * 5.0 + 2.3, 0.0, 1.0 );
 vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
                      vec3( 0.1, 0.2, 0.9 ),
                      clamp( dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ), 0.0, 1.0 ) );
 float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
 skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
+
+// Optimized March
+if ( ray.y > 0.1 ) { 
+    float cloudBottom = 10.0;
+    float cloudTop = 40.0; // Thinner layer = faster
+    
+    float t1 = (cloudBottom - cat_origin.y) / ray.y;
+    float t2 = (cloudTop - cat_origin.y) / ray.y;
+    
+    if (t2 > 0.0) {
+        float tStart = max(t1, 0.0);
+        float tEnd = t2;
+        
+        // Jitter: Randomize start offset to hide low step count
+        float dither = hash( vec3( tf.xy, timer ) );
+        
+        int steps = 24; // Massive reduction from 32
+        float stepSize = (tEnd - tStart) / float(steps);
+        
+        vec4 sum = vec4(0.0);
+        float t = tStart + stepSize * dither; // Apply jitter
+        
+        for(int i=0; i<12; i++) {
+            if(sum.a > 0.95) break; 
+            
+            vec3 pos = cat_origin + ray * t;
+            // Use Cheap Map
+            float den = map(pos * 0.04); 
+            
+            if (den > 0.01) {
+                 float dif = clamp((den - map(pos * 0.04 + vec3(0.5,1.0,0.5)*0.3)) / 0.2, 0.0, 1.0 );
+                 vec3 lin = vec3(0.6,0.6,0.7) + vec3(1.0, 0.6, 0.3)*dif*sunness;
+                 vec4 col = vec4( mix( vec3(1.0,0.95,0.8), vec3(0.3,0.35,0.4), den ), den );
+                 col.rgb *= lin * col.a;
+                 sum = sum + col*(1.0 - sum.a);
+            }
+            t += stepSize;
+        }
+        
+        float horizonFog = smoothstep(0.0, 0.5, ray.y); 
+        skyColor = mix(skyColor, sum.rgb, sum.a * horizonFog);
+    }
+}
+
 ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
 ' 0 1 400 1;
 depth;backface;
-
 
 //////////////////////////////////////////////////////////////////////
 // Selected ui
