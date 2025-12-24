@@ -932,7 +932,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
       }
       if( !t->gpu || ( t->tex.channels != compute->channels ) ){
         unmem( rets );
-        err( "%s %u %u %u %u", "Attempt to return on top of a incompatible tensor (wrong channel count or not gpu).", t->tex.channels, compute->channels, t->tex.width, t->tex.height );
+        err( "%s %u %u %u %u", "Attempt to return on top of a incompatible tensor (wrong channel count or not gpu)." );
       }
       if( t->tex.width != width || t->tex.height != height ){
         unmem( rets );

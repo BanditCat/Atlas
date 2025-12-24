@@ -177,7 +177,7 @@ ret = b( ivec4( idx, 0, 0, 0 ) ) == 0.0 ? ( ( verts[ vert ] * vec4( 0.04, 0.04, 
 in vec2 tripos;
 '
 ret[ 0 ] = clamp( 1.0 - length( tripos ), 0.0, 1.0 ) * -0.1;
-' 2 1 1 1;additive;
+' 2 1 100 1;additive;
 3;bury;
 
 
