@@ -56,10 +56,10 @@ void takeOwnership( tensor* t ){
       case 100: internalFormat = GL_R16F;  format = GL_RED;  type = GL_HALF_FLOAT; break;
       case 2:  internalFormat = GL_RG32F;  format = GL_RG;   type = GL_FLOAT; break;
       case 20: internalFormat = GL_RG8;    format = GL_RG;   type = GL_UNSIGNED_BYTE; break;
-      case 200: internalFormat = GL_R16F;  format = GL_RG;   type = GL_HALF_FLOAT; break;
+      case 200: internalFormat = GL_RG16F;  format = GL_RG;   type = GL_HALF_FLOAT; break;
       case 3:  internalFormat = GL_RGB32F; format = GL_RGB;  type = GL_FLOAT; break;
       case 30: internalFormat = GL_RGB8;   format = GL_RGB;  type = GL_UNSIGNED_BYTE; break;
-      case 300: internalFormat = GL_R16F;  format = GL_RGB;  type = GL_HALF_FLOAT; break;
+      case 300: internalFormat = GL_RGB16F;  format = GL_RGB;  type = GL_HALF_FLOAT; break;
       default: error( "takeOwnership: unknown channel format %u", ch );
     }
     
@@ -1016,7 +1016,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, 1, 0, GL_RED, GL_UNSIGNED_BYTE, NULL );
           break;
         case 100:
-          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R16F, width, height, 1, 0, GL_RGBA, GL_HALF_FLOAT, NULL );
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R16F, width, height, 1, 0, GL_RED, GL_HALF_FLOAT, NULL );
           break;
         case 1:
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R32F, width, height, 1, 0, GL_RED, GL_FLOAT, NULL );
