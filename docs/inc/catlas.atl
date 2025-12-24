@@ -46,13 +46,13 @@ img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
 6;[1];ttexsize;0;cat;[4];0;cat;
 c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
                     a( ivec4( 0, tf.y, 1, 0 ) ),  
-                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
+                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 40 0;texture;
 dim;first;4;cat.fractalNoise;
 // get minmax
 0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
 
 
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 1 0;texture;
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 100 0;texture;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
@@ -752,7 +752,7 @@ v.w = uv.x;
 normal = skin * normal;
 normal.w = uv.y;
 ret[0] = posOrNormal == 0 ? v : normal;
-' 2 1 4 0;
+' 2 1 400 0;print;quit;
 return;
 
 
