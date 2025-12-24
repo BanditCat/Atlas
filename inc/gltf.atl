@@ -59,7 +59,7 @@ pop;
 progress;unext;ifn'loop4';
 unkettle;e;progress= 1;
 // load bar
-windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 40 0;
+windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - progress ? vec4( 0.0 ) : vec4( 1.0 - abs( tf.y - wwdims.y / 2.0 ) / 30.0 );' 0 1 400 0;
 continue;
 l'loop4';
 1;loadedKettle=;
@@ -442,7 +442,7 @@ float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
 ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
-4 1 40 0;
+4 1 400 0;
 
 /////////////////////////////////
 // sky
@@ -461,7 +461,7 @@ vec3 skyColor = mix( vec3( 0.3, 0.1, 0.5 ),
 float sunness = clamp( dot( lightDir * vec3( -1.0, 1.0, -1.0 ), ray ) * 80.0 - 78.0, 0.0, 1.0 );
 skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
 ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
-' 0 1 40 1;
+' 0 1 400 1;
 depth;backface;
 
 //print; quit; // frame hmap smap grad highvat lowvat lowindices mat highindices
@@ -516,7 +516,7 @@ in float fade;
 if( length( tripos ) > 1.0 )
   discard;
 ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
-' 2 1 40 1;depth;
+' 2 1 400 1;depth;
 
 
 
@@ -904,7 +904,7 @@ ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
 // //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 // //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
 // //ret[ 0 ] = vec4( color, 1.0 );
-' 4 1 40 1;
+' 4 1 400 1;
 
 return;
 

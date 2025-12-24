@@ -891,12 +891,13 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     if( sscanf( sizep, "%u%u%u%u%n", &argCount, &retCount, &channels, &reuse, &charsread ) == 4 &&
         !sizep[ charsread ] ){
       curStep->type = COMPUTE;
-      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 ){
+      if( channels && channels != 4 && channels != 1 && channels != 10 && channels != 40 &&
+          channels != 100 && channels != 400 ){
         unmem( pre );
         unmem( vcomp );
         unmem( vpre );
         unmem( comp );
-        err3( "%s", "Compute created with channels not equal 0, 1, 4, 10, or 40." );
+        err3( "%s", "Compute created with channels not equal 0, 1, 4, 10, 40, 100, or 400." );
       }
       if( argCount > 6 ){
         unmem( pre );
@@ -2646,6 +2647,8 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         shape[ i ] = 1;
       // dbg( "%u rc", p->computes[ s->compute ]->retCount );
       u32 channels = p->computes[ s->compute ]->channels;
+      if( channels >= 100 )
+        channels /= 100;
       if( channels >= 10 )
         channels /= 10;
       if( channels && rank != 3 )

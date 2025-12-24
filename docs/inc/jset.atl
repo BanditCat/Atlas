@@ -164,7 +164,7 @@ if(centersample > 0.0)
   ret[0] = (vec4(diffuse)*0.7 + vec4(ambient)*0.4)*color;
 else
   ret[0] = vec4(0.0,0.0,0.0,0.0);
-' 1 1 40 0;
+' 1 1 400 0;
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate

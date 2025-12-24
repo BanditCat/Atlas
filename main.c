@@ -574,7 +574,7 @@ const GLchar* vertexSource = "#version 300 es\n"
   "  gl_Position = vec4( position, 0.0, 1.0 );\n"
   "}\n";
 
-// Fragment Shader Source
+
 const GLchar* fragmentSource =
   "#version 300 es\n"
   "precision highp float;\n"
@@ -598,9 +598,10 @@ const GLchar* fragmentSource =
   "  return texel[ int( channel ) ];\n"
   "}\n"
   "void main(){\n"
-  "  fragColor = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), "
-  "0.0 );\n"
+  "  vec4 linear = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), 0.0 );\n"
+  "  fragColor = vec4( pow( linear.rgb, vec3( 1.0/1.6 ) ), linear.a );\n"  // <-- GAMMA HERE
   "}\n";
+
 
 // Function to compile shaders
 GLuint compileShader( GLenum type, const GLchar* source ){
@@ -765,9 +766,8 @@ int renderThreadFunction( void* data ){
       error( "%s", "Display tensor not of rank 3" );
     if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 4 )
       error( "%s", "Display tensor not a 4 component tensor of rank 3." );
-    if( ts->stack[ ts->size - 1 ]->tex.channels != 4 &&
-        ts->stack[ ts->size - 1 ]->tex.channels != 40 )
-      error( "%s", "Display tensor not a 4 channel tensor of rank 3." );
+    if( ts->stack[ ts->size - 1 ]->tex.channels != 400 )
+      error( "%s", "Display tensor not a 4 channel half float tensor of rank 3." );
 
     glClear( GL_COLOR_BUFFER_BIT );
 
@@ -900,9 +900,8 @@ void main_loop( void ){
     error( "%s", "Display tensor not of rank 3" );
   if( ts->stack[ ts->size - 1 ]->shape[ 2 ] != 4 )
     error( "%s", "Display tensor not a 4 component tensor of rank 3." );
-  if( ts->stack[ ts->size - 1 ]->tex.channels != 4 &&
-      ts->stack[ ts->size - 1 ]->tex.channels != 40 )
-    error( "%s", "Display tensor not a 4 channel tensor of rank 3." );
+  if( ts->stack[ ts->size - 1 ]->tex.channels != 400 )
+    error( "%s", "Display tensor not a 4 channel half float tensor of rank 3." );
 
   glClear( GL_COLOR_BUFFER_BIT );
 

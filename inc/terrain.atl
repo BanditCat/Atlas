@@ -199,7 +199,7 @@ color = mix( rcd ? color * clamp( csc, 0.1, 1.0 ) : vec3( 0.9, 0.1, 0.1 ),
 
 ret[0] = color.zyxx;
 '
-2 1 40 0;
+2 1 400 0;
 
 
 

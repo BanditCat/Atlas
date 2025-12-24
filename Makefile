@@ -97,7 +97,7 @@ backup:
 	strip ./bin/$(TARGET)
 	upx -9 ./bin/$(TARGET)
 	git add -A
-	git commit -m 'UI'
+	git commit -m '16bit :D'
 	git push -u origin main
 
 -include $(OBJS:.o=.d)

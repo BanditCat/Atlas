@@ -50,12 +50,16 @@ void takeOwnership( tensor* t ){
     switch( ch ){
       case 0: case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
       case 40: internalFormat = GL_RGBA8;  format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
+      case 400: internalFormat = GL_RGBA16F;format = GL_RGBA;type = GL_HALF_FLOAT; break;
       case 1:  internalFormat = GL_R32F;   format = GL_RED;  type = GL_FLOAT; break;
       case 10: internalFormat = GL_R8;     format = GL_RED;  type = GL_UNSIGNED_BYTE; break;
+      case 100: internalFormat = GL_R16F;  format = GL_RED;  type = GL_HALF_FLOAT; break;
       case 2:  internalFormat = GL_RG32F;  format = GL_RG;   type = GL_FLOAT; break;
       case 20: internalFormat = GL_RG8;    format = GL_RG;   type = GL_UNSIGNED_BYTE; break;
+      case 200: internalFormat = GL_R16F;  format = GL_RG;   type = GL_HALF_FLOAT; break;
       case 3:  internalFormat = GL_RGB32F; format = GL_RGB;  type = GL_FLOAT; break;
       case 30: internalFormat = GL_RGB8;   format = GL_RGB;  type = GL_UNSIGNED_BYTE; break;
+      case 300: internalFormat = GL_R16F;  format = GL_RGB;  type = GL_HALF_FLOAT; break;
       default: error( "takeOwnership: unknown channel format %u", ch );
     }
     
@@ -168,9 +172,9 @@ void tensorToHostMemory( tensor* t ){
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   
   GLenum format = GL_RGBA;
-  if( t->tex.channels == 1 || t->tex.channels == 10 ) format = GL_RED;
-  if( t->tex.channels == 2 || t->tex.channels == 20 ) format = GL_RG;
-  if( t->tex.channels == 3 || t->tex.channels == 30 ) format = GL_RGB;
+  if( t->tex.channels == 1 || t->tex.channels == 10 || t->tex.channels == 100 ) format = GL_RED;
+  if( t->tex.channels == 2 || t->tex.channels == 20 || t->tex.channels == 200 ) format = GL_RG;
+  if( t->tex.channels == 3 || t->tex.channels == 30 || t->tex.channels == 300 ) format = GL_RGB;
 
   // Read all layers into texData
   for( u32 i = 0; i < t->tex.layers; ++i ){
@@ -434,10 +438,10 @@ char* makeCompute( const char* filename,
   const char* channelsString;
   switch( channels ){
   case 0:
-  case 4: case 40: channelsString = "vec4"; break;
-  case 1: case 10: channelsString = "float"; break;
-  case 2: case 20: channelsString = "vec2"; break;
-  case 3: case 30: channelsString = "vec3"; break;
+  case 4: case 40: case 400: channelsString = "vec4"; break;
+  case 1: case 10: case 100: channelsString = "float"; break;
+  case 2: case 20: case 200: channelsString = "vec2"; break;
+  case 3: case 30: case 300: channelsString = "vec3"; break;
   }
   // Vertex shader source (simple pass-through)
   compute* ret = mem( 1, compute );
@@ -1001,12 +1005,18 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
         case 40:
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, width, height, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
           break;
+        case 400:
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA16F, width, height, 1, 0, GL_RGBA, GL_HALF_FLOAT, NULL );
+          break;
         case 0:
         case 4:
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_RGBA32F, width, height, 1, 0, GL_RGBA, GL_FLOAT, NULL );
           break;
         case 10:
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, 1, 0, GL_RED, GL_UNSIGNED_BYTE, NULL );
+          break;
+        case 100:
+          glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R16F, width, height, 1, 0, GL_RGBA, GL_HALF_FLOAT, NULL );
           break;
         case 1:
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, GL_R32F, width, height, 1, 0, GL_RED, GL_FLOAT, NULL );
@@ -1838,8 +1848,10 @@ char* tensorToTextureArray( tensor* t, u32 channels ){
   
   GLenum internalFormat, format, type;
   switch( channels ){
+  case 400:internalFormat = GL_RGBA16F; format = GL_RGBA; type = GL_HALF_FLOAT; break;
   case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_FLOAT; break;
   case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
+  case 100:internalFormat = GL_R16F; format = GL_RED; type = GL_HALF_FLOAT; break;
   case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
   case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
   default: err( "%s", "Unsupported channel format for textureArray." );
@@ -1984,8 +1996,7 @@ void kettle(tensorStack* ts, u32 count, const char* filename) {
     memWrite(rawData, &writeHead, &meta, sizeof(KettleMeta));
 
     // 4. Write Data (Quantized or F32)
-    if (meta.channels == 10 || meta.channels == 20 || 
-        meta.channels == 30 || meta.channels == 40) {
+    if (meta.channels >= 10 && meta.channels < 100) {
             
       // We can write directly to the buffer to avoid a temp malloc
       u8* dst = rawData + writeHead;
@@ -2325,7 +2336,6 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
           GLenum format = GL_RGBA; 
           GLenum type = GL_FLOAT;
 
-          // [Your Format Switch Logic Here - same as previous]
           if( meta.channels == 40 ){ internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; }
           else if( meta.channels == 30 ){ internalFormat = GL_RGB8;  format = GL_RGB;  type = GL_UNSIGNED_BYTE; }
           else if( meta.channels == 20 ){ internalFormat = GL_RG8;   format = GL_RG;   type = GL_UNSIGNED_BYTE; }
@@ -2334,6 +2344,8 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
           else if( meta.channels == 3 ){ internalFormat = GL_RGB32F;  format = GL_RGB;  type = GL_FLOAT; }
           else if( meta.channels == 2 ){ internalFormat = GL_RG32F;   format = GL_RG;   type = GL_FLOAT; }
           else if( meta.channels == 1 ){ internalFormat = GL_R32F;    format = GL_RED;  type = GL_FLOAT; }
+          else if( meta.channels == 400 ){ internalFormat = GL_RGBA16F; format = GL_RGBA; type = GL_HALF_FLOAT; }
+          else if( meta.channels == 100 ){ internalFormat = GL_R16F;    format = GL_RED;  type = GL_HALF_FLOAT; }
 
           // CRITICAL: Allocate VRAM, but do not upload data yet (NULL)
           glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, 
@@ -2373,6 +2385,8 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
         else if( channels == 3 ){ format = GL_RGB;  type = GL_FLOAT; }
         else if( channels == 2 ){ format = GL_RG;   type = GL_FLOAT; }
         else if( channels == 1 ){ format = GL_RED;  type = GL_FLOAT; }
+        else if( channels == 400 ){ format = GL_RGBA; type = GL_HALF_FLOAT; }
+        else if( channels == 100 ){ format = GL_RED;  type = GL_HALF_FLOAT; }
 
         u32 pixelSize = (isU8 ? 1 : 4) * ((channels > 10) ? (channels/10) : (channels?channels:4));
         

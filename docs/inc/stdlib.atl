@@ -458,7 +458,7 @@ ret = v * 2.0 - 1.0;
 
 ''
 ret[0] = af( ( tf * std_wmult - std_toffset ) * 2.0 ).xxxx;
-' 1 1 40 1;
+' 1 1 400 1;
 return;
 
 
