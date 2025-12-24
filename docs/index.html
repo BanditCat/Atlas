@@ -235,6 +235,8 @@
       <li><a href="#cmd-time">time</a></li>
       <li><a href="#cmd-timeDelta">timeDelta</a></li>
       <li><a href="#cmd-toString">toString</a></li>
+      <li><a href="#cmd-transferStart">transferStart</a></li>
+      <li><a href="#cmd-transferEnd">transferEnd</a></li>
       <li><a href="#cmd-translate">translate</a></li>
       <li><a href="#cmd-unext">unext (unextrude)</a></li>
       <li><a href="#cmd-unkettle">unkettle</a></li>
@@ -833,6 +835,16 @@ print;quit;</code></pre>
   <section id="cmd-toString">
     <h2>toString</h2>
     <p>This command takes the top of the stack, which must be a scalar, and returns it as a string for display.</p>
+  </section>
+
+  <section id="cmd-transferStart">
+    <h2>transferStart</h2>
+    <p>This command starts asynchronous transfer of data from the gpu to the cpu (this is the only way to get data back from vram). Preferably, you call transferEnd the frame after calling this, alleviating sync issues.  You must not do operations on or with the GPU tensor until you finish transfering it.</p>
+  </section>
+
+  <section id="cmd-transferEnd">
+    <h2>transferEnd</h2>
+    <p>This command finishes asynchronous transfer of VRAM to host memory. After calling this, the tensor will be in host memory.</p>
   </section>
 
   <section id="cmd-translate">

@@ -49,7 +49,7 @@ c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
                     a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 40 0;texture;
 dim;first;4;cat.fractalNoise;
 // get minmax
-0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
+0;dup;transferStart;transferEnd;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
 
 
 6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 100 0;texture;
@@ -59,7 +59,7 @@ lrot;last;-300;/;[1 0 0];rot;m; // rot about x
 set'lightRotation' 16;
 
 cat.nav3d;
-[0.5 1.0 2.0];cat.origin= 3;
+[0.5 0.5 1.0];cat.origin= 3;
 [171 134];cat.3dnavParam=;
 
 6;wdims;[4];0;cat;
@@ -114,10 +114,9 @@ ret[ 0 ] = vec4( 0.0 );
 ' 0 1 4 0;
 9;bury;
 [0 0 0];11;bury; //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
-0;totalInstances;first;rep;12;bury;
 
-
-[0];13;bury; // fake height
+0;totalInstances;first;rep;6;totalInstances;c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;12;bury; // fake instance sort
+[0];6;[1];c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;13;bury; // fake height
 
 
 l'kettled';
@@ -249,7 +248,7 @@ vec4 pos = vec4( a( ivec4( t.x, 0, 0, 0 ) ), a( ivec4( t.x, 1, 0, 0 ) ), a( ivec
 pos = cat_worldUnrotation*(pos - vec4( cat_origin, 0.0 ) );
 pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
-' 1 1 0 0; 14;raise;1;raise;14;bury;
+' 1 1 0 0; 14;raise;transferEnd;1;raise;transferStart;14;bury;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //  THIS IS WHERE WE READPIXELS, DO IT ALL IN ONE PLACE!
@@ -265,13 +264,13 @@ float terrainHeight = af( vec4( oz * dim, ox * dim, 0.0, 0.0 ) ).x * hscale;
 
 ret[ 0 ] = terrainHeight + 0.02;
 ' 1 1 0 0;
-16;bury;15;raise;[0];+;0;dup;
+transferStart;16;bury;15;raise;transferEnd;
 cat.origin;[1 2 0];s;>;first;ifn'noHeightChange';
 cat.origin;[0 1 0];s;1;dup;0;cat;cat.origin;[2 3 0];s;0;cat;cat.origin= 3;
 l'noHeightChange';
-pop;
+//print;quit;
+//pop;
 cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
-
 
 
 0;dup;[0 1 0];s;selectedIdx=;
@@ -285,6 +284,7 @@ cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 0;dup;[0 1 0];s;[0 3 1];s;first;
 //selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle=;
 13;raise;6;[3];c''''ret[ 0 ] = a( t ) + ( b( t ) - a( t ) ) * dt * reticleSnappiness;' 2 1 0 0;12;bury;
+
 
 totalInstances;instanceVars;*;reshape;
 8;bury;

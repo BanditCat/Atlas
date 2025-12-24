@@ -1,4 +1,5 @@
 compression.
+full screen/mouse grab.
 
 ui
 

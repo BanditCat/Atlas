@@ -5,6 +5,21 @@
 #include "Atlas.h"
 #include "tensorGltf.h"
 
+
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+
+EM_JS(void, webgl_getBufferSubData, (GLuint pbo, void* dest, GLsizei size), {
+    var gl = Module['canvas'].getContext('webgl2');
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, GL.buffers[pbo]);
+    gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, HEAPF32.subarray(dest >> 2, (dest + size) >> 2));
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+  });
+#endif
+
+
+
 #define err( ... ) do {                         \
     char* msg = printToString( __VA_ARGS__ );   \
     return msg;                                 \
@@ -937,6 +952,14 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
   } else if( !strcmp( command, "cls" ) ){
     curStep->type = CLS;
     // dbg( "Linenum %u commandnum %u: cls\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "transferStart" ) ){
+    curStep->type = TRANSFERSTART;
+    // dbg( "Linenum %u commandnum %u: transferStart\n", linenum, commandnum );
+
+  } else if( !strcmp( command, "transferEnd" ) ){
+    curStep->type = TRANSFEREND;
+    // dbg( "Linenum %u commandnum %u: transferEnd\n", linenum, commandnum );
 
   } else if( !strcmp( command, "eval" ) ){
     curStep->type = EVAL;
@@ -3369,6 +3392,101 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       // dbg( "%s", "get" );
       break;
     }
+    case TRANSFERSTART: {
+      if( !ts->size )
+        err( "Empty stack in transferStart." );
+      tensor* t = ts->stack[ts->size - 1];
+      if( t->gpu != 1 )
+        err( "Attempt to transfer a cpu tensor or gpu tensor already being transferred." );
+
+      u32 chans = t->tex.channels;
+      GLuint pbot;
+      glGenBuffers( 1, &pbot );
+  
+      GLenum format = GL_RGBA;
+      u32 channels = t->tex.channels;
+      if (channels == 1 || channels == 10 || channels == 100) format = GL_RED;
+      if (channels == 2 || channels == 20 || channels == 200) format = GL_RG;
+      if (channels == 3 || channels == 30 || channels == 300) format = GL_RGB;
+  
+      u32 channelCount = (channels % 10) ? (channels % 10) : 4;
+      u32 layerSize = t->tex.width * t->tex.height * channelCount * sizeof(f32);
+      u32 bufferSize = layerSize * t->tex.layers;
+  
+      glBindBuffer( GL_PIXEL_PACK_BUFFER, pbot );
+      glBufferData( GL_PIXEL_PACK_BUFFER, bufferSize, NULL, GL_STREAM_READ );
+  
+      glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+      for( u32 layer = 0; layer < t->tex.layers; ++layer ){
+        glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
+                                   t->tex.texture, 0, layer );
+        // Offset into PBO for this layer
+        glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, 
+                      (void*)(uintptr_t)(layer * layerSize) );
+      }
+      glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+      glBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+  
+      // Delete GPU resources now - driver keeps them alive until PBO copy completes
+      if( t->ownsData ){
+        if( t->tex.texture ) glDeleteTextures( 1, &t->tex.texture );
+        if( t->tex.framebuffer ) glDeleteFramebuffers( 1, &t->tex.framebuffer );
+        if( t->tex.depthbuffer ) glDeleteRenderbuffers( 1, &t->tex.depthbuffer );
+      }
+  
+      // Now safe to overwrite union
+      t->pbo.channels = chans;
+      t->pbo.pbo = pbot;
+      t->pbo.byteSize = bufferSize;
+      t->gpu = 2;
+      break;
+    }
+    case TRANSFEREND: {
+      if( !ts->size )
+        err( "Empty stack in transferEnd." );
+      tensor* t = ts->stack[ts->size - 1];
+      if( t->gpu != 2 )
+        err( "Attempt to end transfer on tensor not being transferred." );
+
+      u32 floatCount = t->pbo.byteSize / sizeof(f32);
+      f32* data = mem( floatCount, f32 );
+
+      glBindBuffer( GL_PIXEL_PACK_BUFFER, t->pbo.pbo );
+  
+#ifdef __EMSCRIPTEN__
+      webgl_getBufferSubData( t->pbo.pbo, data, t->pbo.byteSize );
+#else
+      glBindBuffer( GL_PIXEL_PACK_BUFFER, t->pbo.pbo );
+      void* mapped = glMapBufferRange( GL_PIXEL_PACK_BUFFER, 0, t->pbo.byteSize, GL_MAP_READ_BIT );
+      if( mapped ){
+        memcpy( data, mapped, t->pbo.byteSize );
+        glUnmapBuffer( GL_PIXEL_PACK_BUFFER );
+      } else {
+        unmem( data );
+        glBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+        err( "Failed to map PBO buffer." );
+      }
+      glBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+#endif
+      glBindBuffer( GL_PIXEL_PACK_BUFFER, 0 );
+      glDeleteBuffers( 1, &t->pbo.pbo );
+
+      // Set up as CPU tensor
+      t->data = data;
+      t->gpu = 0;
+      t->ownsData = true;
+      t->offset = 0;
+  
+      // Recalculate contiguous strides
+      u32 stride = 1;
+      for( int i = t->rank - 1; i >= 0; --i ){
+        t->strides[i] = stride;
+        stride *= t->shape[i];
+      }
+  
+      break;
+    }
+      
     case QUIT:
       // dbg( "%s", "exit" );
       *ret = false; return NULL;

@@ -301,7 +301,7 @@ if( (1.0 - tf.y / catcon_wdims.y) < ( catcon_pos * 0.8 ) ){
 } else
   ret[ 0 ] = af( vec4( tf * catcon_wmult, 0.0, 0.0 ) );
 
-' 3 1 40 0;
+' 3 1 400 0;
 
 
 

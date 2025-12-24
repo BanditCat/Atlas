@@ -1,3 +1,4 @@
+
 include'inc\stdlib.atl';
 'inc\\catlas.atl';
 include'inc\nav.atl';
@@ -36,7 +37,9 @@ c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
                     a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
 dim;first;4;std.fractalNoise;
 // get minmax
-0;dup;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
+
+0;dup;transferStart;transferEnd;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
+
 
 
 6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 1 0;texture;
@@ -48,7 +51,6 @@ set'lightRotation' 16;
 std.nav3d;
 [0.5 1.0 2.0];std.origin= 3;
 [171 134];std.3dnavParam=;
-
 6;wdims;[4];0;cat;
 c''''ret[ 0 ]=vec4( 0 );' 0 1 4 0; // dummy value to pop off in place of display tensor.
 
@@ -245,7 +247,7 @@ ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 // 1;raise;[2 3 1];s;unext;1;bury;1;dup;-1;totalInstances;unext;rep;*;+; // length(xy)*weight-pos.z, zs, ...
 // 1;raise;0;totalInstances;unext;rep;>;1000;totalInstances;unext;rep;*;+;
 
-sort;0;index;
+transferStart;transferEnd;1;raise;transferStart;transferEnd;1;bury;sort;0;index;
 
 
 

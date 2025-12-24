@@ -301,7 +301,7 @@ if( (1.0 - tf.y / con_wdims.y) < ( con_pos * 0.8 ) ){
 } else
   ret[ 0 ] = af( vec4( tf * con_wmult, 0.0, 0.0 ) );
 
-' 3 1 40 0;
+' 3 1 400 0;
 
 
 

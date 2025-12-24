@@ -89,7 +89,9 @@ typedef struct{
     TEXTURE, // documented
     TEXTUREARRAY, // documented
     WINDOWSIZE, // documented
-    WORKSPACE // documented
+    WORKSPACE, // documented
+    TRANSFERSTART, // documented
+    TRANSFEREND // documented
   } type;
   union{
     tensor* tensor;

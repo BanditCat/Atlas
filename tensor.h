@@ -15,8 +15,13 @@ typedef struct{
   u32 shape[ 4 ];          // Dimensions of the tensor
   s32 strides[ 4 ];        // Strides for indexing
   s32 offset;
-  bool gpu;              // True if in gpu memory, false if in cpu memory.
+  u32 gpu;              // 0 = cpu, 1 = gpu, 2 = transferring
   union{
+    struct{
+      GLuint pbo;
+      u32 byteSize;
+      u32 channels; 
+    } pbo;
     f32* data;
     struct{
       GLuint texture;        // OpenGL texture for reading/writing operations
