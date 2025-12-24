@@ -206,6 +206,8 @@
       <li><a href="#cmd-l">l (length)</a></li>
       <li><a href="#cmd-load">load</a></li>
       <li><a href="#cmd-m">m (matrix multiply)</a></li>
+      <li><a href="#cmd-max">max</a></li>
+      <li><a href="#cmd-min">min</a></li>
       <li><a href="#cmd-minmax">minmax (minimum and maximum)</a></li>
       <li><a href="#cmd-ortho">ortho (orthographic)</a></li>
       <li><a href="#cmd-pop">pop</a></li>
@@ -664,6 +666,18 @@ print;quit;</code></pre>
     <p>This multiplies the top two tensors (which must be rank 2 or less) and pushes the result on the stack. The result is always of rank 2. For example <code>[[1 0 1][2 1 1][0 1 1][1 1 2]];[[1 2 1][2 3 1][4 2 2]];m;print;quit;</code> prints
     <pre><code>CPU tensor 0 ...</code></pre>
     </p>
+  </section>
+
+  <section id="cmd-max">
+    <h2>max</h2>
+    <p>This takes two identically sized tensors, and returns the maximum of the two of them, element-wise.
+    for example <code>[0.5 2.0 0.75];[1 1 1];max;</code> returns <code>[1.0 2.0 1.0]</code>.</p>
+  </section>
+
+  <section id="cmd-min">
+    <h2>min</h2>
+    <p>This takes two identically sized tensors, and returns the minimum of the two of them, element-wise.
+    for example <code>[0.5 2.0 0.75];[1 1 1];max;</code> returns <code>[0.5 1.0 0.75]</code>.</p>
   </section>
 
   <section id="cmd-minmax">

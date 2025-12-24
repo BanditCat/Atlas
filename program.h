@@ -30,6 +30,8 @@ typedef struct{
     COS, // documented
     FLOOR, // documented
     CEIL, // documented
+    MAX, // documented
+    MIN, // documented
     GREATERTHAN, // documented
     EQUALS, // documented
     MINMAX, // documented

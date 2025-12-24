@@ -270,6 +270,7 @@ cat.origin;[1 2 0];s;>;first;ifn'noHeightChange';
 cat.origin;[0 1 0];s;1;dup;0;cat;cat.origin;[2 3 0];s;0;cat;cat.origin= 3;
 l'noHeightChange';
 pop;
+cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 
 
 
@@ -753,8 +754,6 @@ normal.w = uv.y;
 ret[0] = posOrNormal == 0 ? v : normal;
 ' 2 1 4 0;
 return;
-
-
 
 
 
