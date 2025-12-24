@@ -597,10 +597,26 @@ const GLchar* fragmentSource =
   "  vec4 texel = textureLod( tex, vec3( uv, 0 ), 0.0 );\n"
   "  return texel[ int( channel ) ];\n"
   "}\n"
-  "void main(){\n"
-  "  vec4 linear = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), 0.0 );\n"
-  "  fragColor = vec4( pow( linear.rgb, vec3( 1.0/1.6 ) ), linear.a );\n"  // <-- GAMMA HERE
-  "}\n";
+"void main(){\n"
+"  vec4 linear = textureLod( tex, vec3( gl_FragCoord.xy / resolution, 0.0 ), 0.0 );\n"
+"  vec3 gamma = pow( linear.rgb, vec3( 1.0/1.6 ) );\n"
+
+// 4x4 Bayer matrix threshold
+"  ivec2 p = ivec2( gl_FragCoord.xy ) & 3;\n"  // mod 4
+"  int idx = p.x + p.y * 4;\n"
+"  const float bayer[16] = float[16](\n"
+"     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,\n"
+"    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,\n"
+"     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,\n"
+"    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0\n"
+"  );\n"
+"  float threshold = bayer[idx] - 0.5;\n"  // center around 0
+
+// Add dither before quantizing
+"  float levels = 256.0;\n"
+"  vec3 dithered = gamma + threshold / levels;\n"
+"  fragColor = vec4( floor( dithered * levels ) / levels, 1.0 );\n"
+"}\n";
 
 
 // Function to compile shaders
