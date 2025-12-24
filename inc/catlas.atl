@@ -752,7 +752,7 @@ v.w = uv.x;
 normal = skin * normal;
 normal.w = uv.y;
 ret[0] = posOrNormal == 0 ? v : normal;
-' 2 1 400 0;print;quit;
+' 2 1 400 0;
 return;
 
 
