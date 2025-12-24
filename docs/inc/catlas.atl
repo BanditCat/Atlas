@@ -958,8 +958,8 @@ for( float dx = -0.5; dx <= 0.5; ++dx ){
   }
 }
 shadow = shadow / 4.0 * 0.5;
-
-ret[ 0 ] = vec4( diffuse * dot( normal, L ) * (1.0 - shadow), 1.0 );
+float ambient = 0.3;
+ret[ 0 ] = vec4( diffuse * clamp( dot( normal, L ) + ambient, 0.0, 1.0 ) * (1.0 - shadow), 1.0 );
 // //ret[0] = vec4(vec3(roughness), 1.0);
 // //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 // //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );
