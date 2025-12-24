@@ -276,12 +276,12 @@ float terrainHeight = af( vec4( oz * dim, ox * dim, 0.0, 0.0 ) ).x * hscale;
 
 ret[ 0 ] = terrainHeight + 0.02;
 ' 1 1 0 0;
-transferStart;16;bury;15;raise;transferEnd;
+transferStart;16;bury;15;raise;transferEnd;0;dup;
 cat.origin;[1 2 0];s;>;first;ifn'noHeightChange';
 cat.origin;[0 1 0];s;1;dup;0;cat;cat.origin;[2 3 0];s;0;cat;cat.origin= 3;
 l'noHeightChange';
 //print;quit;
-//pop;
+pop;
 cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 
 
