@@ -939,14 +939,14 @@ float hash( vec2 p, float time ){
 vec2 muv = fract( uv );
 
 vec4 color = df( vec3( muv * atlasSize, mat * 2.0 ) );
-if( color.a > 0.99 && color.a < 1.0 )
-  color.rgb = tint;
-else if( color.a > 0.98 && color.a <= 0.99 )
-  color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
-else if( color.a > 0.97 && color.a <= 0.98 )
-  color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
-else if( color.a > 0.96 && color.a <= 0.97 )
-  color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
+// if( color.a > 0.99 && color.a < 1.0 )
+//   color.rgb = tint;
+// else if( color.a > 0.98 && color.a <= 0.99 )
+//   color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 12.0, 0.0, 0.0 ) ).rgb;
+// else if( color.a > 0.97 && color.a <= 0.98 )
+//   color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 4.0, 0.0, 0.0 ) ).rgb;
+// else if( color.a > 0.96 && color.a <= 0.97 )
+//   color.rgb = df( vec4( 4.0 + 8.0 * job, matDim.y - 20.0, 0.0, 0.0 ) ).rgb;
 //if( color.a < 0.5 )  discard;
 
 
