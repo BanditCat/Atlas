@@ -269,8 +269,11 @@ void mainPoll( void ){
 #ifdef __EMSCRIPTEN__
     EmscriptenFullscreenChangeEvent fsce;
     emscripten_get_fullscreen_status( &fsce );
-    if( !fsce.isFullscreen && fullscreen == 2 )
+    if( !fsce.isFullscreen && fullscreen == 2 ){
+      SDL_ShowCursor( SDL_ENABLE );
+      SDL_SetRelativeMouseMode( SDL_FALSE );
       fullscreen = 0;
+    }
     if( fsce.isFullscreen && fullscreen == 1 )
       fullscreen = 2;
     if( !fsce.isFullscreen && fullscreen == 1 ){
