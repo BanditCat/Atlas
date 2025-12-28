@@ -37,9 +37,10 @@ windowSize;ssaa;*;wdims= 2;
 [-0.000004];gravity= 1;
 [20];reticleSnappiness= 1;
 [0 0 0];selectedReticle=;
-[3];numJobs= 1;
+[4];numJobs= 1;
 [0.15];uiSize=;
 [0];activeJob= 1;
+[360];[3.141527];*;jobFacing= 1;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -130,14 +131,19 @@ ret[ 0 ] = vec4( 0.0 );
 
 
 //////////////////////////////////////////////////////////////
-// actual start post init
+// actual start post init, do controls here
 l'kettled';
+activeJob;cat.inputState;[2 3 0];s;+;numJobs;+;numJobs;%;activeJob= 1;
 cat.keyPresses;[8 9 0];s;first;cat.gamepadPresses;[7 8 0];s;first;+;ifn'actionplus';
 activeJob;[1];+;numJobs;%;activeJob= 1;
 l'actionplus';
 cat.keyPresses;[20 21 0];s;first;cat.gamepadPresses;[6 7 0];s;first;+;ifn'actionminus';
 activeJob;numJobs;[1];-;+;numJobs;%;activeJob= 1;
 l'actionminus';
+cat.inputState;[4 5 0];s;first;ifn'norotateFacing';
+jobFacing;cat.inputState;[0 1 0];s;-;[360.0];[3.14152659];[2];*;*;%;jobFacing= 1;
+l'norotateFacing';
+
 
 windowSize;ssaa;*;wdims= 2;
 wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
@@ -527,10 +533,19 @@ const vec4 verts[3] = vec4[](
     vec4(-1.732051, -1.0, 0.0, 1.0),   // bottom left  (-v3)
     vec4( 1.732051, -1.0, 0.0, 1.0)    // bottom right (v3)
 );
+mat3 rotY(float facing) {
+    float c = cos(facing);
+    float s = sin(facing);
+    return mat3(
+        c,   0.0,  s,
+        0.0, 1.0,  0.0,
+       -s,   0.0,  c
+    );
+}
 out vec2 tripos;
 flat out float radius;
 '
-vec4 pos = verts[ gl_VertexID ].xzyw;
+vec4 pos = vec4( verts[ gl_VertexID ].xzy * rotY( jobFacing / 360.0 ), 1.0 );
 tripos = verts[ gl_VertexID ].xy;
 pos.xyz *= sableScale;
 pos.xyz += vec3( a( ivec4( 0, 0, 0, 0 ) ), a( ivec4( 1, 0, 0, 0 ) ), a( ivec4( 2, 0, 0, 0 ) ) );
@@ -540,11 +555,11 @@ ret = proj*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
 in vec2 tripos;
 flat in float radius;
 '
-if( length( tripos ) > radius + 0.2 )
-  discard;
-if( length( tripos ) < radius - 0.2 )
-  discard;
 ret[ 0 ] = vec4( 0.0, 1.0, 1.0, 1.0 );
+if( tripos.x > -0.15 && tripos.x < 0.15 && tripos.y > 0.0 )
+  ret[ 0 ] = vec4( 1.0, 0.0, 0.0, 1.0 );
+else if( length( tripos ) > radius + 0.2 || length( tripos ) < radius - 0.2 )
+  discard;
 ' 1 1 400 1;
 
 //////////////////////////////////////////////////

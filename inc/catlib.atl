@@ -72,14 +72,14 @@ nav3dInited;if'nav3dInitDone';
 1;nav3dInited=;
 l'nav3dInitDone';
 
-0.90;inputState;[2 3 0];s;[-1];*;first;^;speed;*;speed=;
+//0.90;inputState;[2 3 0];s;[-1];*;first;^;speed;*;speed=;
 
-keyState;[9 10 0];s;first;ifn'fkeyskip'; 
+keyState;[15 16 0];s;first;ifn'lkeyskip'; 
 inputState;[0 2 0];s;3dnavParam;+;3dnavParam=;
-l'fkeyskip';
+l'lkeyskip';
 
 [0 0 0];accel=;
-keyState;[26 27 0];s;first;inputState;[4 5 0];s;first;+;ifn'wkeyskip';
+keyState;[26 27 0];s;first;ifn'wkeyskip';
 [0 0 -1];
 accel;+;accel=;
 l'wkeyskip';
@@ -110,7 +110,7 @@ rotza;timeDelta;165;*;2;^;*;rotza=;
 rotzv;0.95;timeDelta;165;*;^;*;rotzv=;
 
 gamepadState;[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
-//inputState;[3 4 0];s;first;ifn'mouse1skip'; // rotate if mouse 1
+inputState;[4 5 0];s;first;keyState;[15 16 0];s;first;+;if'mouse1skip'; // rotate if mouse 1
 inputState;[0 2 0];s;[2 2];/;+; // get mouse delta xy and add
 l'mouse1skip';
 

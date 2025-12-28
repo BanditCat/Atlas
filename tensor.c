@@ -2129,7 +2129,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
 
   u64 startTime = SDL_GetPerformanceCounter();
   f64 freq = (f64)SDL_GetPerformanceFrequency();
-  f64 timeLimitMs = 6.0;
+  f64 timeLimitMs = 16.666;
 
   // --- STAGE 1 & 2a/2b (START, OPEN, READ) ---
   // (Identical to previous version. Copy/Paste logic for START, OPEN, and READ here)
