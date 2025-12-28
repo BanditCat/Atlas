@@ -2599,12 +2599,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       break;
     }
     case FULLSCREEN:{
-      Uint32 flags = SDL_GetWindowFlags(window);
-      if (flags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
-        SDL_SetWindowFullscreen(window, 0);
-      } else {
-        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-      }
+      fullscreen = !fullscreen;
       break;
     }
     case PRINT:

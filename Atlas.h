@@ -365,10 +365,7 @@ extern GLuint vao;
 extern SDL_GameController* controllers[ MAX_CONTROLLERS ];
 extern SDL_JoystickID joystickIDs[ MAX_CONTROLLERS ];
 extern f32 joysticks[ MAX_CONTROLLERS * 21 ];
-#ifndef __EMSCRIPTEN__
-//extern SDL_mutex* data_mutex;
-#endif
-
+extern u32 fullscreen;  // 0 not fullscreen, 1 trying to get full screen, 2 already fullscreen.
 
 #include "tensor.h"
 #include "program.h"

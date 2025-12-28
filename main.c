@@ -80,6 +80,7 @@ char* textInputBuffer = NULL;
 u64 textInputBufferPos = 0;
 char* textBuffer = NULL;
 u64 textBufferPos = 0;
+u32 fullscreen = 0; // 0 no, 1, maybe, 2, yes
 
 u32 EVENT_PASTE = 0;  // Will be initialized in main
 
@@ -262,9 +263,30 @@ void mainPoll( void ){
   // SDL_Delay( 1 ); // Without this delay, the render to desktop code can
   // deadlock for unknown reason.
   while( SDL_PollEvent( &event ) ){
-    // Hard coded alt-enter
-#ifdef __EMSCRIPTEN__        
-      emscripten_request_fullscreen("#canvas", true);
+
+    ////////////////////////////////////////////////////
+    // Fullscreen check
+#ifdef __EMSCRIPTEN__
+    EmscriptenFullscreenChangeEvent fsce;
+    emscripten_get_fullscreen_status( &fsce );
+    if( !fsce.isFullscreen && fullscreen == 2 )
+      fullscreen = 0;
+    if( fsce.isFullscreen && fullscreen == 1 )
+      fullscreen = 2;
+    if( !fsce.isFullscreen && fullscreen == 1 )
+      emscripten_request_fullscreen( "#canvas", true );
+    if( fsce.isFullscreen && fullscreen == 0 )
+      emscripten_exit_fullscreen();
+#else
+    Uint32 flags = SDL_GetWindowFlags( window );
+    if( !( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen == 2 )
+      fullscreen = 0;
+    if( ( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen == 1 )
+      fullscreen = 2;
+    if( !( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen )
+      SDL_SetWindowFullscreen( window, SDL_WINDOW_FULLSCREEN_DESKTOP );
+    if( ( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && !fullscreen )
+      SDL_SetWindowFullscreen( window, 0 );
 #endif
     if( event.type == SDL_QUIT ||
         ( event.type == SDL_WINDOWEVENT &&
