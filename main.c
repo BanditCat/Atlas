@@ -273,20 +273,32 @@ void mainPoll( void ){
       fullscreen = 0;
     if( fsce.isFullscreen && fullscreen == 1 )
       fullscreen = 2;
-    if( !fsce.isFullscreen && fullscreen == 1 )
+    if( !fsce.isFullscreen && fullscreen == 1 ){
+      SDL_ShowCursor( SDL_DISABLE );
+      SDL_SetRelativeMouseMode( SDL_TRUE );
       emscripten_request_fullscreen( "#canvas", true );
-    if( fsce.isFullscreen && fullscreen == 0 )
+    }
+    if( fsce.isFullscreen && fullscreen == 0 ){
+      SDL_ShowCursor( SDL_ENABLE );
+      SDL_SetRelativeMouseMode( SDL_FALSE );
       emscripten_exit_fullscreen();
+    }
 #else
     Uint32 flags = SDL_GetWindowFlags( window );
     if( !( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen == 2 )
       fullscreen = 0;
     if( ( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen == 1 )
       fullscreen = 2;
-    if( !( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen )
+    if( !( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && fullscreen ){
+      SDL_ShowCursor( SDL_DISABLE );
+      SDL_SetRelativeMouseMode( SDL_TRUE );
       SDL_SetWindowFullscreen( window, SDL_WINDOW_FULLSCREEN_DESKTOP );
-    if( ( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && !fullscreen )
+    }
+    if( ( flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) && !fullscreen ){
+      SDL_ShowCursor( SDL_ENABLE );
+      SDL_SetRelativeMouseMode( SDL_FALSE );
       SDL_SetWindowFullscreen( window, 0 );
+    }
 #endif
     if( event.type == SDL_QUIT ||
         ( event.type == SDL_WINDOWEVENT &&
