@@ -20,7 +20,7 @@ fullscreen;
 [0.05];waterLevel= 1;
 [30.0];waterFogScale= 1;
 [0.0 0.15 0.25];waterColor= 3;
-[2048 2048 1];shadowSize= 3;
+[4096 4096 1];shadowSize= 3;
 [0.001];shadowBias= 1;
 [50];softShadows= 1;
 [0.008];sableScale= 1;
