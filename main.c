@@ -885,6 +885,7 @@ int renderThreadFunction( void* data ){
     //glFlush();
 #endif
     
+    //SDL_Delay( 200 );
     SDL_GL_SwapWindow( window );
 
     // DwmFlush();

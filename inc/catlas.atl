@@ -263,7 +263,7 @@ ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0; 14;raise;transferEnd;1;raise;transferStart;14;bury;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-//  THIS IS WHERE WE READPIXELS, DO IT ALL IN ONE PLACE!
+//  THIS IS WHERE WE TRANSFER BACK TO HOST, DO IT ALL IN ONE PLACE!
 sort; // first sort
 3;dup;6;[1];c''''
 
@@ -295,7 +295,7 @@ cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 //11;dup;selectedIdx;selectedIdx;[1];+;0;cat;[0];0;cat;s;[0 3 1];s;first;selected=;
 0;dup;[0 1 0];s;[0 3 1];s;first;
 //selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle=;
-13;raise;6;[3];c''''ret[ 0 ] = a( t ) + ( b( t ) - a( t ) ) * dt * reticleSnappiness;' 2 1 0 0;12;bury;
+13;raise;6;[3];c''''ret[ 0 ] = mix( a( t ), b( t ), 1.0 - pow( 0.5, dt * reticleSnappiness ) );' 2 1 0 0;12;bury;
 
 
 totalInstances;instanceVars;*;reshape;
@@ -353,7 +353,7 @@ set'lightUnrotation' 16;
 // Stack here: heightmapCopy, prevFrame, heightMap, gradient
 
 6;dim;dim;*;first;*;shadowSize;
-backface;depth;
+depth;
 c'
 const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -379,7 +379,7 @@ in float depth;
 ret[ 0 ] = depth;
 '
 1 1 1 0;
-backface;depth;
+depth;
 
 ////////////////////////////////////////////////////////////////////////////
 //  Shadow map sables
@@ -492,6 +492,9 @@ ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 3 1 400 0;
 1;raise;pop;
 
+
+
+
 /////////////////////////////////
 //sky
 6;1;dup;shape;c''''
@@ -511,6 +514,8 @@ skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
 ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
 ' 0 1 400 1;
 depth;backface;
+
+
 
 
 //////////////////////////////////////////////////////////////////////

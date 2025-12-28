@@ -1,5 +1,3 @@
-clouds
-full screen/mouse grab.
 
 ui
 
@@ -13,4 +11,3 @@ errosion
 main menu
 
 serialization.
-compression.
