@@ -10,7 +10,7 @@ l'go';
 
 
 size;if'started'; // init code goes here
-
+fullscreen;
 'inc\\catlas.ktl';unkettle;pop;
 [2.0];progress= 1;
 
