@@ -263,12 +263,9 @@ void mainPoll( void ){
   // deadlock for unknown reason.
   while( SDL_PollEvent( &event ) ){
     // Hard coded alt-enter
-    if( ( event.key.keysym.sym == SDLK_RETURN &&
-          ( SDL_GetModState() & KMOD_ALT ) ) ){
 #ifdef __EMSCRIPTEN__        
       emscripten_request_fullscreen("#canvas", true);
 #endif
-    }
     if( event.type == SDL_QUIT ||
         ( event.type == SDL_WINDOWEVENT &&
           event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
