@@ -32,9 +32,9 @@ windowSize;ssaa;*;wdims= 2;
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
 6;[1];ttexsize;0;cat;[4];0;cat;
-c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
+c''''ret[0] = vec4( a( ivec4( 0, tf.y, 0, 0 ) ),
                     a( ivec4( 0, tf.y, 1, 0 ) ),  
-                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 4 0;texture;
+                    a( ivec4( 0, tf.y, 2, 0 ) ), 1.0 );' 1 1 4 0;texture;
 dim;first;4;std.fractalNoise;
 // get minmax
 

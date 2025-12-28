@@ -186,18 +186,18 @@ vec3 color = vec3( b( ivec4( 0.0, (height) * ttexsize, 0.0, 0.0 ) ),
 		               b( ivec4( 0.0, (height) * ttexsize, 2.0, 0.0 ) ) );
 
 
-color = underwater ? mix( color, vec3( 0.3, 0.1, 0.1 ),
+color = underwater ? mix( color, vec3( 0.1, 0.1, 0.3 ),
                          clamp( length( intersect - wintersect ) * 30.0, 0.0, 1.0 ) ) : color;
 
 if( length( sintersect - intersect ) > 0.01 )
   color *= 0.2;
 
-color = mix( rcd ? color * clamp( csc, 0.1, 1.0 ) : vec3( 0.9, 0.1, 0.1 ),
-            clamp( vec3( 1.0 - sunDist, sunDist, sunDist ), 0.1, 0.9 ),
+color = mix( rcd ? color * clamp( csc, 0.1, 1.0 ) : vec3( 0.1, 0.1, 0.9 ),
+            clamp( vec3( sunDist, sunDist, 1.0 - sunDist ), 0.1, 0.9 ),
             clamp( sunDist, 0.0, 1.0 ) );
 
 
-ret[0] = color.zyxx;
+ret[0] = color.rgbb;
 '
 2 1 400 0;
 

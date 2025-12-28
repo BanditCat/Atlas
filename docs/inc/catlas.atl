@@ -45,9 +45,9 @@ windowSize;ssaa;*;wdims= 2;
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
 6;[1];ttexsize;0;cat;[4];0;cat;
-c''''ret[0] = vec4( a( ivec4( 0, tf.y, 2, 0 ) ),
+c''''ret[0] = vec4( a( ivec4( 0, tf.y, 0, 0 ) ),
                     a( ivec4( 0, tf.y, 1, 0 ) ),  
-                    a( ivec4( 0, tf.y, 0, 0 ) ), 1.0 );' 1 1 40 0;texture;
+                    a( ivec4( 0, tf.y, 2, 0 ) ), 1.0 );' 1 1 40 0;texture;
 dim;first;4;cat.fractalNoise;
 // get minmax
 0;dup;transferStart;transferEnd;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
@@ -119,8 +119,12 @@ ret[ 0 ] = vec4( 0.0 );
 0;totalInstances;first;rep;6;totalInstances;c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;12;bury; // fake instance sort
 [0];6;[1];c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;13;bury; // fake height
 
-
-
+// set up images
+img'inc/nuke.jpg';6;[512 1024 4];c''''ret[ 0 ] = vec4( a( ivec4( ivec2( tf.xy ), 0, 0 ) ),
+                                        a( ivec4( ivec2( tf.xy ), 1, 0 ) ),
+                                        a( ivec4( ivec2( tf.xy ), 2, 0 ) ),
+                                        a( ivec4( ivec2( tf.xy ), 3, 0 ) ) );' 1 1 40 0;
+texture;14;bury;
 
 
 
@@ -150,7 +154,6 @@ wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
 timer;timeDelta;e;+;timer= 1;
 timeDelta;e;dt= 1;
 cat.nav3d;
-
 
 /////////////////////////////////////////////
 // reset sables maybe
@@ -197,7 +200,6 @@ ret[ 0 ] = clamp( 1.0 - length( tripos ), 0.0, 1.0 ) * -0.1;
 ' 2 1 100 1;additive;
 3;bury;
 
-
 //////////////////////////////////////////////////////////////////
 // fireworks
 // 0           1         2     3    4    5       6      7       8   9        10    11     
@@ -235,7 +237,6 @@ ret[ 1 ] = explode ? vec4( randomVel, 1.0 ) : vec4( vel, fade );
 10;bury;10;bury;
 11;raise;
 
-
 // Zero exploded sables
 0;dup;2;raise;6;totalInstances;instanceVars;0;cat;c''''
 ret[ 0 ] = b( ivec4( t.x, 0, 0, 0 ) ) == 0.0 ?
@@ -267,7 +268,6 @@ pos = cat_worldUnrotation*(pos - vec4( cat_origin, 0.0 ) );
 pos /= pos.w;
 ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0; 14;raise;transferEnd;1;raise;transferStart;14;bury;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //  THIS IS WHERE WE TRANSFER BACK TO HOST, DO IT ALL IN ONE PLACE!
 sort; // first sort
@@ -290,7 +290,6 @@ l'noHeightChange';
 pop;
 cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 
-
 0;dup;[0 1 0];s;selectedIdx=;
 0;dup;2;raise;
 1;bury;
@@ -302,7 +301,6 @@ cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 0;dup;[0 1 0];s;[0 3 1];s;first;
 //selected;selectedReticle;-;dt;first;reticleSnappiness;*;3;rep;*;selectedReticle;+;selectedReticle=;
 13;raise;6;[3];c''''ret[ 0 ] = mix( a( t ), b( t ), 1.0 - pow( 0.5, dt * reticleSnappiness ) );' 2 1 0 0;12;bury;
-
 
 totalInstances;instanceVars;*;reshape;
 8;bury;
@@ -386,7 +384,6 @@ ret[ 0 ] = depth;
 '
 1 1 1 0;
 depth;
-
 ////////////////////////////////////////////////////////////////////////////
 //  Shadow map sables
 //   0          1          2          3         4        5       6           7    8
@@ -500,7 +497,6 @@ ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 
 
 
-
 /////////////////////////////////
 //sky
 6;1;dup;shape;c''''
@@ -520,7 +516,6 @@ skyColor = mix( skyColor, vec3( 1.0, 1.0, 0.3 ), sunness );
 ret[ 0 ] = vec4( skyColor * skyness, 1.0 );
 ' 0 1 400 1;
 depth;backface;
-
 
 
 
@@ -561,7 +556,6 @@ if( tripos.x > -0.15 && tripos.x < 0.15 && tripos.y > 0.0 )
 else if( length( tripos ) > radius + 0.2 || length( tripos ) < radius - 0.2 )
   discard;
 ' 1 1 400 1;
-
 //////////////////////////////////////////////////
 // sables
 //print; quit; // frame hmap smap grad highvat lowvat lowindices mat highindices
@@ -620,7 +614,6 @@ if( length( tripos ) > 1.0 )
 ret[ 0 ] = vec4( hue2rgb( tint ), 0.0 );
 ' 2 1 400 1;depth;
 
-
 //////////////////////////////////////////////////////////////////
 // UI
 // frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel
@@ -638,6 +631,7 @@ vec4( 1.0,0.0,0.0,1.0 )
 vec2 pos = verts[ gl_VertexID ].xy;
 ret = vec4( pos * 2.0 - 1.0, 0.0, 1.0 );
 ''ret[0] = af( vec4( tf.x + ( wdims.x - uiDims.x ) / 2.0, tf.y, 0.0, 0.0 ) );' 1 1 400 0;texture;
+16;dup;1;bury;
 6;wdims;[4];0;cat;c'
 const vec4 verts[] = vec4[](
 vec4( 0.0,0.0,0.0,1.0 ),
@@ -659,16 +653,20 @@ float l = 3.5;
 vec2 uv = pos * uiDims;
 
 vec2 d = vec2( 1.4 ); 
-
-vec4 acc = af(vec4(uv, 0.0, l)) * 0.38;
-
-acc += af(vec4(uv + d, 0.0, l)) * 0.155;
-acc += af(vec4(uv - d, 0.0, l)) * 0.155;
-acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
-acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
-
 vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
 int which = int( pos.x * numJobs );
+
+vec4 acc;
+if( which != int( numJobs ) - 1 ){
+  acc = af(vec4(uv, 0.0, l)) * 0.38;
+
+  acc += af(vec4(uv + d, 0.0, l)) * 0.155;
+  acc += af(vec4(uv - d, 0.0, l)) * 0.155;
+  acc += af(vec4(uv + vec2(d.x, -d.y), 0.0, l)) * 0.155;
+  acc += af(vec4(uv + vec2(-d.x, d.y), 0.0, l)) * 0.155;
+} else
+  acc = bf( vec4( fpos * 512.0, 0.0, 2.0 ) );
+
 vec2 p = fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 );
 vec2 ap = abs(p);
 if( abs( ap.y ) > 0.5 )
@@ -690,12 +688,7 @@ vec3 frameColor = ( which == int( activeJob ) ? vec3( 1.0, 0.0, 0.0 ) : vec3(0.0
 ret[0] = vec4(acc.rgb * 0.5 * vignette + frameColor, 1.0);
 
 
-//vec2 fpos = vec2( fract( pos.x * numJobs ), pos.y * 2.0 );
-//vec4 frame = length( fpos * 2.0 - 1.0 - vec2( 0.0, 1.0 ) ).xxxx;
-//ret[ 0 ] = acc * 0.5 + frame;
-//vec3 bg = af( tf ).rgb;
-//ret[ 0 ] = vec4( bg, 1.0 );
-' 1 1 400 1;
+' 2 1 400 1;
 8;raise;pop;
 10;raise;totalInstances;instanceVars;*;reshape;8;bury;
 

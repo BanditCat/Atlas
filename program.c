@@ -2822,7 +2822,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     }
     case TEXTURE: {
       if( !ts->size )
-        err( "%s", "Attempt to texture an empty stack.9" );
+        err( "%s", "Attempt to texture an empty stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
       if( !cur->gpu || cur->tex.channels == 0 )
         err( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );

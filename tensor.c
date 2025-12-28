@@ -934,7 +934,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
       }
       if( ( t->gpu != 1 ) || ( t->tex.channels != compute->channels ) ){
         unmem( rets );
-        err( "%s %u %u %u %u", "Attempt to return on top of a incompatible tensor (wrong channel count or not gpu)." );
+        err( "%s", "Attempt to return on top of a incompatible tensor (wrong channel count or not gpu)." );
       }
       if( t->tex.width != width || t->tex.height != height ){
         unmem( rets );
@@ -1586,9 +1586,9 @@ tensor* tensorFromImageFile( const char* filename ){
 
       // Normalize 0..255 to 0.0..1.0
       // Mapping: R->0, G->1, B->2, A->3 (Standard RGBA)
-      ret->data[ dest_idx + 0 ] = pixels[ src_idx + 2 ] / 255.0f; // R
+      ret->data[ dest_idx + 0 ] = pixels[ src_idx + 0 ] / 255.0f; // R
       ret->data[ dest_idx + 1 ] = pixels[ src_idx + 1 ] / 255.0f; // G
-      ret->data[ dest_idx + 2 ] = pixels[ src_idx + 0 ] / 255.0f; // B
+      ret->data[ dest_idx + 2 ] = pixels[ src_idx + 2 ] / 255.0f; // B
       ret->data[ dest_idx + 3 ] = pixels[ src_idx + 3 ] / 255.0f; // A
     }
   }
