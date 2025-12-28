@@ -262,6 +262,13 @@ void mainPoll( void ){
   // SDL_Delay( 1 ); // Without this delay, the render to desktop code can
   // deadlock for unknown reason.
   while( SDL_PollEvent( &event ) ){
+    // Hard coded alt-enter
+    if( ( event.key.keysym.sym == SDLK_RETURN &&
+          ( SDL_GetModState() & KMOD_ALT ) ) ){
+#ifdef __EMSCRIPTEN__        
+      emscripten_request_fullscreen("#canvas", true);
+#endif
+    }
     if( event.type == SDL_QUIT ||
         ( event.type == SDL_WINDOWEVENT &&
           event.window.event == SDL_WINDOWEVENT_CLOSE ) ){
@@ -388,13 +395,7 @@ void mainPoll( void ){
 #ifndef __EMSCRIPTEN__
       // SDL_LockMutex( data_mutex );
 #endif
-      // Hard coded alt-enter
-      if( ( event.key.keysym.sym == SDLK_RETURN &&
-            ( SDL_GetModState() & KMOD_ALT ) ) ){
-#ifdef __EMSCRIPTEN__        
-        emscripten_request_fullscreen("#canvas", true);
-#endif
-      } 
+
       // Hard coded copy paste
       if( ( event.key.keysym.sym == SDLK_v &&
             ( SDL_GetModState() & KMOD_CTRL ) ) ||
