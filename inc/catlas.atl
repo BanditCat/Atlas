@@ -120,7 +120,7 @@ ret[ 0 ] = vec4( 0.0 );
 [0];6;[1];c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;13;bury; // fake height
 
 // set up images
-img'inc/nuke.jpg';6;[512 1024 4];c''''ret[ 0 ] = vec4( a( ivec4( ivec2( tf.xy ), 0, 0 ) ),
+img'inc\nuke.jpg';6;[512 1024 4];c''''ret[ 0 ] = vec4( a( ivec4( ivec2( tf.xy ), 0, 0 ) ),
                                         a( ivec4( ivec2( tf.xy ), 1, 0 ) ),
                                         a( ivec4( ivec2( tf.xy ), 2, 0 ) ),
                                         a( ivec4( ivec2( tf.xy ), 3, 0 ) ) );' 1 1 40 0;
