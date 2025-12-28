@@ -42,7 +42,9 @@ void takeOwnership( tensor* t ){
   if( t->ownsData )
     return;
 
-  if( t->gpu ){
+  if( t->gpu == 2 )
+    error( "%s", "Attempt to take ownership of a tensor being transfered to host memory." );
+  if( t->gpu == 1 ){
     // GPU-to-GPU copy via framebuffer blit
     GLenum internalFormat, format, type;
     u32 ch = t->tex.channels;
@@ -157,7 +159,7 @@ tensor* copyTensor( const tensor* t ){
 void tensorToHostMemory( tensor* t ){
   if( !t->gpu )
     return;
-  error( "%s", "Haha, you thought I'd use readpixels, didn't you? Use transferStart and transferEnd to get data into host memory." );
+  error( "%s", "We don't use readpixels. Use transferStart and transferEnd to get data into host memory." );
   /* u64 mult = t->tex.channels; */
   /* if( mult >= 10 ) */
   /*   mult /= 10; */
@@ -930,7 +932,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
          err( "%s", "Attempt to return on top of a non-owning texture." ); 
         //takeOwnership( t );
       }
-      if( !t->gpu || ( t->tex.channels != compute->channels ) ){
+      if( ( t->gpu != 1 ) || ( t->tex.channels != compute->channels ) ){
         unmem( rets );
         err( "%s %u %u %u %u", "Attempt to return on top of a incompatible tensor (wrong channel count or not gpu)." );
       }
@@ -1687,7 +1689,9 @@ bool tensorIsContiguous( const tensor* t ){
   return true;
 }
 void tensorEnsureContiguous( tensor* t ){
-  if( t->gpu )
+  if( t->gpu == 2 )
+    error( "%s", "Attempt to ensure contigiousness of tensor in flight to host memory." );
+  if( t->gpu == 1 )
     tensorToHostMemory( t );
 
   if( tensorIsContiguous( t ) )

@@ -785,6 +785,7 @@ int renderThreadFunction( void* data ){
     if( ts->stack[ ts->size - 1 ]->tex.channels != 400 )
       error( "%s", "Display tensor not a 4 channel half float tensor of rank 3." );
 
+
     glClear( GL_COLOR_BUFFER_BIT );
 
     glUseProgram( shaderProgram );

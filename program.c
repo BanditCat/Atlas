@@ -1161,6 +1161,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = ENCLOSE;
     // dbg( "Linenum %u commandnum %u: enclose\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "fullscreen" ) ){
+    curStep->type = FULLSCREEN;
+    // dbg( "Linenum %u commandnum %u: fullscreen\n", linenum, commandnum );
+
   } else if( !strcmp( command, "ext" ) ){
     curStep->type = EXTRUDE;
     // dbg( "Linenum %u commandnum %u: extrude\n", linenum, commandnum );
@@ -2592,6 +2596,15 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case CLS:{
       textBuffer[ 0 ] = '\0';
       textBufferPos = 0;
+      break;
+    }
+    case FULLSCREEN:{
+      Uint32 flags = SDL_GetWindowFlags(window);
+      if (flags & SDL_WINDOW_FULLSCREEN_DESKTOP) {
+        SDL_SetWindowFullscreen(window, 0);
+      } else {
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+      }
       break;
     }
     case PRINT:

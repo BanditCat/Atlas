@@ -682,7 +682,9 @@ ret[0] = vec4(acc.rgb * 0.5 * vignette + frameColor, 1.0);
 
 //////////////////////////////////////////////////////////////////
 // Help and framerate
-
+cat.keyState;[226 227 0];s;cat.keyState;[230 231 0];s;+;cat.keyPresses;[40 41 0];s;*;unext;ifn'nofullscreen';
+fullscreen;
+l'nofullscreen';
 cat.keyState;[58 59 0];s;first;ifn'skipf1';
 'Click and drag: rotate view                     ';e;
 'Right click: fly forward                        ';e;0;cat;

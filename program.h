@@ -48,6 +48,7 @@ typedef struct{
     SLICE, // documented
     LOAD, // documented
     EVAL, // documented
+    FULLSCREEN, // documented
     MULTM, // documented
     REVERSE, // documented
     CAT, // documented
