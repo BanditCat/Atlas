@@ -84,6 +84,19 @@ u32 fullscreen = 0; // 0 no, 1, maybe, 2, yes
 
 u32 EVENT_PASTE = 0;  // Will be initialized in main
 
+// mouse speed
+#ifdef __EMSCRIPTEN__
+float getMouseSpeed(){ return 1.0; }
+#else
+float getMouseSpeed() {
+    int speed;
+    SystemParametersInfo(SPI_GETMOUSESPEED, 0, &speed, 0);
+    return speed;  // Returns 1-20, default is 10
+}
+#endif
+
+
+
 #ifdef __EMSCRIPTEN__
 
 
@@ -325,8 +338,8 @@ void mainPoll( void ){
 #endif
       posx = event.motion.x;
       posy = event.motion.y;
-      dx += event.motion.xrel;
-      dy += event.motion.yrel;
+      dx += event.motion.xrel * getMouseSpeed() / 10.0;
+      dy += event.motion.yrel * getMouseSpeed() / 10.0;
 #ifndef __EMSCRIPTEN__
       // SDL_UnlockMutex( data_mutex );
 #endif
