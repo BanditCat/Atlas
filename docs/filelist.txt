@@ -16,4 +16,4 @@ inc\catlas.atl
 inc\catlas.ktl
 inc\catlib.atl
 inc\catcon.atl
-inc\nuke.jpg
+inc\ui.png
