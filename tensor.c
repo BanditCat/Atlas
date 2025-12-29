@@ -1210,8 +1210,9 @@ void deleteStack( tensorStack* ts ){
   unmem( ts );
 }
 
-void printStack( tensorStack* ts ){
-  for( u32 i = ts->size - 1; i < ts->size; --i ){
+void printStack( tensorStack* ts, u32 count ){
+  u32 c = 0;
+  for( int i = ts->size - 1; c < count && i >= 0; --i, ++c ){
     tensor* t = ts->stack[ i ];
     print( "%s tensor %u\n", t->gpu ? ( t->gpu == 1 ? "GPU" : "TRANSFERRING TO CPU" ) : "CPU", i );
     if( t->gpu )

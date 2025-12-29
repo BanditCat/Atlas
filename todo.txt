@@ -1,7 +1,10 @@
+print and toString take numeric arguments, printed and precision.
 
 ui
 
 game over
+
+pathfinding
 
 
 filename gets deleted in root error msgs

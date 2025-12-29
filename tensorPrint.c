@@ -180,7 +180,7 @@ char* helper( u32 dimIndex,
                 sizeof( numStr ),
                 "%-*.*f",
                 (int)maxNumLength,
-                2,
+                4,
                 data[ translatedIndex ] );
 
       u32 numStr_len = (u32)strlen( numStr );

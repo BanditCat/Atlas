@@ -1297,10 +1297,26 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     }
     // dbg( "Linenum %u commandnum %u: tensor\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "print" ) ){
+  } else if( !strncmp( command, "print", 5 ) && ( !command[ 5 ] || command[ 5 ] == ' ' ) ){
     curStep->type = PRINT;
-    // dbg( "Linenum %u commandnum %u: print\n", linenum, commandnum );
-
+    curStep->var.size = (u32)( -1 );
+    char* sizep = command + 5;
+    if( *sizep ){
+      u32 varSize;
+      int charsread;
+      if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
+          !sizep[ charsread ] ){
+        curStep->var.size = varSize;
+      } else{
+        err3( "%s:%u command %u: %s", filename,
+              linenum,
+              commandnum,
+              "Malformed print statement." );
+      }
+    }
+    // dbg( "Linenum %u commandnum %u: print %s\n", linenum, commandnum,
+    // varName );
+   
   } else if( !strcmp( command, "printLine" ) ){
     curStep->type = PRINTLINE;
     // dbg( "Linenum %u commandnum %u: printLine\n", linenum, commandnum );
@@ -2607,7 +2623,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       break;
     }
     case PRINT:
-      printStack( ts );
+      printStack( ts, s->var.size );
       // dbg( "%s", "print" );
       break;
     case PRINTLINE:{

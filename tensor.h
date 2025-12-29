@@ -94,7 +94,7 @@ void tensorMultiply( tensorStack* ts );
 void pop( tensorStack* ts );
 // Functions for printing tensors. These put the tensor in cpu memory if not already there.
 char* formatTensorData( tensor* t );
-void printStack( tensorStack* ts );
+void printStack( tensorStack* ts, u32 count );
 bool tensorIsContiguous( const tensor* t );
 void tensorEnsureContiguous( tensor* t );
 // Returns a string that needs to be deallocated or NULL for nonvectors.
