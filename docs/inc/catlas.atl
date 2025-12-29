@@ -138,7 +138,7 @@ texture;14;bury;
 //////////////////////////////////////////////////////////////
 // actual start post init, do controls here
 l'kettled';
-activeJob;cat.inputState;[2 3 0];s;0;dup;first;toString 20;printLine;+;numJobs;+;numJobs;%;activeJob= 1;
+activeJob;cat.inputState;[2 3 0];s;+;numJobs;+;numJobs;%;activeJob= 1;
 cat.keyPresses;[8 9 0];s;first;cat.gamepadPresses;[7 8 0];s;first;+;ifn'actionplus';
 activeJob;[1];+;numJobs;%;activeJob= 1;
 l'actionplus';

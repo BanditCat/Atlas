@@ -14,9 +14,25 @@ size;ifn'dontQuitEarly';quit;l'dontQuitEarly';  // If we have commandline argume
 0;512;rep;inputState=;
 0;512;rep;inputPresses=;
 0;512;rep;inputReleases=;
+0;lastMouseWheel=;
+0;mouseWheel=;
 l'stdlibInitDone'; // Init code
 
-keys;keyState=;input;inputState=;
+keys;keyState=;
+// deal with fractional mousewheels.
+mouseWheel;lastMouseWheel=;
+input;0;dup;inputState=;[2 3 0];s;first;mouseWheel=;
+0;mwheelDelta=;
+mouseWheel;lastMouseWheel;-;ifn'noincrementmw';
+0;mouseWheel;>;if'noincrementmw';
+1;mwheelDelta=;
+l'noincrementmw';
+lastMouseWheel;mouseWheel;-;ifn'nodecrementmw';
+mouseWheel;0;>;if'nodecrementmw';
+-1;mwheelDelta=;
+l'nodecrementmw';
+inputState;[0 2 0];s;mwheelDelta;e;0;cat;inputState;[3 6 0];s;0;cat;inputState=;
+
 gamepad;0;dup;shape;first;ifn'nogamepad';
 first;
 1;if'gamepadDone';
