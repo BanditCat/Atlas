@@ -91,7 +91,7 @@ float getMouseSpeed(){ return 1.0; }
 float getMouseSpeed() {
     int speed;
     SystemParametersInfo(SPI_GETMOUSESPEED, 0, &speed, 0);
-    return speed;  // Returns 1-20, default is 10
+    return (float)( speed ) / 10.0;  // Returns 1-20, default is 10
 }
 #endif
 
@@ -338,8 +338,8 @@ void mainPoll( void ){
 #endif
       posx = event.motion.x;
       posy = event.motion.y;
-      dx += event.motion.xrel * getMouseSpeed() / 10.0;
-      dy += event.motion.yrel * getMouseSpeed() / 10.0;
+      dx += event.motion.xrel * getMouseSpeed();
+      dy += event.motion.yrel * getMouseSpeed();
 #ifndef __EMSCRIPTEN__
       // SDL_UnlockMutex( data_mutex );
 #endif
