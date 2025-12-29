@@ -149,6 +149,10 @@ gamepadState;[0 1 0];s;first;3;rep;[0 0 1];*;joymove;+;joymove=;
 gamepadState;[1 2 0];s;first;3;rep;[0 0 -1];*;joymove;+;joymove=;
 gamepadState;[2 3 0];s;first;3;rep;[1 0 0];*;joymove;+;joymove=;
 gamepadState;[3 4 0];s;first;3;rep;[0 -1 0];*;joymove;+;joymove=;
+gamepadState;[16 17 0];s;first;ifn'skipgpnullmove';
+joymove;[0 0 1];*;joymove=;
+l'skipgpnullmove';
+
 
 gamepadState;[9 10 0];s;first;ifn'nogpup';
 [0];timeDelta;-300;*;e;0;cat;3dnavParam;+;3dnavParam=;
@@ -162,13 +166,13 @@ l'nogpright';
 gamepadState;[12 13 0];s;first;ifn'nogpleft';
 timeDelta;-300;*;e;[0];0;cat;3dnavParam;+;3dnavParam=;
 l'nogpleft';
-gamepadState;[18 19 0];s;first;ifn'nogpbty';
-timeDelta;5;*;speed;+;speed=;
-l'nogpbty';
-gamepadState;[15 16 0];s;first;ifn'nogpbta';
-timeDelta;-5;*;speed;+;speed=;
-speed;0;dup;0.1;-;if'speedPositive';pop;0.1;l'speedPositive';speed=;
-l'nogpbta';
+// gamepadState;[18 19 0];s;first;ifn'nogpbty';
+// timeDelta;5;*;speed;+;speed=;
+// l'nogpbty';
+// gamepadState;[15 16 0];s;first;ifn'nogpbta';
+// timeDelta;-5;*;speed;+;speed=;
+// speed;0;dup;0.1;-;if'speedPositive';pop;0.1;l'speedPositive';speed=;
+// l'nogpbta';
 
 worldRotation;joymove;[1];0;cat;m;unext;[0 3 0];s;joymove=;
 joymove;timeDelta;speed;*;0.3;*;3;rep;*;origin;+;origin= 3;

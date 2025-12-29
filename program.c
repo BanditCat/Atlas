@@ -1121,6 +1121,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = FLOOR;
     // dbg( "Linenum %u commandnum %u: floor\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "atan" ) ){
+    curStep->type = ATAN;
+    // dbg( "Linenum %u commandnum %u: atan\n", linenum, commandnum );
+    
   } else if( !strcmp( command, "sort" ) ){
     curStep->type = SORT;
     // dbg( "Linenum %u commandnum %u: sort\n", linenum, commandnum );
@@ -2777,6 +2781,22 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
              "Expected a scalar angle for rotation." );
       tensorRotate( ts, ts->size - 1, ts->size - 2 );
+      break;
+    }
+    case ATAN: {
+      if( !ts->size )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Attempt to take the arctangent without enough parameters on the stack." );
+      tensor* t = ts->stack[ ts->size - 1 ];
+      if( t->rank != 1 || t->shape[ 0 ] != 2 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Expected a rank 1 length 2 vector for atan." );
+      f32* ret = mem( 1, f32 );
+      f32 x = t->data[ t->offset + t->strides[ 0 ] * 0 ];
+      f32 y = t->data[ t->offset + t->strides[ 0 ] * 1 ];
+      pop( ts );
+      *ret = atan2f( y, x );
+      push( ts, newTensor( 0, NULL, ret ) );
       break;
     }
     case PROJ: {

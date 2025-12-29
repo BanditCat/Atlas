@@ -32,6 +32,7 @@ typedef struct{
     CEIL, // documented
     MAX, // documented
     MIN, // documented
+    ATAN, // documented
     GREATERTHAN, // documented
     EQUALS, // documented
     MINMAX, // documented

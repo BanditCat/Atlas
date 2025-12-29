@@ -40,7 +40,8 @@ windowSize;ssaa;*;wdims= 2;
 [4];numJobs= 1;
 [0.15];uiSize=;
 [0];activeJob= 1;
-[360];[3.141527];*;jobFacing= 1;
+[360];[3.1415926535897932384626433832795];*;jobFacing= 1;
+[0];nukeBar= 1;
 
 dim;first;2;rep;set'texsize' 2;
 img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
@@ -145,8 +146,22 @@ cat.keyPresses;[20 21 0];s;first;cat.gamepadPresses;[6 7 0];s;first;+;ifn'action
 activeJob;numJobs;[1];-;+;numJobs;%;activeJob= 1;
 l'actionminus';
 cat.inputState;[4 5 0];s;first;ifn'norotateFacing';
-jobFacing;cat.inputState;[0 1 0];s;-;[360.0];[3.14152659];[2];*;*;%;jobFacing= 1;
+jobFacing;cat.inputState;[0 1 0];s;-;[360.0];[3.1415926535897932384626433832795];[2];*;*;%;jobFacing= 1;
 l'norotateFacing';
+cat.gamepadState;[16 17 0];s;first;ifn'nogpsetfacing';
+cat.gamepadState;[2 4 0];s;l;0.8;-;ifn'nogpsetfacing';
+cat.gamepadState;[2 4 0];s;atan;-360;*;e;
+cat.forward;[0 1 0];s;cat.forward;[2 3 0];s;0;cat;atan;360;*;e;[360];[3.1415926535897932384626433832795];*;+;-;
+jobFacing= 1;
+l'nogpsetfacing';
+cat.inputPresses;[3 4 0];s;cat.gamepadPresses;[15 16 0];s;+;first;ifn'nomouseclick';
+numJobs;[1];-;activeJob;==;first;ifn'nomouseclick';
+nukeBar;[0.75];+;nukeBar= 1;
+l'nomouseclick';
+nukeBar;[2];-;first;if'skipnukedec';
+nukeBar;first;ifn'skipnukedec';
+nukeBar;dt;-;nukeBar= 1;
+l'skipnukedec';
 
 
 windowSize;ssaa;*;wdims= 2;
@@ -161,7 +176,9 @@ cat.nav3d;
 cat.gamepadPresses;[17 18 0];s;cat.keyPresses;[21 22 0];s;+;unext;ifn'noreset';
 pop;resetInstances;
 l'noreset';
-cat.gamepadPresses;[16 17 0];s;cat.keyPresses;[40 41 0];s;+;unext;ifn'noexplodify';
+nukeBar;[1];-;first;ifn'noexplodify';
+nukeBar;[2];-;first;if'noexplodify';
+[2.1];nukeBar= 1;
 explodify;
 l'noexplodify';
 8;bury;
@@ -305,29 +322,6 @@ cat.origin;[1 1 1];min;[0 0 0];max;cat.origin= 3;
 totalInstances;instanceVars;*;reshape;
 8;bury;
 
-
-
-///////////////////////////////////////////////////////////
-// instance mashing.
-//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel sorted
-
-// 7;raise;
-// 8;dup;[0];highInstanceCount;instanceVars;*;0;cat;[0];0;cat;s;
-// 6;highInstanceCount;instanceVars;*;highIndexCount;+;
-// c''''ret[ 0 ] = t.x < int( highIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
-//                                              a( ivec4( t.x - int( highIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
-// 7;bury;
-// 5;raise;
-// 8;dup;highInstanceCount;instanceVars;*;totalInstances;instanceVars;*;0;cat;[0];0;cat;s;
-// 6;lowInstanceCount;instanceVars;*;lowIndexCount;+;
-// c''''ret[ 0 ] = t.x < int( lowIndexCount ) ? b( ivec4( t.x, 0, 0, 0 ) ) :
-//                                              a( ivec4( t.x - int( lowIndexCount ), 0, 0, 0 ) );' 2 1 0 0;
-// 5;bury;
-
-//8;raise;pop;10;raise;totalInstances;instanceVars;*;reshape;8;bury;
-
-
-//print;quit; // frame hmap grad highvat lowvat lowindices mat highindices instances fwpos fwvel sorted
 
 
 
@@ -684,8 +678,15 @@ float bracket = corner * line * 2.0;
 float vignette = 1.0 - smoothstep(0.5, 2.1, length(p));
 
 vec3 frameColor = ( which == int( activeJob ) ? vec3( 1.0, 0.0, 0.0 ) : vec3(0.0, 1.0, 1.0) ) * (line * 0.3 + bracket);
-
-ret[0] = vec4(acc.rgb * 0.5 * vignette + frameColor, 1.0);
+if( which == int( numJobs ) - 1 ){
+  if( nukeBar >= 2.0 )
+    ret[ 0 ] = vec4( acc.rgb + frameColor, 1.0 );
+  else if( nukeBar < pos.y )
+    ret[ 0 ] = vec4( acc.rgb * 0.5 * vignette + frameColor, 1.0 );
+  else
+    ret[ 0 ] = mix( vec4( acc.rgb * 0.5 * vignette + frameColor, 1.0 ), vec4( 1.0, 0.0, 0.0, 1.0 ), 0.5 );
+} else
+  ret[0] = vec4( acc.rgb * 0.5 * vignette + frameColor, 1.0 );
 
 
 ' 2 1 400 1;
@@ -839,7 +840,7 @@ vec4 v1 = af( vec4(xCoord, yPos1, 0.0, 0.0 ) );
 vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
 
 v.w = 1.0;
-v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
+v.xyz = rotY( facing * 3.1415926535897932384626433832795 * 2.0 ) * v.xyz;
 v.xyz *= sableScale;
 v.xyz += instPos;
 
@@ -931,9 +932,9 @@ vec4 v = v1 * lerp + v0 * ( 1.0 - lerp );
 uv = vec2( v.w, n.w );
 v.w = 1.0;
 n.w = 1.0;
-n.xyz = rotY( facing * 3.14159265359 * 2.0 ) * n.xyz;
+n.xyz = rotY( facing * 3.1415926535897932384626433832795 * 2.0 ) * n.xyz;
 normal = normalize( n.xyz );
-v.xyz = rotY( facing * 3.14159265359 * 2.0 ) * v.xyz;
+v.xyz = rotY( facing * 3.1415926535897932384626433832795 * 2.0 ) * v.xyz;
 v.xyz *= sableScale;
 v.xyz += instPos;
 worldPos = v.xyz;

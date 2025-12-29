@@ -1,6 +1,8 @@
 
 ui
 
+game over
+
 
 filename gets deleted in root error msgs
 
