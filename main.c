@@ -89,9 +89,9 @@ u32 EVENT_PASTE = 0;  // Will be initialized in main
 float getMouseSpeed(){ return 1.0; }
 #else
 float getMouseSpeed() {
-    int speed;
-    SystemParametersInfo(SPI_GETMOUSESPEED, 0, &speed, 0);
-    return (float)( speed ) / 10.0;  // Returns 1-20, default is 10
+  int speed;
+  SystemParametersInfo( SPI_GETMOUSESPEED, 0, &speed, 0 );
+  return (float)( speed ) / 10.0;
 }
 #endif
 
