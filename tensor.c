@@ -1224,7 +1224,7 @@ void printStack( tensorStack* ts, u32 count ){
     for( u32 j = 0; j < t->rank; ++j )
       print( " %i", t->strides[ j ] );
     if( t->size < MAX_TENSOR_DISPLAY_SIZE && !t->gpu ){
-      char* fd = formatTensorData( t );
+      char* fd = formatTensorData( t, 4 );
       print( "\n%s\n\n", fd );
       unmem( fd );
     } else {

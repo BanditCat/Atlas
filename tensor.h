@@ -93,7 +93,7 @@ void tensorUnextrude( tensor* t );
 void tensorMultiply( tensorStack* ts );
 void pop( tensorStack* ts );
 // Functions for printing tensors. These put the tensor in cpu memory if not already there.
-char* formatTensorData( tensor* t );
+char* formatTensorData( tensor* t, u32 numDecimals );
 void printStack( tensorStack* ts, u32 count );
 bool tensorIsContiguous( const tensor* t );
 void tensorEnsureContiguous( tensor* t );

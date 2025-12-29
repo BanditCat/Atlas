@@ -997,10 +997,25 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = GAMEPADRUMBLE;
     // dbg( "Linenum %u commandnum %u: last\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "toString" ) ){
+  } else if( !strncmp( command, "toString", 8 ) && ( !command[ 8 ] || command[ 8 ] == ' ' ) ){
     curStep->type = TOSTRING;
-    // dbg( "Linenum %u commandnum %u: toString\n", linenum, commandnum );
-
+    curStep->var.size = 4;
+    char* sizep = command + 8;
+    if( *sizep ){
+      u32 varSize;
+      int charsread;
+      if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
+          !sizep[ charsread ] ){
+        curStep->var.size = varSize;
+      } else{
+        err3( "%s:%u command %u: %s", filename,
+              linenum,
+              commandnum,
+              "Malformed toString statement." );
+      }
+    }
+    // dbg( "Linenum %u commandnum %u: toString %s\n", linenum, commandnum,
+    // varName );
   } else if( !strcmp( command, "additive" ) ){
     curStep->type = ADDITIVE;
     // dbg( "Linenum %u commandnum %u: additive\n", linenum, commandnum );
@@ -2776,7 +2791,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       if( t1->rank != 0 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
              "Expected a scalar for toString." );
-      char* fd = formatTensorData( t1 );
+      char* fd = formatTensorData( t1, s->var.size );
       pop( ts );
       tensor* nt = tensorFromString( fd );
       unmem( fd );

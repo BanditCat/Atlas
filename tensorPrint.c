@@ -100,7 +100,7 @@ u32 displayWidth( const char* str ){
 }
 
 // Compute the maximum number length in the tensor
-u32 computeMaxNumLength( const tensor* t ){
+u32 computeMaxNumLength( const tensor* t, u32 numDecimals ){
   u32 maxNumLength = 0;
   u32 indices[ 4 ] = { 0 };
   u32 rank = t->rank;
@@ -115,8 +115,13 @@ u32 computeMaxNumLength( const tensor* t ){
     }
 
     f32 value = t->data[ index ];
-    char buffer[ 50 ];
-    int len = snprintf( buffer, sizeof( buffer ), "%.2f", value );
+    char buffer[ 100 ];
+    int len;
+    if( !numDecimals ){
+      len = snprintf( buffer, sizeof( buffer ), "%.0f", value );
+    } else {
+      len = snprintf( buffer, sizeof( buffer ), "%.*f", numDecimals, value );
+    }
     if( len > (int)maxNumLength ){
       maxNumLength = len;
     }
@@ -160,7 +165,8 @@ char* helper( u32 dimIndex,
               u32 shape_length,
               const f32* data,
               u32 maxNumLength,
-              const tensor* t ){
+              const tensor* t,
+              u32 numDecimals ){
 
   // Base case: last dimension
   if( dimIndex == shape_length - 1 ){
@@ -171,18 +177,26 @@ char* helper( u32 dimIndex,
     char* ptr = result;
 
     for( u32 i = 0; i < num_elements; i++ ){
-      char numStr[ 50 ];
+      char numStr[ 100 ];
       s32 translatedIndex =
         translateIndex( offset + i, shape + 1, strides + 1, shape_length - 1 );
       translatedIndex += t->offset;
 
+      if( !numDecimals ){
+        snprintf( numStr,
+                  sizeof( numStr ),
+                  "%-*.0f",
+                  (int)maxNumLength,
+                  data[ translatedIndex ] );
+      } else {
       snprintf( numStr,
                 sizeof( numStr ),
                 "%-*.*f",
                 (int)maxNumLength,
-                4,
+                numDecimals,
                 data[ translatedIndex ] );
-
+      }
+      
       u32 numStr_len = (u32)strlen( numStr );
       memcpy( ptr, numStr, numStr_len );
       ptr += numStr_len;
@@ -211,7 +225,7 @@ char* helper( u32 dimIndex,
                             shape_length,
                             data,
                             maxNumLength,
-                            t );
+                            t, numDecimals);
     }
 
     if( isHorizontal ){
@@ -510,7 +524,7 @@ char* helper( u32 dimIndex,
 }
 
 // Main function to format tensor data
-char* formatTensorData( tensor* t ){
+char* formatTensorData( tensor* t, u32 numDecimals ){
   /* if( t->gpu && t->tex.channels != 0 ){ */
   /*   char* rets = "[texture]"; */
   /*   char* ret = mem( strlen( rets ) + 1, char ); */
@@ -531,11 +545,11 @@ char* formatTensorData( tensor* t ){
   }
 
   // Compute maxNumLength
-  u32 maxNumLength = computeMaxNumLength( t );
+  u32 maxNumLength = computeMaxNumLength( t, numDecimals );
 
   // Build the ASCII representation
   char* result =
-    helper( 0, 0, 0, shape, strides, shape_length, t->data, maxNumLength, t );
+    helper( 0, 0, 0, shape, strides, shape_length, t->data, maxNumLength, t, numDecimals );
 
   unmem( shape );
   unmem( strides );

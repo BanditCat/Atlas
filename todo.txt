@@ -1,4 +1,3 @@
-print and toString take numeric arguments, printed and precision.
 
 ui
 
