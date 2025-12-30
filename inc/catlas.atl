@@ -717,17 +717,24 @@ if( which == int( numJobs ) - 1 ){
 7;dup; // mat shadow frame ....
 9;dup; // highinds mat shadow frame ...
 6;dup; // highvat highinds mat shadow frame ...
-[0 0 -0.1 // z
- 17.08 0];       // facing animIdx
+aspect;[1];0;cat;atan;114.59155902616464175359630962821;*;e;fovm=;
+[1]; //i
+[0.5];+;numJobs;/;[2];*;[1];-;uiDims;[0 1 0];s;*;wdims;[0 1 0];s;/;
+//ndc.x = ((i + 0.5) / numJobs * 2 - 1) * (uiDims.x / wdims.x)
+[0.1];*;aspect;*;aspect;*;
+//worldPos.x = ndc.x * 0.1 * aspect / fov
+[-0.82];[0.1];*;
+0;cat; // y
+[-0.1 // z
+ 17.08 0];0;cat;       // facing animIdx
 [1];0;cat; // animStart
 [0.5];0;cat; // hue
 2;dup;shape; // indexCount instances highvat highinds mat shadow frame ...;
 [1];[0];
 
 projm;oldproj=;
-
-[80];wdims;0;cat;[0.01 3];0;cat;proj;projm= 16;
-
+fovm;
+wdims;0;cat;[0.01 3];0;cat;proj;projm= 16;
 cat.origin;oldorigin=;
 cat.worldUnrotation;oldrot=;
 lightDir;oldlightdir=;
@@ -737,13 +744,15 @@ lightDir;oldlightdir=;
  [0 1 0 0]
  [0 0 1 0]
  [0 0 0 1]];cat.worldUnrotation= 16;
-
+sableScale;oldsableScale=;
+[0.012];sableScale= 1;
 
 depth;backface;
 sablePass2;
 //  Sable pass2, expects bypassCount instanceCount indexCount instances vat indices mat smap frame
 depth;backface;
 
+oldsableScale;sableScale= 1;
 oldproj;projm= 16;
 oldlightdir;lightDir= 3;
 oldrot;cat.worldUnrotation= 16;
