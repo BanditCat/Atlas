@@ -127,7 +127,7 @@ rotza;timeDelta;165;*;2;^;*;rotza=;
 rotzv;0.95;timeDelta;165;*;^;*;rotzv=;
 
 gamepadState;[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
-inputState;[4 5 0];s;first;keyState;[15 16 0];s;first;+;if'mouse1skip'; // rotate if mouse 1
+inputState;[4 5 0];s;first;keyState;[15 16 0];s;first;+;inputState;[5 6 0];s;first;+;if'mouse1skip';
 inputState;[0 2 0];s;mouseDiv;/;+; // get mouse delta xy and add
 l'mouse1skip';
 
@@ -169,6 +169,11 @@ gamepadState;[3 4 0];s;first;3;rep;[0 -1 0];*;joymove;+;joymove=;
 gamepadState;[16 17 0];s;first;ifn'skipgpnullmove';
 joymove;[0 0 1];*;joymove=;
 l'skipgpnullmove';
+inputState;[5 6 0];s;first;ifn'skipmiddlemove';
+inputState;[0 2 0];s;[1 -1];*;mouseDiv;/;[0];0;cat;joymove;+;joymove=;
+inputState;[4 5 0];s;first;ifn'skipmiddlemove';
+joymove;[0 0 -1];+;joymove=;
+l'skipmiddlemove';
 
 
 gamepadState;[9 10 0];s;first;ifn'nogpup';
