@@ -160,80 +160,84 @@ void tensorToHostMemory( tensor* t ){
   if( !t->gpu )
     return;
   error( "%s", "We don't use readpixels. Use transferStart and transferEnd to get data into host memory." );
-  /* u64 mult = t->tex.channels; */
-  /* if( mult >= 10 ) */
-  /*   mult /= 10; */
-  /* if( !mult ) mult = 4; */
+}
+void tensorToHostMemoryReally( tensor* t ){
+  if( !t->gpu )
+    return;
+  u64 mult = t->tex.channels;
+  if( mult >= 10 )
+    mult /= 10;
+  if( !mult ) mult = 4;
   
-  /* u32 layerElementCount = t->tex.width * t->tex.height * mult; */
-  /* u64 totalTexElements = (u64)layerElementCount * t->tex.layers; */
-  /* f32* texData = mem( totalTexElements, f32 ); */
-  /* f32* tempData = mem( layerElementCount, f32 ); */
+  u32 layerElementCount = t->tex.width * t->tex.height * mult;
+  u64 totalTexElements = (u64)layerElementCount * t->tex.layers;
+  f32* texData = mem( totalTexElements, f32 );
+  f32* tempData = mem( layerElementCount, f32 );
 
-  /* CHECK_GL_ERROR(); */
-  /* glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer ); */
+  CHECK_GL_ERROR();
+  glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
   
-  /* GLenum format = GL_RGBA; */
-  /* if( t->tex.channels == 1 || t->tex.channels == 10 || t->tex.channels == 100 ) format = GL_RED; */
-  /* if( t->tex.channels == 2 || t->tex.channels == 20 || t->tex.channels == 200 ) format = GL_RG; */
-  /* if( t->tex.channels == 3 || t->tex.channels == 30 || t->tex.channels == 300 ) format = GL_RGB; */
+  GLenum format = GL_RGBA;
+  if( t->tex.channels == 1 || t->tex.channels == 10 || t->tex.channels == 100 ) format = GL_RED;
+  if( t->tex.channels == 2 || t->tex.channels == 20 || t->tex.channels == 200 ) format = GL_RG;
+  if( t->tex.channels == 3 || t->tex.channels == 30 || t->tex.channels == 300 ) format = GL_RGB;
 
-  /* // Read all layers into texData */
-  /* for( u32 i = 0; i < t->tex.layers; ++i ){ */
-  /*   glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i ); */
-  /*   glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData ); */
-  /*   memcpy( texData + (u64)i * layerElementCount, tempData, layerElementCount * sizeof( f32 ) ); */
-  /* } */
-  /* glBindFramebuffer( GL_FRAMEBUFFER, 0 ); */
-  /* CHECK_GL_ERROR(); */
-  /* unmem( tempData ); */
+  // Read all layers into texData
+  for( u32 i = 0; i < t->tex.layers; ++i ){
+    glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, i );
+    glReadPixels( 0, 0, t->tex.width, t->tex.height, format, GL_FLOAT, tempData );
+    memcpy( texData + (u64)i * layerElementCount, tempData, layerElementCount * sizeof( f32 ) );
+  }
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+  CHECK_GL_ERROR();
+  unmem( tempData );
 
-  /* // Now extract logical tensor using offset/strides */
-  /* f32* hostData = mem( t->size, f32 ); */
+  // Now extract logical tensor using offset/strides
+  f32* hostData = mem( t->size, f32 );
   
-  /* // Compute standard contiguous strides for output */
-  /* u32 std_strides[4] = {1, 1, 1, 1}; */
-  /* if( t->rank > 0 ){ */
-  /*   std_strides[ t->rank - 1 ] = 1; */
-  /*   for( int i = t->rank - 2; i >= 0; --i ) */
-  /*     std_strides[ i ] = std_strides[ i + 1 ] * t->shape[ i + 1 ]; */
-  /* } */
+  // Compute standard contiguous strides for output
+  u32 std_strides[4] = {1, 1, 1, 1};
+  if( t->rank > 0 ){
+    std_strides[ t->rank - 1 ] = 1;
+    for( int i = t->rank - 2; i >= 0; --i )
+      std_strides[ i ] = std_strides[ i + 1 ] * t->shape[ i + 1 ];
+  }
   
-  /* // Copy using offset/strides to read, contiguous to write */
-  /* u32 indices[4] = {0, 0, 0, 0}; */
-  /* for( u32 i = 0; i < t->size; ++i ){ */
-  /*   u32 tmp = i; */
-  /*   for( u32 dim = 0; dim < t->rank; ++dim ){ */
-  /*     indices[ dim ] = tmp / std_strides[ dim ]; */
-  /*     tmp %= std_strides[ dim ]; */
-  /*   } */
+  // Copy using offset/strides to read, contiguous to write
+  u32 indices[4] = {0, 0, 0, 0};
+  for( u32 i = 0; i < t->size; ++i ){
+    u32 tmp = i;
+    for( u32 dim = 0; dim < t->rank; ++dim ){
+      indices[ dim ] = tmp / std_strides[ dim ];
+      tmp %= std_strides[ dim ];
+    }
     
-  /*   s64 src_idx = t->offset; */
-  /*   for( u32 dim = 0; dim < t->rank; ++dim ) */
-  /*     src_idx += (s64)indices[ dim ] * t->strides[ dim ]; */
+    s64 src_idx = t->offset;
+    for( u32 dim = 0; dim < t->rank; ++dim )
+      src_idx += (s64)indices[ dim ] * t->strides[ dim ];
     
-  /*   hostData[ i ] = texData[ src_idx ]; */
-  /* } */
+    hostData[ i ] = texData[ src_idx ];
+  }
   
-  /* unmem( texData ); */
+  unmem( texData );
 
-  /* if( t->ownsData ){ */
-  /*   if( t->tex.texture ){ */
-  /*     glDeleteTextures( 1, &t->tex.texture ); */
-  /*     t->tex.texture = 0; */
-  /*   } */
-  /*   if( t->tex.framebuffer ){ */
-  /*     glDeleteFramebuffers( 1, &t->tex.framebuffer ); */
-  /*     t->tex.framebuffer = 0; */
-  /*   } */
-  /* } */
+  if( t->ownsData ){
+    if( t->tex.texture ){
+      glDeleteTextures( 1, &t->tex.texture );
+      t->tex.texture = 0;
+    }
+    if( t->tex.framebuffer ){
+      glDeleteFramebuffers( 1, &t->tex.framebuffer );
+      t->tex.framebuffer = 0;
+    }
+  }
 
-  /* t->offset = 0; */
-  /* t->data = hostData; */
-  /* t->gpu = false; */
-  /* t->ownsData = true; */
-  /* for( u32 i = 0; i < t->rank; ++i ) */
-  /*   t->strides[ i ] = std_strides[ i ]; */
+  t->offset = 0;
+  t->data = hostData;
+  t->gpu = false;
+  t->ownsData = true;
+  for( u32 i = 0; i < t->rank; ++i )
+    t->strides[ i ] = std_strides[ i ];
 }
 /* // This converts a tensor to cpu memory. */
 /* void tensorToHostMemory( tensor* t ){ */
@@ -1994,7 +1998,7 @@ void kettle(tensorStack* ts, u32 count, const char* filename) {
     }
 
     // 2. Fetch Data
-    tensorToHostMemory(t);
+    tensorToHostMemoryReally(t);
     tensorEnsureContiguous(t);
 
     // 3. Write Meta

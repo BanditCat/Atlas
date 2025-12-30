@@ -40,7 +40,7 @@ windowSize;ssaa;*;wdims= 2;
 [20];reticleSnappiness= 1;
 [0 0 0];selectedReticle=;
 [4];numJobs= 1;
-[0.15];uiSize=;
+[0.18];uiSize=;
 [0];activeJob= 1;
 [360];[3.1415926535897932384626433832795];*;jobFacing= 1;
 [0];nukeBar= 1;
@@ -410,7 +410,7 @@ depth;backface;texture;
 wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window dimensions and aspect.
 
 
-[90];wdims;0;cat;[0.01 3];0;cat;proj;proj= 16;
+[90];wdims;0;cat;[0.01 3];0;cat;proj;projm= 16;
 
 // Stack here: the arguments (heightmapcopy, gradientcopy, shadowMap, prevFrame), heightMap, gradient
 //2;dup;5;bury;print;   // OOPS dont do this, itll deep copy
@@ -449,7 +449,7 @@ normal = normalize( cross( nrml1, nrml2 ) ).yzx;
 
 v.xy /= dim;
 worldPos = v.yzx;
-ret = proj*cat_worldUnrotation*( v.yzxw - vec4( cat_origin, 0.0 ) );
+ret = projm*cat_worldUnrotation*( v.yzxw - vec4( cat_origin, 0.0 ) );
 '
 in vec3 color;
 in vec3 worldPos;
@@ -545,7 +545,7 @@ tripos = verts[ gl_VertexID ].xy;
 pos.xyz *= sableScale;
 pos.xyz += vec3( a( ivec4( 0, 0, 0, 0 ) ), a( ivec4( 1, 0, 0, 0 ) ), a( ivec4( 2, 0, 0, 0 ) ) );
 radius = mod( timer * 5.0, 2.0 );
-ret = proj*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
+ret = projm*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
 '
 in vec2 tripos;
 flat in float radius;
@@ -598,7 +598,7 @@ vec4 pos = vec4( posSamp.xyz, 1.0 );
 tint = posSamp.w;
 fade = velSamp.w;
 tripos = verts[ vert ].xy;
-ret = proj*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
+ret = projm*cat_worldUnrotation*( pos - vec4( cat_origin, 0.0 ) );
 ret.xy += tripos * fireworkSize * vec2( 1.0 / aspect, aspect );
 '
 vec3 hue2rgb(float h) {
@@ -704,6 +704,52 @@ if( which == int( numJobs ) - 1 ){
 ' 2 1 400 1;
 8;raise;pop;
 10;raise;totalInstances;instanceVars;*;reshape;8;bury;
+
+
+
+
+/////////////////////////////////////////////////////////
+// Sables on ui
+// frame hmap grad highvat lowvat lowinds mat highinds instances fwpos fwvel reticle sorted height uitex
+// 0     1    2    3       4      5       6   7        8         9     10    11      12     13     14
+
+100000; // shadow frame ...
+7;dup; // mat shadow frame ....
+9;dup; // highinds mat shadow frame ...
+6;dup; // highvat highinds mat shadow frame ...
+[0.5 0.5 0.5 // xyz
+ 0 0];       // facing animIdx
+timer;0;cat; // animStart
+[0];0;cat; // hue
+2;dup;shape; // indexCount instances highvat highinds mat shadow frame ...;
+[1];[0];
+
+cat.origin;oldorigin=;
+cat.worldUnrotation;oldrot=;
+[0.5 0.5 1];cat.origin= 3;
+[[1 0 0 0]
+ [0 1 0 0]
+ [0 0 1 0]
+ [0 0 0 1]];cat.worldUnrotation= 16;
+
+
+depth;backface;
+sablePass2;
+//  Sable pass2, expects bypassCount instanceCount indexCount instances vat indices mat smap frame
+depth;backface;
+
+oldrot;cat.worldUnrotation= 16;
+oldorigin;cat.origin= 3;
+
+
+
+
+
+
+
+
+
+
 
 
 //////////////////////////////////////////////////////////////////
@@ -950,7 +996,7 @@ v.xyz = rotY( facing * 3.1415926535897932384626433832795 * 2.0 ) * v.xyz;
 v.xyz *= sableScale;
 v.xyz += instPos;
 worldPos = v.xyz;
-ret = proj*cat_worldUnrotation*( v - vec4( cat_origin, 0.0 ) );
+ret = projm*cat_worldUnrotation*( v - vec4( cat_origin, 0.0 ) );
 '
 in vec3 normal;
 in vec2 uv;
