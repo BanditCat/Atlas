@@ -39,7 +39,7 @@ windowSize;ssaa;*;wdims= 2;
 [-0.000004];gravity= 1;
 [20];reticleSnappiness= 1;
 [0 0 0];selectedReticle=;
-[4];numJobs= 1;
+[5];numJobs= 1;
 [0.18];uiSize=;
 [0];activeJob= 1;
 [360];[3.1415926535897932384626433832795];*;jobFacing= 1;
@@ -718,19 +718,27 @@ if( which == int( numJobs ) - 1 ){
 9;dup; // highinds mat shadow frame ...
 6;dup; // highvat highinds mat shadow frame ...
 aspect;[1];0;cat;atan;114.59155902616464175359630962821;*;e;fovm=;
-[1]; //i
+'here1';printLine;
+'';
+[0];ic=;
+l'jobloop';
+ic;
 [0.5];+;numJobs;/;[2];*;[1];-;uiDims;[0 1 0];s;*;wdims;[0 1 0];s;/;
 //ndc.x = ((i + 0.5) / numJobs * 2 - 1) * (uiDims.x / wdims.x)
 [0.1];*;aspect;*;aspect;*;
 //worldPos.x = ndc.x * 0.1 * aspect / fov
-[-0.82];[0.1];*;
+[-0.87];[0.1];*;
 0;cat; // y
-[-0.1 // z
- 17.08 0];0;cat;       // facing animIdx
-[1];0;cat; // animStart
-[0.5];0;cat; // hue
-2;dup;shape; // indexCount instances highvat highinds mat shadow frame ...;
-[1];[0];
+[-0.1]; // z
+[17.08];0;cat;ic;0;cat;0;cat;       // facing animIdx
+[1];ic;activeJob;==;-;timer;*;0;cat; // animStart
+ic;numJobs;/;[1];ic;activeJob;==;-;[127];*;+;0;cat;0;cat; // hue
+ic;[1];+;ic=;
+'here ';printString;ic;first;toString;printLine;
+ic;numJobs;-;[2];+;first;ifn'jobloop';
+
+2;dup;shape; // indexCount instances highvat highinds mat shadow frame ...
+numJobs;[2];-;[0]; // offset instanceCount indexCount instances highvat highinds mat shadow frame ...
 
 projm;oldproj=;
 fovm;
