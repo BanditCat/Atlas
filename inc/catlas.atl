@@ -1141,7 +1141,7 @@ float hash( vec2 p, float time ){
 '
 int instance = t.x / int( instanceVars );
 int var = t.x % int( instanceVars );
-ret[ 0 ] = var == 4 ? 2.0 : a( ivec4( t.x, 0, 0, 0 ) );
+ret[ 0 ] = var == 4 ? 2.0 + 512.0 / 1048576.0 : a( ivec4( t.x, 0, 0, 0 ) );
 ret[ 0 ] = var == 5 ? timer + 1.0 + hash( vec2( t.x, timer ), timer ) * 10.0 : ret[ 0 ];
 ' 1 1 0 0;
 return;
