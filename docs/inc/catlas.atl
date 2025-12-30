@@ -172,7 +172,7 @@ l'skipnukedec';
 
 windowSize;ssaa;*;wdims= 2;
 wdims;[1 2 0];s;uiSize;*;0;dup;[2];/;numJobs;*;1;bury;0;cat;uiDims= 2;
-timer;timeDelta;e;+;timer= 1;
+timer;timeDelta;e;+;[3333.33333333];%;timer= 1;
 timeDelta;e;dt= 1;
 cat.nav3d;
 
@@ -718,31 +718,29 @@ if( which == int( numJobs ) - 1 ){
 9;dup; // highinds mat shadow frame ...
 6;dup; // highvat highinds mat shadow frame ...
 aspect;[1];0;cat;atan;114.59155902616464175359630962821;*;e;fovm=;
-'here1';printLine;
 '';
 [0];ic=;
 l'jobloop';
 ic;
 [0.5];+;numJobs;/;[2];*;[1];-;uiDims;[0 1 0];s;*;wdims;[0 1 0];s;/;
 //ndc.x = ((i + 0.5) / numJobs * 2 - 1) * (uiDims.x / wdims.x)
-[0.1];*;aspect;*;aspect;*;
+[1];+;[2];/;ndcx=;[0];
 //worldPos.x = ndc.x * 0.1 * aspect / fov
-[-0.87];[0.1];*;
+[0];//[-0.87];[0.1];*;
 0;cat; // y
 [-0.1]; // z
-[17.08];0;cat;ic;0;cat;0;cat;       // facing animIdx
+[17.08];0;cat; // facing
+ic;[0.86];[1023];*;floor;[1024];*;ndcx;[1023];*;floor;+;[1048576];/;+; //animidx
+0;cat;0;cat; 
 [1];ic;activeJob;==;-;timer;*;0;cat; // animStart
 ic;numJobs;/;[1];ic;activeJob;==;-;[127];*;+;0;cat;0;cat; // hue
 ic;[1];+;ic=;
-'here ';printString;ic;first;toString;printLine;
 ic;numJobs;-;[2];+;first;ifn'jobloop';
 
 2;dup;shape; // indexCount instances highvat highinds mat shadow frame ...
 numJobs;[2];-;[0]; // offset instanceCount indexCount instances highvat highinds mat shadow frame ...
-
 projm;oldproj=;
-fovm;
-wdims;0;cat;[0.01 3];0;cat;proj;projm= 16;
+fovm;wdims;0;cat;[0.01 3];0;cat;proj;projm= 16;
 cat.origin;oldorigin=;
 cat.worldUnrotation;oldrot=;
 lightDir;oldlightdir=;
@@ -991,7 +989,12 @@ int base = instanceID * int(instanceVars);
 float rawfacing = a(ivec4(base + 3, 0, 0, 0));
 float facing = fract( rawfacing );
 float backup = floor( rawfacing ) / 100.0;
-float animIdx = a(ivec4(base + 4, 0, 0, 0));
+float idxRaw = a(ivec4(base + 4, 0, 0, 0));
+float twovars = fract( idxRaw ) * 1048576.0;
+float movey = floor( twovars / 1024.0 ) / 1023.0;
+float movex = mod( twovars, 1024.0 ) / 1023.0;
+movex = movex * 2.0 - 1.0;
+float animIdx = floor( idxRaw );
 float animStart = a(ivec4(base + 5, 0, 0, 0));
 float rawtint = a(ivec4(base + 6, 0, 0, 0));
 tint = hue2rgb( fract( rawtint ) );
@@ -1028,6 +1031,8 @@ v.xyz += instPos;
 worldPos = v.xyz;
 ret = projm*cat_worldUnrotation*( v - vec4( cat_origin, 0.0 ) );
 ret.z -= backup;
+ret.y -= movey * ret.w;
+ret.x += movex * ret.w;
 '
 in vec3 normal;
 in vec2 uv;
@@ -1119,7 +1124,7 @@ float hash( vec2 p, float time ){
 '
 int instance = t.x / int( instanceVars );
 int var = t.x % int( instanceVars );
-ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) : hash( vec2( t.xy ), timer );
+ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) + 512.0 / 1048576.0: hash( vec2( t.xy ), timer );
 ' 0 1 0 0;
 reset;
 return;
