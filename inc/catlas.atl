@@ -717,16 +717,22 @@ if( which == int( numJobs ) - 1 ){
 7;dup; // mat shadow frame ....
 9;dup; // highinds mat shadow frame ...
 6;dup; // highvat highinds mat shadow frame ...
-[0.5 0.5 0.5 // xyz
- 0 0];       // facing animIdx
-timer;0;cat; // animStart
-[0];0;cat; // hue
+[0 0 -0.1 // z
+ 17.08 0];       // facing animIdx
+[1];0;cat; // animStart
+[0.5];0;cat; // hue
 2;dup;shape; // indexCount instances highvat highinds mat shadow frame ...;
 [1];[0];
 
+projm;oldproj=;
+
+[80];wdims;0;cat;[0.01 3];0;cat;proj;projm= 16;
+
 cat.origin;oldorigin=;
 cat.worldUnrotation;oldrot=;
-[0.5 0.5 1];cat.origin= 3;
+lightDir;oldlightdir=;
+[0.5 1 -1.5];lightDir= 3;
+[0 0 0];cat.origin= 3;
 [[1 0 0 0]
  [0 1 0 0]
  [0 0 1 0]
@@ -738,6 +744,8 @@ sablePass2;
 //  Sable pass2, expects bypassCount instanceCount indexCount instances vat indices mat smap frame
 depth;backface;
 
+oldproj;projm= 16;
+oldlightdir;lightDir= 3;
 oldrot;cat.worldUnrotation= 16;
 oldorigin;cat.origin= 3;
 
@@ -935,6 +943,7 @@ out vec3 worldPos;
 flat out float mat;
 flat out vec3 tint;
 flat out float job;
+flat out float fade;
 vec3 hue2rgb(float h) {
     vec3 p = abs(fract(h + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0);
     return clamp(p - 1.0, 0.0, 1.0);
@@ -962,10 +971,14 @@ int base = instanceID * int(instanceVars);
      a(ivec4(base + 1, 0, 0, 0)),
      a(ivec4(base + 2, 0, 0, 0))
  );
- float facing = a(ivec4(base + 3, 0, 0, 0));
- float animIdx = a(ivec4(base + 4, 0, 0, 0));
- float animStart = a(ivec4(base + 5, 0, 0, 0));
- tint = hue2rgb( a(ivec4(base + 6, 0, 0, 0)) );
+float rawfacing = a(ivec4(base + 3, 0, 0, 0));
+float facing = fract( rawfacing );
+float backup = floor( rawfacing ) / 100.0;
+float animIdx = a(ivec4(base + 4, 0, 0, 0));
+float animStart = a(ivec4(base + 5, 0, 0, 0));
+float rawtint = a(ivec4(base + 6, 0, 0, 0));
+tint = hue2rgb( fract( rawtint ) );
+fade = floor( rawtint ) / 255.0;
 int anim = int( animIdx );
 job = animIdx;
 float pframe = clamp( timer - animStart, 0.0, 10000000000000000.0 );
@@ -997,6 +1010,7 @@ v.xyz *= sableScale;
 v.xyz += instPos;
 worldPos = v.xyz;
 ret = projm*cat_worldUnrotation*( v - vec4( cat_origin, 0.0 ) );
+ret.z -= backup;
 '
 in vec3 normal;
 in vec2 uv;
@@ -1004,6 +1018,7 @@ in vec3 worldPos;
 flat in vec3 tint;
 flat in float mat;
 flat in float job;
+flat in float fade;
 
 float hash( vec2 p, float time ){
     float h = dot( p, vec2( 127.1, 311.7 ) ) / 1000.0 + fract( time * 1.2123438709 );
@@ -1051,7 +1066,7 @@ for( float dx = -0.5; dx <= 0.5; ++dx ){
 }
 shadow = shadow / 4.0 * 0.5;
 float ambient = 0.3;
-ret[ 0 ] = vec4( diffuse * clamp( dot( normal, L ) + ambient, 0.0, 1.0 ) * (1.0 - shadow), 1.0 );
+ret[ 0 ] = ( 1.0 - fade ) * vec4( diffuse * clamp( dot( normal, L ) + ambient, 0.0, 1.0 ) * (1.0 - shadow), 1.0 );
 // //ret[0] = vec4(vec3(roughness), 1.0);
 // //ret[ 0 ] = vec4( clamp( dot( finalNormal, lightDir * vec3( -1.0, 1.0, -1.0 ) ), 0.2, 1.0 ) * color.rgb , 1.0 );
 // //ret[ 0 ] = vec4( uv.x, uv.y, 0.0, 1.0 );

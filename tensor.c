@@ -1799,7 +1799,7 @@ void tensorTranslate( tensorStack* ts, u32 index ){
 void tensorProject( tensorStack* ts, u32 index ){
   tensor* top = ts->stack[ index ];
   tensorToHostMemory( top );
-  float fov = tanf( top->data[ top->offset + top->strides[ 0 ] * 0 ] / 2 );
+  float fov = tanf( ( top->data[ top->offset + top->strides[ 0 ] * 0 ] * 3.14159265f / 180.0f ) / 2.0 );
   float width = top->data[ top->offset + top->strides[ 0 ] * 1 ];
   float height = top->data[ top->offset + top->strides[ 0 ] * 2 ];
   float near = top->data[ top->offset + top->strides[ 0 ] * 3 ];

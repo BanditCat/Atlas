@@ -90,6 +90,8 @@ float getMouseSpeed(){ return 1.0; }
 #else
 float getMouseSpeed() {
   int speed;
+  if( !fullscreen )
+    return 1.0;
   SystemParametersInfo( SPI_GETMOUSESPEED, 0, &speed, 0 );
   return (float)( speed ) / 10.0;
 }
