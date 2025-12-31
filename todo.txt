@@ -1,17 +1,19 @@
+ui text
+ears have holes
+terrain splatting
+errosion
+pathfinding
 
-ui
 
 game over
 
-pathfinding
 
+come out of box
 
 filename gets deleted in root error msgs
 
 newline on error messages.
 
-terrain splatting
-errosion
 main menu
 
 serialization.

@@ -14,6 +14,7 @@ CPPFLAGS = -MMD -MP -DSDL_MAIN_HANDLED
 LDFLAGS = -ldwmapi -lopengl32 -luser32 -lgdi32 -lshell32 -lwinmm \
           -lsetupapi -lole32 -ladvapi32 -limm32 -lversion -loleaut32 \
           -Wl,-subsystem,windows -Wl,-entry,mainCRTStartup
+
 LDFLAGS += -fuse-ld=lld
 
 LDFLAGS_DEBUG =
