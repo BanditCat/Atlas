@@ -43,6 +43,8 @@ windowSize;ssaa;*;wdims= 2;
 [99];numJobs;first;rep;uiNums=;
 [0.2];uiSize= 1;
 [0];activeJob= 1;
+[0.99];gameover= 1;
+[3];gameoverTime= 1;
 [360];[3.1415926535897932384626433832795];*;jobFacing= 1;
 [0];nukeBar= 1;
 return;
@@ -145,6 +147,8 @@ texture;14;bury;
 //////////////////////////////////////////////////////////////
 // actual start post init, do controls here
 l'kettled';
+
+
 activeJob;cat.inputState;[2 3 0];s;+;numJobs;+;numJobs;%;activeJob= 1;
 cat.keyPresses;[8 9 0];s;first;cat.gamepadPresses;[7 8 0];s;first;+;ifn'actionplus';
 activeJob;[1];+;numJobs;%;activeJob= 1;
@@ -844,12 +848,27 @@ cat.keyState;[59 60 0];s;first;cat.gamepadState;[13 14 0];s;first;+;ifn'skipf2';
 cat.textToTexture;cat.blitText;
 l'skipf2';
 
+////////////////////////////////////////////
+// Game Over
+live;if'decreaseGameover';
+gameover;dt;gameoverTime;/;+;gameover= 1;
+gameover;[1];-;first;ifn'gameoverDone';
+8;raise;pop;resetInstances;8;bury;
+1;if'gameoverDone';
+l'decreaseGameover';
+gameover;first;ifn'gameoverDone';
+gameover;dt;gameoverTime;/;-;gameover= 1;
+l'gameoverDone';
+
+
+gameover;first;ifn'noGameoverFade';
+6;1;dup;shape;c''''ret[ 0 ] = af( vec4( tf, 0.0, 0.0 ) ) * ( 1.0 - gameover );' 1 1 400 0;
+l'noGameoverFade';
 
 // generate mipmaps for ssaa
 ssaa;first;1;-;ifn'nomipmap';
 texture;
 l'nomipmap';
-
 
 // Functions
 1;if'skipFuncs';
