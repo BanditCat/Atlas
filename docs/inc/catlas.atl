@@ -133,7 +133,8 @@ img'inc\ui.png';6;[1152 1024 4];c''''ret[ 0 ] = vec4( a( ivec4( ivec2( tf.xy ), 
                                         a( ivec4( ivec2( tf.xy ), 3, 0 ) ) );' 1 1 40 0;
 texture;14;bury;
 
-
+// fake instances;
+6;totalInstances;instanceVars;0;cat;c''''ret[ 0 ] = 0.0;' 0 1 0 0;transferStart;15;bury;
 
 
 
@@ -294,6 +295,9 @@ ret[ 0 ] = pos.z < 0.0 ? length( pos.xy )*5.0 - pos.z : 10000.0;
 ' 1 1 0 0; 14;raise;transferEnd;1;raise;transferStart;14;bury;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //  THIS IS WHERE WE TRANSFER BACK TO HOST, DO IT ALL IN ONE PLACE!
+17;raise;transferEnd;
+[0 1 1];s;unext;-9999;1;dup;shape;first;rep;>;sum;live=; // Here we can do things on the cpu with instances
+1;dup;transferStart;17;bury;
 sort; // first sort
 3;dup;6;[1];c''''
 
@@ -769,12 +773,18 @@ oldorigin;cat.origin= 3;
 
 ///////////////////////////////////////////////////////////
 // UI text
-'Hel';e;
-'wor';e;0;cat;
-'mor';e;0;cat;
-'tex';e;0;cat;
-'whs';e;0;cat;
-[0 0 18 8];1;3;rep;numJobs;0;cat;*;[0 0 1 1];+;
+[1 2 20 33];live;e;0;cat;jobNums=;
+[0];i=;
+l'jobNumsLoop';
+jobNums;i;i;[1];+;0;cat;[0];0;cat;s;
+first;toString 0;'0';first;[4];2;dup;shape;-;first;rep;1;bury;0;cat;
+e;
+i;first;ifn'nocat';
+0;cat;
+l'nocat';
+i;[1];+;i=;
+numJobs;i;-;first;if'jobNumsLoop';
+[0 0 24 8];1;3;rep;numJobs;0;cat;*;[0 0 1 1];+;
 cat.textAreaToFlatTexture;
 
 6;numJobs;first;*;2;dup;shape;additive;c'
@@ -804,7 +814,7 @@ uv = verts[ vert ].xy * ( ( uitd - vec2( 0.0, 1.0 ) ) * vec2( 1.0, 1.0 / numJobs
 flat in float which;
 in vec2 uv;
 '
-float val = 1.0 - af( uv + vec2( 0.0, 8.0 ) * which );
+float val = 1.0 - af( uv + vec2( 0.0, 8.0 ) * which + vec2( 6.0, 0.0 ) * ( which == 0.0 ? 1.0 : 2.0 ) );
 ret[ 0 ] = vec4( vec3( val ), 1.0 );
 ' 1 1 400 1;additive;
 

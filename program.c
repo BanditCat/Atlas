@@ -1200,6 +1200,10 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = REPEAT;
     // dbg( "Linenum %u commandnum %u: repeat\n", linenum, commandnum );
 
+  } else if( !strcmp( command, "sum" ) ){
+    curStep->type = SUM;
+    // dbg( "Linenum %u commandnum %u: sum\n", linenum, commandnum );
+
   } else if( !strcmp( command, "shape" ) ){
     curStep->type = SHAPE;
     // dbg( "Linenum %u commandnum %u: shape\n", linenum, commandnum );
@@ -2185,6 +2189,28 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
 
       pop( ts );
       // dbg( "%s", "pow" );
+      break;
+    }
+    case SUM: {
+      if( ts->size < 1 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "Attempt to sum with an empty stack." );
+
+      tensorToHostMemory( ts->stack[ ts->size - 1 ] );
+      tensor* t = ts->stack[ ts->size - 1 ];
+      f32* ret = mem( 1, f32 );
+      for( s32 i0 = 0; i0 < t->shape[ 0 ]; ++i0 )
+        for( s32 i1 = 0; i1 < t->shape[ 1 ]; ++i1 )
+          for( s32 i2 = 0; i2 < t->shape[ 2 ]; ++i2 )
+            for( s32 i3 = 0; i3 < t->shape[ 3 ]; ++i3 ){
+              f32* offset = t->data + t->offset + i0 * t->strides[ 0 ] +
+                i1 * t->strides[ 1 ] + i2 * t->strides[ 2 ] +
+                i3 * t->strides[ 3 ];
+              *ret += *offset;
+            }
+
+      pop( ts );
+      push( ts, newTensor( 0, NULL, ret ) );
+      // dbg( "%s", "add" );
       break;
     }
     case ADD: {

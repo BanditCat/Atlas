@@ -91,6 +91,7 @@ typedef struct{
     TEXTURE, // documented
     TEXTUREARRAY, // documented
     WINDOWSIZE, // documented
+    SUM, // documented
     WORKSPACE, // documented
     TRANSFERSTART, // documented
     TRANSFEREND // documented
