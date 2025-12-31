@@ -57,12 +57,7 @@ img'inc\terrain.bmp';0;dup;shape;[1 2 0];s;ttexsize= 1;
 c''''ret[0] = vec4( a( ivec4( 0, tf.y, 0, 0 ) ),
                     a( ivec4( 0, tf.y, 1, 0 ) ),  
                     a( ivec4( 0, tf.y, 2, 0 ) ), 1.0 );' 1 1 40 0;texture;
-dim;first;4;cat.fractalNoise;
-// get minmax
-0;dup;transferStart;transferEnd;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
-
-
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 100 0;texture;
+terrainGen;
 [150 400];set'lrot' 2;
 lrot;first;-300;/;[0 1 0];rot; // rot about y
 lrot;last;-300;/;[1 0 0];rot;m; // rot about x
@@ -108,9 +103,8 @@ l'loop4';
 4;dup;7;dup;bakeVat;
 2;raise;pop;4;raise;pop;5;raise;pop; // stack:  highVAT lowVAT lowindices mat highindices prevframe hmap gradient
 2;dup;lowindscpu=;4;dup;highindscpu=;
-7;raise;7;raise;7;raise;
+7;raise;7;raise;7;raise;1;8;bury;
 resetInstances;
-8;bury;
 
 //print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances
 /////////////////////////////////////////////////
@@ -184,16 +178,16 @@ cat.nav3d;
 
 /////////////////////////////////////////////
 // reset sables maybe
-8;raise;
+
 cat.gamepadPresses;[17 18 0];s;cat.keyPresses;[21 22 0];s;+;unext;ifn'noreset';
-pop;resetInstances;
+resetInstances;
 l'noreset';
 nukeBar;[1];-;first;ifn'noexplodify';
 nukeBar;[2];-;first;if'noexplodify';
 [2.1];nukeBar= 1;
-explodify;
+8;raise;explodify;8;bury;
 l'noexplodify';
-8;bury;
+
 
 ////////////////////////////////////////////////////////////////////
 //  Check for exploding sables.
@@ -853,7 +847,7 @@ l'skipf2';
 live;if'decreaseGameover';
 gameover;dt;gameoverTime;/;+;gameover= 1;
 gameover;[1];-;first;ifn'gameoverDone';
-8;raise;pop;resetInstances;8;bury;
+resetInstances;
 1;if'gameoverDone';
 l'decreaseGameover';
 gameover;first;ifn'gameoverDone';
@@ -1183,6 +1177,7 @@ return;
 
 
 l'resetInstances';
+8;raise;pop;
 6;totalInstances;instanceVars;*;
 c'''
 float hash( vec2 p, float time ){
@@ -1194,6 +1189,8 @@ int instance = t.x / int( instanceVars );
 int var = t.x % int( instanceVars );
 ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) + 512.0 / 1048576.0: hash( vec2( t.xy ), timer );
 ' 0 1 0 0;
+8;bury;
+1;raise;pop;terrainGen;1;bury;
 reset;
 return;
 
@@ -1213,6 +1210,38 @@ ret[ 0 ] = var == 4 ? 2.0 + 512.0 / 1048576.0 : a( ivec4( t.x, 0, 0, 0 ) );
 ret[ 0 ] = var == 5 ? timer + 1.0 + hash( vec2( t.x, timer ), timer ) * 10.0 : ret[ 0 ];
 ' 1 1 0 0;
 return;
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//  Level funcs.  These should eventually be in a seperate file, per level, including this one
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//  Terrain gen.
+
+l'terrainGen';
+dim;first;4;cat.fractalNoise;
+// get minmax
+0;dup;transferStart;transferEnd;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
+6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 100 0;texture;
+return;
+
+
+
+
+
+
+
+
+
 
 
 
