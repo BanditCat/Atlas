@@ -818,7 +818,7 @@ uv = verts[ vert ].xy * ( ( uitd - vec2( 0.0, 1.0 ) ) * vec2( 1.0, 1.0 / numJobs
 flat in float which;
 in vec2 uv;
 '
-float val = 1.0 - af( uv + vec2( 0.0, 8.0 ) * which + vec2( 6.0, 0.0 ) * ( which == 0.0 ? 1.0 : 2.0 ) );
+float val = 1.0 - af( uv + vec2( 0.0, 8.0 ) * which + vec2( 6.0, 0.0 ) * ( which == 0.0 ? 1.0 : 2.0 ) ).r;
 ret[ 0 ] = vec4( vec3( val ), 1.0 );
 ' 1 1 400 1;additive;
 
