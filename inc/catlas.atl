@@ -104,19 +104,10 @@ l'loop4';
 2;raise;pop;4;raise;pop;5;raise;pop; // stack:  highVAT lowVAT lowindices mat highindices prevframe hmap gradient
 2;dup;lowindscpu=;4;dup;highindscpu=;
 7;raise;7;raise;7;raise;1;8;bury;
+1;9;bury;1;9;bury;
 resetInstances;
 
 //print;quit; frame hmap grad highvat lowvat lowinds mat highinds instances
-/////////////////////////////////////////////////
-//  init fireworks
-6;fireworksDims;[4];0;cat;c''''
-ret[ 0 ] = vec4( 0.0 );
-' 0 1 4 0;
-9;bury;
-6;fireworksDims;[4];0;cat;c''''
-ret[ 0 ] = vec4( 0.0 );
-' 0 1 4 0;
-9;bury;
 [0 0 0];11;bury; //frame hmap grad highvat lowvat lowinds mat highinds instances fireworksPos fireworksVel
 
 0;totalInstances;first;rep;6;totalInstances;c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;12;bury; // fake instance sort
@@ -151,7 +142,7 @@ cat.keyPresses;[20 21 0];s;first;cat.gamepadPresses;[6 7 0];s;first;+;ifn'action
 activeJob;numJobs;[1];-;+;numJobs;%;activeJob= 1;
 l'actionminus';
 cat.inputState;[4 5 0];s;first;ifn'norotateFacing';
-jobFacing;cat.inputState;[0 1 0];s;-;[360.0];[3.1415926535897932384626433832795];[2];*;*;%;jobFacing= 1;
+jobFacing;cat.inputState;[0 1 0];s;cat.mouseDiv;first;0.25;*;e;/;-;[360.0];[3.1415926535897932384626433832795];[2];*;*;%;jobFacing= 1;
 l'norotateFacing';
 cat.gamepadState;[16 17 0];s;first;ifn'nogpsetfacing';
 cat.gamepadState;[2 4 0];s;l;0.8;-;ifn'nogpsetfacing';
@@ -176,7 +167,7 @@ timer;timeDelta;e;+;[3333.33333333];%;timer= 1;
 timeDelta;e;dt= 1;
 cat.nav3d;
 
-/////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 // reset sables maybe
 
 cat.gamepadPresses;[17 18 0];s;cat.keyPresses;[21 22 0];s;+;unext;ifn'noreset';
@@ -1190,6 +1181,17 @@ int var = t.x % int( instanceVars );
 ret[ 0 ] = var == 4 ? floor( hash( vec2( t.xy ), timer ) * 1.999 ) + 512.0 / 1048576.0: hash( vec2( t.xy ), timer );
 ' 0 1 0 0;
 8;bury;
+/////////////////////////////////////////////////
+//  init fireworks
+9;raise;pop;9;raise;pop;
+6;fireworksDims;[4];0;cat;c''''
+ret[ 0 ] = vec4( 0.0 );
+' 0 1 4 0;
+9;bury;
+6;fireworksDims;[4];0;cat;c''''
+ret[ 0 ] = vec4( 0.0 );
+' 0 1 4 0;
+9;bury;
 1;raise;pop;terrainGen;1;bury;
 reset;
 return;

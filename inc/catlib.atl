@@ -16,7 +16,7 @@ size;ifn'dontQuitEarly';quit;l'dontQuitEarly';  // If we have commandline argume
 0;512;rep;inputReleases=;
 0;lastMouseWheel=;
 0;mouseWheel=;
-[3 3];mouseDiv=;
+[1.5 1.5];mouseDiv=;
 l'stdlibInitDone'; // Init code
 
 keys;keyState=;

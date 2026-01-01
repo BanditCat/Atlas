@@ -1,18 +1,18 @@
+clouds
 ui text
-ears have holes
+
 terrain splatting
 errosion
-pathfinding
 
+level exit/pathfinding/come out of box
 
-
-
-come out of box
 
 filename gets deleted in root error msgs
 
 newline on error messages.
 
 main menu
+
+help menu and vars command for console, error cleanup
 
 serialization.
