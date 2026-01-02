@@ -1876,7 +1876,16 @@ char* tensorToTextureArray( tensor* t, u32 channels ){
   glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
   
   // Allocation
-  glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
+  if( channels == 40 || channels == 10 ){
+    u64 size = width * height * layers;
+    u8* bdata = mem( size, u8 );
+    for( u64 i = 0; i < size; ++i )
+      bdata[ i ] = data[ i ] * 255.0;
+    glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, bdata );
+    unmem( bdata );
+  } else{
+    glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
+  }
   
   // Mipmaps & Params
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
@@ -1935,12 +1944,23 @@ char* tensorToTextureArrayOld( tensor* t, u32 channels ){
   default: err( "%s", "Unsupported channel format for textureArray." );
   }
 
+  
   // 4. Create Texture Array
   glGenTextures( 1, &t->tex.texture );
   glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
   
+  
   // Allocation
-  glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
+  if( channels == 40 || channels == 10 ){
+    u64 size = width * height * layers;
+    u8* bdata = mem( size, u8 );
+    for( u64 i = 0; i < size; ++i )
+      bdata[ i ] = data[ i ] * 255.0;
+    glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, bdata );
+    unmem( bdata );
+  } else{
+    glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
+  }
   
   // Mipmaps & Params
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
