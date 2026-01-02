@@ -2053,12 +2053,6 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     case GETINPUT: {
       static const u32 wsshape[ 1 ] = { 6 };
       f32* data = mem( 6, f32 );
-      //int dx, dy;
-      //mainPoll();
-      //SDL_GetRelativeMouseState( &dx, &dy );  // Get mouse delta
-#ifndef __EMSCRIPTEN__
-      //SDL_LockMutex( data_mutex );
-#endif
       data[ 0 ] = dx;dx = 0;
       data[ 1 ] = dy;dy = 0;
       f32 delta = ( mouseWheel - mouseWheelPos ) / 10.0;

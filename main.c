@@ -340,8 +340,10 @@ void mainPoll( void ){
 #endif
       posx = event.motion.x;
       posy = event.motion.y;
-      dx += event.motion.xrel * getMouseSpeed();
-      dy += event.motion.yrel * getMouseSpeed();
+      if( event.motion.xrel < 20 && event.motion.yrel < 20 ){
+        dx += event.motion.xrel * getMouseSpeed();
+        dy += event.motion.yrel * getMouseSpeed();
+      }
 #ifndef __EMSCRIPTEN__
       // SDL_UnlockMutex( data_mutex );
 #endif
