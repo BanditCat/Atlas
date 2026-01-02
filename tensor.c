@@ -1863,10 +1863,10 @@ char* tensorToTextureArray( tensor* t, u32 channels ){
   GLenum internalFormat, format, type;
   switch( channels ){
   case 400:internalFormat = GL_RGBA16F; format = GL_RGBA; type = GL_HALF_FLOAT; break;
-  case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_FLOAT; break;
+  case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
   case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
   case 100:internalFormat = GL_R16F; format = GL_RED; type = GL_HALF_FLOAT; break;
-  case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
+  case 10: internalFormat = GL_R8; format = GL_RED; type = GL_UNSIGNED_BYTE; break;
   case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
   default: err( "%s", "Unsupported channel format for textureArray." );
   }
@@ -1927,10 +1927,10 @@ char* tensorToTextureArrayOld( tensor* t, u32 channels ){
   GLenum internalFormat, format, type;
   switch( channels ){
   case 400:internalFormat = GL_RGBA16F; format = GL_RGBA; type = GL_HALF_FLOAT; break;
-  case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_FLOAT; break;
+  case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_UNSIGNED_BYTE; break;
   case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
   case 100:internalFormat = GL_R16F; format = GL_RED; type = GL_HALF_FLOAT; break;
-  case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
+  case 10: internalFormat = GL_R8; format = GL_RED; type = GL_UNSIGNED_BYTE; break;
   case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
   default: err( "%s", "Unsupported channel format for textureArray." );
   }
