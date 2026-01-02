@@ -1,5 +1,3 @@
-clouds
-get rid of fake line numbers.
 nums/up/down control release rate
 terrain splatting
 errosion

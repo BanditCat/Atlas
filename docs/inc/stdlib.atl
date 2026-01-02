@@ -16,6 +16,10 @@ size;ifn'dontQuitEarly';quit;l'dontQuitEarly';  // If we have commandline argume
 0;512;rep;inputReleases=;
 0;lastMouseWheel=;
 0;mouseWheel=;
+
+// globals
+[0.04];deadZone=;
+
 l'stdlibInitDone'; // Init code
 
 keys;keyState=;
@@ -39,6 +43,15 @@ first;
 l'nogamepad';
 pop;0;21;rep;
 l'gamepadDone';
+
+// deadzones
+0;dup;[2 4 0];s;l;deadZone;first;>;if'nodeadZoneleft';
+0;dup;[0 2 0];s;[0 0];0;cat;1;raise;[4 21 0];s;0;cat;
+l'nodeadZoneleft';
+0;dup;[4 6 0];s;l;deadZone;first;>;if'nodeadZoneright';
+0;dup;[0 4 0];s;[0 0];0;cat;1;raise;[6 21 0];s;0;cat;
+l'nodeadZoneright';
+
 gamepadState=; // Set input variables, it's important to do this just once per frame for smoothest performance
 
 1;512;rep;
