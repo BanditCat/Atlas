@@ -1907,6 +1907,70 @@ char* tensorToTextureArray( tensor* t, u32 channels ){
   t->tex.channels = channels;
   return NULL;
 }
+char* tensorToTextureArrayOld( tensor* t, u32 channels ){
+  if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] != channels / 10 ) )
+    err( "%s", "tensorToTextureArray called with a bad channel count." );
+  if( !t ) err( "%s", "Tensor is NULL in tensorToTextureArray." );
+  if( t->rank != 4 ) err( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
+  tensorToHostMemory( t );
+  tensorEnsureContiguous( t );
+ 
+  float* data = t->data + t->offset;
+  float* dataBase = t->data;
+  
+  u32 layers = t->shape[ 0 ]; 
+  u32 width  = t->shape[ 2 ];
+  u32 height = t->shape[ 1 ];
+
+
+  
+  GLenum internalFormat, format, type;
+  switch( channels ){
+  case 400:internalFormat = GL_RGBA16F; format = GL_RGBA; type = GL_HALF_FLOAT; break;
+  case 40: internalFormat = GL_RGBA8; format = GL_RGBA; type = GL_FLOAT; break;
+  case 4:  internalFormat = GL_RGBA32F; format = GL_RGBA; type = GL_FLOAT; break;
+  case 100:internalFormat = GL_R16F; format = GL_RED; type = GL_HALF_FLOAT; break;
+  case 10: internalFormat = GL_R8; format = GL_RED; type = GL_FLOAT; break;
+  case 1:  internalFormat = GL_R32F; format = GL_RED; type = GL_FLOAT; break;
+  default: err( "%s", "Unsupported channel format for textureArray." );
+  }
+
+  // 4. Create Texture Array
+  glGenTextures( 1, &t->tex.texture );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
+  
+  // Allocation
+  glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
+  
+  // Mipmaps & Params
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST  );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+  
+  glGenFramebuffers( 1, &t->tex.framebuffer );
+  glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
+  glFramebufferTextureLayer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, t->tex.texture, 0, 0 );
+  glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+
+  if( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE )
+    error( "%s", "Framebuffer is not complete." );
+
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+  // 5. Update Tensor State
+  // We free the CPU data because we moved it to the GPU
+  if( t->ownsData ) unmem( dataBase );
+  
+  t->gpu = true;
+  t->ownsData = true;
+  t->tex.width = width;
+  t->tex.height = height;
+  t->tex.layers = layers;
+  t->tex.channels = channels;
+  return NULL;
+}
 
 
 

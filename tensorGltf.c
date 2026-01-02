@@ -451,7 +451,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
       }
     }
     t_anim = newTensor( 4, anim_shape, anim_data );
-    tensorToTextureArray( t_anim, 4 );
+    tensorToTextureArrayOld( t_anim, 4 );
   } else {
     // Dummy animation
     u32 s[ 4 ] = { 1, 1, 1, 16 };
@@ -473,7 +473,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
 
   // Tensor Shape: [Total Layers, Height, Width, RGBA]
   // Note: Most texture arrays are [Layer, H, W, 4], make sure your
-  // tensorToTextureArray expects this.
+  // tensorToTextureArrayOld expects this.
   u32 tex_shape[ 4 ] = { num_mats * LAYERS_PER_MAT, TEX_H, TEX_W, 4 };
   u32 total_pixels = ( num_mats * LAYERS_PER_MAT ) * TEX_W * TEX_H;
   f32* tex_data = mem( total_pixels * 4, f32 );
@@ -650,7 +650,7 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
   }
 
   t_tex = newTensor( 4, tex_shape, (f32*)tex_data );
-  tensorToTextureArray( t_tex, 40 );
+  tensorToTextureArrayOld( t_tex, 40 );
   textureTensor( t_tex );
   
   // --- MESH LOADING (Vertices & Indices) ---
