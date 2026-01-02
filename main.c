@@ -340,7 +340,7 @@ void mainPoll( void ){
 #endif
       posx = event.motion.x;
       posy = event.motion.y;
-      if( abs( event.motion.xrel ) < 100 && abs( event.motion.yrel ) < 100 ){
+      if( abs( event.motion.xrel ) < 1000 && abs( event.motion.yrel ) < 1000 ){
         dx += event.motion.xrel * getMouseSpeed();
         dy += event.motion.yrel * getMouseSpeed();
       }
