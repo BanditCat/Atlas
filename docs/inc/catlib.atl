@@ -16,7 +16,7 @@ size;ifn'dontQuitEarly';quit;l'dontQuitEarly';  // If we have commandline argume
 0;512;rep;inputReleases=;
 0;lastMouseWheel=;
 0;mouseWheel=;
-[1.5 1.5];mouseDiv=;
+[3 3];mouseDiv=;
 l'stdlibInitDone'; // Init code
 
 keys;keyState=;
@@ -317,9 +317,6 @@ c'''
 float fade( float x ){
     return x*x*x*(x*(x*6.0 - 15.0)+10.0);
 }
-float lerp( float a, float b, float t ){
-    return a + t*(b - a);
-}
 '
 vec2 c1 = vec2( t.xy ) * cat_gradsize / cat_texsize;
 vec2 fract = fract( c1 );
@@ -337,9 +334,9 @@ float fc3 = dot( c3, fract - vec2( 0, 1 ) );
 float fc4 = dot( c4, fract - vec2( 1, 1 ) );
 float u  = fade( fract.x );
 float v  = fade( fract.y );
-float v1 = lerp( fc1, fc2, u );
-float v2 = lerp( fc3, fc4, u );
-float v3 = lerp( v1, v2, v );
+float v1 = mix( fc1, fc2, u );
+float v2 = mix( fc3, fc4, u );
+float v3 = mix( v1, v2, v );
 ret[0]=cat_amp*(v3 * 0.5 + 0.5);
 ' 1 1 0 0;
 return;
@@ -360,25 +357,123 @@ fntexsize=;
 
 fngradsize;fntexsize;fnamp;fnseed;perlin;
 
-l'foo';
 l'fnloop';
-l'foo2';
 fngradsize;2;*;fngradsize=;
-l'foo3';
 fnamp;[0.5];*;fnamp=;
-l'foo4';
 fnseed;[1.2];+;fnseed=;
-l'foo5';
 fngradsize;fntexsize;fnamp;fnseed;perlin;
-l'foo6';
 6;fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0 0;
-l'foo7';
 fntexsize;fngradsize;/;4;-;if'fnloop';
 return;
 
 
 
-l'stdlibend';
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// perlin 3d
+// This function takes 4 arguments, gradient grid size, texture size, amplitude,
+// and random seed.  The return value is 1 tensor: a perlin noise tensor.
+
+
+l'perlin3d';  
+randseed= 1;
+amp= 1;
+texsize3d= 3;
+
+0;dup;gradsize3d= 3;pop;6;gradsize3d;[3];0;cat;
+c'''  // Push the gradients.
+float hash( vec3 p, float time ){
+    float h = dot( p, vec3( 127.1, 311.7, 1337.3 ) ) / 1000.0 + fract( time * 1.2123438709 );
+    return fract( sin( h ) * 43758.5453123 );
+}
+'
+float z = hash( vec3( t.xyz ), cat_randseed ) * 2.0 - 1.0;  // uniform in [-1, 1]
+float theta =  hash( vec3( t.xyz ), cat_randseed ) * 2.0 * 3.1415926535897932384626433832795;
+float r = sqrt( 1.0 - z * z );
+vec3 g = vec3( r * cos(theta), r * sin(theta), z );
+ret[ 0 ]= g[ t.w ];
+' 0 1 0 0;
+
+6;texsize3d;
+c'''
+float fade( float x ){
+    return x * x * x * ( x * ( x * 6.0 - 15.0 ) + 10.0 );
+}
+'
+vec3 c1 = vec3( t.xyz ) * cat_gradsize3d / cat_texsize3d;
+vec3 f = fract( c1 );
+ivec3 ic1 = ivec3( c1 );
+ivec3 ic2 = ic1 + ivec3( 1, 0, 0 );
+ivec3 ic3 = ic1 + ivec3( 0, 1, 0 );
+ivec3 ic4 = ic1 + ivec3( 1, 1, 0 );
+ivec3 ic5 = ic1 + ivec3( 0, 0, 1 );
+ivec3 ic6 = ic1 + ivec3( 1, 0, 1 );
+ivec3 ic7 = ic1 + ivec3( 0, 1, 1 );
+ivec3 ic8 = ic1 + ivec3( 1, 1, 1 );
+c1 = vec3( a( ivec4( ic1, 0 ) ), a( ivec4( ic1, 1 ) ), a( ivec4( ic1, 2 ) ) );
+vec3 c2 = vec3( a( ivec4( ic2, 0 ) ), a( ivec4( ic2, 1 ) ), a( ivec4( ic2, 2 ) ) );
+vec3 c3 = vec3( a( ivec4( ic3, 0 ) ), a( ivec4( ic3, 1 ) ), a( ivec4( ic3, 2 ) ) );
+vec3 c4 = vec3( a( ivec4( ic4, 0 ) ), a( ivec4( ic4, 1 ) ), a( ivec4( ic4, 2 ) ) );
+vec3 c5 = vec3( a( ivec4( ic5, 0 ) ), a( ivec4( ic5, 1 ) ), a( ivec4( ic5, 2 ) ) );
+vec3 c6 = vec3( a( ivec4( ic6, 0 ) ), a( ivec4( ic6, 1 ) ), a( ivec4( ic6, 2 ) ) );
+vec3 c7 = vec3( a( ivec4( ic7, 0 ) ), a( ivec4( ic7, 1 ) ), a( ivec4( ic7, 2 ) ) );
+vec3 c8 = vec3( a( ivec4( ic8, 0 ) ), a( ivec4( ic8, 1 ) ), a( ivec4( ic8, 2 ) ) );
+float fc1 = dot( c1, f - vec3( 0, 0, 0 ) );
+float fc2 = dot( c2, f - vec3( 1, 0, 0 ) );
+float fc3 = dot( c3, f - vec3( 0, 1, 0 ) );
+float fc4 = dot( c4, f - vec3( 1, 1, 0 ) );
+float fc5 = dot( c5, f - vec3( 0, 0, 1 ) );
+float fc6 = dot( c6, f - vec3( 1, 0, 1 ) );
+float fc7 = dot( c7, f - vec3( 0, 1, 1 ) );
+float fc8 = dot( c8, f - vec3( 1, 1, 1 ) );
+float u = fade( f.x );
+float v = fade( f.y );
+float w = fade( f.z );
+float v1 = mix( fc1, fc2, u );
+float v2 = mix( fc3, fc4, u );
+float v3 = mix( fc5, fc6, u );
+float v4 = mix( fc7, fc8, u );
+float v5 = mix( v1, v2, v );
+float v6 = mix( v3, v4, v );
+float v7 = mix( v5, v6, w );
+ret[ 0 ] = cat_amp * ( v7 * 0.5 + 0.5 );
+' 1 1 0 0;
+return;
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// fractalNoise3d
+// This function takes 2 arguments, initial grid size, and texture size and
+// returns a tensor with multiple combined octaves of perlin noise.
+
+l'fractalNoise3d';
+fngradsize=;
+fntexsize=;
+[0.5];fnamp=;
+[1];fnseed=;
+
+fngradsize;fntexsize;fnamp;fnseed;perlin3d;
+
+l'fnloop3d';
+fngradsize;[2 2 2];*;fngradsize=;
+fnamp;[0.5];*;fnamp=;
+fnseed;[1.2];+;fnseed=;
+fngradsize;fntexsize;fnamp;fnseed;perlin3d;
+6;fntexsize;c''''ret[0]=a(t)+b(t);' 2 1 0 0;
+fntexsize;fngradsize;/;first;4;==;ifn'fnloop3d';
+return;
+
+
+
+
+
+
+l'stdlibend';
 // the console goes at the top, so it can circumvent the script, but after stdlib, so we can have input and textblit.
 include'inc\catcon.atl';

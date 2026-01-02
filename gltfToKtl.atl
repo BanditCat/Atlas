@@ -3,7 +3,7 @@
 2;raise;pop; // low poly bones
 7;raise;pop; // high poly mats
 3;raise;pop; // second anim count
-// lowverts lowindeices lowmats highverts highindices highbones animcount
+// lowverts lowindices lowmats highverts highindices highbones animcount
 
 2;raise;
 6;1;dup;shape;[1 4 0];s;

@@ -79,6 +79,7 @@ void takeOwnership( tensor* t ){
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
       if( getMaxAnisotropy() > 1.0f )
         glTexParameterf( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
     } else {
@@ -346,8 +347,7 @@ void tensorToGPUMemory( tensor* t ){
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-  /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
-  /* glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 
   glGenFramebuffers( 1, &t->tex.framebuffer );
   glBindFramebuffer( GL_FRAMEBUFFER, t->tex.framebuffer );
@@ -903,6 +903,7 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
       if( getMaxAnisotropy() > 1.0 ){
         glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
       }
@@ -1039,8 +1040,6 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
         glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-        /* glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT ); */
-        /* glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT ); */
         
         CHECK_GL_ERROR();
         // Create framebuffer
@@ -1841,19 +1840,25 @@ void tensorOrtho( tensorStack* ts, u32 index ){
   push( ts, newTensor( 2, shape, ret ) );
 }
 char* tensorToTextureArray( tensor* t, u32 channels ){
+  if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] != channels / 10 ) )
+    err( "%s", "tensorToTextureArray called with a bad channel count." );
   if( !t ) err( "%s", "Tensor is NULL in tensorToTextureArray." );
+  if( t->rank != 4 ) err( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
   tensorToHostMemory( t );
+  tensorTransposeHelper( t, 0, 2 );
+  tensorTransposeHelper( t, 1, 2 );
   tensorEnsureContiguous( t );
-  // MUST CACHE DATA BECAUSE WERE MUCKING WITH THE TEXTURES, which are in a union with t->data
+ 
   float* data = t->data + t->offset;
   float* dataBase = t->data;
   
-  if( t->rank != 4 ) err( "%s", "tensorToTextureArray requires a rank 4 tensor [W, H, Layers, C]." );
-  if( !channels || ( t->shape[ 3 ] != channels && t->shape[ 3 ] != channels / 10 ) )
-    err( "%s", "tensorToTextureArray called with a bad channel count." );
   u32 layers = t->shape[ 0 ]; 
-  u32 height = t->shape[ 1 ];
-  u32 width  = t->shape[ 2 ];
+  u32 width  = t->shape[ 1 ];
+  u32 height = t->shape[ 2 ];
+
+  tensorTransposeHelper( t, 1, 2 );
+  tensorTransposeHelper( t, 0, 2 );
+
   
   GLenum internalFormat, format, type;
   switch( channels ){
@@ -1940,6 +1945,7 @@ char* textureTensor( tensor* cur ){
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
   if( getMaxAnisotropy() > 1.0 ){
     glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
   }
@@ -2467,6 +2473,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
           
           if( getMaxAnisotropy() > 1.0f )
             glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
@@ -2479,6 +2486,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
         }
 
         // Framebuffer Check

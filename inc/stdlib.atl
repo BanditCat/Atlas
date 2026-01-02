@@ -507,9 +507,6 @@ c'''
 float fade( float x ){
     return x*x*x*(x*(x*6.0 - 15.0)+10.0);
 }
-float lerp( float a, float b, float t ){
-    return a + t*(b - a);
-}
 '
 vec2 c1 = vec2( t.xy ) * std_gradsize / std_texsize;
 vec2 fract = fract( c1 );
@@ -527,9 +524,9 @@ float fc3 = dot( c3, fract - vec2( 0, 1 ) );
 float fc4 = dot( c4, fract - vec2( 1, 1 ) );
 float u  = fade( fract.x );
 float v  = fade( fract.y );
-float v1 = lerp( fc1, fc2, u );
-float v2 = lerp( fc3, fc4, u );
-float v3 = lerp( v1, v2, v );
+float v1 = mix( fc1, fc2, u );
+float v2 = mix( fc3, fc4, u );
+float v3 = mix( v1, v2, v );
 ret[0]=std_amp*(v3 * 0.5 + 0.5);
 ' 1 1 0 0;
 return;
@@ -550,19 +547,12 @@ fntexsize=;
 
 fngradsize;fntexsize;fnamp;fnseed;perlin;
 
-l'foo';
 l'fnloop';
-l'foo2';
 fngradsize;2;*;fngradsize=;
-l'foo3';
 fnamp;[0.5];*;fnamp=;
-l'foo4';
 fnseed;[1.2];+;fnseed=;
-l'foo5';
 fngradsize;fntexsize;fnamp;fnseed;perlin;
-l'foo6';
 6;fntexsize;2;rep;c''''ret[0]=a(t)+b(t);' 2 1 0 0;
-l'foo7';
 fntexsize;fngradsize;/;4;-;if'fnloop';
 return;
 

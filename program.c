@@ -1070,7 +1070,8 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     int charsread;
     if( sscanf( sizep, "%u%n", &channels, &charsread ) == 1 && !sizep[ charsread ] ){
       curStep->type = TEXTUREARRAY;
-      if( channels != 1 && channels != 10 && channels != 4 && channels != 40 )
+      if( channels != 1 && channels != 10 && channels != 100 &&
+          channels != 4 && channels != 40 && channels != 400 )
         err3( "%s:%u command %u: %s", filename, linenum, commandnum, "textureArray statement with a bad channel count." );
       curStep->var.size = channels; // Storing channel count in var.size
     } else
