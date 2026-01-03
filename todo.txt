@@ -1,3 +1,4 @@
+fixed frame rate.
 nums/up/down control release rate
 terrain splatting
 errosion
