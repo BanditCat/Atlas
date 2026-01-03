@@ -1,5 +1,4 @@
-fix console at 60fps;
-nums/up/down control release rate
+
 terrain splatting
 errosion
 
@@ -10,8 +9,12 @@ filename gets deleted in root error msgs
 
 newline on error messages.
 
-main menu
+
+
+level 1
 
 help menu and vars command for console, error cleanup
+
+main menu
 
 serialization.

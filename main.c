@@ -76,7 +76,7 @@ f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 f64 rawFrameTime = 0.01;
 f64 frameDelay = 0.0;
-f64 targetFps = 3000.0;
+f64 targetFps = 6000.0;
 #define TEXTINPUTBUFFERSIZE 1048576
 #define TEXTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
@@ -104,9 +104,9 @@ float getMouseSpeed() {
 void delay( void ){
   f64 ttime = 1 / targetFps - timeDelta;
   if( ttime > 0 ){
-    frameDelay += 0.1;
+    frameDelay += 0.33;
   }else{
-    frameDelay -= 0.1;
+    frameDelay -= 0.33;
     if( frameDelay < 0.0 )
       frameDelay = 0.0;
   }

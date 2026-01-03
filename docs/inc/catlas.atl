@@ -50,10 +50,12 @@ windowSize;ssaa;*;wdims= 2;
 [512 512 4];cloudDims= 3;
 [4 4 1];cloudGridDims=;
 [5];cloudCieling= 1;
-[0.5];cloudBias= 1;
-[8.0];cloudScale= 1;
+[0.52];cloudBias= 1;
+[16.0];cloudScale= 1;
 [2.0];cloudThickness= 1;
 [32.0];cloudTiles= 1;
+[1];releaseRate=;
+[0];releaseRateDelta=;
 
 return;
 l'skipreset';
@@ -140,6 +142,43 @@ cloudDims;cloudGridDims;cat.fractalNoise3d;transferStart;transferEnd;ext;texture
 //////////////////////////////////////////////////////////////
 // actual start post init, do controls here
 l'kettled';
+// mouse move
+cat.gamepadState;[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
+cat.inputState;[4 5 0];s;first;cat.keyState;[15 16 0];s;first;+;cat.inputState;[5 6 0];s;first;+; // if mouse2 or l key
+numJobs;activeJob;-;[2];==;cat.inputState;[3 4 0];s;*;first;+; // or if mouse1 and releaseratejob
+if'mouse1skip';
+cat.inputState;[0 2 0];s;cat.mouseDiv;/;+; // get mouse delta xy and add
+l'mouse1skip';
+cat.rotxy=;
+
+// releaseRate
+numJobs;activeJob;-;[2];==;cat.inputState;[3 4 0];s;*;first;ifn'noMouseRate'; // if mouse1 and releaseratejob
+releaseRate;cat.inputState;[1 2 0];s;cat.mouseDiv;[0 1 0];s;/;[-5];/;+;releaseRate=;
+l'noMouseRate';
+
+0;i=;
+l'releaseRateLoop';
+cat.keyPresses;i;30;+;e;i;31;+;e;0;cat;[0];0;cat;s;first;ifn'rrNotPressed';
+i;11;*;e;releaseRate=;
+l'rrNotPressed';
+i;1;+;i=;
+i;10;>;ifn'releaseRateLoop';
+cat.gamepadState;[9 10 0];s;cat.keyState;[46 47 0];s;+;first;uprr=;
+cat.gamepadState;[11 12 0];s;cat.keyState;[45 46 0];s;+;first;downrr=;
+uprr;ifn'noIncReleaseRate';
+releaseRateDelta;dt;[10];*;+;releaseRateDelta=;
+l'noIncReleaseRate';
+downrr;ifn'noDecReleaseRate';
+releaseRateDelta;dt;[10];*;-;releaseRateDelta=;
+l'noDecReleaseRate';
+uprr;downrr;+;if'noZerorr';
+[0];releaseRateDelta=;
+l'noZerorr';
+releaseRate;releaseRateDelta;dt;*;[3];*;+;releaseRate=;
+
+// clamp release rate
+releaseRate;[99];>;first;ifn'noCapRate';[99];releaseRate=;l'noCapRate';
+[0];releaseRate;>;first;ifn'noLowCapRate';[0];releaseRate=;l'noLowCapRate';
 
 
 activeJob;cat.inputState;[2 3 0];s;+;numJobs;+;numJobs;%;activeJob= 1;
@@ -524,7 +563,7 @@ for( float layer = 0.0; layer < cloudLayers; ++layer ){
   float t = ( ( cloudCieling + layer * cloudThickness / cloudLayers ) - cat_origin.y ) / ray.y;
   vec3 hit = cat_origin + ray * t;
   vec2 uv = hit.xz;
-  float cloud1 = clamp( ( af( vec4( uv.xy * cloudTiles + cloudDims.xy / 2.0, layer, 0.0 ) ).x - cloudBias ) * cloudScale, 0.0, 1.0 );
+  float cloud1 = clamp( ( af( vec4( ( uv.xy + vec2( -10.0, 27.0 ) ) * cloudTiles + cloudDims.xy / 2.0, layer, 0.0 ) ).x - cloudBias ) * cloudScale, 0.0, 1.0 );
   float cloud2 = clamp( ( af( vec4( ( rotate( uv.xy, 1.0 ) + vec2( 20.0, 30.0 ) ) * 1.2 * cloudTiles + cloudDims.xy / 2.0, layer, 0.0 ) ).x - cloudBias ) * cloudScale, 0.0, 1.0 );
   cloud += ( cloud1 + cloud2 ) * 0.5;
 }
@@ -796,7 +835,7 @@ oldorigin;cat.origin= 3;
 
 ///////////////////////////////////////////////////////////
 // UI text
-[1 2 20 33];live;e;0;cat;jobNums=;
+[1 2 20];releaseRate;0;cat;live;e;0;cat;jobNums=;
 [0];i=;
 l'jobNumsLoop';
 jobNums;i;i;[1];+;0;cat;[0];0;cat;s;

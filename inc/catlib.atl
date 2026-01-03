@@ -16,6 +16,7 @@ size;ifn'dontQuitEarly';quit;l'dontQuitEarly';  // If we have commandline argume
 0;512;rep;inputReleases=;
 0;lastMouseWheel=;
 0;mouseWheel=;
+[0 0];rotxy=;
 
 // globals
 [3 3];mouseDiv=;
@@ -141,12 +142,9 @@ rotza;timeDelta;165;*;2;^;*;rotza=;
 //rotzv;rotza;+;rotzv=;
 rotzv;0.95;timeDelta;165;*;^;*;rotzv=;
 
-gamepadState;[4 6 0];s;timeDelta;2;rep;*;[800 800];*; // gamepad xy
-inputState;[4 5 0];s;first;keyState;[15 16 0];s;first;+;inputState;[5 6 0];s;first;+;if'mouse1skip';
-inputState;[0 2 0];s;mouseDiv;/;+; // get mouse delta xy and add
-l'mouse1skip';
 
-worldUnrotation;[1 2 0];s;first;[0 3 0];s;up=;
+
+rotxy;worldUnrotation;[1 2 0];s;first;[0 3 0];s;up=;
 0;dup;first;
 -300;/;up;rot;worldRotation;m;worldRotation= 16;
 last;
