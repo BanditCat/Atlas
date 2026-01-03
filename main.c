@@ -793,7 +793,7 @@ int renderThreadFunction( void* data ){
     CHECK_GL_ERROR();
     prevTime = curTime;
     curTime = SDL_GetPerformanceCounter();
-    timeDelta *= 0.9; timeDelta += 0.1 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+    timeDelta *= 0.1; timeDelta += 0.9 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
     // timeDelta = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
       
     runTime =
@@ -902,7 +902,6 @@ int renderThreadFunction( void* data ){
     //glFlush();
 #endif
     
-    SDL_Delay( 16 );
     SDL_GL_SwapWindow( window );
 
     // DwmFlush();
