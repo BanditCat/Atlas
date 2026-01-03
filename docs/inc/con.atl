@@ -83,7 +83,7 @@ l'noTilde';
 
 
 
-pos;visible;e;pos;-;[0.08];timeDelta;165;*;e;^;*;+;pos= 1;
+pos;visible;e;pos;-;[0.08];1;timeDelta;165;*;/;e;^;*;+;pos= 1;
 
 
 pos;posCutoff;-;unext;ifn'end';   // Skip if pos < 0.05;

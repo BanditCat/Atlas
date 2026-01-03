@@ -76,7 +76,7 @@ f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 f64 rawFrameTime = 0.01;
 f64 frameDelay = 0.0;
-f64 targetFps = 60.0;
+f64 targetFps = 3000.0;
 #define TEXTINPUTBUFFERSIZE 1048576
 #define TEXTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
