@@ -75,7 +75,8 @@ u64 startTime = 0;
 f64 runTime = 0.0;
 f64 timeDelta = 0.01;
 f64 rawFrameTime = 0.01;
-f64 targetFps = 82.5;
+f64 frameDelay = 0.0;
+f64 targetFps = 60.0;
 #define TEXTINPUTBUFFERSIZE 1048576
 #define TEXTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
@@ -99,11 +100,18 @@ float getMouseSpeed() {
 }
 #endif
 
-// Delay to framerat
+// Delay to framerate
 void delay( void ){
-  f64 ttime = 1000 / targetFps - rawFrameTime;
-  if( ttime > 0 )
-    SDL_Delay( ttime );  
+  f64 ttime = 1 / targetFps - timeDelta;
+  if( ttime > 0 ){
+    frameDelay += 0.1;
+  }else{
+    frameDelay -= 0.1;
+    if( frameDelay < 0.0 )
+      frameDelay = 0.0;
+  }
+  if( frameDelay > 0.0 )
+    SDL_Delay( frameDelay );
 }
 
 
@@ -799,13 +807,6 @@ int renderThreadFunction( void* data ){
     // mainPoll();
     //  Run the program
     CHECK_GL_ERROR();
-    prevTime = curTime;
-    curTime = SDL_GetPerformanceCounter();
-    rawFrameTime = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    timeDelta *= 0.5; timeDelta += 0.5 * rawFrameTime;
-      
-    runTime =
-      (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
     bool ret;
     char* msg = runProgram( ts, &prog, 0, &ret );
     if( msg )
@@ -910,6 +911,13 @@ int renderThreadFunction( void* data ){
     //glFlush();
 #endif
     
+    prevTime = curTime;
+    curTime = SDL_GetPerformanceCounter();
+    rawFrameTime = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+    timeDelta *= 0.5; timeDelta += 0.5 * rawFrameTime;
+      
+    runTime =
+      (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
     delay();
     SDL_GL_SwapWindow( window );
 
@@ -939,13 +947,6 @@ void main_loop( void ){
 
   // Run the program
   CHECK_GL_ERROR();
-  prevTime = curTime;
-  curTime = SDL_GetPerformanceCounter();
-  timeDelta *= 0.9;
-  timeDelta +=
-    0.1 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
-  runTime =
-    (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
   bool ret;
   char* err = runProgram( ts, &prog, 0, &ret );
   if( err )
@@ -1040,6 +1041,14 @@ void main_loop( void ){
   // Cleanup
   glDisableVertexAttribArray( posAttrib );
   glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
+
+  prevTime = curTime;
+  curTime = SDL_GetPerformanceCounter();
+  timeDelta *= 0.9;
+  timeDelta +=
+    0.1 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+  runTime =
+    (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
 
   delay();
   SDL_GL_SwapWindow( window );

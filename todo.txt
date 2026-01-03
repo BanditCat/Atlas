@@ -1,4 +1,4 @@
-fixed frame rate.
+fix console at 60fps;
 nums/up/down control release rate
 terrain splatting
 errosion
