@@ -49,7 +49,7 @@ windowSize;ssaa;*;wdims= 2;
 [0];nukeBar= 1;
 [512 512 4];cloudDims= 3;
 [4 4 1];cloudGridDims=;
-[5];cloudCieling= 1;
+[5];cloudCeiling= 1;
 [0.52];cloudBias= 1;
 [16.0];cloudScale= 1;
 [2.0];cloudThickness= 1;
@@ -560,14 +560,14 @@ ray = ( cat_worldRotation * vec4( ray, 1.0 ) ).xyz;
 
 float cloud = 0.0;
 for( float layer = 0.0; layer < cloudLayers; ++layer ){
-  float t = ( ( cloudCieling + layer * cloudThickness / cloudLayers ) - cat_origin.y ) / ray.y;
+  float t = ( ( cloudCeiling + layer * cloudThickness / cloudLayers ) - cat_origin.y ) / ray.y;
   vec3 hit = cat_origin + ray * t;
   vec2 uv = hit.xz;
   float cloud1 = clamp( ( af( vec4( ( uv.xy + vec2( -10.0, 27.0 ) ) * cloudTiles + cloudDims.xy / 2.0, layer, 0.0 ) ).x - cloudBias ) * cloudScale, 0.0, 1.0 );
   float cloud2 = clamp( ( af( vec4( ( rotate( uv.xy, 1.0 ) + vec2( 20.0, 30.0 ) ) * 1.2 * cloudTiles + cloudDims.xy / 2.0, layer, 0.0 ) ).x - cloudBias ) * cloudScale, 0.0, 1.0 );
   cloud += ( cloud1 + cloud2 ) * 0.5;
 }
-float t = ( cloudCieling - cat_origin.y ) / ray.y;
+float t = ( cloudCeiling - cat_origin.y ) / ray.y;
 vec3 hit = cat_origin + ray * t;
 vec2 uv = hit.xz;
 float cloud3 = clamp( ( af( vec4( ( rotate( uv.xy, 5.454 ) + vec2( 6.0, 57.0 ) ) * 0.32 * cloudTiles + cloudDims.xy / 2.0, 0.0, 0.0 ) ).x - cloudBias + 0.1 ) * cloudScale, 0.0, 1.0 );
