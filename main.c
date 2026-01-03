@@ -74,6 +74,8 @@ u64 prevTime = 0;
 u64 startTime = 0;
 f64 runTime = 0.0;
 f64 timeDelta = 0.01;
+f64 rawFrameTime = 0.01;
+f64 targetFps = 60.0;
 #define TEXTINPUTBUFFERSIZE 1048576
 #define TEXTBUFFERSIZE 1048576
 char* textInputBuffer = NULL;
@@ -97,6 +99,12 @@ float getMouseSpeed() {
 }
 #endif
 
+// Delay to framerat
+void delay( void ){
+  f64 ttime = 1000 / targetFps - rawFrameTime;
+  if( ttime > 0 )
+    SDL_Delay( ttime );  
+}
 
 
 #ifdef __EMSCRIPTEN__
@@ -793,8 +801,8 @@ int renderThreadFunction( void* data ){
     CHECK_GL_ERROR();
     prevTime = curTime;
     curTime = SDL_GetPerformanceCounter();
-    timeDelta *= 0.1; timeDelta += 0.9 * (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
-    // timeDelta = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+    rawFrameTime = (f64)( curTime - prevTime ) / (f64)( SDL_GetPerformanceFrequency() );
+    timeDelta *= 0.5; timeDelta += 0.5 * rawFrameTime;
       
     runTime =
       (f64)( curTime - startTime ) / (f64)( SDL_GetPerformanceFrequency() );
@@ -902,6 +910,7 @@ int renderThreadFunction( void* data ){
     //glFlush();
 #endif
     
+    delay();
     SDL_GL_SwapWindow( window );
 
     // DwmFlush();
@@ -1032,6 +1041,7 @@ void main_loop( void ){
   glDisableVertexAttribArray( posAttrib );
   glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
 
+  delay();
   SDL_GL_SwapWindow( window );
 }
 #endif
