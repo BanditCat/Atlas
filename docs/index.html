@@ -211,6 +211,7 @@
       <li><a href="#cmd-max">max</a></li>
       <li><a href="#cmd-min">min</a></li>
       <li><a href="#cmd-minmax">minmax (minimum and maximum)</a></li>
+      <li><a href="#cmd-move">move</a></li>
       <li><a href="#cmd-ortho">ortho (orthographic)</a></li>
       <li><a href="#cmd-pop">pop</a></li>
       <li><a href="#cmd-projection">proj (projection)</a></li>
@@ -698,6 +699,11 @@ print;quit;</code></pre>
   <section id="cmd-minmax">
     <h2>minmax (minimum and maximum)</h2>
     <p>This takes the tensor on top of the stack and replaces it by a vector of length two with the minimum and maximum values occuring in the tensor, like [min max].</p>
+  </section>
+
+  <section id="cmd-move">
+    <h2>move</h2>
+    <p>This command is identical to get, but uses move semantics, placing the value directly onto the stack without copying and replacing the named variable with scalar 0.  For example, <pre><code>move'foo';<code></pre> will place the contents of foo onto the stack and replace foo with 0. This command should be preffered over get whenever the value of the variable won't be needed anymore.</p>
   </section>
 
   <section id="cmd-ortho">

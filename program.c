@@ -694,6 +694,43 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     // dbg( "Linenum %u commandnum %u: get var %s\n", linenum, commandnum,
     // varName );
 
+  } else if( !strncmp( command, "move'", 4 ) ){  // move
+    char* starti = command + 5;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty name in move statement." );
+    if( *endi != '\'' )
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in move statement." );
+    u32 worklen = strlen( workspace );
+    char* varName = mem( worklen + 2 + endi - starti, char );
+    if( worklen ){
+      memcpy( varName, workspace, worklen );
+      varName[ worklen ] = '.';
+      ++worklen;
+    }
+    memcpy( varName + worklen, starti, endi - starti );
+    varName[ worklen + endi - starti ] = '\0';
+    if( *( endi + 1 ) ){
+      unmem( varName );
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after move statement." );
+    }
+    curStep->type = MOVE;
+    curStep->var.name = varName;
+    if( worklen )
+      curStep->var.baseName = varName + worklen;
+    // dbg( "Linenum %u commandnum %u: move var %s\n", linenum, commandnum, varName );
+
   } else if( !strncmp( command, "if'", 3 ) ){  // If
     char* starti = command + 3;
     char* endi = starti;
@@ -1750,7 +1787,7 @@ char* finalize( program* program ){
         program->steps[ i ].branchName = NULL;
         program->steps[ i ].branch = jumpTo;
       }
-    } else if( program->steps[ i ].type == GET ){
+    } else if( program->steps[ i ].type == GET || program->steps[ i ].type == MOVE ){
       u32 vi;
       if( !trieSearch( program->vars, program->steps[ i ].var.name, &vi ) ){
         if( !trieSearch( program->bigvars, program->steps[ i ].var.name, &vi ) ){
@@ -3470,6 +3507,18 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         push( ts, t );
       }
       // dbg( "%s", "get" );
+      break;
+    }
+    case MOVE: {
+      if( !s->var.size ){
+        f32* nt = mem( 1, f32 );
+        tensor* t = newTensor( 0, NULL, nt );
+        push( ts, p->bigvarts[ s->var.index ] );
+        p->bigvarts[ s->var.index ] = t;
+      }else{
+        err( "Attempt to move a sized vairable!" );
+      }
+      // dbg( "%s", "move" );
       break;
     }
     case TRANSFERSTART: {

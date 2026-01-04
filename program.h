@@ -53,6 +53,7 @@ typedef struct{
     MULTM, // documented
     REVERSE, // documented
     CAT, // documented
+    MOVE, // documented
     FIRST, // documented
     LAST, // documented
     ENCLOSE, // documented
