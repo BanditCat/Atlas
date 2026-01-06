@@ -48,6 +48,7 @@ typedef struct{
     TRANSPOSE, // documented
     SLICE, // documented
     LOAD, // documented
+    LOADFILE, // documented
     EVAL, // documented
     FULLSCREEN, // documented
     MULTM, // documented

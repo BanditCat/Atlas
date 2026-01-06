@@ -27,7 +27,7 @@ typedef struct{
       GLuint texture;        // OpenGL texture for reading/writing operations
       GLuint framebuffer;    // Framebuffer for rendering into the texture
       GLuint depthbuffer;    // Depth buffer for depth testing.
-      bool mipmapped;        // No logic reuired; defaults to 0 and is set only by textureTensor.
+      u32 mipmapped;        // 0 - flat texture, 1 - mirrored repeat, 2 - repeat
       u32 width, height, layers, channels; // If channels is non-zero, its a texture.
     } tex;
   };
@@ -72,6 +72,7 @@ char* makeCompute( const char* filename, u32 linenum, u32 commandnum,
 void deleteCompute( compute* i );
 char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
                              const compute* initializer, u32 vertCount, tensor*** rets );
+tensor* tensorFromFile( const char* fileName );
 tensor* tensorFromImageFile( const char* fileName );
 tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );

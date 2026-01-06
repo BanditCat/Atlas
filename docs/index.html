@@ -207,6 +207,7 @@
       <li><a href="#cmd-keys">keys</a></li>
       <li><a href="#cmd-l">l (length)</a></li>
       <li><a href="#cmd-load">load</a></li>
+      <li><a href="#cmd-loadFile">loadFile</a></li>
       <li><a href="#cmd-m">m (matrix multiply)</a></li>
       <li><a href="#cmd-max">max</a></li>
       <li><a href="#cmd-min">min</a></li>
@@ -602,7 +603,7 @@ print;quit;</code></pre>
     <h2>img (image)</h2>
     <p>Loads a 4-channel bitmap from a file. For example:
       <pre><code>img'font.bmp'</code></pre>
-      loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.</p>
+      loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.  This tensor is placed on the GPU.</p>
   </section>
 
   <section id="cmd-include">
@@ -675,6 +676,11 @@ print;quit;</code></pre>
   <section id="cmd-load">
     <h2>load</h2>
     <p>Loads another Atlas file, resets the stack, and starts executing it. For example: <code>load'mandelbrot.atl'</code>. If called without quotes, it treats the top of the stack (which must be a vector) as the filename.</p>
+  </section>
+
+  <section id="cmd-loadFile">
+    <h2>loadFile</h2>
+    <p>This command attempts to load a file as a byte sequence onto the stack.  The returned tensor is an array with values 0-255 corresponding to the bytes of the loaded file.</p>
   </section>
 
   <section id="cmd-m">
@@ -838,7 +844,7 @@ print;quit;</code></pre>
 
   <section id="cmd-texture">
     <h2>texture</h2>
-    <p>This command takes the texture on top of the stack, which must be rank 3, 1 or 4 component like [512 512 4] or [256 256 1], and makes it suitable for use as a texture. That is, this command enables and generates mipmaps and anisotropic filtering.</p>
+    <p>This command takes the texture on top of the stack, which must be rank 3, 1 or 4 component like [512 512 4] or [256 256 1], and makes it suitable for use as a texture. That is, this command enables and generates mipmaps and anisotropic filtering.  This command takes an optional argument that defailts to 1: if 0, mipmapping is none, and behaviour is GL_CLAMP_TO_EDGE, if 1, mipmapping is enabled and behaviour is GL_MIRRORED_REPEAT, if 2, mipmapping is enabled and behaviour is GL_REPEAT.</p>
   </section>
 
   <section id="cmd-textureArray">

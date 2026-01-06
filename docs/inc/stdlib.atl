@@ -45,10 +45,10 @@ pop;0;21;rep;
 l'gamepadDone';
 
 // deadzones
-0;dup;[2 4 0];s;l;deadZone;first;>;if'nodeadZoneleft';
+0;dup;[2 4 0];s;len;deadZone;first;>;if'nodeadZoneleft';
 0;dup;[0 2 0];s;[0 0];0;cat;1;raise;[4 21 0];s;0;cat;
 l'nodeadZoneleft';
-0;dup;[4 6 0];s;l;deadZone;first;>;if'nodeadZoneright';
+0;dup;[4 6 0];s;len;deadZone;first;>;if'nodeadZoneright';
 0;dup;[0 4 0];s;[0 0];0;cat;1;raise;[6 21 0];s;0;cat;
 l'nodeadZoneright';
 

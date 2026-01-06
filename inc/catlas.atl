@@ -192,7 +192,7 @@ cat.inputState;[4 5 0];s;first;ifn'norotateFacing';
 jobFacing;cat.inputState;[0 1 0];s;cat.mouseDiv;first;0.25;*;e;/;-;[360.0];[3.1415926535897932384626433832795];[2];*;*;%;jobFacing= 1;
 l'norotateFacing';
 cat.gamepadState;[16 17 0];s;first;ifn'nogpsetfacing';
-cat.gamepadState;[2 4 0];s;l;0.8;-;ifn'nogpsetfacing';
+cat.gamepadState;[2 4 0];s;len;0.8;-;ifn'nogpsetfacing';
 cat.gamepadState;[2 4 0];s;atan;-360;*;e;
 cat.forward;[0 1 0];s;cat.forward;[2 3 0];s;0;cat;atan;360;*;e;[360];[3.1415926535897932384626433832795];*;+;-;
 [360];[3.1415926535897932384626433832795];[2];*;*;+;[360];[3.1415926535897932384626433832795];[2];*;*;%;

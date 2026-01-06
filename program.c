@@ -103,7 +103,8 @@ char* finalizeCleanup( program* program, char* block, char* msg ) {
       }else if( program->steps[ i ].type == CALL || program->steps[ i ].type == IF || program->steps[ i ].type == IFN ){
         if( program->steps[ i ].branchName )
           unmem( program->steps[ i ].branchName );
-      } else if( program->steps[ i ].type == LOAD && program->steps[ i ].progName ){
+      } else if( ( program->steps[ i ].type == LOAD || program->steps[ i ].type == LOADFILE )
+                 && program->steps[ i ].progName ){
         unmem( program->steps[ i ].progName );
       }else if( program->steps[ i ].type == TENSOR ){
         deleteTensor( program->steps[ i ].tensor );
@@ -862,6 +863,36 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     // dbg( "Linenum %u commandnum %u: load %s\n", linenum, commandnum,
     // progName );
 
+  }else if( !strcmp( command, "loadFile" ) ){
+    curStep->type = LOADFILE;
+    curStep->progName = NULL;    
+  }else if( !strncmp( command, "loadFile'", 9 ) ){  // loadFile
+    char* starti = command + 9;
+    char* endi = starti;
+    while( *endi && *endi != '\'' )
+      endi++;
+    if( endi == starti )
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Empty loadFile statement." );
+    if( *endi != '\'' )
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Unmatched quote in loadFile statement." );
+    char* progName = mem( 1 + endi - starti, char );
+    memcpy( progName, starti, endi - starti );
+    progName[ endi - starti ] = '\0';
+    curStep->type = LOADFILE;
+    curStep->progName = progName;
+    if( *( endi + 1 ) )
+      err3( "%s:%u command %u: %s", filename,
+            linenum,
+            commandnum,
+            "Extra characters after loadFile statement." );
+    // dbg( "Linenum %u commandnum %u: loadFile %s\n", linenum, commandnum, progName );
+
   } else if( !strncmp( command, "c\252", 2 ) ){  // Compute
     char* starti = command + 2;
     char* endi = starti;
@@ -1069,7 +1100,7 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = UNEXTRUDE;
     // dbg( "Linenum %u commandnum %u: unext\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "l" ) ){
+  } else if( !strcmp( command, "len" ) ){
     curStep->type = LENGTH;
     // dbg( "Linenum %u commandnum %u: length\n", linenum, commandnum );
 
@@ -1083,7 +1114,7 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
 
   } else if( !strcmp( command, "unkettle" ) ){
     curStep->type = UNKETTLE;
-    // dbg( "Linenum %u commandnum %u: kettle\n", linenum, commandnum );
+    // dbg( "Linenum %u commandnum %u: unkettle\n", linenum, commandnum );
 
   } else if( !strcmp( command, "proj" ) ){
     curStep->type = PROJ;
@@ -1097,9 +1128,24 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     curStep->type = TRANS;
     // dbg( "Linenum %u commandnum %u: translate\n", linenum, commandnum );
 
-  } else if( !strcmp( command, "texture" ) ){
+  } else if( !strncmp( command, "texture", 7 ) && ( !command[ 7 ] || command[ 7 ] == ' ' ) ){
     curStep->type = TEXTURE;
-    // dbg( "Linenum %u commandnum %u: first\n", linenum, commandnum );
+    curStep->var.size = 1;
+    char* sizep = command + 7;
+    if( *sizep ){
+      u32 varSize;
+      int charsread;
+      if( sscanf( sizep, "%u%n", &varSize, &charsread ) == 1 &&
+          !sizep[ charsread ] ){
+        curStep->var.size = varSize;
+      } else{
+        err3( "%s:%u command %u: %s", filename,
+              linenum,
+              commandnum,
+              "Malformed texture statement." );
+      }
+    }
+    // dbg( "Linenum %u commandnum %u: texture\n", linenum, commandnum );
 
   } else if( !strncmp( command, "textureArray", 12 ) ){
     char* sizep = command + 12;
@@ -1967,7 +2013,7 @@ void deleteProgram( program* p ){
   for( u32 i = 0; i < p->numComputes; ++i )
     deleteCompute( p->computes[ i ] );
   for( u32 i = 0; i < p->numSteps; ++i ){
-    if( p->steps[ i ].type == LOAD && p->steps[ i ].progName )
+    if( ( p->steps[ i ].type == LOAD || p->steps[ i ].type == LOADFILE ) && p->steps[ i ].progName )
       unmem( p->steps[ i ].progName );
     else if( p->steps[ i ].type == TENSOR ){
       deleteTensor( p->steps[ i ].tensor );
@@ -2933,13 +2979,12 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       if( !ts->size )
         err( "%s", "Attempt to texture an empty stack." );
       tensor* cur = ts->stack[ ts->size - 1 ];
+      cur->tex.mipmapped = s->var.size;
       if( !cur->gpu || cur->tex.channels == 0 )
         err( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
-      if( !cur->tex.mipmapped ){
-        char* emsg = textureTensor( cur );
-        if( emsg )
-          return emsg;
-      }
+      char* emsg = textureTensor( cur );
+      if( emsg )
+        return emsg;
       break;
      
     }
@@ -3040,6 +3085,26 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
         pop( ts );
       // dbg( "%s'%s'", "load ", s=>progName );
       *ret = true; return NULL;
+    }
+    case LOADFILE: {
+      bool freename = false;
+      char* fn = s->progName;
+      if( !fn ){
+        if( !ts->size )
+          err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to loadFile a string filename with no string on the stack." );
+        tensor* cur = ts->stack[ ts->size - 1 ];
+        if( cur->rank != 1 )
+          err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+               "Attempt to loadFile a string filename with a nonvector." );
+        fn = tensorToString( ts->stack[ ts->size - 1 ] );
+        pop( ts );
+        freename = true;
+      }
+      push( ts, tensorFromFile( fn ) );
+      if( freename )
+        unmem( fn );
+      break;
     }
     case RESHAPE: {
       if( ts->size < 2 )

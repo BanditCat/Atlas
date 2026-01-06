@@ -77,9 +77,15 @@ void takeOwnership( tensor* t ){
     if( t->tex.mipmapped ){
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
-      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
+      if( t->tex.mipmapped == 1 ){
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
+      } else {
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT );
+      }
       if( getMaxAnisotropy() > 1.0f )
         glTexParameterf( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
     } else {
@@ -901,9 +907,15 @@ char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape, 
     if( cur->tex.mipmapped ){
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
       glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
-      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
-      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
+      if( cur->tex.mipmapped == 1 ){
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
+      } else if( cur->tex.mipmapped == 2 ){
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT );
+      }
       if( getMaxAnisotropy() > 1.0 ){
         glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
       }
@@ -1545,6 +1557,38 @@ Uint32 getPixel( SDL_Surface* surface, int x, int y ){
     return 0;
   }
 }
+tensor* tensorFromFile( const char* filename ){
+  FILE* file = fopen( filename, "rb" );
+  if( !file )
+    error( "%s %s.", "Failed to open file in tensorFromFile: ", filename );
+  if( fseek( file, 0, SEEK_END ) ){
+    fclose( file );
+    error( "%s", "Failed to seek file in tensorFromFile." );
+  }
+  long fileSize = ftell( file );
+  if( fileSize == -1 ){
+    fclose( file );
+    error( "%s", "Failed to get file size in tensorFromFile." );
+  }
+  fseek( file, 0, SEEK_SET );
+  char* buffer = mem( fileSize + 10, char );
+  // Read the file contents into the buffer
+  size_t bytesRead = fread( buffer, 1, fileSize, file );
+  if( bytesRead != fileSize ){
+    unmem( buffer );
+    fclose( file );
+    error( "%s", "Failed to read file in tensorFromFile." );
+  }
+
+  buffer[ fileSize ] = '\0';
+  fclose( file );
+  u32 shape[ 4 ] = { fileSize, 1, 1, 1 };
+  f32* nt = mem( fileSize, f32 );
+  for( u64 i = 0; i < fileSize; ++i )
+    nt[ i ] = buffer[ i ];
+  unmem( buffer );
+  return newTensor( 1, shape, nt );
+}
 tensor* tensorFromImageFile( const char* filename ){
   int w, h, channels;
     
@@ -2025,17 +2069,30 @@ char* textureTensor( tensor* cur ){
   if( !cur->gpu || cur->tex.channels == 0 )
     err( "%s", "Attempt to use an inapropriate tensor as a texture. Must be channeled." );
   glBindTexture( GL_TEXTURE_2D_ARRAY, cur->tex.texture );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-  glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
-  if( getMaxAnisotropy() > 1.0 ){
-    glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+  if( cur->tex.mipmapped ){
+    glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR  );
+    if( cur->tex.mipmapped == 1 ){
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
+    } else if( cur->tex.mipmapped == 2 ){
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT );
+    }
+    if( getMaxAnisotropy() > 1.0 ){
+      glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
+    }
+    glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
+  } else {
+    glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST  );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+      glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
   }
-  glGenerateMipmap( GL_TEXTURE_2D_ARRAY );
   glBindTexture( GL_TEXTURE_2D_ARRAY, 0 );
-  cur->tex.mipmapped = true;
   return NULL;
 }
 
@@ -2171,7 +2228,7 @@ typedef struct{
   u32 currentY;
   u32 currentHeight;
   u32 currentTensorLayers;
-  bool tempMipmapped; 
+  u32 tempMipmapped; 
 } unkettleState;
 void resetUnkettleState( unkettleState* s ){
   if( s->f ){ fclose( s->f ); s->f = NULL; }
@@ -2385,7 +2442,7 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
         // 2. Parse & Alloc
         KettleMeta meta;
         READ_MEM( &meta, sizeof( KettleMeta ) );
-        s.tempMipmapped = (meta.mipmapped != 0);
+        s.tempMipmapped = meta.mipmapped;
         tensor* t = mem( 1, tensor );
         t->rank = meta.rank;
         t->size = meta.size;
@@ -2555,10 +2612,15 @@ char* unkettle( tensorStack* ts, const char* filename, f32* progress ){
         if( s.tempMipmapped ){
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
           glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
-          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
-          glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
-          
+          if( s.tempMipmapped == 1 ){
+            glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT );
+            glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT );
+            glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT );
+          } else if( s.tempMipmapped == 2 ){
+            glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT );
+            glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT );
+            glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_REPEAT );
+          }          
           if( getMaxAnisotropy() > 1.0f )
             glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, getMaxAnisotropy() );
 
