@@ -11,7 +11,8 @@ c''''ret[ 0 ] = af( vec4( tf, 0.0, 0.0 ) );' 1 1 40 0;
 2;bury;
 
 
+loadFile'inc/snow.jpg';
 loadFile'inc/grass.jpg';
 
-'inc/catlas.ktl';8;kettle;quit;
+'inc/catlas.ktl';9;kettle;quit;
 

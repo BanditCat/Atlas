@@ -1950,7 +1950,7 @@ char* tensorToTextureArray( tensor* t, u32 channels ){
   
   // Allocation
   if( channels == 40 || channels == 10 ){
-    u64 size = width * height * layers;
+    u64 size = width * height * layers * ( channels / 10 );
     u8* bdata = mem( size, u8 );
     for( u64 i = 0; i < size; ++i )
       bdata[ i ] = data[ i ] * 255.0;

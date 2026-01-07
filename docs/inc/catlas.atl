@@ -92,13 +92,20 @@ continue;
 l'loop4';
 1;loadedKettle=;
 
+
 ////////////////////////////////////////////////////
 // Take textures off the top
-img;6;1;dup;shape;c''''ret[ 0 ] = vec4( a( ivec4( tf.xy, 0, 0 ) ),
-                                        a( ivec4( tf.xy, 1, 0 ) ),
-                                        a( ivec4( tf.xy, 2, 0 ) ),
-                                        a( ivec4( tf.xy, 3, 0 ) ) );' 1 1 40 0;
-texture;0;dup;shape;[0 1 0];s;terrainTexDim= 1;terrainTex=;
+1;raise;img;
+1;raise;img;
+
+6;1;dup;shape;[0 2 0];s;[2 4];0;cat;c''''
+float[] reta = float[](
+        a( ivec4( t.xyw, 0 ) ).x,
+        b( ivec4( t.xyw, 0 ) ).x );
+ret[ 0 ] = reta[ t.z ];
+' 2 1 0 0;
+transferStart;transferEnd;textureArray 40;texture 1;
+0;dup;shape;[0 1 0];s;terrainTexDim= 1;terrainTex=;
 
 
 /////////////////////////////////////////////////
@@ -541,7 +548,7 @@ float waterDepth = len * ( 1.0 - t );
 float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
 float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
-ret[ 0 ] = vec4( mix( diffuse * df( worldPos.xz * terrainTexDim * 10.0 ).xyz, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
+ret[ 0 ] = vec4( mix( diffuse * df( vec3( worldPos.xz * terrainTexDim * 10.0, 1.0 ) ).xyz, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
 4 1 400 0;
 //print;quit;
