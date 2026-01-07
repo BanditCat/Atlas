@@ -1334,7 +1334,7 @@ dim;first;4;cat.fractalNoise;
 0;dup; // then gen splat map
 6;dim;dim;0;cat;[4];0;cat;
 c''''
-float blend = clamp( ( af( vec4( tf, 0.0, 0.0 ) ) + hbias ) * hscale * 40.0, 0.0, 1.0 );
+float blend = clamp( ( af( vec4( tf, 0.0, 0.0 ) ) + hbias ).x * hscale * 40.0, 0.0, 1.0 );
 ret[0] = vec4( 0.0, 1.0, blend, 1.0 );' 1 1 40 0;texture;
 
 1;bury; // swap them;
