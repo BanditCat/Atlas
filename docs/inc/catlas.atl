@@ -91,6 +91,16 @@ windowSize;wwdims= 2;6;wwdims;[4];0;cat;c''''ret[ 0 ] = tf.x / wwdims.x > 2.0 - 
 continue;
 l'loop4';
 1;loadedKettle=;
+
+////////////////////////////////////////////////////
+// Take textures off the top
+img;6;1;dup;shape;c''''ret[ 0 ] = vec4( a( ivec4( tf.xy, 0, 0 ) ),
+                                        a( ivec4( tf.xy, 1, 0 ) ),
+                                        a( ivec4( tf.xy, 2, 0 ) ),
+                                        a( ivec4( tf.xy, 3, 0 ) ) );' 1 1 40 0;
+texture;0;dup;shape;[0 1 0];s;terrainTexDim= 1;terrainTex=;
+
+
 /////////////////////////////////////////////////
 // instance/unkettle init
 //print;quit; // stack:  lowverts lowindices mat highverts highindices bones animcount prevframe hmap gradient
@@ -124,7 +134,7 @@ resetInstances;
 [0];6;[1];c''''ret[ 0 ] = a( t );' 1 1 0 0;transferStart;13;bury; // fake height
 
 // set up images
-img'inc\ui.png';6;[1152 1024 4];c''''ret[ 0 ] = vec4( a( ivec4( ivec2( tf.xy ), 0, 0 ) ),
+'inc\\ui.png';loadFile;img;6;[1152 1024 4];c''''ret[ 0 ] = vec4( a( ivec4( ivec2( tf.xy ), 0, 0 ) ),
                                         a( ivec4( ivec2( tf.xy ), 1, 0 ) ),
                                         a( ivec4( ivec2( tf.xy ), 2, 0 ) ),
                                         a( ivec4( ivec2( tf.xy ), 3, 0 ) ) );' 1 1 40 0;
@@ -452,10 +462,10 @@ wdims;0;dup;first;1;dup;last;/;0.5;^;e;set'aspect' 1;pop; // set wdims to window
 
 
 [90];wdims;0;cat;[0.001 3];0;cat;proj;projm= 16;
-
-// Stack here: the arguments (heightmapcopy, gradientcopy, shadowMap, prevFrame), heightMap, gradient
-//2;dup;5;bury;print;   // OOPS dont do this, itll deep copy
 2;raise;4;bury;4;dup;2;bury;
+//print;quit; // hmap grad smap frame ....
+move'terrainTex';5;bury;5;dup;3;bury;
+
 depth;backface;
 6;dim;dim;*;first;*;wdims;[4];0;cat;
 c'
@@ -531,10 +541,12 @@ float waterDepth = len * ( 1.0 - t );
 float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
 float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
-ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
+ret[ 0 ] = vec4( mix( diffuse * df( worldPos.xz * terrainTexDim * 10.0 ).xyz, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
-3 1 400 0;
+4 1 400 0;
+//print;quit;
 1;raise;pop;
+2;raise;terrainTex=;
 
 //depth;backface;
 //depth;backface;

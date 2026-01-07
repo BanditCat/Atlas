@@ -73,6 +73,7 @@ void deleteCompute( compute* i );
 char* newTensorsInitialized( program* p, tensorStack* ts, u32 rank, u32* shape,
                              const compute* initializer, u32 vertCount, tensor*** rets );
 tensor* tensorFromFile( const char* fileName );
+tensor* tensorFromImage( const u8* data, u64 size );
 tensor* tensorFromImageFile( const char* fileName );
 tensor* tensorFromString( const char* string );
 void deleteTensor( tensor* t );

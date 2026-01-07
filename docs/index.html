@@ -601,9 +601,9 @@ print;quit;</code></pre>
 
   <section id="cmd-img">
     <h2>img (image)</h2>
-    <p>Loads a 4-channel bitmap from a file. For example:
+    <p>Loads a 4-channel image from a file. For example:
       <pre><code>img'font.bmp'</code></pre>
-      loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.  This tensor is placed on the GPU.</p>
+      loads <code>font.bmp</code> as a <code>[width height 4]</code> tensor.  This tensor is placed on the GPU.  If called with no string, as just <code>img</code>, it will attempt to load the vector on top of the stack as an image. Thus, <code>'font.bmp';loadFile;img</code> is equivalent to <code>img'font.bmp'</code></p>
   </section>
 
   <section id="cmd-include">

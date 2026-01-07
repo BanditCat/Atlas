@@ -649,10 +649,14 @@ tensor** loadGltfCooked( const char* filename, u32* outCount ){
       unmem( occ_pixels );
   }
 
+
+  printf( "foof\n" );
   t_tex = newTensor( 4, tex_shape, (f32*)tex_data );
   tensorToTextureArrayOld( t_tex, 40 );
-  //t_tex->tex.mipmapped = 1;
+  t_tex->tex.mipmapped = 1;
+  printf( "foo\n" );
   textureTensor( t_tex );
+  printf( "bar\n" );
   
   // --- MESH LOADING (Vertices & Indices) ---
   // (Standard Mesh code...)

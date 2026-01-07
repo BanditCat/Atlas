@@ -1,5 +1,5 @@
+calling print in console calls takeownership
 water
-make mipmapped renamed texParam and use it to do GL_REPEAT for tilable
 
 terrain splatting
 errosion

@@ -66,7 +66,10 @@ continue;
 l'loop4';
 1;loadedKettle=;
 /////////////////////////////////////////////////
-// instance/unkettle init
+// instance/unkettle init BUGBUG
+//print;quit;
+l'fudge';pop;size;10;==;ifn'fudge';
+
 //print;quit; // stack:  lowverts lowindices mat highverts highindices bones animcount prevframe hmap gradient
 6;raise;e;animCount= 1; // stack:  lowverts lowindices mat highverts highindices bones prevframe hmap gradient
 0;dup;shape;[0 1 0];s;lowVertexCount= 1;
@@ -123,6 +126,8 @@ ret[ 0 ] = vec4( 0.0 );
 
 
 l'kettled';
+
+
 windowSize;ssaa;*;wdims= 2;
 std.nav3d;
 

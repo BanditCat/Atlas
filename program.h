@@ -96,7 +96,8 @@ typedef struct{
     SUM, // documented
     WORKSPACE, // documented
     TRANSFERSTART, // documented
-    TRANSFEREND // documented
+    TRANSFEREND, // documented
+    IMG // documented
   } type;
   union{
     tensor* tensor;

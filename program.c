@@ -802,6 +802,8 @@ char* addStep( program* p, const char* filename, u32 linenum, u32 commandnum, ch
     if( worklen )
       curStep->branchBaseName = branchName + worklen;
 
+  } else if( !strcmp( command, "img" ) ){
+    curStep->type = IMG;
   } else if( !strncmp( command, "img'", 4 ) ){  // img
     char* starti = command + 4;
     char* endi = starti;
@@ -2074,6 +2076,24 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
     // dbg( "Step %u", i );
     step* s = p->steps + i;
     switch( s->type ){
+    case IMG: {
+      if( !ts->size )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Attempt to load an image with an empty stack." );
+      tensor* cur = ts->stack[ ts->size - 1 ];
+      if( cur->rank != 1 )
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum,
+             "Attempt to load an image with a non-vector." );
+      u64 size = cur->shape[ 0 ];
+      u8* data = mem( size, u8 );
+      for( u64 i = 0; i < size; ++i )
+        data[ i ] = cur->data[ cur->offset + i * cur->strides[ 0 ] ];
+      tensor* ret = tensorFromImage( data, size );
+      pop( ts );
+      unmem( data );
+      push( ts, ret );
+      break;
+    }
     case INDEX: {
       char* err = tensorIndex( ts );
       if( err )

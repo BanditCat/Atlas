@@ -1571,7 +1571,7 @@ tensor* tensorFromFile( const char* filename ){
     error( "%s", "Failed to get file size in tensorFromFile." );
   }
   fseek( file, 0, SEEK_SET );
-  char* buffer = mem( fileSize + 10, char );
+  u8* buffer = mem( fileSize + 10, char );
   // Read the file contents into the buffer
   size_t bytesRead = fread( buffer, 1, fileSize, file );
   if( bytesRead != fileSize ){
@@ -1589,14 +1589,13 @@ tensor* tensorFromFile( const char* filename ){
   unmem( buffer );
   return newTensor( 1, shape, nt );
 }
-tensor* tensorFromImageFile( const char* filename ){
+tensor* tensorFromImage( const u8* buffer, u64 fileSize ){
   int w, h, channels;
-    
-  // Force loading as 4 channels (RGBA), regardless of input format
-  unsigned char* pixels = stbi_load( filename, &w, &h, &channels, 4 );
+  
+  unsigned char* pixels = stbi_load_from_memory( buffer, fileSize, &w, &h, &channels, 4 );
     
   if( !pixels ) {
-    error( "Unable to load image file: %s\nReason: %s\n", filename, stbi_failure_reason() );
+    error( "Unable to load image: %s\n", stbi_failure_reason() );
   }
 
   tensor* ret = mem( 1, tensor );
@@ -1641,8 +1640,38 @@ tensor* tensorFromImageFile( const char* filename ){
     }
   }
 
+
   stbi_image_free( pixels );
   tensorToGPUMemory( ret );
+  return ret;
+}
+tensor* tensorFromImageFile( const char* filename ){
+  FILE* file = fopen( filename, "rb" );
+  if( !file )
+    error( "%s %s.", "Failed to open file in tensorFromFile: ", filename );
+  if( fseek( file, 0, SEEK_END ) ){
+    fclose( file );
+    error( "%s", "Failed to seek file in tensorFromFile." );
+  }
+  long fileSize = ftell( file );
+  if( fileSize == -1 ){
+    fclose( file );
+    error( "%s", "Failed to get file size in tensorFromFile." );
+  }
+  fseek( file, 0, SEEK_SET );
+  u8* buffer = mem( fileSize + 10, char );
+  // Read the file contents into the buffer
+  size_t bytesRead = fread( buffer, 1, fileSize, file );
+  if( bytesRead != fileSize ){
+    unmem( buffer );
+    fclose( file );
+    error( "%s", "Failed to read file in tensorFromFile." );
+  }
+
+  buffer[ fileSize ] = '\0';
+  fclose( file );
+  tensor* ret = tensorFromImage( buffer, fileSize );
+  unmem( buffer );
   return ret;
 }
 tensor* tensorFromString( const char* string ){
@@ -1975,8 +2004,6 @@ char* tensorToTextureArrayOld( tensor* t, u32 channels ){
   u32 width  = t->shape[ 2 ];
   u32 height = t->shape[ 1 ];
 
-
-  
   GLenum internalFormat, format, type;
   switch( channels ){
   case 400:internalFormat = GL_RGBA16F; format = GL_RGBA; type = GL_HALF_FLOAT; break;
@@ -1988,15 +2015,13 @@ char* tensorToTextureArrayOld( tensor* t, u32 channels ){
   default: err( "%s", "Unsupported channel format for textureArray." );
   }
 
-  
   // 4. Create Texture Array
   glGenTextures( 1, &t->tex.texture );
   glBindTexture( GL_TEXTURE_2D_ARRAY, t->tex.texture );
   
-  
   // Allocation
   if( channels == 40 || channels == 10 ){
-    u64 size = width * height * layers;
+    u64 size = width * height * layers * ( channels / 10 );
     u8* bdata = mem( size, u8 );
     for( u64 i = 0; i < size; ++i )
       bdata[ i ] = data[ i ] * 255.0;
@@ -2005,7 +2030,7 @@ char* tensorToTextureArrayOld( tensor* t, u32 channels ){
   } else{
     glTexImage3D( GL_TEXTURE_2D_ARRAY, 0, internalFormat, width, height, layers, 0, format, type, data );
   }
-  
+
   // Mipmaps & Params
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   glTexParameteri( GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST  );
@@ -2026,7 +2051,7 @@ char* tensorToTextureArrayOld( tensor* t, u32 channels ){
   // 5. Update Tensor State
   // We free the CPU data because we moved it to the GPU
   if( t->ownsData ) unmem( dataBase );
-  
+
   t->gpu = true;
   t->ownsData = true;
   t->tex.width = width;
