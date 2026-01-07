@@ -100,8 +100,8 @@ l'loop4';
 
 6;1;dup;shape;[0 2 0];s;[2 4];0;cat;c''''
 float[] reta = float[](
-        a( ivec4( t.xyw, 0 ) ).x,
-        b( ivec4( t.xyw, 0 ) ).x );
+        a( ivec4( t.xyw, 0 ) ),
+        b( ivec4( t.xyw, 0 ) ) );
 ret[ 0 ] = reta[ t.z ];
 ' 2 1 0 0;
 transferStart;transferEnd;textureArray 40;texture 1;
