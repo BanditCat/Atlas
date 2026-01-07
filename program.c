@@ -2823,7 +2823,7 @@ char* runProgram( tensorStack* ts, program** progp, u32 startstep, bool* ret ){
       if( ts->stack[ ts->size - 1 ]->rank != 1 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for a compute was not a rank 1 tensor." );
       if( ts->stack[ ts->size - 1 ]->size > 4 )
-        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for an initilizer was more than 4 component." );
+        err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "The shape for an initializer was more than 4 component." );
       if( ts->stack[ ts->size - 2 ]->rank != 0 )
         err( "%s:%u command %u: %s", s->filename, s->linenum, s->commandnum, "A compute was run with a non-scalar vertex count." );
       tensorToHostMemory( ts->stack[ ts->size - 1 ] );
