@@ -91,16 +91,23 @@ l'loop4';
 
 ////////////////////////////////////////////////////
 // Take textures off the top and replace gradient with splatmap.
-1;raise;img;
-1;raise;img;
+4;raise;img;
+4;raise;img;
+4;raise;img;
+4;raise;img;
+4;raise;img;
 
-6;1;dup;shape;[0 2 0];s;[2 4];0;cat;c''''
+
+6;1;dup;shape;[0 2 0];s;[5 4];0;cat;c''''
 float[] reta = float[](
         a( ivec4( t.xyw, 0 ) ),
-        b( ivec4( t.xyw, 0 ) ) );
+        b( ivec4( t.xyw, 0 ) ),
+        c( ivec4( t.xyw, 0 ) ),
+        d( ivec4( t.xyw, 0 ) ),
+        e( ivec4( t.xyw, 0 ) ) );
 ret[ 0 ] = reta[ t.z ];
-' 2 1 0 0;
-transferStart;transferEnd;textureArray 40;texture 1;
+' 5 1 0 0;
+transferStart;transferEnd;textureArray 40;texture 2;
 0;dup;shape;[0 1 0];s;terrainTexDim= 1;terrainTex=;
 
 
@@ -544,8 +551,8 @@ float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
 
 vec3 tap0 = bf( worldPos.zx * dim ).xyz;
-vec3 tap1 = df( vec3( worldPos.zx * terrainTexDim * 10.0, tap0.x ) ).rgb;
-vec3 tap2 = df( vec3( worldPos.zx * terrainTexDim * 10.0, tap0.y ) ).rgb;
+vec3 tap1 = df( vec3( worldPos.zx * terrainTexDim * 10.0, tap0.x * 255.0 ) ).rgb;
+vec3 tap2 = df( vec3( worldPos.zx * terrainTexDim * 10.0, tap0.y * 255.0 ) ).rgb;
 vec3 color = mix( tap1, tap2, tap0.z );
  
 ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
@@ -1334,8 +1341,11 @@ dim;first;4;cat.fractalNoise;
 0;dup; // then gen splat map
 6;dim;dim;0;cat;[4];0;cat;
 c''''
-float blend = clamp( ( af( vec4( tf, 0.0, 0.0 ) ) + hbias ).x * hscale * 40.0, 0.0, 1.0 );
-ret[0] = vec4( 0.0, 1.0, blend, 1.0 );' 1 1 40 0;texture;
+float blend = ( ( af( vec4( tf, 0.0, 0.0 ) ) + hbias ).x / hspan ) * 5.0;
+float idx1 = floor( blend ) / 255.0;
+float idx2 = idx1 + 1.0 / 255.0;
+blend = fract( blend );
+ret[0] = vec4( idx1, idx2, blend, 1.0 );' 1 1 40 0;
 
 1;bury; // swap them;
 
