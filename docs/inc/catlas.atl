@@ -1341,7 +1341,7 @@ dim;first;4;cat.fractalNoise;
 0;dup; // then gen splat map
 6;dim;dim;0;cat;[4];0;cat;
 c''''
-float h = af( vec4( tf, 0.0, 0.0 ) ) * 2.0;
+float h = af( vec4( tf, 0.0, 0.0 ) ).x * 2.0;
 float c1, c2, c3;
 if( h < 1.0 ){
   c1 = clamp( ( 1.0 - h ) * 2.0 - 0.5, 0.0, 1.0 );
