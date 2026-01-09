@@ -91,11 +91,10 @@ l'loop4';
 
 ////////////////////////////////////////////////////
 // Take textures off the top and replace gradient with splatmap.
-4;raise;img;
-4;raise;img;
-4;raise;img;
-4;raise;img;
-4;raise;img;
+3;raise;img;
+3;raise;img;
+3;raise;img;
+3;raise;img;
 
 
 6;1;dup;shape;[0 2 0];s;[5 4];0;cat;c''''
@@ -103,10 +102,9 @@ float[] reta = float[](
         a( ivec4( t.xyw, 0 ) ),
         b( ivec4( t.xyw, 0 ) ),
         c( ivec4( t.xyw, 0 ) ),
-        d( ivec4( t.xyw, 0 ) ),
-        e( ivec4( t.xyw, 0 ) ) );
+        d( ivec4( t.xyw, 0 ) ) );
 ret[ 0 ] = reta[ t.z ];
-' 5 1 0 0;
+' 4 1 0 0;
 transferStart;transferEnd;textureArray 40;texture 2;
 0;dup;shape;[0 1 0];s;terrainTexDim= 1;terrainTex=;
 
@@ -550,10 +548,12 @@ float fog = clamp( waterDepth * waterFogScale, 0.0, 1.0 );
 float diffuse = dot( normal, lightDir ) * 0.5 + 0.5;
 diffuse *= ( 1.0 - shadow );
 
-vec3 tap0 = bf( worldPos.zx * dim ).xyz;
-vec3 tap1 = df( vec3( worldPos.zx * terrainTexDim * 10.0, tap0.x * 255.0 ) ).rgb;
-vec3 tap2 = df( vec3( worldPos.zx * terrainTexDim * 10.0, tap0.y * 255.0 ) ).rgb;
-vec3 color = mix( tap1, tap2, tap0.z );
+vec4 splatmap = bf( vec4( worldPos.zx * dim, 0.0, 0.0 ) );
+vec3 tap0 = df( vec3( worldPos.zx * terrainTexDim * 10.0, 0.0 ) ).rgb * splatmap.x;
+vec3 tap1 = df( vec3( worldPos.zx * terrainTexDim * 10.0, 1.0 ) ).rgb * splatmap.y;
+vec3 tap2 = df( vec3( worldPos.zx * terrainTexDim * 10.0, 2.0 ) ).rgb * splatmap.z;
+vec3 tap3 = df( vec3( worldPos.zx * terrainTexDim * 10.0, 3.0 ) ).rgb * splatmap.w;
+vec3 color = tap0 + tap1 + tap2 + tap3;
  
 ret[ 0 ] = vec4( mix( diffuse * color, vec3( 0.0, 0.1, 0.3 ), fog ), 1.0 );
 '
@@ -1327,7 +1327,7 @@ return;
 //  Level funcs.  These should eventually be in a seperate file, per level, including this one
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+ ///////////////////////////////////////////////////////////////////////////////////////////////
 //  Terrain gen.
 
 l'terrainGen';
@@ -1336,16 +1336,25 @@ l'terrainGen';
 dim;first;4;cat.fractalNoise;
 // get minmax
 0;dup;transferStart;transferEnd;minmax;0;dup;last;1;dup;first;-;e;hspan= 1;first;-1;*;e;hbias= 1;
-6;texsize;[1];0;cat;c''''ret[0]=( a( ivec4( tf, 0, 0 ) ) + hbias) / hspan;' 1 1 100 0;texture;
+6;texsize;[1];0;cat;c''''ret[ 0 ] = ( a( ivec4( tf, 0, 0 ) ) + hbias ) / hspan;' 1 1 100 0;texture;
 
 0;dup; // then gen splat map
 6;dim;dim;0;cat;[4];0;cat;
 c''''
-float blend = ( ( af( vec4( tf, 0.0, 0.0 ) ) + hbias ).x / hspan ) * 5.0;
-float idx1 = floor( blend ) / 255.0;
-float idx2 = idx1 + 1.0 / 255.0;
-blend = fract( blend );
-ret[0] = vec4( idx1, idx2, blend, 1.0 );' 1 1 40 0;
+float h = af( vec4( tf, 0.0, 0.0 ) ) * 2.0;
+float c1, c2, c3;
+if( h < 1.0 ){
+  c1 = clamp( ( 1.0 - h ) * 2.0 - 0.5, 0.0, 1.0 );
+  c2 = clamp( h * 2.0 - 0.5, 0.0, 1.0 );
+  c3 = 0.0;
+} else {
+  c1 = 0.0;
+  c2 = clamp( ( 2.0 - h ) * 2.0 - 0.5, 0.0, 1.0 );
+  c3 = clamp( ( h - 1.0 ) * 2.0 - 0.5, 0.0, 1.0 );
+}
+  
+
+ret[0] = vec4( 0.0, c1, c2, c3 );' 1 1 40 0;texture;
 
 1;bury; // swap them;
 
